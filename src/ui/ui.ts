@@ -1,6 +1,6 @@
 // UI controller: picks the panel for each phase, routes clicks/taps/keys, keeps the camera clear of panels.
 import { play, setSoundEnabled } from '../audio/sfx';
-import { clearSave, readSave } from '../core/save';
+import { clearSave, parseSave, readSave, serializeSave, writeSave } from '../core/save';
 import type { AgeMode, Avatar, Lang, Phase } from '../core/types';
 import { setLang, t } from '../i18n';
 import type { Game } from '../sim/game';
@@ -111,8 +111,57 @@ export class UI implements UIApi {
           this.toTitle();
         },
         toTitle: () => this.toTitle(),
+        exportSave: () => this.exportSave(),
+        importSave: () => this.pickSaveFile(),
       }),
     );
+  }
+
+  /** Downloads the save as a file (the game in progress, or the stored save when on the title screen). */
+  private exportSave(): void {
+    const snap = this.g.phase !== 'title' ? this.g.snapshot() : readSave();
+    if (!snap) {
+      this.toast(t('toast.noSave'), 'warn');
+      return;
+    }
+    const blob = new Blob([serializeSave(snap)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lemonade-king-save-day${snap.S.day}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    this.toast(t('toast.exported', { day: snap.S.day, coins: snap.S.coins }), 'good');
+  }
+
+  /** Opens the file picker; the chosen file is validated, then the player confirms replacing the current progress. */
+  private pickSaveFile(): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.style.display = 'none';
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (!file) return;
+      const snap = parseSave(await file.text());
+      if (!snap) {
+        this.toast(t('toast.importBad'), 'warn');
+        return;
+      }
+      const apply = () => {
+        writeSave(snap);
+        this.continueGame();
+        this.toast(t('toast.imported', { day: snap.S.day, coins: snap.S.coins }), 'good');
+      };
+      const current = this.g.phase !== 'title' ? this.g.S : readSave()?.S;
+      if (current) this.confirm(t('settings.importAsk', { day: snap.S.day, coins: snap.S.coins, curDay: current.day, curCoins: current.coins }), apply);
+      else apply();
+    });
+    document.body.appendChild(input);
+    input.click();
   }
 
   openGlossary(): void {
@@ -275,7 +324,7 @@ export class UI implements UIApi {
 
   toast(text: string, kind: 'info' | 'warn' | 'good' = 'info'): void {
     const el = document.createElement('div');
-    el.className = `toast ${kind}`;
+    el.className = `toast toast-${kind}`;
     el.innerHTML = esc(text);
     this.toastsEl.appendChild(el);
     while (this.toastsEl.children.length > 3) this.toastsEl.firstElementChild?.remove();

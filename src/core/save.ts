@@ -22,6 +22,21 @@ export function readSave(): Snapshot | null {
   }
 }
 
+/** Text of a save file (used to move progress to another browser or phone). */
+export function serializeSave(s: Snapshot): string {
+  return JSON.stringify(s);
+}
+
+/** Parses the text of a save file. Returns null when it is not a valid Lemonade King save. */
+export function parseSave(text: string): Snapshot | null {
+  try {
+    if (text.length > 2_000_000) return null;
+    return migrate(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
 export function clearSave(): void {
   try {
     localStorage.removeItem(KEY);

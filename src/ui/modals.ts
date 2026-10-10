@@ -69,6 +69,8 @@ export interface SettingsHooks {
   info(title: string, text: string): void;
   resetProgress(): void;
   toTitle(): void;
+  exportSave(): void;
+  importSave(): void;
 }
 
 export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
@@ -92,6 +94,12 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
           <button class="btn btn-sm ${g.S.ageMode === 'kid' ? 'btn-y' : ''}" data-act="mode:kid">${t('mode.kid')}</button>
           <button class="btn btn-sm ${g.S.ageMode === 'pro' ? 'btn-y' : ''}" data-act="mode:pro">${t('mode.pro')}</button>
         </div>` : ''}
+        <h3>💾 ${t('settings.backup')}</h3>
+        <div class="row" style="flex-wrap:wrap">
+          <button class="btn btn-sm" data-act="export">⬇️ ${t('settings.export')}</button>
+          <button class="btn btn-sm" data-act="import">⬆️ ${t('settings.import')}</button>
+        </div>
+        <p class="note">${t('settings.backupNote')}</p>
         <h3>👪 ${t('settings.parents')}</h3>
         <div class="row" style="flex-wrap:wrap">
           <button class="btn btn-sm" data-act="full">⭐ ${t('settings.full')}</button>
@@ -117,6 +125,15 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
       }
       if (act === 'reset') {
         queueMicrotask(() => hooks.openGate(() => hooks.resetProgress()));
+        return true;
+      }
+      if (act === 'export') {
+        hooks.exportSave();
+        return false;
+      }
+      if (act === 'import') {
+        // the file picker must open straight from the tap, so close this dialog first and open the picker at once
+        hooks.importSave();
         return true;
       }
       if (act === 'title') {

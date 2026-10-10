@@ -1240,10 +1240,10 @@ small {
   animation: toastIn 0.25s ease-out;
   text-align: center;
 }
-.toast.warn {
+.toast-warn {
   border-left-color: var(--red);
 }
-.toast.good {
+.toast-good {
   border-left-color: var(--green);
 }
 .toast.out {
