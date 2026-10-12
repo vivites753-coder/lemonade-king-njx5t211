@@ -8,7 +8,7 @@ import { UPGRADES } from '../data/upgrades';
 import { WEATHER } from '../data/weather';
 import type { Recipe, Stock } from './state';
 import { lemonsTotal } from './state';
-import { NO_EVENTS, nearShare, passersBetween } from './traffic';
+import { NO_EVENTS, nearShare, passersBetween, placeEventStop, type Crowd } from './traffic';
 
 export type Owned = Partial<Record<UpgradeId, true>>;
 
@@ -202,10 +202,13 @@ export function expectedDay(o: {
   from: number;
   to?: number;
   recipe?: Recipe;
+  /** Today's events (crowd and stop chance); none by default. */
+  events?: Crowd;
 }): { passers: number; inRange: number; buyers: number; revenue: number; profit: number; profitPerPasser: number } {
   const loc = LOCATIONS[o.loc];
   const to = o.to ?? CONFIG.DAY_END;
-  const passers = passersBetween(o.loc, o.weather, o.from, to, NO_EVENTS);
+  const ev = o.events ?? NO_EVENTS;
+  const passers = passersBetween(o.loc, o.weather, o.from, to, ev);
   const radius = attentionRadius(o.upgrades, o.speakerOn ?? true);
   const inRange = passers * (nearShare(radius) + (1 - CONFIG.LANES[0].weight) * farCoverage(radius));
   const base = interestChance({
@@ -214,8 +217,9 @@ export function expectedDay(o: {
     flyers: false,
     weather: o.weather,
     rep: o.rep ?? 1,
-    festival: false,
+    festival: ev.festival && !loc.indoor,
     location: o.loc,
+    event: placeEventStop(o.loc, ev),
   }).chance;
   let buyShare = 0;
   for (const [type, share] of Object.entries(loc.mix) as [PedTypeId, number][]) {

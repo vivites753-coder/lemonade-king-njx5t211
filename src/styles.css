@@ -604,6 +604,7 @@ small {
   font-weight: 800 !important;
   color: var(--blue-d) !important;
 }
+.tag,
 .loc .tag {
   display: inline-block;
   font-size: 11px;
@@ -619,6 +620,13 @@ small {
   display: block;
   font-size: 13px;
   font-weight: 900;
+  margin: 2px 0;
+}
+.loc-own {
+  display: block;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--green-d);
   margin: 2px 0;
 }
 .loc-lock {
@@ -2224,4 +2232,88 @@ body.reduce-motion * {
   .k-foot .btn-big {
     min-height: 44px;
   }
+}
+
+/* my stands */
+.pt-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  box-shadow: 0 3px 0 var(--line);
+}
+.pt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+}
+.pt-ico {
+  font-size: 28px;
+}
+.pt-seller {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.pt-seller small,
+.pt-new small {
+  display: block;
+  color: var(--muted);
+  font-weight: 700;
+}
+.pt-face {
+  font-size: 30px;
+}
+.pt-cand,
+.pt-new {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  box-shadow: 0 2px 0 var(--line);
+}
+.skill {
+  color: var(--orange);
+  letter-spacing: 1px;
+}
+.skill .off {
+  color: #e2d9bb;
+}
+.pt-last {
+  background: #fffaf0;
+  border-radius: 12px;
+  padding: 6px 10px;
+  margin: 6px 0;
+  font-size: 14px;
+}
+.pt-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 34px;
+  margin: 6px 0;
+}
+.pt-bars i {
+  flex: 1;
+  background: var(--green);
+  border-radius: 4px 4px 0 0;
+}
+.pt-bars i.neg {
+  background: var(--red);
+}
+.pt-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.warn-chip {
+  background: #fff0f0;
+  color: var(--red-d);
+  font-size: 12px;
 }

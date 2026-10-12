@@ -1,5 +1,6 @@
 import { CONFIG } from '../core/config';
 import type { AgeMode, Avatar, EquipId, Lang, LocationId, MixResult, Params, UpgradeId, WeatherId } from '../core/types';
+import type { Point, PointDay } from './points';
 
 export interface LemonBatch {
   n: number;
@@ -52,6 +53,9 @@ export interface GameState {
   broken: Partial<Record<EquipId, true>>;
   /** Cups of lemonade kept in the cooler overnight. */
   carryCups: number;
+  /** Extra stands at other places, run by sellers. */
+  points: Point[];
+  nextPointId: number;
   location: LocationId;
   price: number;
   recipe: Recipe;
@@ -110,6 +114,8 @@ export interface KitchenState {
   stir: number;
 }
 
+export type PointReport = PointDay & { id: number; loc: LocationId; nameId: number | null };
+
 export interface DayReport {
   sales: number;
   bonus: number;
@@ -121,6 +127,7 @@ export interface DayReport {
   stolen: number;
   wages: number;
   repairs: number;
+  training: number;
   profit: number;
   sold: number;
   freeCups: number;
@@ -137,6 +144,11 @@ export interface DayReport {
   broke: EquipId[];
   /** Places that opened tonight (reputation milestone). */
   unlocked: LocationId[];
+  /** The player's other stands today (already included in income and expenses). */
+  points: PointReport[];
+  pointsProfit: number;
+  /** Tonight the reputation first reached the level for extra stands. */
+  pointsUnlocked: boolean;
   stageGoalReached: boolean;
 }
 
@@ -154,7 +166,7 @@ export interface DayState {
   delivery: boolean;
   sales: number;
   bonus: number;
-  expenses: { ingredients: number; rent: number; flyers: number; stolen: number; wages: number; repairs: number };
+  expenses: { ingredients: number; rent: number; flyers: number; stolen: number; wages: number; repairs: number; training: number };
   flyers: boolean;
   helper: boolean;
   /** The stand was open today (equipment wears out). */
@@ -207,6 +219,8 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     condition: { mixer: 100 },
     broken: {},
     carryCups: 0,
+    points: [],
+    nextPointId: 1,
     location: 'yard',
     price: 8,
     recipe: { lemons: CONFIG.IDEAL_LEMONS, sugar: CONFIG.IDEAL_SUGAR },
@@ -236,7 +250,7 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     delivery: false,
     sales: 0,
     bonus: 0,
-    expenses: { ingredients: 0, rent: 0, flyers: 0, stolen: 0, wages: 0, repairs: 0 },
+    expenses: { ingredients: 0, rent: 0, flyers: 0, stolen: 0, wages: 0, repairs: 0, training: 0 },
     flyers: false,
     helper: false,
     opened: false,
@@ -288,5 +302,5 @@ export function lemonsTotal(stock: Stock): number {
 
 export function dayExpenses(d: DayState): number {
   const e = d.expenses;
-  return e.ingredients + e.rent + e.flyers + e.stolen + e.wages + e.repairs;
+  return e.ingredients + e.rent + e.flyers + e.stolen + e.wages + e.repairs + e.training;
 }

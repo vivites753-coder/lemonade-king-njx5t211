@@ -38,6 +38,10 @@ export class Overlays {
       const cur = this.current;
       if (!cur) return;
       if (cur.kind === 'card') {
+        if (cur.card.choices) {
+          if (this.g.cardChoice(cur.card, act)) this.close();
+          return;
+        }
         if (act === 'repair' && cur.card.repair) {
           if (this.g.repair(cur.card.repair)) this.close();
           return;
@@ -98,6 +102,8 @@ export class Overlays {
   /** Enter / Escape closes tips and cards. */
   key(k: string): boolean {
     if (!this.current) return false;
+    // a card with choices waits for an answer
+    if (this.current.kind === 'card' && this.current.card.choices) return false;
     if ((k === 'Enter' || k === 'Escape') && this.current.kind !== 'modal') {
       this.close();
       return true;
@@ -145,8 +151,12 @@ export class Overlays {
       <h2 class="ev-title">${esc(t(`card.${c.id}.title`, c.params))}</h2>
       <p>${esc(t(`card.${c.id}.text`, c.params))}</p>
       <div class="lesson">${lemiFace(true)}<div>${esc(t(`card.${c.id}.lemi`, c.params))}</div></div>
-      <div class="modal-actions">
-        ${c.repair
+      <div class="modal-actions${c.choices && c.choices.length > 2 ? ' wrap' : ''}">
+        ${c.choices
+          ? c.choices
+              .map((ch) => `<button class="btn${ch.style ? ` btn-${ch.style}` : ''}" data-act="${ch.act}" ${ch.disabled ? 'disabled' : ''}>${esc(t(ch.key, ch.params))}</button>`)
+              .join('')
+          : c.repair
           ? `<button class="btn" data-act="ok">${t('card.later')}</button>
              <button class="btn btn-g" data-act="repair" ${this.g.S.coins < this.g.repairCost(c.repair) ? 'disabled' : ''}>🔧 ${t('card.repair', { cost: this.g.repairCost(c.repair) })}</button>`
           : `<button class="btn btn-y" data-act="ok">${t('btn.ok')}</button>`}

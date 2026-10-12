@@ -17,6 +17,7 @@ import { shopPanel } from './panels/shop';
 import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
 import { esc } from './dom';
+import { hireModal, pointsModal, type PointsHooks } from './points';
 import { ResourceBar, stockModal } from './resources';
 
 const PANELS: Partial<Record<Phase, Panel>> = {
@@ -128,6 +129,16 @@ export class UI implements UIApi {
 
   openStock(): void {
     this.overlays.modal(stockModal(this.g));
+  }
+
+  private pointsHooks: PointsHooks = {
+    hire: (id) => this.overlays.modal(hireModal(this.g, id, this.pointsHooks)),
+    points: () => this.openPoints(),
+    confirm: (text, yes) => this.confirm(text, yes),
+  };
+
+  openPoints(): void {
+    this.overlays.modal(pointsModal(this.g, this.pointsHooks));
   }
 
   continueGame(): void {
@@ -333,6 +344,9 @@ export class UI implements UIApi {
         break;
       case 'glossary':
         this.openGlossary();
+        break;
+      case 'points':
+        this.openPoints();
         break;
       case 'sound':
         g.updateSettings({ sound: !g.S.settings.sound });

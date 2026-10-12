@@ -19,7 +19,8 @@ export const morningPanel: Panel = {
     const locCards = LOCATION_IDS.map((id) => {
       const l = LOCATIONS[id];
       const repLock = !g.unlocked(id);
-      const locked = repLock || (S.day === 1 && id !== 'yard');
+      const own = S.points.find((p) => p.loc === id);
+      const locked = repLock || !!own || (S.day === 1 && id !== 'yard');
       const travel = g.travelHours(id);
       const ev = repLock ? undefined : LOC_EVENTS.find((e) => e.loc === id && D.events[e.id]);
       return `<button class="loc${S.location === id ? ' sel' : ''}${repLock ? ' rep-lock' : ''}" data-act="loc:${id}" ${locked ? 'disabled' : ''}>
@@ -28,6 +29,7 @@ export const morningPanel: Panel = {
           <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}
           ${repLock ? `<span class="loc-lock">⭐ ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}
           ${ev ? `<span class="loc-ev">${t(`loc.ev.${ev.id}`)}</span>` : ''}
+          ${own ? `<span class="loc-own">🏪 ${t('loc.ownPoint')}</span>` : ''}
           <small>${t(`loc.${id}.desc`)}</small>
           <span class="loc-meta">
             <span>👥 ${dots(l.trafficStars)}</span>

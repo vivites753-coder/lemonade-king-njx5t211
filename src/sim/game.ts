@@ -39,10 +39,25 @@ import {
   normalizeState,
   type DayReport,
   type DayState,
+  type PointReport,
   type GameState,
   type Recipe,
 } from './state';
+import { POINTS, type WorkerIssue } from '../data/staff';
+import {
+  candidates,
+  freePlaces,
+  pointAt,
+  pointsOpen,
+  recordDay,
+  rollMorningIssue,
+  rollTheft,
+  simulatePoint,
+  type Point,
+  type Seller,
+} from './points';
 import { Street, type Ped, type StreetHost } from './street';
+import { placeEventStop } from './traffic';
 
 export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'splash' | 'alarm' | 'fanfare' | 'buy' | 'mix' | 'break';
 
@@ -52,6 +67,18 @@ export interface CardInfo {
   params?: Params;
   /** Offer to repair this equipment right from the card. */
   repair?: EquipId;
+  /** A decision about the seller of this stand (see `workerChoice`). */
+  point?: number;
+  choices?: CardChoice[];
+}
+
+export interface CardChoice {
+  act: string;
+  /** i18n key of the button label. */
+  key: string;
+  params?: Params;
+  style?: 'g' | 'r' | 'y';
+  disabled?: boolean;
 }
 
 export type GameEvents = {
@@ -81,6 +108,7 @@ export type KitchenItem = 'lemon' | 'water' | 'sugar';
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const clone = <T,>(o: T): T => JSON.parse(JSON.stringify(o)) as T;
+const ISSUE_ICON: Record<WorkerIssue, string> = { sick: '🤒', late: '⏰', rude: '😠', raise: '💬', stole: '💸' };
 /** Equipment names in params are translated by the UI. */
 const equipName = (id: EquipId) => `@equip.${id}`;
 
@@ -208,8 +236,8 @@ export class Game {
     this.bus.emit('sfx', { name });
   }
 
-  private card(id: string, icon: string, params?: Params, repair?: EquipId): void {
-    this.bus.emit('card', { id, icon, params, repair });
+  private card(id: string, icon: string, params?: Params, repair?: EquipId, extra: Partial<CardInfo> = {}): void {
+    this.bus.emit('card', { id, icon, params, repair, ...extra });
   }
 
   changed(): void {
@@ -250,7 +278,8 @@ export class Game {
     this.D.carriedIn = this.S.carryCups;
     this.S.carryCups = 0;
     rollDayEvents(this);
-    if (this.S.day === 1) this.S.location = 'yard';
+    // the player cannot stand where a seller of theirs works
+    if (this.S.day === 1 || pointAt(this.S, this.S.location)) this.S.location = 'yard';
     this.serving = null;
     this.making = null;
     this.paused = false;
@@ -270,6 +299,7 @@ export class Game {
     if (broke.length) this.tip('breakdown');
     if (this.D.events.festival) this.card('festival', '🎉');
     for (const e of LOC_EVENTS) if (this.D.events[e.id]) this.card(`ev.${e.id}`, e.icon);
+    this.morningStaff();
   }
 
   /** Places open for the player (some need a better reputation). */
@@ -295,6 +325,11 @@ export class Game {
     }
     if (!this.unlocked(id)) {
       this.toast('toast.locLocked', { n: LOCATIONS[id].minRep ?? 0 }, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
+    if (pointAt(this.S, id)) {
+      this.toast('toast.pointHere', undefined, 'warn');
       this.sfx('buzz');
       return false;
     }
@@ -752,14 +787,8 @@ export class Game {
       // the city festival is outdoors; indoor places have their own events
       festival: this.D.events.festival && !LOCATIONS[this.S.location].indoor,
       location: this.S.location,
-      event: this.placeEventBoost(),
+      event: placeEventStop(this.S.location, this.D.events),
     });
-  }
-
-  /** A place event that makes people stop more often (a concert at the mall). */
-  private placeEventBoost(): { key: string; mult: number } | undefined {
-    const e = LOC_EVENTS.find((x) => x.loc === this.S.location && x.stop && this.D.events[x.id]);
-    return e ? { key: `why.ev.${e.id}`, mult: e.stop! } : undefined;
   }
 
   refreshInterest(): void {
@@ -1064,8 +1093,13 @@ export class Game {
     S.carryCups = carried;
     D.cupsReady = 0;
     applyWear(S, this.rng, D.weather, D.pitchersMade > 0, D.opened);
-    const income = D.sales + D.bonus;
-    const expenses = dayExpenses(D);
+    const points = this.eveningPoints();
+    const pointsIncome = points.reduce((n, p) => n + p.revenue, 0);
+    const pointsCosts = points.reduce((n, p) => n + p.ingredients + p.rent + p.wage + p.stolen, 0);
+    const pointsProfit = pointsIncome - pointsCosts;
+    S.coins += pointsProfit;
+    const income = D.sales + D.bonus + pointsIncome;
+    const expenses = dayExpenses(D) + pointsCosts;
     const f = { ...D.funnel };
     const report: DayReport = {
       sales: D.sales,
@@ -1078,6 +1112,7 @@ export class Game {
       stolen: D.expenses.stolen,
       wages: D.expenses.wages,
       repairs: D.expenses.repairs,
+      training: D.expenses.training,
       profit: income - expenses,
       sold: f.sold,
       freeCups: D.freeCups,
@@ -1093,12 +1128,16 @@ export class Game {
       spoilTomorrow: S.stock.lemons.filter((b) => b.age + 1 >= CONFIG.LEMON_SPOIL_AGE).reduce((n, b) => n + b.n, 0),
       broke: [...D.brokeToday],
       unlocked: [],
+      points,
+      pointsProfit,
+      pointsUnlocked: false,
       stageGoalReached: false,
     };
     // reputation milestones open new places for good
     const before = S.bestRep;
     S.bestRep = Math.max(S.bestRep, S.rep);
     report.unlocked = LOCATION_IDS.filter((id) => !locationUnlocked(before, id) && locationUnlocked(S.bestRep, id));
+    report.pointsUnlocked = before < POINTS.MIN_REP - 1e-9 && pointsOpen(S);
     report.lesson = pickLesson(S, D, report);
     if (!S.stageDone && S.coins >= CONFIG.GOAL_COINS && S.rep >= CONFIG.GOAL_REP) {
       report.stageGoalReached = true;
@@ -1114,6 +1153,198 @@ export class Game {
       this.card('locUnlocked', '🔓', { list: report.unlocked.map((id) => `@loc.${id}.name`).join(', ') });
       this.sfx('fanfare');
     }
+    if (report.pointsUnlocked) {
+      this.card('pointsUnlocked', '🏪');
+      this.sfx('fanfare');
+    }
+    for (const p of S.points) if (p.issue === 'stole' && p.seller) this.staffCard(p);
+  }
+
+  // ---------------------------------------------------------------- my stands
+
+  pointsOpen(): boolean {
+    return pointsOpen(this.S);
+  }
+
+  pointById(id: number): Point | undefined {
+    return this.S.points.find((p) => p.id === id);
+  }
+
+  /** New stands are built (and old ones sold) in the evening, like the other investments. */
+  canOpenPoint(loc: LocationId): { ok: boolean; reason?: 'locked' | 'taken' | 'max' | 'evening' | 'money' } {
+    if (!pointsOpen(this.S)) return { ok: false, reason: 'locked' };
+    if (!freePlaces(this.S).includes(loc)) return { ok: false, reason: 'taken' };
+    if (this.S.points.length >= POINTS.MAX) return { ok: false, reason: 'max' };
+    if (this.phase !== 'shop') return { ok: false, reason: 'evening' };
+    if (this.S.coins < POINTS.COST) return { ok: false, reason: 'money' };
+    return { ok: true };
+  }
+
+  openPoint(loc: LocationId): Point | null {
+    if (!this.canOpenPoint(loc).ok) {
+      this.sfx('buzz');
+      return null;
+    }
+    this.S.coins -= POINTS.COST;
+    const p: Point = { id: this.S.nextPointId++, loc, opened: this.S.day, seller: null, issue: null, last: null, history: [], total: 0 };
+    this.S.points.push(p);
+    this.sfx('buy');
+    this.tip('points');
+    this.save();
+    this.changed();
+    return p;
+  }
+
+  closePoint(id: number): boolean {
+    const i = this.S.points.findIndex((p) => p.id === id);
+    if (i < 0 || this.phase !== 'shop') return false;
+    this.S.points.splice(i, 1);
+    this.S.coins += Math.round(POINTS.COST * POINTS.SELL_BACK);
+    this.sfx('coin');
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  /** Hiring and firing: any time except while selling. */
+  canManageStaff(): boolean {
+    return this.phase !== 'sell' && this.phase !== 'title';
+  }
+
+  candidates(pointId: number): Seller[] {
+    return candidates(this.S, pointId);
+  }
+
+  hireSeller(pointId: number, index: number): boolean {
+    const p = this.pointById(pointId);
+    if (!p || p.seller || !this.canManageStaff()) return false;
+    const c = candidates(this.S, pointId)[index];
+    if (!c) return false;
+    p.seller = c;
+    p.issue = null;
+    this.sfx('pop');
+    this.tip('hire');
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  fireSeller(pointId: number): boolean {
+    const p = this.pointById(pointId);
+    if (!p || !p.seller || !this.canManageStaff()) return false;
+    this.toast('toast.fired', { name: `@staff.name${p.seller.nameId}` });
+    p.seller = null;
+    p.issue = null;
+    this.sfx('click');
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  /** Morning: sellers call with their problems. */
+  private morningStaff(): void {
+    for (const p of this.S.points) {
+      p.issue = rollMorningIssue(this.S, p, this.rng);
+      if (p.issue) this.staffCard(p);
+    }
+  }
+
+  /** Evening: every stand's day in numbers; a dishonest seller may take money from the till. */
+  private eveningPoints(): PointReport[] {
+    const out: PointReport[] = [];
+    for (const p of this.S.points) {
+      const d = simulatePoint(this.S, p, this.D.weather, this.D.events, this.rng);
+      p.issue = rollTheft(p, d, this.rng) > 0 ? 'stole' : null;
+      recordDay(p, d);
+      out.push({ ...d, id: p.id, loc: p.loc, nameId: p.seller?.nameId ?? null });
+    }
+    return out;
+  }
+
+  /** A card about a problem with a seller, with the choices the player has. */
+  private staffCard(p: Point): void {
+    const s = p.seller;
+    const issue = p.issue;
+    if (!s || !issue) return;
+    const params: Params = { name: `@staff.name${s.nameId}`, place: `@loc.${p.loc}.name` };
+    const fire: CardChoice = { act: 'fire', key: 'staff.act.fire', style: 'r' };
+    let choices: CardChoice[] | undefined;
+    switch (issue) {
+      case 'late':
+        params.n = s.warnings + 1;
+        choices = s.warnings + 1 >= POINTS.MAX_WARNINGS ? [fire] : [{ act: 'warn', key: 'staff.act.warn', style: 'y' }, fire];
+        break;
+      case 'rude':
+        choices = [
+          { act: 'ignore', key: 'staff.act.ignore' },
+          { act: 'train', key: 'staff.act.train', params: { cost: POINTS.TRAIN_COST }, style: 'g', disabled: this.S.coins < POINTS.TRAIN_COST },
+          fire,
+        ];
+        break;
+      case 'raise':
+        params.old = s.wage;
+        params.new = s.wage + POINTS.RAISE;
+        choices = [
+          { act: 'refuse', key: 'staff.act.refuse' },
+          { act: 'agree', key: 'staff.act.agree', style: 'g' },
+        ];
+        break;
+      case 'stole':
+        params.n = p.last?.stolen ?? 0;
+        choices = [{ act: 'chance', key: 'staff.act.chance' }, { ...fire, style: 'y' }];
+        break;
+      case 'sick':
+        break;
+    }
+    this.card(`staff.${issue}`, ISSUE_ICON[issue], params, undefined, { point: p.id, choices });
+  }
+
+  /** The player's answer on a seller card. Returns true when the card can close. */
+  workerChoice(pointId: number, act: string): boolean {
+    const p = this.pointById(pointId);
+    const s = p?.seller;
+    if (!p || !s) return true;
+    switch (act) {
+      case 'fire':
+        this.fireSeller(pointId);
+        return true;
+      case 'warn':
+        s.warnings++;
+        break;
+      case 'train':
+        if (this.S.coins < POINTS.TRAIN_COST) return false;
+        this.S.coins -= POINTS.TRAIN_COST;
+        this.D.expenses.training += POINTS.TRAIN_COST;
+        s.skill = Math.min(1.1, Math.round((s.skill + POINTS.TRAIN_SKILL) * 100) / 100);
+        // customers are treated well again from today
+        p.issue = null;
+        break;
+      case 'agree':
+        s.wage += POINTS.RAISE;
+        p.issue = null;
+        break;
+      case 'refuse':
+        p.issue = null;
+        if (this.rng.chance(POINTS.QUIT_ON_REFUSE)) {
+          p.seller = null;
+          this.card('staff.quit', '👋', { name: `@staff.name${s.nameId}`, place: `@loc.${p.loc}.name` });
+        }
+        break;
+      case 'chance':
+        // they got away with it once: the next time is more likely
+        s.honesty = Math.max(0, s.honesty - POINTS.SECOND_CHANCE_HONESTY);
+        p.issue = null;
+        break;
+    }
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  /** A button on an event card. Returns true when the card can close. */
+  cardChoice(card: CardInfo, act: string): boolean {
+    if (card.point !== undefined) return this.workerChoice(card.point, act);
+    return true;
   }
 
   // ---------------------------------------------------------------- evening

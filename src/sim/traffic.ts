@@ -22,6 +22,12 @@ export function eventPedFactor(loc: LocationId, hour: number, ev: Crowd): number
   return m;
 }
 
+/** A place event that makes people stop more often (a concert at the mall), with its "Why?" key. */
+export function placeEventStop(loc: LocationId, ev: Crowd): { key: string; mult: number } | undefined {
+  const e = LOC_EVENTS.find((x) => x.loc === loc && x.stop && ev[x.id]);
+  return e ? { key: `why.ev.${e.id}`, mult: e.stop! } : undefined;
+}
+
 /** Pedestrians per game hour. */
 export function spawnRatePerHour(loc: LocationId, hour: number, weather: WeatherId, ev: Crowd): number {
   const l = LOCATIONS[loc];

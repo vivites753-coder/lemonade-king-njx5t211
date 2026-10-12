@@ -50,6 +50,7 @@ export class Hud {
           <button data-hud="speed:2" aria-label="x2">⏩</button>
           <button data-hud="speed:3" aria-label="x3">⏭</button>
         </div>
+        <button class="hud-btn hidden" data-hud="points" data-el="points" aria-label="${t('points.title')}">🏪</button>
         <button class="hud-btn" data-hud="tip" aria-label="${t('hud.tip')}">🍋</button>
         <button class="hud-btn" data-hud="glossary" aria-label="${t('hud.glossary')}">📖</button>
         <button class="hud-btn" data-hud="sound" data-el="sound" aria-label="${t('hud.sound')}">🔊</button>
@@ -123,6 +124,7 @@ export class Hud {
     const fill = `${Math.round(Math.min(1, S.coins / CONFIG.GOAL_COINS) * 100)}%`;
     if (this.els.goalfill.style.width !== fill) this.els.goalfill.style.width = fill;
     this.set('sound', S.settings.sound ? '🔊' : '🔇');
+    this.show('points', g.pointsOpen() || S.points.length > 0);
     if (this.phase !== 'sell') return;
 
     // speed
