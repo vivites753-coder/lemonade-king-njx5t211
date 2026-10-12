@@ -52,14 +52,20 @@ function wantedPlace(g: Game): LocationId {
 
 const WANT: Record<LocationId, number> = { yard: 2, park: 4, school: 3, beach: 6, station: 5, mall: 5 };
 
-/** Makes lemonade in the kitchen like a careful player. */
+/** Makes lemonade in the kitchen like a careful player: every jug from scratch, then off to the stand. */
 export function cook(g: Game, pitchers: number): boolean {
   if (g.phase !== 'kitchen') return false;
-  g.kitchenRepeat();
-  if (!g.kitchenCanMix()) return false;
-  if (g.S.broken.mixer) while (!g.kitchenStir());
-  else g.kitchenMix('perfect');
-  return g.kitchenPour(Math.min(pitchers, g.kitchenMaxPitchers()));
+  let made = 0;
+  for (let i = 0; i < pitchers; i++) {
+    g.kitchenRepeat();
+    if (!g.kitchenCanMix() || g.kitchenMaxPitchers() < 1) break;
+    if (g.S.broken.mixer) while (!g.kitchenStir());
+    else g.kitchenMix('perfect');
+    if (!g.kitchenPour()) break;
+    made++;
+  }
+  g.leaveKitchen();
+  return made > 0;
 }
 
 /** Plays one full day (morning → shop). */

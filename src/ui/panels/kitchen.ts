@@ -1,11 +1,14 @@
-// Kitchen mini-game: drag ingredients into the jug, then mix. Built once and updated in place,
-// because drag & drop and holding the mixer button must not be interrupted by re-renders.
+// Kitchen mini-game: drag ingredients into the jug, mix, pour one pitcher, and repeat for the next one.
+// Built once and updated in place, because drag & drop and holding the mixer button must not be
+// interrupted by re-renders. Opens before selling and, when the lemonade runs out, in the middle of the day.
 import { CONFIG } from '../../core/config';
 import { t } from '../../i18n';
 import { lemonsConsumed, quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
-import { coin, fmtDur, fmtHour, round1 } from '../dom';
+import { lemonsTotal } from '../../sim/state';
+import { coin, fmtDur, fmtHour } from '../dom';
+import { coolerBag, cups, juicer, lemonCrate, mixer, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 
 const ITEMS: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' }[] = [
@@ -20,9 +23,6 @@ const PERFECT_TO = 1.05;
 const OVERFLOW = 1.3;
 const FILL_PER_SEC = 0.65;
 
-let pitchers = 2;
-/** The player changed the number of pitchers by hand (otherwise we suggest 2). */
-let pitchersTouched = false;
 let holdRaf = 0;
 let cleanup: (() => void) | null = null;
 
@@ -35,6 +35,26 @@ function bump(el: Element | null, cls = 'bump'): void {
   el.classList.remove(cls);
   void (el as HTMLElement).offsetWidth;
   el.classList.add(cls);
+}
+
+function juicerKind(g: Game): JuicerKind {
+  const up = g.active();
+  return up.juicer_lever ? 'lever' : up.juicer_hand ? 'hand' : 'none';
+}
+
+/** What is still on the shelf: the stock minus what is already in the jug. */
+function shelf(g: Game): Record<KitchenItem, number> {
+  const k = g.D.kitchen;
+  const st = g.S.stock;
+  return {
+    lemon: lemonsTotal(st) - (k.juice ? lemonsConsumed({ lemons: k.juice, sugar: k.sugar }, g.active()) : 0),
+    water: st.water - k.water,
+    sugar: st.sugar - k.sugar,
+  };
+}
+
+function art(item: KitchenItem, n: number): string {
+  return item === 'lemon' ? lemonCrate(n) : item === 'water' ? waterBottles(n) : sugarBag(n);
 }
 
 function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
@@ -112,11 +132,13 @@ function startHold(g: Game, el: HTMLElement): void {
   let last = performance.now();
   let done = false;
   jug.classList.add('swirl');
+  q(el, '.k-mixer-art').classList.add('buzz');
   const finish = () => {
     if (done) return;
     done = true;
     cancelAnimationFrame(holdRaf);
     jug.classList.remove('swirl');
+    q(el, '.k-mixer-art').classList.remove('buzz');
     window.removeEventListener('pointerup', finish);
     window.removeEventListener('pointercancel', finish);
     const result = p < PERFECT_FROM ? 'under' : p <= PERFECT_TO ? 'perfect' : 'over';
@@ -143,26 +165,43 @@ export const kitchenPanel: Panel = {
   act: () => undefined,
 
   mount(el, g, ui) {
-    pitchers = 2;
-    pitchersTouched = false;
     const zoneL = (PERFECT_FROM / OVERFLOW) * 100;
     const zoneW = ((PERFECT_TO - PERFECT_FROM) / OVERFLOW) * 100;
-    el.innerHTML = `<div class="panel kitchen">
+    const mid = g.midKitchen;
+    const up = g.S.upgrades;
+    const jk = juicerKind(g);
+    const juicerLabel = jk === 'lever' ? t('kitchen.juicerLever') : jk === 'hand' ? t('kitchen.juicer') : t('kitchen.juicerHands');
+    el.innerHTML = `<div class="panel kitchen${mid ? ' mid' : ''}">
       <div class="panel-head"><h2 data-k="title"></h2><span class="chip coins" data-k="coins"></span></div>
       <div class="panel-body">
         <div class="k-hint">👆 ${t('kitchen.hint')}</div>
         <div class="k-stage">
           <div class="k-shelf">
             <div class="k-label">${t('kitchen.shelf')}</div>
-            ${ITEMS.map((i) => `<button class="k-item" data-item="${i.id}"><span class="k-ico">${i.icon}</span><b>${t(`kitchen.${i.id}`)}</b><small data-k="left-${i.id}"></small></button>`).join('')}
+            ${ITEMS.map(
+              (i) => `<button class="k-item" data-item="${i.id}"><span class="k-art" data-k="art-${i.id}"></span>
+                <span class="k-meta"><b>${t(`kitchen.${i.id}`)}</b><small data-k="left-${i.id}"></small></span></button>`,
+            ).join('')}
           </div>
-          <div class="k-center">
-            <div class="k-juicer" data-drop="juicer"><div class="k-cone"></div><div class="k-base"></div><small>${t('kitchen.juicer')}</small></div>
-            <div class="k-jug" data-drop="jug">
-              <div class="k-liquid" data-k="liquid"></div>
-              <div class="k-grains" data-k="grains"></div>
-              <div class="k-handle"></div>
-              <div class="k-splash">💦💦💦</div>
+          <div class="k-room">
+            <div class="k-table">
+              <div class="k-top">
+                <div class="k-juicer" data-drop="juicer"><span class="k-tool-art">${juicer(jk)}</span><small>${juicerLabel}</small></div>
+                <div class="k-jug" data-drop="jug">
+                  <div class="k-liquid" data-k="liquid"></div>
+                  <div class="k-grains" data-k="grains"></div>
+                  <div class="k-splash">💦💦💦</div>
+                </div>
+                <div class="k-tools-art">
+                  <div class="k-mixer-art">${mixer(mixerBroken(g.S) ? 'broken' : up.mixer_pro ? 'pro' : 'basic')}</div>
+                  <div class="k-cups-art" data-k="cupsart"></div>
+                </div>
+              </div>
+              <div class="k-board"></div>
+              <div class="k-under">
+                ${up.cooler ? `<span class="k-cooler" title="${t('up.cooler.name')}">${coolerBag()}<b data-k="cooler"></b></span>` : ''}
+                ${up.toolkit ? `<span class="k-toolkit" title="${t('up.toolkit.name')}">${toolkitBox()}</span>` : ''}
+              </div>
             </div>
             <div class="k-counts" data-k="counts"></div>
           </div>
@@ -178,22 +217,18 @@ export const kitchenPanel: Panel = {
         <div class="k-tools">
           <button class="btn btn-sm btn-b" data-kact="repeat">🔁 ${t('kitchen.repeat')}</button>
           <button class="btn btn-sm" data-kact="reset">↺ ${t('kitchen.reset')}</button>
-          <button class="btn btn-sm" data-kact="market">🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
-          <button class="btn btn-sm" data-kact="rest">😴 ${t('morning.rest')}</button>
+          ${
+            mid
+              ? ''
+              : `<button class="btn btn-sm" data-kact="market">🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
+          <button class="btn btn-sm" data-kact="rest">😴 ${t('morning.rest')}</button>`
+          }
         </div>
       </div>
       <div class="panel-foot k-foot">
-        <div class="k-pour">
-          <span>${t('kitchen.pitchers')}</span>
-          <span class="stepper">
-            <button class="btn" data-kact="minus" aria-label="−">−</button>
-            <b data-k="pitchers"></b>
-            <button class="btn btn-y" data-kact="plus" aria-label="+">+</button>
-          </span>
-          <small data-k="pourinfo"></small>
-        </div>
-        <button class="btn btn-g btn-big" data-kact="pour" data-k="pourbtn">🥛 ${t('kitchen.pour')}</button>
-        <button class="btn" data-kact="stand" data-k="standbtn">▶ ${t('kitchen.toStand')}</button>
+        <div class="k-pour"><b data-k="jugs"></b><small data-k="pourinfo"></small></div>
+        <button class="btn btn-g btn-big" data-kact="pour" data-k="pourbtn">🥛 ${t('kitchen.pourOne')}</button>
+        <button class="btn" data-kact="stand" data-k="standbtn">${mid ? `↩ ${t('kitchen.toStandMid')}` : `▶ ${t('kitchen.toStand')}`}</button>
       </div>
     </div>`;
 
@@ -208,8 +243,8 @@ export const kitchenPanel: Panel = {
       if (mix && !(mix as HTMLButtonElement).disabled) {
         e.preventDefault();
         if (mixerBroken(g.S)) {
-          if (g.kitchenStir()) bump(q(el, '.k-jug'), 'swirl-once');
-          else bump(q(el, '.k-jug'), 'swirl-once');
+          g.kitchenStir();
+          bump(q(el, '.k-jug'), 'swirl-once');
         } else startHold(g, el);
       }
     };
@@ -219,14 +254,10 @@ export const kitchenPanel: Panel = {
       const act = b.dataset.kact;
       if (act === 'repeat') g.kitchenRepeat();
       if (act === 'reset') g.kitchenReset();
-      if (act === 'minus' || act === 'plus') pitchersTouched = true;
-      if (act === 'minus') pitchers = Math.max(1, pitchers - 1);
-      if (act === 'plus') pitchers = Math.min(Math.max(1, g.kitchenMaxPitchers()), pitchers + 1);
-      if (act === 'pour') g.kitchenPour(pitchers);
+      if (act === 'pour' && g.kitchenPour()) bump(q(el, '[data-k="jugs"]'));
       if (act === 'stand') g.leaveKitchen();
       if (act === 'market') g.goMarket();
       if (act === 'rest') ui.confirm(t('morning.restConfirm'), () => g.restDay());
-      if (act === 'minus' || act === 'plus') kitchenPanel.update!(el, g, ui);
     };
     el.addEventListener('pointerdown', onDown);
     el.addEventListener('click', onClick);
@@ -245,25 +276,25 @@ export const kitchenPanel: Panel = {
 
   update(el, g) {
     const k = g.D.kitchen;
+    const mid = g.midKitchen;
     const set = (key: string, html: string) => {
       const n = q(el, `[data-k="${key}"]`);
       if (n && n.innerHTML !== html) n.innerHTML = html;
     };
-    set('title', `🍳 ${t('kitchen.title', { time: fmtHour(g.D.hour) })}`);
+    set('title', mid ? `🍳 ${t('kitchen.titleMid', { time: fmtHour(g.D.hour) })}` : `🍳 ${t('kitchen.title', { time: fmtHour(g.D.hour) })}`);
     set('coins', coin(g.S.coins));
     const st = g.S.stock;
-    const have: Record<KitchenItem, number> = {
-      lemon: st.lemons.reduce((n, b) => n + b.n, 0),
-      water: st.water,
-      sugar: st.sugar,
-    };
+    const left = shelf(g);
     for (const i of ITEMS) {
-      set(`left-${i.id}`, t('kitchen.left', { n: have[i.id] }));
+      set(`left-${i.id}`, t('kitchen.left', { n: Math.max(0, left[i.id]) }));
+      set(`art-${i.id}`, art(i.id, Math.max(0, left[i.id])));
       const btn = q<HTMLButtonElement>(el, `.k-item[data-item="${i.id}"]`);
       const can = g.kitchenCanAdd(i.id);
       btn.disabled = can !== 'ok';
       btn.title = can === 'full' ? t('kitchen.full') : can === 'noStock' ? t('kitchen.noStock') : '';
     }
+    set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>🥤 ${st.cups}</small>`);
+    set('cooler', g.D.cupsReady && g.S.upgrades.cooler ? `🥛 ${g.D.cupsReady}` : '');
     // jug contents
     const fill = Math.min(95, k.water * 32 + k.juice * 5);
     const juiceShare = k.water + k.juice > 0 ? k.juice / (k.juice + k.water * 2) : 0;
@@ -282,12 +313,13 @@ export const kitchenPanel: Panel = {
     const pos = k.juice ? Math.max(5, Math.min(95, 50 - tasteBalance(r) * 12)) : 50;
     q(el, '[data-k="taste"]').style.left = `${pos}%`;
     set('tastelabel', k.juice ? t(tasteKey(r)) + (quality(r) >= 0.99 ? ' ⭐' : '') : '—');
-    // mixer
+    // mixer: it bounces when mixing is the next step
     const broken = mixerBroken(g.S);
     const canMix = g.kitchenCanMix();
     const mixBtn = q<HTMLButtonElement>(el, '[data-k="mixbtn"]');
     mixBtn.disabled = !canMix || k.mix !== 'none';
     mixBtn.classList.toggle('stir', broken);
+    mixBtn.classList.toggle('nudge', canMix && k.mix === 'none');
     set('mixbtn', broken ? `🥄 ${t('kitchen.stir')}<small>${k.stir}/${CONFIG.STIR_TAPS}</small>` : `🌀 ${t('kitchen.mixer')}<small>${g.S.upgrades.mixer_pro ? '✨' : t('kitchen.hold')}</small>`);
     q(el, '.k-meter').classList.toggle('hidden', broken || !!g.S.upgrades.mixer_pro);
     if (k.mix === 'none') q(el, '.k-needle').style.left = '0%';
@@ -302,22 +334,22 @@ export const kitchenPanel: Panel = {
         : t(`kitchen.mix${k.mix[0].toUpperCase()}${k.mix.slice(1)}`);
     set('mixstatus', status);
     q(el, '[data-k="mixstatus"]').className = `k-mix-status ${k.mix === 'perfect' ? 'pos' : k.mix === 'none' ? '' : 'neg'}`;
-    // pouring
+    // pouring: one jug at a time
+    const jugs = g.D.kitchenJugs;
+    set('jugs', jugs ? t('kitchen.jugs', { n: jugs, c: jugs * CONFIG.CUPS_PER_PITCHER }) : t('kitchen.jugsNone'));
     const max = g.kitchenMaxPitchers();
-    if (!pitchersTouched) pitchers = Math.min(2, Math.max(1, max));
-    pitchers = Math.max(1, Math.min(pitchers, Math.max(1, max)));
-    set('pitchers', String(pitchers));
-    const hours = g.kitchenHours(pitchers, k.hand || broken);
+    const hours = mid ? (CONFIG.PITCHER_TIME * (k.hand || broken ? 2 : 1)) / CONFIG.HOUR_SEC : g.nextJugHours(k.hand || broken);
     set(
       'pourinfo',
-      max < 1 && k.juice > 0 && st.cups < CONFIG.CUPS_PER_PITCHER
+      k.juice > 0 && st.cups < CONFIG.CUPS_PER_PITCHER
         ? `<span class="neg">${t('kitchen.noCups')}</span>`
-        : `= ${pitchers * CONFIG.CUPS_PER_PITCHER} 🥤 · ⏱ ${t('kitchen.time', { t: round1(hours) })} · ${t('prep.max', { n: max })}`,
+        : `${t('kitchen.nextJug', { t: fmtDur(hours) })}${mid ? ` · ${t('kitchen.midNote')}` : ''}`,
     );
     const pourBtn = q<HTMLButtonElement>(el, '[data-k="pourbtn"]');
     pourBtn.disabled = k.mix === 'none' || max < 1;
     pourBtn.classList.toggle('ready', !pourBtn.disabled);
-    q<HTMLButtonElement>(el, '[data-k="standbtn"]').classList.toggle('hidden', g.D.cupsReady < 1);
-    q<HTMLButtonElement>(el, '[data-kact="market"]').disabled = !g.canGoMarket();
+    q<HTMLButtonElement>(el, '[data-k="standbtn"]').classList.toggle('hidden', !mid && g.D.cupsReady < 1);
+    const market = el.querySelector<HTMLButtonElement>('[data-kact="market"]');
+    if (market) market.disabled = !g.canGoMarket();
   },
 };

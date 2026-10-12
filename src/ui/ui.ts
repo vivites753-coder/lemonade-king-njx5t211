@@ -70,6 +70,8 @@ export class UI implements UIApi {
     });
 
     g.bus.on('phase', ({ phase }) => this.onPhase(phase));
+    // the kitchen opens over the selling day when the lemonade runs out
+    g.bus.on('kitchen', () => this.onPhase(g.phase));
     g.bus.on('changed', () => this.refresh());
     g.bus.on('tip', ({ key }) => this.overlays.tip(key));
     g.bus.on('card', (c) => this.overlays.card(c));
@@ -251,8 +253,9 @@ export class UI implements UIApi {
 
   // ---------------------------------------------------------------- phases & layout
   private onPhase(p: Phase): void {
-    this.hud.setPhase(p);
-    const panel = PANELS[p] ?? null;
+    const midKitchen = p === 'sell' && this.g.midKitchen;
+    this.hud.setPhase(midKitchen ? 'kitchen' : p);
+    const panel = midKitchen ? kitchenPanel : (PANELS[p] ?? null);
     this.current?.unmount?.();
     this.current = panel;
     if (panel) {
@@ -333,7 +336,7 @@ export class UI implements UIApi {
         g.serve();
         break;
       case 'make':
-        g.makePitcher();
+        g.openKitchen();
         break;
       case 'end':
         this.confirm(t('hud.end') + '?', () => g.endDay());

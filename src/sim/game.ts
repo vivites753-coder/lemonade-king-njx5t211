@@ -91,6 +91,8 @@ export type GameEvents = {
   thief: { state: 'appear' | 'caught' | 'stole' | 'locked'; amount?: number };
   changed: Record<string, never>;
   save: Snapshot;
+  /** The kitchen opened or closed while selling. */
+  kitchen: { open: boolean };
 };
 
 export interface Snapshot {
@@ -122,7 +124,10 @@ export class Game {
   speed = 1;
   paused = false;
   serving: { ped: Ped; t: number; dur: number } | null = null;
-  making: { t: number; dur: number } | null = null;
+  /** Lemonade being made at the stand: `jugs` pitchers are ready when the time is up. */
+  making: { t: number; dur: number; jugs: number } | null = null;
+  /** The kitchen mini-game is open in the middle of the selling day (the world waits). */
+  midKitchen = false;
   cart: Cart = emptyCart();
   interest: ReturnType<typeof interestChance>;
   radius: number = CONFIG.BASE_RADIUS;
@@ -197,6 +202,7 @@ export class Game {
     this.setRng(this.S.seed, snap.rng);
     this.serving = null;
     this.making = null;
+    this.midKitchen = false;
     this.paused = false;
     this.speed = 1;
     this.cart = emptyCart();
@@ -545,9 +551,42 @@ export class Game {
   goKitchen(): void {
     if (!['morning', 'market', 'prepare'].includes(this.phase)) return;
     this.D.kitchen = emptyKitchen();
+    this.D.kitchenJugs = 0;
     this.setPhase('kitchen');
     this.tip('kitchen');
     if (mixerBroken(this.S)) this.tip('hand_stir');
+  }
+
+  /** The kitchen mini-game is on screen (before selling, or in the middle of the day). */
+  inKitchen(): boolean {
+    return this.phase === 'kitchen' || (this.phase === 'sell' && this.midKitchen);
+  }
+
+  /** Lemonade is over while selling: go and make more (the world waits meanwhile). */
+  openKitchen(): boolean {
+    if (this.phase !== 'sell' || this.midKitchen) return false;
+    if (!this.canMakePitcher()) {
+      this.toast('toast.noIngredients', undefined, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
+    this.midKitchen = true;
+    this.D.kitchen = emptyKitchen();
+    this.D.kitchenJugs = 0;
+    this.bus.emit('kitchen', { open: true });
+    this.tip('kitchen');
+    if (mixerBroken(this.S)) this.tip('hand_stir');
+    this.changed();
+    return true;
+  }
+
+  /** Back to the stand: the poured jugs are being made there (it takes time, no serving meanwhile). */
+  closeKitchen(): void {
+    if (!this.midKitchen) return;
+    this.midKitchen = false;
+    this.D.kitchen = emptyKitchen();
+    this.bus.emit('kitchen', { open: false });
+    this.changed();
   }
 
   /** Ingredients still free in the stock for one more unit in the jug. */
@@ -567,7 +606,7 @@ export class Game {
   }
 
   kitchenAdd(item: KitchenItem): 'ok' | 'full' | 'noStock' | 'no' {
-    if (this.phase !== 'kitchen') return 'no';
+    if (!this.inKitchen()) return 'no';
     const can = this.kitchenCanAdd(item);
     if (can !== 'ok') {
       this.sfx('buzz');
@@ -581,19 +620,21 @@ export class Game {
     k.mix = 'none';
     k.stir = 0;
     this.sfx(item === 'lemon' ? 'splash' : item === 'water' ? 'pour' : 'pop');
+    // the first time the jug can be mixed, Lemi explains the mixer
+    if (this.kitchenCanMix() && !this.S.upgrades.mixer_pro && !mixerBroken(this.S)) this.tip('mixer');
     this.changed();
     return 'ok';
   }
 
   kitchenReset(): void {
-    if (this.phase !== 'kitchen') return;
+    if (!this.inKitchen()) return;
     this.D.kitchen = emptyKitchen();
     this.changed();
   }
 
   /** Fills the jug with yesterday's recipe (as far as the stock allows). Mixing is still needed. */
   kitchenRepeat(): void {
-    if (this.phase !== 'kitchen') return;
+    if (!this.inKitchen()) return;
     this.D.kitchen = emptyKitchen();
     const r = this.S.recipe;
     for (let i = 0; i < CONFIG.WATER_PER_PITCHER; i++) if (this.kitchenCanAdd('water') === 'ok') this.D.kitchen.water++;
@@ -614,7 +655,7 @@ export class Game {
 
   /** Result of holding the mixer button (or perfect automatically with the pro mixer). */
   kitchenMix(result: Exclude<MixResult, 'none'>): void {
-    if (this.phase !== 'kitchen' || !this.kitchenCanMix() || mixerBroken(this.S)) return;
+    if (!this.inKitchen() || !this.kitchenCanMix() || mixerBroken(this.S)) return;
     const k = this.D.kitchen;
     k.mix = this.S.upgrades.mixer_pro ? 'perfect' : result;
     k.hand = false;
@@ -625,7 +666,7 @@ export class Game {
 
   /** Stir by hand when the mixer is broken. Returns true when the lemonade is mixed. */
   kitchenStir(): boolean {
-    if (this.phase !== 'kitchen' || !this.kitchenCanMix()) return false;
+    if (!this.inKitchen() || !this.kitchenCanMix()) return false;
     const k = this.D.kitchen;
     if (k.mix !== 'none') return true;
     k.stir++;
@@ -644,24 +685,32 @@ export class Game {
     return maxPitchers(this.S.stock, this.kitchenRecipe(), this.active());
   }
 
-  /** Pour the jug into n pitchers: uses the ingredients and kitchen time. */
-  kitchenPour(n: number): boolean {
-    if (this.phase !== 'kitchen') return false;
+  /** Time for the next jug: the first one of a kitchen visit also pays the set-up. */
+  nextJugHours(hand = this.D.kitchen.hand || mixerBroken(this.S)): number {
+    const h = (this.D.kitchenJugs === 0 ? CONFIG.KITCHEN_BASE_H : 0) + CONFIG.KITCHEN_PER_PITCHER_H;
+    return h * (hand ? 2 : 1);
+  }
+
+  /**
+   * Pour the mixed jug into one pitcher (10 cups): uses the ingredients and time. Every jug is made from
+   * scratch — collect the ingredients and mix again for the next one.
+   */
+  kitchenPour(): boolean {
+    if (!this.inKitchen()) return false;
     const k = this.D.kitchen;
     if (k.mix === 'none' || !this.kitchenCanMix()) {
       this.toast('toast.mixFirst', undefined, 'warn');
       this.sfx('buzz');
       return false;
     }
-    const max = this.kitchenMaxPitchers();
-    n = clamp(Math.round(n), 0, max);
-    if (n < 1) {
+    if (this.kitchenMaxPitchers() < 1) {
       this.toast('toast.noIngredients', undefined, 'warn');
       this.sfx('buzz');
       return false;
     }
-    const hours = this.kitchenHours(n, k.hand);
-    if (this.D.hour + hours + this.travelHours() >= CONFIG.DAY_END - 0.5) {
+    const mid = this.phase === 'sell';
+    const hours = this.nextJugHours(k.hand);
+    if (!mid && this.D.hour + hours + this.travelHours() >= CONFIG.DAY_END - 0.5) {
       this.toast('toast.tooLate', undefined, 'warn');
       this.sfx('buzz');
       return false;
@@ -670,21 +719,32 @@ export class Game {
     this.S.recipe = recipe;
     this.D.recipeUsed = { ...recipe };
     this.D.mixQuality = CONFIG.MIX_QUALITY[k.mix];
-    for (let i = 0; i < n; i++) {
-      this.consumePitcher(recipe);
+    this.consumePitcher(recipe);
+    this.D.pitchersMade++;
+    this.D.kitchenJugs++;
+    if (mid) {
+      // at the stand the jugs are made after the kitchen closes; serving waits meanwhile
+      const dur = CONFIG.PITCHER_TIME * (k.hand ? 2 : 1);
+      if (this.making) {
+        this.making.dur += dur;
+        this.making.jugs++;
+      } else this.making = { t: 0, dur, jugs: 1 };
+    } else {
       this.D.cupsReady += CONFIG.CUPS_PER_PITCHER;
-      this.D.pitchersMade++;
+      this.D.hour += hours;
     }
-    this.D.hour += hours;
     this.D.kitchen = emptyKitchen();
     this.sfx('pour');
-    this.goPrepare();
+    this.toast('toast.jugReady', { n: this.D.kitchenJugs }, 'good');
+    if (this.D.kitchenJugs === 1) this.tip('kitchen_more');
+    this.changed();
     return true;
   }
 
-  /** From the kitchen to the stand without making more (only if there is lemonade). */
+  /** From the kitchen to the stand (only if there is lemonade). */
   leaveKitchen(): void {
     if (this.phase === 'kitchen' && this.D.cupsReady > 0) this.goPrepare();
+    else if (this.midKitchen) this.closeKitchen();
   }
 
   // ---------------------------------------------------------------- prepare
@@ -818,7 +878,7 @@ export class Game {
       if (!this.paused) this.street.update(rdt);
       return;
     }
-    if (this.paused) return;
+    if (this.paused || this.midKitchen) return;
     const sim = rdt * this.speed;
     const n = Math.max(1, Math.ceil(sim / 0.05));
     for (let i = 0; i < n && this.phase === 'sell'; i++) this.stepSell(sim / n, rdt / n);
@@ -837,20 +897,31 @@ export class Game {
     if (this.making) {
       this.making.t += dt;
       if (this.making.t >= this.making.dur) {
+        D.cupsReady += CONFIG.CUPS_PER_PITCHER * this.making.jugs;
         this.making = null;
-        D.cupsReady += CONFIG.CUPS_PER_PITCHER;
+        D.outAsked = false;
         this.sfx('splash');
         this.toast('toast.pitcherReady', undefined, 'good');
       }
     }
 
-    // the helper serves and makes pitchers by himself
+    // the helper serves by himself; making more lemonade is the player's decision
     if (D.helper && !this.serving && !this.making) {
-      if (D.cupsReady === 0 && this.canMakePitcher()) this.makePitcher();
-      else if (this.street.frontReady() && D.cupsReady > 0) {
+      if (this.street.frontReady() && D.cupsReady > 0) {
         this.helperIdle += rdt;
         if (this.helperIdle >= CONFIG.HELPER_DELAY) this.serve();
       } else this.helperIdle = 0;
+    }
+
+    // the lemonade is over: ask the player once (until the next refill)
+    if (D.cupsReady === 0 && !this.making && !this.serving && !D.outAsked && this.canMakePitcher()) {
+      D.outAsked = true;
+      this.card('outOfLemonade', '🥛', undefined, undefined, {
+        choices: [
+          { act: 'later', key: 'card.later' },
+          { act: 'kitchen', key: 'kitchen.makeMore', style: 'g' },
+        ],
+      });
     }
 
     if (D.events.thiefAt !== null && !D.thief.appeared && D.hour >= D.events.thiefAt && D.hour < CONFIG.DAY_END - 0.5) {
@@ -974,7 +1045,10 @@ export class Game {
     if (S.totals.sold >= 20) this.tip('reputation');
   }
 
-  /** Make a new pitcher while selling (costs time, no serving meanwhile; twice as long by hand). */
+  /**
+   * Quick pitcher with the last recipe (costs time, no serving meanwhile; twice as long by hand).
+   * The game UI opens the kitchen mini-game instead (`openKitchen`); tests and bots use this shortcut.
+   */
   makePitcher(): boolean {
     if (this.phase !== 'sell' || this.making || this.serving || this.paused) return false;
     if (!this.canMakePitcher()) {
@@ -984,7 +1058,7 @@ export class Game {
     }
     this.consumePitcher(this.D.recipeUsed);
     this.D.pitchersMade++;
-    this.making = { t: 0, dur: CONFIG.PITCHER_TIME * (mixerBroken(this.S) ? 2 : 1) };
+    this.making = { t: 0, dur: CONFIG.PITCHER_TIME * (mixerBroken(this.S) ? 2 : 1), jugs: 1 };
     this.sfx('splash');
     return true;
   }
@@ -1095,6 +1169,7 @@ export class Game {
     const D = this.D;
     this.serving = null;
     this.making = null;
+    if (this.midKitchen) this.closeKitchen();
     this.street.sendAwayQueue();
     if (this.street.thief && (this.street.thief.state === 'run' || this.street.thief.state === 'grab')) this.street.thief = null;
     // unsold lemonade: poured out, or kept for tomorrow in the cooler (cups from the cooler are sold first)
@@ -1359,6 +1434,7 @@ export class Game {
   /** A button on an event card. Returns true when the card can close. */
   cardChoice(card: CardInfo, act: string): boolean {
     if (card.point !== undefined) return this.workerChoice(card.point, act);
+    if (card.id === 'outOfLemonade' && act === 'kitchen') this.openKitchen();
     return true;
   }
 

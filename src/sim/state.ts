@@ -172,6 +172,10 @@ export interface DayState {
   /** The stand was open today (equipment wears out). */
   opened: boolean;
   kitchen: KitchenState;
+  /** Jugs poured in the current kitchen visit (the first one also pays the set-up time). */
+  kitchenJugs: number;
+  /** The "lemonade is over" question was asked (asked again after the next refill). */
+  outAsked: boolean;
   /** 0.85–1: how well the lemonade was mixed. */
   mixQuality: number;
   cupsReady: number;
@@ -255,6 +259,8 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     helper: false,
     opened: false,
     kitchen: emptyKitchen(),
+    kitchenJugs: 0,
+    outAsked: false,
     mixQuality: 1,
     cupsReady: 0,
     carriedIn: 0,

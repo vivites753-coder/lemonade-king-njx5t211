@@ -1783,41 +1783,124 @@ body.reduce-motion * {
   transform: translate(-50%, -60%) rotate(-10deg);
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25));
 }
-.k-center {
-  display: grid;
-  grid-template-columns: auto auto;
+/* kitchen scene: a work table in front of a tiled wall; the tools follow the upgrades */
+.k-room {
+  position: relative;
+  border-radius: 18px;
+  padding: 10px 10px 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1px) 0 0 / 26px 26px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.6) 1px, transparent 1px) 0 0 / 26px 26px,
+    linear-gradient(#e6f4f1, #cde7e1);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 250px;
+  overflow: hidden;
+}
+.k-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
   justify-content: center;
-  align-items: end;
-  gap: 4px 12px;
+  gap: 10px;
+  padding: 0 6px;
+}
+.k-board {
+  height: 16px;
+  border-radius: 6px;
+  background: linear-gradient(#d39a5c, #a86c34);
+  box-shadow: 0 4px 0 #7a4a20;
+  margin-top: -2px;
+}
+.k-under {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 46px;
+  padding: 6px 30px 0;
+  background:
+    linear-gradient(#8a5a2b, #8a5a2b) 14px 0 / 10px 100% no-repeat,
+    linear-gradient(#8a5a2b, #8a5a2b) calc(100% - 14px) 0 / 10px 100% no-repeat;
+}
+.k-cooler {
+  position: relative;
+  width: 64px;
+  height: 46px;
+}
+.k-cooler b {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0 4px;
+  font-size: 11px;
+  box-shadow: 0 1px 0 var(--line);
+}
+.k-toolkit {
+  width: 56px;
+  height: 32px;
+  margin-left: auto;
 }
 .k-juicer {
-  width: 86px;
-  height: 92px;
+  width: 92px;
   border-radius: 18px;
   border: 3px dashed transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
+  font-size: 12px;
   font-weight: 800;
-  color: var(--muted);
+  color: #5c6b68;
+  text-align: center;
+  line-height: 1.1;
 }
-.k-cone {
-  width: 0;
-  height: 0;
-  border-left: 18px solid transparent;
-  border-right: 18px solid transparent;
-  border-bottom: 34px solid #f1f3f5;
-  filter: drop-shadow(0 2px 0 #ced4da);
+.k-tool-art {
+  display: block;
+  width: 80px;
+  height: 86px;
 }
-.k-base {
-  width: 70px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 3px 0 #ced4da;
-  margin-top: -2px;
+.k-tools-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.k-mixer-art {
+  width: 56px;
+  height: 72px;
+}
+.k-mixer-art.buzz {
+  animation: buzz 0.08s linear infinite;
+}
+@keyframes buzz {
+  50% {
+    transform: translate(1px, -1px) rotate(1.5deg);
+  }
+}
+.k-cups-art {
+  width: 62px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #5c6b68;
+}
+.k-cups-art svg {
+  height: 38px;
+}
+.k-art {
+  display: block;
+  flex: none;
+  width: 60px;
+  height: 44px;
+}
+.k-meta {
+  min-width: 0;
 }
 .k-jug {
   position: relative;
@@ -2002,6 +2085,23 @@ body.reduce-motion * {
   opacity: 0.5;
   filter: grayscale(0.6);
 }
+/* the mixer button bounces when mixing is the next step */
+.k-mixer-btn.nudge:not(:active) {
+  animation: nudge 1s ease-in-out infinite;
+}
+@keyframes nudge {
+  0%,
+  55%,
+  100% {
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-9px);
+  }
+  38% {
+    transform: translateY(-3px);
+  }
+}
 .k-mixer-btn.stir {
   background: radial-gradient(circle at 40% 35%, #fff, #dee2e6);
   box-shadow: 0 5px 0 #adb5bd;
@@ -2145,11 +2245,41 @@ body.reduce-motion * {
   }
   .k-juicer {
     width: 66px;
-    height: 70px;
+    font-size: 10px;
+  }
+  .k-tool-art {
+    width: 58px;
+    height: 60px;
   }
   .k-jug {
     width: 82px;
     height: 100px;
+  }
+  .k-room {
+    min-height: 0;
+    padding: 6px 6px 0;
+  }
+  .k-mixer-art {
+    width: 40px;
+    height: 50px;
+  }
+  .k-cups-art svg {
+    height: 28px;
+  }
+  .k-art {
+    width: 44px;
+    height: 32px;
+  }
+  .k-under {
+    min-height: 34px;
+  }
+  .k-cooler {
+    width: 48px;
+    height: 34px;
+  }
+  .k-toolkit {
+    width: 42px;
+    height: 24px;
   }
   .k-mixer-btn {
     min-height: 54px;

@@ -153,13 +153,14 @@ export class Hud {
     const canServe = !!front && !g.serving && !g.making && D.cupsReady > 0;
     serveBtn.disabled = !front || !!g.making;
     serveBtn.classList.toggle('ready', canServe);
-    serveBtn.style.setProperty('--p', g.serving ? String(Math.min(1, g.serving.t / CONFIG.SERVE_TIME)) : '0');
+    // the ring follows the real pouring time (the dispenser and the helper make it shorter)
+    serveBtn.style.setProperty('--p', g.serving ? String(Math.min(1, g.serving.t / g.serving.dur)) : '0');
     this.set('cups', g.isSoldOut() ? `🚫 ${t('hud.soldOut')}` : `🥛<span class="lbl"> ${t('hud.cups')}:</span> <b>${D.cupsReady}</b> · 👥 ${g.street.queue.length}`);
     const canMake = g.canMakePitcher();
     this.show('make', canMake || !!g.making);
     const makeBtn = this.els.make as HTMLButtonElement;
-    makeBtn.disabled = !!g.making || !!g.serving;
-    this.set('make', g.making ? `🍋 ${Math.round((g.making.t / CONFIG.PITCHER_TIME) * 100)}%<span class="lbl"> ${t('hud.making')}</span>` : `🍋<span class="lbl"> ${t('hud.make')}</span><span class="sm">+</span>`);
+    makeBtn.disabled = !!g.making;
+    this.set('make', g.making ? `🍋 ${Math.round(Math.min(1, g.making.t / g.making.dur) * 100)}%<span class="lbl"> ${t('hud.making')}</span>` : `🍳<span class="lbl"> ${t('hud.make')}</span><span class="sm">+</span>`);
     makeBtn.classList.toggle('btn-y', D.cupsReady === 0);
   }
 

@@ -40,19 +40,40 @@ describe('kitchen mini-game', () => {
     expect(g.kitchenAdd('water')).toBe('ok');
     expect(g.kitchenAdd('water')).toBe('full');
     g.kitchenAdd('sugar');
-    expect(g.kitchenPour(1)).toBe(false); // not mixed yet
+    expect(g.kitchenPour()).toBe(false); // not mixed yet
     g.kitchenMix('under');
     g.kitchenAdd('sugar'); // adding after mixing → mix again
     expect(g.D.kitchen.mix).toBe('none');
     g.kitchenMix('perfect');
     const hour = g.D.hour;
     const lemons = lemonsTotal(g.S.stock);
-    expect(g.kitchenPour(2)).toBe(true);
+    expect(g.kitchenPour()).toBe(true);
     expect(g.S.recipe).toEqual({ lemons: 3, sugar: 2 });
+    expect(g.D.cupsReady).toBe(10);
+    expect(lemonsTotal(g.S.stock)).toBe(lemons - 3);
+    expect(g.D.hour).toBeCloseTo(hour + CONFIG.KITCHEN_BASE_H + CONFIG.KITCHEN_PER_PITCHER_H, 6);
+    // the jug is empty again: the next pitcher is made from scratch
+    expect(g.phase).toBe('kitchen');
+    expect(g.D.kitchen.juice).toBe(0);
+    expect(g.kitchenPour()).toBe(false);
+    g.kitchenRepeat();
+    g.kitchenMix('perfect');
+    expect(g.kitchenPour()).toBe(true);
     expect(g.D.cupsReady).toBe(20);
-    expect(lemonsTotal(g.S.stock)).toBe(lemons - 6);
     expect(g.D.hour).toBeCloseTo(hour + CONFIG.KITCHEN_BASE_H + 2 * CONFIG.KITCHEN_PER_PITCHER_H, 6);
+    g.leaveKitchen();
     expect(g.phase).toBe('prepare');
+  });
+
+  it('shows what is left on the shelf while the jug fills up', () => {
+    const g = freshGame();
+    toKitchen(g, 1);
+    const lemons = lemonsTotal(g.S.stock);
+    g.kitchenAdd('lemon');
+    g.kitchenAdd('lemon');
+    // nothing is used up until pouring, but the shelf count must go down (see the kitchen panel)
+    expect(lemonsTotal(g.S.stock)).toBe(lemons);
+    expect(g.kitchenCanAdd('lemon')).toBe('ok');
   });
 
   it('cannot put in more lemons than there are', () => {
@@ -78,8 +99,8 @@ describe('kitchen mini-game', () => {
     while (!g.kitchenStir()) taps++;
     expect(taps + 1).toBe(CONFIG.STIR_TAPS);
     const hour = g.D.hour;
-    g.kitchenPour(2);
-    expect(g.D.hour).toBeCloseTo(hour + 2 * (CONFIG.KITCHEN_BASE_H + 2 * CONFIG.KITCHEN_PER_PITCHER_H), 6);
+    g.kitchenPour();
+    expect(g.D.hour).toBeCloseTo(hour + 2 * (CONFIG.KITCHEN_BASE_H + CONFIG.KITCHEN_PER_PITCHER_H), 6);
   });
 });
 
@@ -149,6 +170,55 @@ describe('helper', () => {
     expect(r.sold).toBeGreaterThan(5);
     expect(r.wages).toBe(CONFIG.HELPER_WAGE);
     expect(g.S.coins - g.D.coinsStart).toBe(r.profit);
+  });
+
+  it('does not make lemonade by himself: the player is asked when it runs out', () => {
+    const g = freshGame(8);
+    g.debugAddCoins(200);
+    toKitchen(g, 3);
+    cook(g, 1);
+    g.S.bestRep = 2;
+    g.setHelper(true);
+    g.debugAddCoins(100);
+    g.startSelling();
+    g.D.cupsReady = 1; // the last cup
+    const asked: string[] = [];
+    g.bus.on('card', (c) => asked.push(c.id));
+    g.setSpeed(4);
+    for (let i = 0; i < 100000 && g.D.cupsReady > 0 && g.phase === 'sell'; i++) g.update(0.05);
+    expect(g.D.cupsReady).toBe(0);
+    for (let i = 0; i < 200 && g.phase === 'sell'; i++) g.update(0.05);
+    expect(g.D.pitchersMade).toBe(1);
+    expect(g.making).toBeNull();
+    expect(asked.filter((id) => id === 'outOfLemonade')).toHaveLength(1);
+  });
+});
+
+describe('kitchen in the middle of the day', () => {
+  it('the world waits while cooking, and the jugs are made at the stand afterwards', () => {
+    const g = freshGame(5);
+    g.debugAddCoins(200);
+    toKitchen(g, 3);
+    cook(g, 1);
+    g.startSelling();
+    g.D.cupsReady = 0;
+    expect(g.openKitchen()).toBe(true);
+    const hour = g.D.hour;
+    g.update(1);
+    expect(g.D.hour).toBe(hour); // paused
+    for (let i = 0; i < 2; i++) {
+      g.kitchenRepeat();
+      g.kitchenMix('perfect');
+      expect(g.kitchenPour()).toBe(true);
+    }
+    expect(g.D.cupsReady).toBe(0);
+    expect(g.making?.jugs).toBe(2);
+    g.closeKitchen();
+    expect(g.midKitchen).toBe(false);
+    for (let i = 0; i < 400 && g.making; i++) g.update(0.05);
+    expect(g.making).toBeNull();
+    expect(g.D.cupsReady).toBe(20);
+    expect(g.D.hour).toBeGreaterThan(hour);
   });
 });
 
