@@ -1,9 +1,10 @@
 // A simple scripted player used by tests: plays whole days without any UI.
 import { Game, type Cart } from '../src/sim/game';
 import { LOCATIONS } from '../src/data/locations';
-import { UPGRADE_ORDER, UPGRADES } from '../src/data/upgrades';
+import { UPGRADES } from '../src/data/upgrades';
 import { CONFIG } from '../src/core/config';
-import type { LocationId } from '../src/core/types';
+import type { EquipId, LocationId, UpgradeId } from '../src/core/types';
+import { ownedEquipment } from '../src/sim/equipment';
 
 export interface BotDay {
   day: number;
@@ -23,6 +24,16 @@ export interface BotResult {
   log: BotDay[];
 }
 
+export interface BotOpts {
+  catchThief?: boolean;
+  buyUpgrades?: boolean;
+  helper?: boolean;
+  maintain?: boolean;
+}
+
+/** A thrifty player buys only what pays off quickly while saving for the stage goal. */
+const BOT_UPGRADES: UpgradeId[] = ['sign', 'umbrella', 'juicer_hand', 'banner', 'dispenser', 'speaker', 'bike'];
+
 function chooseLocation(g: Game): LocationId {
   if (g.S.day === 1) return 'yard';
   const w = g.D.forecast;
@@ -34,12 +45,24 @@ function chooseLocation(g: Game): LocationId {
 
 const WANT: Record<LocationId, number> = { yard: 2, park: 4, school: 3, beach: 6 };
 
-/** Plays one full day (morning → shop). Returns the report profit. */
-export function playDay(g: Game, opts: { catchThief?: boolean; buyUpgrades?: boolean } = {}): BotDay {
+/** Makes lemonade in the kitchen like a careful player. */
+export function cook(g: Game, pitchers: number): boolean {
+  if (g.phase !== 'kitchen') return false;
+  g.kitchenRepeat();
+  if (!g.kitchenCanMix()) return false;
+  if (g.S.broken.mixer) while (!g.kitchenStir());
+  else g.kitchenMix('perfect');
+  return g.kitchenPour(Math.min(pitchers, g.kitchenMaxPitchers()));
+}
+
+/** Plays one full day (morning → shop). */
+export function playDay(g: Game, opts: BotOpts = {}): BotDay {
   const loc = chooseLocation(g);
   g.chooseLocation(loc);
+  // fix broken equipment first if it is affordable
+  for (const id of Object.keys(g.S.broken) as EquipId[]) if (g.S.coins - g.repairCost(id) >= 60) g.repair(id);
   const wanted = g.D.forecast === 'rain' ? 1 : WANT[loc];
-  const reserve = LOCATIONS[loc].rent;
+  const reserve = LOCATIONS[loc].rent + 30;
   if (g.maxPitchersNow() < wanted && g.goMarket()) {
     for (let k = 0; k < wanted && g.pitchersWithCart() < wanted; k++) {
       const before: Cart = { ...g.cart };
@@ -53,16 +76,24 @@ export function playDay(g: Game, opts: { catchThief?: boolean; buyUpgrades?: boo
   } else {
     g.skipMarket();
   }
-  g.setPrice(LOCATIONS[g.S.location].fairPrice);
-  g.setPitchers(g.maxPitchersNow());
-  if (g.maxPitchersNow() < 1 && g.goMarket()) {
-    // e.g. the lemons were rotten: one more trip to the market
-    g.addPitcherKit();
-    if (g.cartTotal() > g.S.coins) g.leaveMarket();
-    else g.pay();
-    g.setPitchers(g.maxPitchersNow());
+  if (!cook(g, wanted)) {
+    if (g.maxPitchersNow() < 1 && g.goMarket()) {
+      // e.g. the lemons were rotten: one more trip to the market
+      g.addPitcherKit();
+      if (g.cartTotal() > g.S.coins) g.leaveMarket();
+      else g.pay();
+      cook(g, 1);
+    }
   }
-  if (!g.startSelling()) g.restDay();
+  if (g.phase === 'kitchen') g.leaveKitchen();
+  if (g.phase === 'prepare') {
+    g.setPrice(LOCATIONS[g.S.location].fairPrice);
+    const goodDay = loc === 'park' || loc === 'beach';
+    if (opts.helper !== false && goodDay && g.S.day >= 4 && g.S.coins > 200) g.setHelper(true);
+    if (!g.startSelling()) g.restDay();
+  } else if (g.phase !== 'report') {
+    g.restDay();
+  }
   if (g.phase === 'sell') g.setSpeed(4);
   let guard = 0;
   while (g.phase === 'sell' && guard++ < 200000) {
@@ -76,8 +107,11 @@ export function playDay(g: Game, opts: { catchThief?: boolean; buyUpgrades?: boo
   const r = g.D.report!;
   const day: BotDay = { day: g.S.day, loc, weather: g.D.weather, profit: r.profit, coins: g.S.coins, rep: g.S.rep, sold: r.sold };
   g.openShop();
+  for (const id of opts.maintain === false ? [] : ownedEquipment(g.S)) {
+    if (!g.S.broken[id] && (g.S.condition[id] ?? 100) < 50 && g.S.coins - g.maintenanceCost(id) >= 100) g.maintain(id);
+  }
   if (opts.buyUpgrades !== false) {
-    for (const id of UPGRADE_ORDER) {
+    for (const id of BOT_UPGRADES) {
       if (g.canBuy(id).ok && g.S.coins - UPGRADES[id].price >= 150) g.buyUpgrade(id);
     }
   }

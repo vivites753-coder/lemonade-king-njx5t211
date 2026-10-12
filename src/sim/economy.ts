@@ -97,6 +97,16 @@ export interface InterestInput {
   weather: WeatherId;
   rep: number;
   festival: boolean;
+  location?: LocationId;
+}
+
+/** Weather factor for the stop chance; a tent removes part of the bad-weather penalty. */
+export function weatherThirst(weather: WeatherId, up: Owned): number {
+  const t = WEATHER[weather].thirst;
+  if (t >= 1) return t;
+  let shield = 0;
+  for (const id of Object.keys(up) as UpgradeId[]) shield = Math.max(shield, UPGRADES[id].weatherShield ?? 0);
+  return 1 - (1 - t) * (1 - shield);
 }
 
 /**
@@ -106,18 +116,20 @@ export interface InterestInput {
 export function interestChance(i: InterestInput): { chance: number; raw: number; parts: InterestPart[] } {
   const parts: InterestPart[] = [{ key: 'why.base', kind: 'base', value: CONFIG.BASE_STOP_CHANCE }];
   let ads = 0;
+  const special = i.festival || i.location === 'school';
   for (const id of Object.keys(i.upgrades) as UpgradeId[]) {
     const u = UPGRADES[id];
     if (!u.ads) continue;
     if (u.toggle && !i.speakerOn) continue;
-    ads += u.ads;
-    parts.push({ key: `why.up.${id}`, kind: 'add', value: u.ads });
+    const v = special && u.adsSpecial ? u.adsSpecial : u.ads;
+    ads += v;
+    parts.push({ key: `why.up.${id}`, kind: 'add', value: v });
   }
   if (i.flyers) {
     ads += 0.25;
     parts.push({ key: 'why.flyers', kind: 'add', value: 0.25 });
   }
-  const w = WEATHER[i.weather];
+  const w = { thirst: weatherThirst(i.weather, i.upgrades) };
   parts.push({ key: `why.weather.${i.weather}`, kind: 'mul', value: w.thirst });
   let comfort = 1;
   for (const id of Object.keys(i.upgrades) as UpgradeId[]) comfort *= UPGRADES[id].comfort ?? 1;
@@ -147,10 +159,20 @@ export function satisfaction(q: number, price: number, maxPrice: number, waited:
   return clamp(0.35 + 0.65 * q - pricePain - waitPain, 0, 1);
 }
 
-/** Reputation grows slowly (harder near 5 stars) and falls quickly. */
-export function repDelta(sat: number, rep: number): number {
+/** Reputation grows slowly (harder near 5 stars) and falls quickly. Branded cups speed up the growth. */
+export function repDelta(sat: number, rep: number, up: Owned = {}): number {
   const d = (sat - CONFIG.REP_SAT_PIVOT) * CONFIG.REP_SAT_SCALE;
-  return d > 0 ? d * Math.max(0, (5 - rep) / 4) : d;
+  if (d <= 0) return d;
+  let mult = 1;
+  for (const id of Object.keys(up) as UpgradeId[]) mult *= UPGRADES[id].repMult ?? 1;
+  return d * mult * Math.max(0, (5 - rep) / 4);
+}
+
+/** Seconds (simulation) to pour one cup. */
+export function serveTime(up: Owned, helper: boolean): number {
+  let t = CONFIG.SERVE_TIME * (helper ? CONFIG.HELPER_SERVE_MULT : 1);
+  for (const id of Object.keys(up) as UpgradeId[]) t *= UPGRADES[id].serveMult ?? 1;
+  return t;
 }
 
 export function stars(rep: number): number {
@@ -184,6 +206,7 @@ export function expectedDay(o: {
     weather: o.weather,
     rep: o.rep ?? 1,
     festival: false,
+    location: o.loc,
   }).chance;
   let buyShare = 0;
   for (const [type, share] of Object.entries(loc.mix) as [PedTypeId, number][]) {

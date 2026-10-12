@@ -78,6 +78,24 @@ export const CONFIG = {
   /** Grandma's help when the player cannot afford even one pitcher. */
   GRANDMA_GIFT: 40,
   GRANDMA_GIFT_KID: 60,
+
+  /** Helper: daily wage, pours faster and serves by himself. */
+  HELPER_WAGE: 30,
+  HELPER_SERVE_MULT: 0.6,
+  /** Real seconds the helper waits before taking the next customer. */
+  HELPER_DELAY: 0.35,
+
+  /** Kitchen: game hours to make lemonade = BASE + PER_PITCHER × pitchers (×2 when stirring by hand). */
+  KITCHEN_BASE_H: 0.25,
+  KITCHEN_PER_PITCHER_H: 0.15,
+  KITCHEN_MAX_JUICE: 6,
+  KITCHEN_MAX_SUGAR: 5,
+  /** Taps needed to stir by hand when the mixer is broken. */
+  STIR_TAPS: 14,
+  MIX_QUALITY: { perfect: 1, over: 0.93, under: 0.85, none: 0.85 },
+
+  /** Maintenance in the shop costs this share of a repair at 0% condition. */
+  MAINTENANCE_SHARE: 0.5,
 } as const;
 
 export function queueSpot(i: number): { x: number; y: number } {

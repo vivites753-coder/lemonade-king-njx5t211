@@ -3,7 +3,8 @@
 import { Bus } from '../core/bus';
 import { CONFIG } from '../core/config';
 import { RNG } from '../core/rng';
-import type { AgeMode, Avatar, GoodId, Lang, LocationId, Params, Phase, UpgradeId, WeatherId } from '../core/types';
+import type { AgeMode, Avatar, EquipId, GoodId, Lang, LocationId, MixResult, Params, Phase, UpgradeId, WeatherId } from '../core/types';
+import { EQUIPMENT } from '../data/equipment';
 import { BAD_LEMONS_SHARE, type DayEventId } from '../data/events';
 import { GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
 import { TIP_GLOSSARY } from '../data/glossary';
@@ -21,16 +22,21 @@ import {
   quality,
   repDelta,
   satisfaction,
+  serveTime,
   stockValue,
   tasteBalance,
+  type Owned,
 } from './economy';
+import { activeUpgrades, applyWear, maintenanceCost, mixerBroken, repairCost, restore, rollBreaks, rollMiddayBreak } from './equipment';
 import { pickLesson } from './lessons';
 import { applyEvent, rollDayEvents } from './randomEvents';
 import {
   dayExpenses,
+  emptyKitchen,
   lemonsTotal,
   newDayState,
   newGameState,
+  normalizeState,
   type DayReport,
   type DayState,
   type GameState,
@@ -38,12 +44,14 @@ import {
 } from './state';
 import { Street, type Ped, type StreetHost } from './street';
 
-export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'splash' | 'alarm' | 'fanfare' | 'buy';
+export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'splash' | 'alarm' | 'fanfare' | 'buy' | 'mix' | 'break';
 
 export interface CardInfo {
   id: string;
   icon: string;
   params?: Params;
+  /** Offer to repair this equipment right from the card. */
+  repair?: EquipId;
 }
 
 export type GameEvents = {
@@ -51,9 +59,9 @@ export type GameEvents = {
   tip: { key: string };
   card: CardInfo;
   toast: { key: string; params?: Params; kind?: 'info' | 'warn' | 'good' };
-  sale: { x: number; y: number; amount: number; sat: number };
+  sale: { x: number; y: number; amount: number; sat: number; free: boolean };
   sfx: { name: SfxName };
-  thief: { state: 'appear' | 'caught' | 'stole'; amount?: number };
+  thief: { state: 'appear' | 'caught' | 'stole' | 'locked'; amount?: number };
   changed: Record<string, never>;
   save: Snapshot;
 };
@@ -69,9 +77,12 @@ export interface Snapshot {
 
 export type Cart = Record<GoodId, number>;
 export const emptyCart = (): Cart => ({ lemon: 0, lemon_cheap: 0, water: 0, sugar: 0, cups: 0, cups_super: 0 });
+export type KitchenItem = 'lemon' | 'water' | 'sugar';
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const clone = <T,>(o: T): T => JSON.parse(JSON.stringify(o)) as T;
+/** Equipment names in params are translated by the UI. */
+const equipName = (id: EquipId) => `@equip.${id}`;
 
 export class Game {
   readonly bus = new Bus<GameEvents>();
@@ -82,11 +93,13 @@ export class Game {
   readonly street: Street;
   speed = 1;
   paused = false;
-  serving: { ped: Ped; t: number } | null = null;
-  making: { t: number } | null = null;
+  serving: { ped: Ped; t: number; dur: number } | null = null;
+  making: { t: number; dur: number } | null = null;
   cart: Cart = emptyCart();
   interest: ReturnType<typeof interestChance>;
   radius: number = CONFIG.BASE_RADIUS;
+  /** Real seconds the helper has been idle with a customer waiting. */
+  private helperIdle = 0;
 
   constructor(seed = 1) {
     this.rng = new RNG(seed);
@@ -110,7 +123,11 @@ export class Game {
       festival: () => this.D.events.festival,
       selling: () => this.phase === 'sell',
       radius: () => this.radius,
-      patienceMult: () => (this.S.upgrades.umbrella ? UPGRADES.umbrella.patience ?? 1 : 1),
+      patienceMult: () => {
+        let m = 1;
+        for (const id of Object.keys(this.active()) as UpgradeId[]) m = Math.max(m, UPGRADES[id].patience ?? 1);
+        return m;
+      },
       servingPed: () => this.serving?.ped ?? null,
       onSpawnCounted: () => {
         this.D.funnel.passed++;
@@ -120,15 +137,20 @@ export class Game {
     };
   }
 
+  /** Upgrades that work right now (broken equipment gives no bonus). */
+  active(): Owned {
+    return activeUpgrades(this.S);
+  }
+
   // ---------------------------------------------------------------- setup / save
 
-  newGame(o: { ageMode: AgeMode; avatar: Avatar; lang: Lang; seed?: number }): void {
+  newGame(o: { ageMode: AgeMode; avatar: Avatar; lang: Lang; seed?: number; name?: string }): void {
     const seed = o.seed ?? (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
     this.setRng(seed);
     this.S = newGameState(seed, o);
     this.speed = 1;
     this.paused = false;
-    this.startMorning(0);
+    this.startMorning(0, []);
   }
 
   private setRng(seed: number, state?: number): void {
@@ -143,11 +165,13 @@ export class Game {
   restore(snap: Snapshot): void {
     this.S = clone(snap.S);
     this.D = clone(snap.D);
+    normalizeState(this.S, this.D);
     this.setRng(this.S.seed, snap.rng);
     this.serving = null;
     this.making = null;
     this.paused = false;
     this.speed = 1;
+    this.cart = emptyCart();
     this.phase = snap.phase === 'title' ? 'morning' : snap.phase;
     this.street.reset(true);
     // the new crowd used the RNG; rewind so the simulation continues exactly from the snapshot
@@ -184,8 +208,8 @@ export class Game {
     this.bus.emit('sfx', { name });
   }
 
-  private card(id: string, icon: string, params?: Params): void {
-    this.bus.emit('card', { id, icon, params });
+  private card(id: string, icon: string, params?: Params, repair?: EquipId): void {
+    this.bus.emit('card', { id, icon, params, repair });
   }
 
   changed(): void {
@@ -216,11 +240,15 @@ export class Game {
     return WEATHER_ORDER[j];
   }
 
-  private startMorning(spoiled: number): void {
+  private startMorning(spoiled: number, broke: EquipId[]): void {
     const w = this.rollWeather();
     const f = this.forecastFor(w);
     this.D = newDayState(this.S, w, f);
     this.D.spoiledOvernight = spoiled;
+    // lemonade kept in the cooler overnight
+    this.D.cupsReady = this.S.carryCups;
+    this.D.carriedIn = this.S.carryCups;
+    this.S.carryCups = 0;
     rollDayEvents(this);
     if (this.S.day === 1) this.S.location = 'yard';
     this.serving = null;
@@ -237,13 +265,16 @@ export class Game {
     this.tip('morning');
     if (this.S.day >= 2) this.tip('location');
     if (spoiled > 0) this.tip('spoiled');
+    if (this.D.carriedIn > 0) this.toast('toast.carried', { n: this.D.carriedIn }, 'good');
+    for (const id of broke) this.card('broke', EQUIPMENT[id].icon, { item: equipName(id), cost: repairCost(this.S, id) }, id);
+    if (broke.length) this.tip('breakdown');
     if (this.D.events.festival) this.card('festival', '🎉');
   }
 
   /** Soft safety net: if coins and stock cannot make even one pitcher, grandma helps. Counts as income (a gift). */
   private grandmaHelp(): number {
-    const onePitcher = Math.ceil(pitcherCost(this.S.recipe, this.S.upgrades)) + CONFIG.CUPS_PER_PITCHER;
-    if (this.S.coins + stockValue(this.S.stock) >= onePitcher) return 0;
+    const onePitcher = Math.ceil(pitcherCost(this.S.recipe, this.active())) + CONFIG.CUPS_PER_PITCHER;
+    if (this.S.coins + stockValue(this.S.stock) + this.D.cupsReady >= onePitcher) return 0;
     const gift = this.S.ageMode === 'kid' ? CONFIG.GRANDMA_GIFT_KID : CONFIG.GRANDMA_GIFT;
     this.S.coins += gift;
     this.D.bonus += gift;
@@ -259,43 +290,54 @@ export class Game {
     if (this.S.location === id) return true;
     this.S.location = id;
     this.street.reset(true);
+    this.refreshInterest();
     this.sfx('pop');
     this.changed();
     return true;
   }
 
-  tripHours(): number {
-    return this.S.upgrades.bike ? UPGRADES.bike.tripHours ?? 1 : CONFIG.MARKET_TRIP_H;
+  tripHours(delivery = false): number {
+    if (delivery) return 0;
+    return this.active().bike ? UPGRADES.bike.tripHours ?? 1 : CONFIG.MARKET_TRIP_H;
   }
 
   travelHours(id: LocationId = this.S.location): number {
-    const reduce = this.S.upgrades.bike ? UPGRADES.bike.travelReduce ?? 0 : 0;
+    const reduce = this.active().bike ? UPGRADES.bike.travelReduce ?? 0 : 0;
     return Math.max(0, LOCATIONS[id].travel - reduce);
   }
 
-  /** Hour the stand would open if the player goes to the market now (or not). */
-  openingHour(withMarket: boolean, id: LocationId = this.S.location): number {
-    return this.D.hour + (withMarket ? this.tripHours() : 0) + this.travelHours(id);
+  /** Kitchen time for n pitchers (doubles when stirring by hand). */
+  kitchenHours(n: number, hand = mixerBroken(this.S)): number {
+    if (n <= 0) return 0;
+    return (CONFIG.KITCHEN_BASE_H + CONFIG.KITCHEN_PER_PITCHER_H * n) * (hand ? 2 : 1);
   }
 
-  canGoMarket(): boolean {
-    return this.openingHour(true) < CONFIG.DAY_END - 1;
+  /** Estimated opening hour. In the morning it includes a typical kitchen time (2 pitchers). */
+  openingHour(withMarket: boolean, id: LocationId = this.S.location, delivery = false): number {
+    const kitchen = this.phase === 'morning' || this.phase === 'market' ? this.kitchenHours(2) : 0;
+    return this.D.hour + (withMarket ? this.tripHours(delivery) : 0) + kitchen + this.travelHours(id);
+  }
+
+  canGoMarket(delivery = false): boolean {
+    return this.openingHour(true, this.S.location, delivery) < CONFIG.DAY_END - 1;
   }
 
   // ---------------------------------------------------------------- market
 
-  goMarket(): boolean {
-    if (this.phase !== 'morning' && this.phase !== 'prepare') return false;
-    if (!this.canGoMarket()) {
+  goMarket(delivery = false): boolean {
+    if (this.phase !== 'morning' && this.phase !== 'prepare' && this.phase !== 'kitchen') return false;
+    if (delivery && !this.S.upgrades.delivery) return false;
+    if (!this.canGoMarket(delivery)) {
       this.toast('toast.tooLateMarket', undefined, 'warn');
       this.sfx('buzz');
       return false;
     }
-    this.D.marketTrips++;
-    this.D.hour += this.tripHours();
+    this.D.delivery = delivery;
+    if (!delivery) this.D.marketTrips++;
+    this.D.hour += this.tripHours(delivery);
     this.cart = emptyCart();
     this.setPhase('market');
-    this.tip('market');
+    this.tip(delivery ? 'delivery' : 'market');
     if (!this.D.marketCardsShown) {
       this.D.marketCardsShown = true;
       if (this.D.events.sugarHike) this.card('sugarHike', '📈', { price: this.goodPrice('sugar') });
@@ -306,8 +348,10 @@ export class Game {
 
   goodPrice(id: GoodId): number {
     const g = GOODS[id];
-    if (id === 'sugar' && this.D.events.sugarHike) return Math.round(g.price * SUGAR_HIKE);
-    return g.price;
+    let p: number = g.price;
+    if (id === 'sugar' && this.D.events.sugarHike) p = Math.round(p * SUGAR_HIKE);
+    if (this.D.delivery) p = Math.ceil(p * (UPGRADES.delivery.deliveryMarkup ?? 1));
+    return p;
   }
 
   goodAvailable(id: GoodId): boolean {
@@ -344,7 +388,7 @@ export class Game {
   pitchersWithCart(): number {
     const u = this.stockWithCart();
     const r = this.S.recipe;
-    const lemonsPer = lemonsConsumed(r, this.S.upgrades);
+    const lemonsPer = lemonsConsumed(r, this.active());
     return Math.max(
       0,
       Math.min(
@@ -362,7 +406,7 @@ export class Game {
     const r = this.S.recipe;
     const u = this.stockWithCart();
     const need = {
-      lemons: target * lemonsConsumed(r, this.S.upgrades) - u.lemons,
+      lemons: target * lemonsConsumed(r, this.active()) - u.lemons,
       water: target * CONFIG.WATER_PER_PITCHER - u.water,
       sugar: target * r.sugar - u.sugar,
       cups: target * CONFIG.CUPS_PER_PITCHER - u.cups,
@@ -413,7 +457,7 @@ export class Game {
     this.D.rottenToday += rotten + rottenCheap;
     this.cart = emptyCart();
     this.sfx('coin');
-    this.goPrepare();
+    this.goKitchen();
     if (boughtCheap > 0) {
       this.toast(rottenCheap > 0 ? 'toast.cheapRotten' : 'toast.cheapLucky', { n: rottenCheap, total: boughtCheap }, rottenCheap > 0 ? 'warn' : 'good');
       this.tip('cheap_lemons');
@@ -432,45 +476,175 @@ export class Game {
   leaveMarket(): void {
     if (this.phase !== 'market') return;
     this.cart = emptyCart();
+    this.goKitchen();
+  }
+
+  skipMarket(): void {
+    if (this.phase === 'morning') this.goKitchen();
+  }
+
+  // ---------------------------------------------------------------- kitchen (mini-game)
+
+  goKitchen(): void {
+    if (!['morning', 'market', 'prepare'].includes(this.phase)) return;
+    this.D.kitchen = emptyKitchen();
+    this.setPhase('kitchen');
+    this.tip('kitchen');
+    if (mixerBroken(this.S)) this.tip('hand_stir');
+  }
+
+  /** Ingredients still free in the stock for one more unit in the jug. */
+  kitchenCanAdd(item: KitchenItem): 'ok' | 'full' | 'noStock' {
+    const k = this.D.kitchen;
+    const st = this.S.stock;
+    if (item === 'lemon') {
+      if (k.juice >= CONFIG.KITCHEN_MAX_JUICE) return 'full';
+      return lemonsConsumed({ lemons: k.juice + 1, sugar: k.sugar }, this.active()) <= lemonsTotal(st) ? 'ok' : 'noStock';
+    }
+    if (item === 'water') {
+      if (k.water >= CONFIG.WATER_PER_PITCHER) return 'full';
+      return st.water >= k.water + 1 ? 'ok' : 'noStock';
+    }
+    if (k.sugar >= CONFIG.KITCHEN_MAX_SUGAR) return 'full';
+    return st.sugar >= k.sugar + 1 ? 'ok' : 'noStock';
+  }
+
+  kitchenAdd(item: KitchenItem): 'ok' | 'full' | 'noStock' | 'no' {
+    if (this.phase !== 'kitchen') return 'no';
+    const can = this.kitchenCanAdd(item);
+    if (can !== 'ok') {
+      this.sfx('buzz');
+      return can;
+    }
+    const k = this.D.kitchen;
+    if (item === 'lemon') k.juice++;
+    else if (item === 'water') k.water++;
+    else k.sugar++;
+    // anything added after mixing has to be mixed again
+    k.mix = 'none';
+    k.stir = 0;
+    this.sfx(item === 'lemon' ? 'splash' : item === 'water' ? 'pour' : 'pop');
+    this.changed();
+    return 'ok';
+  }
+
+  kitchenReset(): void {
+    if (this.phase !== 'kitchen') return;
+    this.D.kitchen = emptyKitchen();
+    this.changed();
+  }
+
+  /** Fills the jug with yesterday's recipe (as far as the stock allows). Mixing is still needed. */
+  kitchenRepeat(): void {
+    if (this.phase !== 'kitchen') return;
+    this.D.kitchen = emptyKitchen();
+    const r = this.S.recipe;
+    for (let i = 0; i < CONFIG.WATER_PER_PITCHER; i++) if (this.kitchenCanAdd('water') === 'ok') this.D.kitchen.water++;
+    for (let i = 0; i < r.lemons; i++) if (this.kitchenCanAdd('lemon') === 'ok') this.D.kitchen.juice++;
+    for (let i = 0; i < r.sugar; i++) if (this.kitchenCanAdd('sugar') === 'ok') this.D.kitchen.sugar++;
+    this.sfx('pour');
+    this.changed();
+  }
+
+  kitchenRecipe(): Recipe {
+    return { lemons: this.D.kitchen.juice, sugar: this.D.kitchen.sugar };
+  }
+
+  kitchenCanMix(): boolean {
+    const k = this.D.kitchen;
+    return k.water >= CONFIG.WATER_PER_PITCHER && k.juice >= 1;
+  }
+
+  /** Result of holding the mixer button (or perfect automatically with the pro mixer). */
+  kitchenMix(result: Exclude<MixResult, 'none'>): void {
+    if (this.phase !== 'kitchen' || !this.kitchenCanMix() || mixerBroken(this.S)) return;
+    const k = this.D.kitchen;
+    k.mix = this.S.upgrades.mixer_pro ? 'perfect' : result;
+    k.hand = false;
+    this.sfx(k.mix === 'over' ? 'splash' : 'mix');
+    if (k.mix === 'over') this.tip('mix_over');
+    this.changed();
+  }
+
+  /** Stir by hand when the mixer is broken. Returns true when the lemonade is mixed. */
+  kitchenStir(): boolean {
+    if (this.phase !== 'kitchen' || !this.kitchenCanMix()) return false;
+    const k = this.D.kitchen;
+    if (k.mix !== 'none') return true;
+    k.stir++;
+    this.sfx('click');
+    if (k.stir >= CONFIG.STIR_TAPS) {
+      k.mix = 'perfect';
+      k.hand = true;
+      this.sfx('mix');
+    }
+    this.changed();
+    return k.mix !== 'none';
+  }
+
+  kitchenMaxPitchers(): number {
+    if (this.D.kitchen.juice < 1) return 0;
+    return maxPitchers(this.S.stock, this.kitchenRecipe(), this.active());
+  }
+
+  /** Pour the jug into n pitchers: uses the ingredients and kitchen time. */
+  kitchenPour(n: number): boolean {
+    if (this.phase !== 'kitchen') return false;
+    const k = this.D.kitchen;
+    if (k.mix === 'none' || !this.kitchenCanMix()) {
+      this.toast('toast.mixFirst', undefined, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
+    const max = this.kitchenMaxPitchers();
+    n = clamp(Math.round(n), 0, max);
+    if (n < 1) {
+      this.toast('toast.noIngredients', undefined, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
+    const hours = this.kitchenHours(n, k.hand);
+    if (this.D.hour + hours + this.travelHours() >= CONFIG.DAY_END - 0.5) {
+      this.toast('toast.tooLate', undefined, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
+    const recipe = this.kitchenRecipe();
+    this.S.recipe = recipe;
+    this.D.recipeUsed = { ...recipe };
+    this.D.mixQuality = CONFIG.MIX_QUALITY[k.mix];
+    for (let i = 0; i < n; i++) {
+      this.consumePitcher(recipe);
+      this.D.cupsReady += CONFIG.CUPS_PER_PITCHER;
+      this.D.pitchersMade++;
+    }
+    this.D.hour += hours;
+    this.D.kitchen = emptyKitchen();
+    this.sfx('pour');
     this.goPrepare();
+    return true;
+  }
+
+  /** From the kitchen to the stand without making more (only if there is lemonade). */
+  leaveKitchen(): void {
+    if (this.phase === 'kitchen' && this.D.cupsReady > 0) this.goPrepare();
   }
 
   // ---------------------------------------------------------------- prepare
 
-  skipMarket(): void {
-    if (this.phase === 'morning') this.goPrepare();
-  }
-
   private goPrepare(): void {
-    const max = this.maxPitchersNow();
-    const want = this.D.pitchersPlanned || 2;
-    this.D.pitchersPlanned = Math.min(max, want);
     this.setPhase('prepare');
     this.tip('prepare_cost');
     this.tip('price');
-    if (this.S.day >= 2) this.tip('recipe');
+    if (this.S.day >= 2) this.tip('helper');
   }
 
   maxPitchersNow(recipe: Recipe = this.S.recipe): number {
-    return maxPitchers(this.S.stock, recipe, this.S.upgrades);
-  }
-
-  setRecipe(lemons: number, sugar: number): void {
-    this.S.recipe = {
-      lemons: clamp(lemons, CONFIG.RECIPE_LEMONS_MIN, CONFIG.RECIPE_LEMONS_MAX),
-      sugar: clamp(sugar, CONFIG.RECIPE_SUGAR_MIN, CONFIG.RECIPE_SUGAR_MAX),
-    };
-    this.D.pitchersPlanned = Math.min(this.D.pitchersPlanned, this.maxPitchersNow());
-    this.changed();
+    return maxPitchers(this.S.stock, recipe, this.active());
   }
 
   setPrice(p: number): void {
     this.S.price = clamp(Math.round(p), CONFIG.PRICE_MIN, CONFIG.PRICE_MAX);
-    this.changed();
-  }
-
-  setPitchers(n: number): void {
-    this.D.pitchersPlanned = clamp(n, 0, this.maxPitchersNow());
     this.changed();
   }
 
@@ -480,11 +654,21 @@ export class Game {
     this.changed();
   }
 
+  setHelper(on: boolean): void {
+    if (this.phase !== 'prepare') return;
+    this.D.helper = on;
+    this.changed();
+  }
+
+  /** Coins needed today before opening (rent, flyers, the helper's wage). */
+  openingCosts(): number {
+    return LOCATIONS[this.S.location].rent + (this.D.flyers ? CONFIG.FLYERS_COST : 0) + (this.D.helper ? CONFIG.HELPER_WAGE : 0);
+  }
+
   canStartSelling(): { ok: boolean; reason?: string } {
-    if (this.D.pitchersPlanned < 1) return { ok: false, reason: this.maxPitchersNow() < 1 ? 'toast.noIngredients' : 'toast.noPitchers' };
-    if (this.openingHour(false) >= CONFIG.DAY_END - 0.5) return { ok: false, reason: 'toast.tooLate' };
-    const need = LOCATIONS[this.S.location].rent + (this.D.flyers ? CONFIG.FLYERS_COST : 0);
-    if (this.S.coins < need) return { ok: false, reason: 'toast.noRent' };
+    if (this.D.cupsReady < 1) return { ok: false, reason: 'toast.noLemonade' };
+    if (this.D.hour + this.travelHours() >= CONFIG.DAY_END - 0.5) return { ok: false, reason: 'toast.tooLate' };
+    if (this.S.coins < this.openingCosts()) return { ok: false, reason: 'toast.noRent' };
     return { ok: true };
   }
 
@@ -492,7 +676,7 @@ export class Game {
     if (this.phase !== 'prepare') return false;
     const chk = this.canStartSelling();
     if (!chk.ok) {
-      this.toast(chk.reason!, { rent: LOCATIONS[this.S.location].rent }, 'warn');
+      this.toast(chk.reason!, { rent: this.openingCosts() }, 'warn');
       this.sfx('buzz');
       return false;
     }
@@ -500,6 +684,8 @@ export class Game {
     const rent = LOCATIONS[this.S.location].rent;
     D.hour += this.travelHours();
     D.startHour = D.hour;
+    D.lastRiskHour = Math.floor(D.hour);
+    D.opened = true;
     if (rent) {
       this.S.coins -= rent;
       D.expenses.rent += rent;
@@ -508,15 +694,14 @@ export class Game {
       this.S.coins -= CONFIG.FLYERS_COST;
       D.expenses.flyers += CONFIG.FLYERS_COST;
     }
-    D.recipeUsed = { ...this.S.recipe };
-    for (let i = 0; i < D.pitchersPlanned; i++) {
-      this.consumePitcher(D.recipeUsed);
-      D.cupsReady += CONFIG.CUPS_PER_PITCHER;
-      D.pitchersMade++;
+    if (D.helper) {
+      this.S.coins -= CONFIG.HELPER_WAGE;
+      D.expenses.wages += CONFIG.HELPER_WAGE;
     }
     if (D.events.thiefAt !== null) D.events.thiefAt = Math.max(D.events.thiefAt, D.startHour + 1);
     this.serving = null;
     this.making = null;
+    this.helperIdle = 0;
     this.speed = 1;
     this.refreshInterest();
     D.funnel.passed += this.street.markAllCounted();
@@ -529,7 +714,7 @@ export class Game {
 
   private consumePitcher(r: Recipe): void {
     const st = this.S.stock;
-    let need = lemonsConsumed(r, this.S.upgrades);
+    let need = lemonsConsumed(r, this.active());
     st.lemons.sort((a, b) => b.age - a.age);
     for (const b of st.lemons) {
       const take = Math.min(b.n, need);
@@ -547,18 +732,19 @@ export class Game {
 
   calcInterest(): ReturnType<typeof interestChance> {
     return interestChance({
-      upgrades: this.S.upgrades,
+      upgrades: this.active(),
       speakerOn: this.S.speakerOn,
       flyers: this.D.flyers,
       weather: this.D.weather,
       rep: this.S.rep,
       festival: this.D.events.festival,
+      location: this.S.location,
     });
   }
 
   refreshInterest(): void {
     this.interest = this.calcInterest();
-    this.radius = attentionRadius(this.S.upgrades, this.S.speakerOn);
+    this.radius = attentionRadius(this.active(), this.S.speakerOn);
   }
 
   /** Advance the world. `realDt` in seconds. */
@@ -582,16 +768,25 @@ export class Game {
 
     if (this.serving) {
       this.serving.t += dt;
-      if (this.serving.t >= CONFIG.SERVE_TIME) this.completeServe();
+      if (this.serving.t >= this.serving.dur) this.completeServe();
     }
     if (this.making) {
       this.making.t += dt;
-      if (this.making.t >= CONFIG.PITCHER_TIME) {
+      if (this.making.t >= this.making.dur) {
         this.making = null;
         D.cupsReady += CONFIG.CUPS_PER_PITCHER;
         this.sfx('splash');
         this.toast('toast.pitcherReady', undefined, 'good');
       }
+    }
+
+    // the helper serves and makes pitchers by himself
+    if (D.helper && !this.serving && !this.making) {
+      if (D.cupsReady === 0 && this.canMakePitcher()) this.makePitcher();
+      else if (this.street.frontReady() && D.cupsReady > 0) {
+        this.helperIdle += rdt;
+        if (this.helperIdle >= CONFIG.HELPER_DELAY) this.serve();
+      } else this.helperIdle = 0;
     }
 
     if (D.events.thiefAt !== null && !D.thief.appeared && D.hour >= D.events.thiefAt && D.hour < CONFIG.DAY_END - 0.5) {
@@ -602,6 +797,19 @@ export class Game {
       this.tip('thief');
     }
     if (this.street.thief && this.street.updateThief(rdt) === 'steal') this.thiefSteals();
+
+    // a worn item may break during the day (about once per game hour we roll the dice)
+    if (Math.floor(D.hour) > D.lastRiskHour) {
+      D.lastRiskHour = Math.floor(D.hour);
+      const broke = rollMiddayBreak(this.S, this.rng, D.weather);
+      if (broke) {
+        D.brokeToday.push(broke);
+        this.refreshInterest();
+        this.sfx('break');
+        this.card('broke', EQUIPMENT[broke].icon, { item: equipName(broke), cost: repairCost(this.S, broke) }, broke);
+        this.tip('breakdown');
+      }
+    }
 
     if (this.isSoldOut()) {
       if (D.soldOutAt === null) {
@@ -615,7 +823,7 @@ export class Game {
   }
 
   canMakePitcher(): boolean {
-    return maxPitchers(this.S.stock, this.D.recipeUsed, this.S.upgrades) >= 1;
+    return maxPitchers(this.S.stock, this.D.recipeUsed, this.active()) >= 1;
   }
 
   isSoldOut(): boolean {
@@ -652,7 +860,7 @@ export class Game {
     this.tip('queue');
   }
 
-  /** Player taps to pour a cup for the first customer in line. */
+  /** Player taps to pour a cup for the first customer in line (the helper calls it too). */
   serve(): 'ok' | 'busy' | 'making' | 'noCustomer' | 'noCups' | 'no' {
     if (this.phase !== 'sell' || this.paused) return 'no';
     if (this.serving) return 'busy';
@@ -664,7 +872,8 @@ export class Game {
       this.sfx('buzz');
       return 'noCups';
     }
-    this.serving = { ped: p, t: 0 };
+    this.helperIdle = 0;
+    this.serving = { ped: p, t: 0, dur: serveTime(this.active(), this.D.helper) };
     this.sfx('pour');
     return 'ok';
   }
@@ -675,26 +884,33 @@ export class Game {
     if (!this.street.queue.includes(p)) return;
     const S = this.S;
     const D = this.D;
+    const up = this.active();
     D.cupsReady--;
-    S.coins += S.price;
-    D.sales += S.price;
     D.funnel.sold++;
     S.totals.sold++;
-    S.totals.earned += S.price;
-    const q = quality(D.recipeUsed);
-    const sat = satisfaction(q, S.price, p.maxPrice, p.waited, p.patienceMax);
-    S.rep = clamp(S.rep + repDelta(sat, S.rep), 0, 5);
+    // loyalty card: every N-th cup is a gift
+    const every = up.loyalty ? UPGRADES.loyalty.freeEvery ?? 0 : 0;
+    const free = every > 0 && S.totals.sold % every === 0;
+    const paid = free ? 0 : S.price;
+    if (free) D.freeCups++;
+    S.coins += paid;
+    D.sales += paid;
+    S.totals.earned += paid;
+    const q = quality(D.recipeUsed) * D.mixQuality;
+    const sat = satisfaction(q, paid, p.maxPrice, p.waited, p.patienceMax);
+    S.rep = clamp(S.rep + repDelta(sat, S.rep, up), 0, 5);
     const bal = tasteBalance(D.recipeUsed);
-    const emote = sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
+    const emote = free ? '🎁' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
     this.street.serveDone(p, emote);
-    this.bus.emit('sale', { x: p.x, y: p.y, amount: S.price, sat });
+    this.bus.emit('sale', { x: p.x, y: p.y, amount: paid, sat, free });
     this.sfx('coin');
     this.tip('first_sale');
+    if (free) this.tip('loyalty');
     if (q < 0.6) this.tip('taste_bad');
     if (S.totals.sold >= 20) this.tip('reputation');
   }
 
-  /** Make a new pitcher while selling (costs time, no serving meanwhile). */
+  /** Make a new pitcher while selling (costs time, no serving meanwhile; twice as long by hand). */
   makePitcher(): boolean {
     if (this.phase !== 'sell' || this.making || this.serving || this.paused) return false;
     if (!this.canMakePitcher()) {
@@ -704,7 +920,7 @@ export class Game {
     }
     this.consumePitcher(this.D.recipeUsed);
     this.D.pitchersMade++;
-    this.making = { t: 0 };
+    this.making = { t: 0, dur: CONFIG.PITCHER_TIME * (mixerBroken(this.S) ? 2 : 1) };
     this.sfx('splash');
     return true;
   }
@@ -735,6 +951,12 @@ export class Game {
   }
 
   private thiefSteals(): void {
+    if (this.active().cash_lock) {
+      this.bus.emit('thief', { state: 'locked' });
+      this.sfx('pop');
+      this.card('thiefLocked', '🔒');
+      return;
+    }
     const amount = Math.max(0, Math.min(CONFIG.THIEF_MAX, Math.floor(this.D.sales * 0.5), this.S.coins));
     this.S.coins -= amount;
     this.D.expenses.stolen += amount;
@@ -744,9 +966,57 @@ export class Game {
     this.card(amount > 0 ? 'thiefStole' : 'thiefEmpty', '🦊', { n: amount });
   }
 
+  // ---------------------------------------------------------------- equipment
+
+  repairCost(id: EquipId): number {
+    return repairCost(this.S, id);
+  }
+
+  maintenanceCost(id: EquipId): number {
+    return maintenanceCost(this.S, id);
+  }
+
+  /** Repair broken equipment. Before the evening it counts as today's expense. */
+  repair(id: EquipId): boolean {
+    if (!this.S.broken[id]) return false;
+    const cost = repairCost(this.S, id);
+    if (this.S.coins < cost) {
+      this.toast('toast.notEnough', { total: cost, coins: this.S.coins }, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
+    this.S.coins -= cost;
+    if (this.phase !== 'report' && this.phase !== 'shop') this.D.expenses.repairs += cost;
+    restore(this.S, id);
+    this.refreshInterest();
+    this.sfx('buy');
+    this.toast('toast.repaired', { item: equipName(id) }, 'good');
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  /** Preventive maintenance in the shop: back to 100%. */
+  maintain(id: EquipId): boolean {
+    if (this.phase !== 'shop' || this.S.broken[id]) return false;
+    const cost = maintenanceCost(this.S, id);
+    if (cost <= 0 || this.S.coins < cost) {
+      this.sfx('buzz');
+      return false;
+    }
+    this.S.coins -= cost;
+    restore(this.S, id);
+    this.sfx('buy');
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  // ---------------------------------------------------------------- end of day
+
   /** Skip selling today (nothing to sell, too late, or just a day off). Goes straight to the evening report. */
   restDay(): void {
-    if (this.phase !== 'morning' && this.phase !== 'prepare' && this.phase !== 'market') return;
+    if (!['morning', 'prepare', 'market', 'kitchen'].includes(this.phase)) return;
     this.cart = emptyCart();
     this.finishDay();
   }
@@ -763,8 +1033,17 @@ export class Game {
     this.making = null;
     this.street.sendAwayQueue();
     if (this.street.thief && (this.street.thief.state === 'run' || this.street.thief.state === 'grab')) this.street.thief = null;
-    const wasted = D.cupsReady;
+    // unsold lemonade: poured out, or kept for tomorrow in the cooler (cups from the cooler are sold first)
+    let wasted = D.cupsReady;
+    let carried = 0;
+    if (this.active().cooler) {
+      const oldLeft = Math.max(0, D.carriedIn - D.funnel.sold);
+      wasted = Math.min(oldLeft, D.cupsReady);
+      carried = D.cupsReady - wasted;
+    }
+    S.carryCups = carried;
     D.cupsReady = 0;
+    applyWear(S, this.rng, D.weather, D.pitchersMade > 0, D.opened);
     const income = D.sales + D.bonus;
     const expenses = dayExpenses(D);
     const f = { ...D.funnel };
@@ -777,10 +1056,14 @@ export class Game {
       rent: D.expenses.rent,
       flyers: D.expenses.flyers,
       stolen: D.expenses.stolen,
+      wages: D.expenses.wages,
+      repairs: D.expenses.repairs,
       profit: income - expenses,
       sold: f.sold,
+      freeCups: D.freeCups,
       wastedCups: wasted,
-      wasteCost: Math.round(wasted * costPerCup(D.recipeUsed, S.upgrades)),
+      wasteCost: Math.round(wasted * costPerCup(D.recipeUsed, this.active())),
+      carriedCups: carried,
       repStart: D.repStart,
       repEnd: S.rep,
       funnel: f,
@@ -788,6 +1071,7 @@ export class Game {
       lesson: { key: 'lesson.profit', params: {} },
       stockValue: stockValue(S.stock),
       spoilTomorrow: S.stock.lemons.filter((b) => b.age + 1 >= CONFIG.LEMON_SPOIL_AGE).reduce((n, b) => n + b.n, 0),
+      broke: [...D.brokeToday],
       stageGoalReached: false,
     };
     report.lesson = pickLesson(S, D, report);
@@ -809,6 +1093,7 @@ export class Game {
     if (this.phase !== 'report') return;
     this.setPhase('shop');
     this.tip('shop');
+    if (Object.values(this.S.condition).some((c) => (c ?? 100) < 60)) this.tip('maintenance');
   }
 
   canBuy(id: UpgradeId): { ok: boolean; reason?: 'owned' | 'requires' | 'money' } {
@@ -826,6 +1111,8 @@ export class Game {
     }
     this.S.coins -= UPGRADES[id].price;
     this.S.upgrades[id] = true;
+    if (id in EQUIPMENT) this.S.condition[id as EquipId] = 100;
+    if (id === 'mixer_pro') restore(this.S, 'mixer');
     if (id === 'speaker') this.S.speakerOn = true;
     this.refreshInterest();
     this.sfx('buy');
@@ -845,10 +1132,12 @@ export class Game {
       }
       return b.n > 0;
     });
+    // worn equipment may break overnight; the player finds out in the morning
+    const broke = rollBreaks(this.S, this.rng);
     this.S.weatherHistory.push(this.D.weather);
     if (this.S.weatherHistory.length > 30) this.S.weatherHistory.shift();
     this.S.day++;
-    this.startMorning(spoiled);
+    this.startMorning(spoiled, broke);
   }
 
   /** Back to the main menu (the game stays saved at its last phase). */
@@ -898,6 +1187,14 @@ export class Game {
       this.D.thief.appeared = false;
       this.D.events.thiefAt = this.D.hour;
     }
+    this.changed();
+  }
+
+  debugBreak(id: EquipId): void {
+    this.S.broken[id] = true;
+    this.S.condition[id] = 0;
+    this.refreshInterest();
+    this.card('broke', EQUIPMENT[id].icon, { item: equipName(id), cost: repairCost(this.S, id) }, id);
     this.changed();
   }
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../src/core/config';
 import { Game } from '../src/sim/game';
 import { lemonsTotal } from '../src/sim/state';
-import { playDay } from './bot';
+import { cook, playDay } from './bot';
 
 function newGame(seed = 7): Game {
   const g = new Game(seed);
@@ -81,7 +81,8 @@ describe('day loop', () => {
     g.setCart('sugar', 1);
     g.setCart('cups', 2);
     expect(g.pay()).toBe(true);
-    g.setPitchers(2);
+    expect(g.phase).toBe('kitchen');
+    expect(cook(g, 2)).toBe(true);
     g.startSelling();
     expect(g.D.cupsReady).toBe(20);
     g.endDay();
@@ -106,7 +107,7 @@ describe('day loop', () => {
     g.addPitcherKit();
     g.addPitcherKit();
     g.pay();
-    g.setPitchers(2);
+    cook(g, 2);
     g.startSelling();
     g.debugAddCoins(500);
     g.D.sales = 200;
@@ -123,7 +124,7 @@ describe('day loop', () => {
     g.goMarket();
     g.addPitcherKit();
     g.pay();
-    g.setPitchers(1);
+    cook(g, 1);
     g.startSelling();
     g.debugForceEvent('thief');
     for (let i = 0; i < 5; i++) g.update(0.05);

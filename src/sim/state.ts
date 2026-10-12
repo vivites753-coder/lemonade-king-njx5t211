@@ -1,5 +1,5 @@
 import { CONFIG } from '../core/config';
-import type { AgeMode, Avatar, Lang, LocationId, Params, UpgradeId, WeatherId } from '../core/types';
+import type { AgeMode, Avatar, EquipId, Lang, LocationId, MixResult, Params, UpgradeId, WeatherId } from '../core/types';
 
 export interface LemonBatch {
   n: number;
@@ -39,11 +39,17 @@ export interface DayHistory {
 export interface GameState {
   v: 1;
   seed: number;
+  playerName: string;
   day: number;
   coins: number;
   rep: number;
   stock: Stock;
   upgrades: Partial<Record<UpgradeId, true>>;
+  /** Equipment condition, 0–100. */
+  condition: Partial<Record<EquipId, number>>;
+  broken: Partial<Record<EquipId, true>>;
+  /** Cups of lemonade kept in the cooler overnight. */
+  carryCups: number;
   location: LocationId;
   price: number;
   recipe: Recipe;
@@ -82,6 +88,18 @@ export interface DayEvents {
   badLemons: boolean;
 }
 
+/** The jug being made in the kitchen mini-game (nothing is used up until it is poured). */
+export interface KitchenState {
+  /** Parts of lemon juice (= recipe lemons). */
+  juice: number;
+  sugar: number;
+  water: number;
+  mix: MixResult;
+  /** Stirred by hand because the mixer is broken (takes longer). */
+  hand: boolean;
+  stir: number;
+}
+
 export interface DayReport {
   sales: number;
   bonus: number;
@@ -91,10 +109,14 @@ export interface DayReport {
   rent: number;
   flyers: number;
   stolen: number;
+  wages: number;
+  repairs: number;
   profit: number;
   sold: number;
+  freeCups: number;
   wastedCups: number;
   wasteCost: number;
+  carriedCups: number;
   repStart: number;
   repEnd: number;
   funnel: Funnel;
@@ -102,6 +124,7 @@ export interface DayReport {
   lesson: { key: string; params: Params };
   stockValue: number;
   spoilTomorrow: number;
+  broke: EquipId[];
   stageGoalReached: boolean;
 }
 
@@ -115,15 +138,25 @@ export interface DayState {
   hour: number;
   startHour: number;
   marketTrips: number;
+  /** Today's goods come by delivery (pricier, no trip). */
+  delivery: boolean;
   sales: number;
   bonus: number;
-  expenses: { ingredients: number; rent: number; flyers: number; stolen: number };
+  expenses: { ingredients: number; rent: number; flyers: number; stolen: number; wages: number; repairs: number };
   flyers: boolean;
-  pitchersPlanned: number;
+  helper: boolean;
+  /** The stand was open today (equipment wears out). */
+  opened: boolean;
+  kitchen: KitchenState;
+  /** 0.85–1: how well the lemonade was mixed. */
+  mixQuality: number;
   cupsReady: number;
+  /** Cups that came from the cooler this morning (sold first). */
+  carriedIn: number;
   pitchersMade: number;
   recipeUsed: Recipe;
   funnel: Funnel;
+  freeCups: number;
   repStart: number;
   coinsStart: number;
   spoiledOvernight: number;
@@ -131,6 +164,8 @@ export interface DayState {
   thief: { appeared: boolean; caught: boolean; stolen: number };
   soldOutAt: number | null;
   marketCardsShown: boolean;
+  brokeToday: EquipId[];
+  lastRiskHour: number;
   report: DayReport | null;
 }
 
@@ -138,15 +173,23 @@ export function emptyFunnel(): Funnel {
   return { passed: 0, inRange: 0, stopped: 0, tooExpensive: 0, queueFull: 0, soldOut: 0, joined: 0, sold: 0, impatient: 0 };
 }
 
-export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar; lang: Lang }): GameState {
+export function emptyKitchen(): KitchenState {
+  return { juice: 0, sugar: 0, water: 0, mix: 'none', hand: false, stir: 0 };
+}
+
+export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar; lang: Lang; name?: string }): GameState {
   return {
     v: 1,
     seed,
+    playerName: o.name ?? '',
     day: 1,
     coins: CONFIG.START_COINS,
     rep: CONFIG.START_REP,
     stock: { lemons: [], water: 0, sugar: 0, cups: 0 },
     upgrades: {},
+    condition: { mixer: 100 },
+    broken: {},
+    carryCups: 0,
     location: 'yard',
     price: 8,
     recipe: { lemons: CONFIG.IDEAL_LEMONS, sugar: CONFIG.IDEAL_SUGAR },
@@ -173,15 +216,21 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     hour: CONFIG.DAY_START,
     startHour: CONFIG.DAY_START,
     marketTrips: 0,
+    delivery: false,
     sales: 0,
     bonus: 0,
-    expenses: { ingredients: 0, rent: 0, flyers: 0, stolen: 0 },
+    expenses: { ingredients: 0, rent: 0, flyers: 0, stolen: 0, wages: 0, repairs: 0 },
     flyers: false,
-    pitchersPlanned: 0,
+    helper: false,
+    opened: false,
+    kitchen: emptyKitchen(),
+    mixQuality: 1,
     cupsReady: 0,
+    carriedIn: 0,
     pitchersMade: 0,
     recipeUsed: { ...s.recipe },
     funnel: emptyFunnel(),
+    freeCups: 0,
     repStart: s.rep,
     coinsStart: s.coins,
     spoiledOvernight: 0,
@@ -189,8 +238,29 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     thief: { appeared: false, caught: false, stolen: 0 },
     soldOutAt: null,
     marketCardsShown: false,
+    brokeToday: [],
+    lastRiskHour: CONFIG.DAY_START,
     report: null,
   };
+}
+
+/** Fills fields that older saves do not have (saves stay at format v1). */
+export function normalizeState(S: GameState, D: DayState): void {
+  const fresh = newGameState(S.seed, { ageMode: S.ageMode, avatar: S.avatar, lang: S.lang });
+  for (const k of Object.keys(fresh) as (keyof GameState)[]) {
+    if (S[k] === undefined) (S as unknown as Record<string, unknown>)[k] = fresh[k];
+  }
+  if (S.condition.mixer === undefined) S.condition.mixer = 100;
+  for (const id of Object.keys(S.upgrades)) {
+    const eq = id as keyof GameState['condition'];
+    if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'dispenser'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
+  }
+  const day = newDayState(S, D.weather ?? 'sunny', D.forecast ?? 'sunny');
+  for (const k of Object.keys(day) as (keyof DayState)[]) {
+    if (D[k] === undefined) (D as unknown as Record<string, unknown>)[k] = day[k];
+  }
+  D.expenses = { ...day.expenses, ...D.expenses };
+  D.kitchen = { ...emptyKitchen(), ...D.kitchen };
 }
 
 export function lemonsTotal(stock: Stock): number {
@@ -199,5 +269,5 @@ export function lemonsTotal(stock: Stock): number {
 
 export function dayExpenses(d: DayState): number {
   const e = d.expenses;
-  return e.ingredients + e.rent + e.flyers + e.stolen;
+  return e.ingredients + e.rent + e.flyers + e.stolen + e.wages + e.repairs;
 }
