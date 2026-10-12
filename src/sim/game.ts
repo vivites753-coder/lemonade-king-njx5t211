@@ -44,6 +44,7 @@ import {
   type GameState,
   type Recipe,
 } from './state';
+import { ACCIDENTS, BONUSES, ELECTRIC, INCIDENT, type AccidentId, type BonusId } from '../data/incidents';
 import { POINTS, type WorkerIssue } from '../data/staff';
 import { TRUCK_LOGOS, TRUCK_SKINS, TRUCK_TEXT_MAX } from '../data/truck';
 import {
@@ -58,10 +59,11 @@ import {
   type Point,
   type Seller,
 } from './points';
+import { Critters } from './critters';
 import { Street, type Ped, type StreetHost } from './street';
 import { placeEventStop } from './traffic';
 
-export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'splash' | 'alarm' | 'fanfare' | 'buy' | 'mix' | 'break';
+export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'splash' | 'alarm' | 'fanfare' | 'buy' | 'mix' | 'break' | 'crash' | 'zap' | 'woof' | 'meow';
 
 export interface CardInfo {
   id: string;
@@ -95,6 +97,8 @@ export type GameEvents = {
   save: Snapshot;
   /** The kitchen opened or closed while selling. */
   kitchen: { open: boolean };
+  /** A lucky find was picked up. */
+  found: { x: number; y: number; amount: number; icon: string };
 };
 
 export interface Serving {
@@ -139,6 +143,8 @@ export class Game {
   making: { t: number; dur: number; jugs: number } | null = null;
   /** The kitchen mini-game is open in the middle of the selling day (the world waits). */
   midKitchen = false;
+  /** Actors of accidents and lucky finds (only for the show). */
+  readonly critters = new Critters();
   cart: Cart = emptyCart();
   interest: ReturnType<typeof interestChance>;
   radius: number = CONFIG.BASE_RADIUS;
@@ -195,9 +201,11 @@ export class Game {
     };
   }
 
-  /** Upgrades that work right now (broken equipment gives no bonus). */
+  /** Upgrades that work right now (broken equipment gives no bonus; nothing electric works in a blackout). */
   active(): Owned {
-    return activeUpgrades(this.S);
+    const up = activeUpgrades(this.S);
+    if (this.D && this.D.blackoutUntil > this.D.hour) for (const id of ELECTRIC) delete up[id];
+    return up;
   }
 
   // ---------------------------------------------------------------- setup / save
@@ -309,6 +317,8 @@ export class Game {
     this.D.carriedIn = this.S.carryCups;
     this.S.carryCups = 0;
     rollDayEvents(this);
+    this.rollIncidents();
+    this.critters.clear();
     // the player cannot stand where a seller of theirs works
     if (this.S.day === 1 || pointAt(this.S, this.S.location)) this.S.location = 'yard';
     this.servings = [null, null];
@@ -332,6 +342,7 @@ export class Game {
     if (this.D.events.festival) this.card('festival', '🎉');
     for (const e of LOC_EVENTS) if (this.D.events[e.id]) this.card(`ev.${e.id}`, e.icon);
     this.morningStaff();
+    this.rollBreakIn();
   }
 
   /** Places open for the player (some need a better reputation). */
@@ -925,6 +936,7 @@ export class Game {
       festival: this.D.events.festival && !LOCATIONS[this.S.location].indoor,
       location: this.S.location,
       event: placeEventStop(this.S.location, this.D.events),
+      scare: this.D.dogsUntil > this.D.hour ? { key: 'why.dogs', mult: INCIDENT.DOGS_STOP } : undefined,
     });
   }
 
@@ -997,6 +1009,7 @@ export class Game {
       this.tip('thief');
     }
     if (this.street.thief && this.street.updateThief(rdt) === 'steal') this.thiefSteals();
+    this.stepIncidents(rdt);
 
     // a worn item may break during the day (about once per game hour we roll the dice)
     if (Math.floor(D.hour) > D.lastRiskHour) {
@@ -1316,6 +1329,7 @@ export class Game {
     const D = this.D;
     this.servings = [null, null];
     this.making = null;
+    this.critters.clear();
     if (this.midKitchen) this.closeKitchen();
     this.street.sendAwayQueue();
     if (this.street.thief && (this.street.thief.state === 'run' || this.street.thief.state === 'grab')) this.street.thief = null;
@@ -1367,6 +1381,7 @@ export class Game {
       spoilTomorrow: S.stock.lemons.filter((b) => b.age + 1 >= CONFIG.LEMON_SPOIL_AGE).reduce((n, b) => n + b.n, 0),
       broke: [...D.brokeToday],
       unlocked: [],
+      spilled: D.spilled,
       points,
       pointsProfit,
       pointsUnlocked: false,
@@ -1397,6 +1412,178 @@ export class Game {
       this.sfx('fanfare');
     }
     for (const p of S.points) if (p.issue === 'stole' && p.seller) this.staffCard(p);
+  }
+
+  // ---------------------------------------------------------------- accidents and lucky finds
+
+  /** Morning: which accidents and finds happen today, and when. */
+  private rollIncidents(): void {
+    const S = this.S;
+    const D = this.D;
+    D.incidents = [];
+    if (S.day < 2) return;
+    let acc = 0;
+    for (const a of ACCIDENTS) {
+      if (acc >= INCIDENT.MAX_ACCIDENTS || S.day < a.minDay) continue;
+      if (!this.rng.chance(a.chance)) continue;
+      D.incidents.push({ id: a.id, kind: 'acc', at: this.rng.range(11, 18.5), done: false });
+      acc++;
+    }
+    let found = 0;
+    for (const b of BONUSES) {
+      if (found >= INCIDENT.MAX_BONUSES || !this.rng.chance(b.chance)) continue;
+      D.incidents.push({ id: b.id, kind: 'bonus', at: this.rng.range(10.5, 18.5), done: false });
+      found++;
+      // the lost cat is in the morning news
+      if (b.id === 'cat' && D.newsKey.startsWith('news.calm')) D.newsKey = 'news.lostCat';
+    }
+  }
+
+  /** Morning: thieves may have broken into the storeroom overnight (the cash lock protects it too). */
+  private rollBreakIn(): void {
+    const S = this.S;
+    if (S.day < INCIDENT.BREAK_IN_MIN_DAY || !this.rng.chance(INCIDENT.BREAK_IN_CHANCE)) return;
+    const st = S.stock;
+    if (lemonsTotal(st) + st.sugar + st.cups + (st.cookies ?? 0) <= 0) return;
+    if (this.active().cash_lock) {
+      this.card('acc.breakInLocked', '🔒');
+      return;
+    }
+    const k = INCIDENT.BREAK_IN_SHARE;
+    let lemons = 0;
+    for (const b of st.lemons) {
+      const n = Math.floor(b.n * k);
+      b.n -= n;
+      lemons += n;
+    }
+    st.lemons = st.lemons.filter((b) => b.n > 0);
+    const sugar = Math.floor(st.sugar * k);
+    const cups = Math.floor(st.cups * k);
+    const cookies = Math.floor((st.cookies ?? 0) * k);
+    st.sugar -= sugar;
+    st.cups -= cups;
+    st.cookies = (st.cookies ?? 0) - cookies;
+    this.sfx('crash');
+    this.card('acc.breakIn', '🔓', { l: lemons, s: sugar, c: cups });
+  }
+
+  /** While selling: start what is due. */
+  private stepIncidents(rdt: number): void {
+    const D = this.D;
+    for (const inc of D.incidents) {
+      if (inc.done || D.hour < inc.at) continue;
+      inc.done = true;
+      if (inc.kind === 'acc') this.startAccident(inc.id as AccidentId);
+      else this.startBonus(inc.id as BonusId);
+    }
+    this.critters.update(rdt);
+    if (D.dogsUntil > 0 && D.hour >= D.dogsUntil) {
+      D.dogsUntil = 0;
+      this.critters.dismissDogs();
+      this.refreshInterest();
+    }
+    if (D.blackoutUntil > 0 && D.hour >= D.blackoutUntil) {
+      D.blackoutUntil = 0;
+      this.refreshInterest();
+      this.toast('toast.powerBack', undefined, 'good');
+    }
+  }
+
+  private startAccident(id: AccidentId): void {
+    const D = this.D;
+    const def = ACCIDENTS.find((a) => a.id === id)!;
+    if (def.outdoorOnly && LOCATIONS[this.S.location].indoor) return;
+    switch (id) {
+      case 'runner': {
+        if (D.cupsReady <= 0) return;
+        const n = Math.min(D.cupsReady, this.rng.int(4, 8));
+        D.cupsReady -= n;
+        D.spilled += n;
+        this.critters.runner();
+        this.sfx('crash');
+        this.card('acc.runner', def.icon, { n });
+        break;
+      }
+      case 'football': {
+        if (D.cupsReady <= 0) return;
+        const n = Math.min(D.cupsReady, CONFIG.CUPS_PER_PITCHER);
+        D.cupsReady -= n;
+        D.spilled += n;
+        this.critters.ball();
+        this.sfx('crash');
+        this.card('acc.football', def.icon, { n });
+        break;
+      }
+      case 'helperSpill': {
+        if (D.helpers <= 0) return;
+        const c = [0, 1].find((k) => this.autoCounter(k) && this.street.frontReady(k));
+        const p = c === undefined ? null : this.street.frontReady(c);
+        if (!p) return;
+        if (this.servings[c!]?.ped === p) this.servings[c!] = null;
+        this.street.leave(p, '😡', 3);
+        this.critters.splash(p.x, p.y);
+        this.S.rep = clamp(this.S.rep - INCIDENT.HELPER_SPILL_REP, 0, 5);
+        this.sfx('splash');
+        this.card('acc.helperSpill', def.icon);
+        break;
+      }
+      case 'helperStole': {
+        if (D.helpers <= 0 || D.sales <= 0) return;
+        const n = Math.min(this.S.coins, clamp(Math.round(D.sales * 0.25), 5, CONFIG.THIEF_MAX));
+        if (n <= 0) return;
+        this.S.coins -= n;
+        D.expenses.stolen += n;
+        this.sfx('buzz');
+        this.card('acc.helperStole', def.icon, { n });
+        break;
+      }
+      case 'blackout':
+        D.blackoutUntil = D.hour + INCIDENT.BLACKOUT_H;
+        this.refreshInterest();
+        this.sfx('zap');
+        this.card('acc.blackout', def.icon);
+        break;
+      case 'dogs':
+        D.dogsUntil = D.hour + INCIDENT.DOGS_H;
+        this.critters.dogs(3);
+        this.refreshInterest();
+        this.sfx('woof');
+        this.card('acc.dogs', def.icon);
+        break;
+    }
+  }
+
+  private startBonus(id: BonusId): void {
+    const def = BONUSES.find((b) => b.id === id)!;
+    this.critters[id](def.life);
+    if (id === 'cat') this.sfx('meow');
+    this.toast(`bonus.${id}.seen`, undefined, 'good');
+    this.tip('bonus');
+  }
+
+  /** Developer mode: start an accident or a lucky find right now (while selling). */
+  devIncident(id: string): void {
+    if (this.phase !== 'sell') return;
+    const kind = ACCIDENTS.some((a) => a.id === id) ? 'acc' : 'bonus';
+    this.D.incidents.push({ id, kind, at: this.D.hour, done: false });
+  }
+
+  /** The player taps a critter: a lucky find pays out. */
+  tapCritter(id: number): boolean {
+    const c = this.critters.list.find((x) => x.id === id);
+    if (!c || !c.bonus || this.phase !== 'sell') return false;
+    const def = BONUSES.find((b) => b.id === c.kind);
+    if (!def) return false;
+    this.critters.remove(id);
+    this.S.coins += def.reward;
+    this.D.bonus += def.reward;
+    this.S.rep = clamp(this.S.rep + def.rep, 0, 5);
+    this.bus.emit('found', { x: c.x, y: c.y, amount: def.reward, icon: def.icon });
+    this.sfx('coin');
+    if (c.kind === 'cat') this.sfx('meow');
+    this.toast(`bonus.${c.kind}.found`, { n: def.reward }, 'good');
+    this.changed();
+    return true;
   }
 
   // ---------------------------------------------------------------- my stands

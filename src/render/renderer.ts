@@ -5,6 +5,7 @@ import { LOCATIONS, type DecorDef } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
 import type { Game } from '../sim/game';
 import { FOX_LOOK } from '../sim/looks';
+import type { Critter } from '../sim/critters';
 import type { Ped } from '../sim/street';
 import { drawSprite, onAssetsChanged } from './assets';
 import { ENV } from './env';
@@ -14,6 +15,7 @@ import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from '
 import { drawCharacter, drawCup } from './proc/people';
 import { drawCar } from './proc/props';
 import { drawWalls } from './proc/indoor';
+import { drawCritter } from './proc/critters';
 import { drawStand } from './proc/stand';
 import './proc/truck';
 import './proc/buildings';
@@ -22,7 +24,7 @@ import './proc/buildings';
 const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
 const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
 
-type Kind = 0 | 1 | 2 | 3 | 4; // decor, ped, car, stand, thief
+type Kind = 0 | 1 | 2 | 3 | 4 | 5; // decor, ped, car, stand, thief, critter
 interface Item {
   d: number;
   k: Kind;
@@ -75,6 +77,8 @@ export class Renderer {
   private items: Item[] = [];
   private bubbles: Bubble[] = [];
   private t = 0;
+  /** Lucky finds on screen this frame (CSS px) for tapping. */
+  tapTargets: { id: number; x: number; y: number; r: number }[] = [];
   /** The fox on screen: centre of his body and the tap radius (only a tap on him counts). */
   thiefScreen: { x: number; y: number; r: number } | null = null;
 
@@ -84,6 +88,7 @@ export class Renderer {
   ) {
     this.ctx = canvas.getContext('2d')!;
     onAssetsChanged(() => (this.ground = null));
+    game.bus.on('found', (e) => this.floats.push({ x: e.x, y: e.y, text: `+${e.amount} ${e.icon}`, color: '#2b8a3e', t: 0 }));
     game.bus.on('sale', (e) => this.floats.push({ x: e.x, y: e.y - (e.cookie ? 0.35 : 0), text: `+${e.amount}${e.cookie ? ' 🍪' : ''}`, color: e.cookie ? '#a0612b' : '#2b8a3e', t: 0 }));
     game.bus.on('thief', (e) => {
       if (e.state === 'caught') this.floats.push({ x: CONFIG.STAND.x - 1, y: CONFIG.STAND.y + 0.8, text: `+${e.amount}`, color: '#2b8a3e', t: 0 });
@@ -214,6 +219,8 @@ export class Renderer {
     for (const c of g.street.cars) items.push({ d: c.x + c.y + 0.3, k: 2, o: c });
     items.push({ d: CONFIG.STAND.x + CONFIG.STAND.y + 0.05, k: 3, o: null });
     if (g.street.thief) items.push({ d: g.street.thief.x + g.street.thief.y, k: 4, o: g.street.thief });
+    for (const c of g.critters.list) items.push({ d: c.x + c.y + (c.kind === 'splash' ? 0.3 : 0), k: 5, o: c });
+    this.tapTargets = [];
     items.sort((a, b) => a.d - b.d);
 
     this.bubbles.length = 0;
@@ -241,7 +248,27 @@ export class Renderer {
         case 4:
           this.drawThief(ctx);
           break;
+        case 5: {
+          const c = it.o as Critter;
+          const tap = drawCritter(ctx, c, this.t);
+          if (tap) {
+            const p = { x: this.cam.ox + tap.x * this.cam.s, y: this.cam.oy + tap.y * this.cam.s };
+            this.tapTargets.push({ id: c.id, ...p, r: Math.max(22, 26 * this.cam.s) });
+          }
+          break;
+        }
       }
+    }
+    // a blackout: no light in a hall, and a sign over the stand
+    if (g.D.blackoutUntil > g.D.hour && selling) {
+      if (ENV.indoor) {
+        ctx.fillStyle = 'rgba(10,12,40,0.35)';
+        ctx.fillRect(-420, -200, 840, 640);
+      }
+      const [bx, by] = P(CONFIG.STAND.x, CONFIG.STAND.y, 120);
+      const pulse = ENV.reduceMotion ? 1 : 0.8 + Math.abs(Math.sin(this.t * 4)) * 0.3;
+      circle(ctx, bx, by, 13 * pulse, '#fff9db', '#fab005', 2);
+      text(ctx, '⚡', bx, by + 0.5, 14, '#000', 'center', 400);
     }
 
     this.drawBubbles(ctx);

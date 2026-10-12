@@ -160,6 +160,8 @@ export interface DayReport {
   broke: EquipId[];
   /** Places that opened tonight (reputation milestone). */
   unlocked: LocationId[];
+  /** Cups lost in accidents. */
+  spilled: number;
   /** The player's other stands today (already included in income and expenses). */
   points: PointReport[];
   pointsProfit: number;
@@ -216,6 +218,14 @@ export interface DayState {
   marketCardsShown: boolean;
   brokeToday: EquipId[];
   lastRiskHour: number;
+  /** Today's accidents and lucky finds (rolled in the morning). */
+  incidents: { id: string; kind: 'acc' | 'bonus'; at: number; done: boolean }[];
+  /** A blackout: electric things do not work until this hour (0 = no blackout). */
+  blackoutUntil: number;
+  /** Stray dogs scare customers until this hour. */
+  dogsUntil: number;
+  /** Cups lost in accidents today. */
+  spilled: number;
   report: DayReport | null;
 }
 
@@ -304,6 +314,10 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     marketCardsShown: false,
     brokeToday: [],
     lastRiskHour: CONFIG.DAY_START,
+    incidents: [],
+    blackoutUntil: 0,
+    dogsUntil: 0,
+    spilled: 0,
     report: null,
   };
 }

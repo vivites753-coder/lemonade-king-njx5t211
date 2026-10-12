@@ -98,5 +98,24 @@ export function play(name: SfxName): void {
       tone(660, 0.1, 'triangle', 0.1);
       tone(990, 0.18, 'triangle', 0.1, 0.09);
       break;
+    case 'crash':
+      noise(0.35, 2400, 0.14);
+      tone(520, 0.08, 'square', 0.05, 0.02, 1400);
+      tone(900, 0.06, 'triangle', 0.05, 0.12, 1800);
+      break;
+    case 'zap':
+      tone(1200, 0.25, 'sawtooth', 0.05, 0, 80);
+      noise(0.2, 3000, 0.06);
+      break;
+    case 'woof':
+      for (let i = 0; i < 2; i++) {
+        tone(240, 0.11, 'sawtooth', 0.07, i * 0.22, 140);
+        noise(0.08, 500, 0.06);
+      }
+      break;
+    case 'meow':
+      tone(620, 0.35, 'triangle', 0.07, 0, 880);
+      tone(880, 0.25, 'triangle', 0.05, 0.3, 520);
+      break;
   }
 }

@@ -101,6 +101,8 @@ export interface InterestInput {
   location?: LocationId;
   /** Stop-chance multiplier from a place event (a concert), with its "Why?" key. */
   event?: { key: string; mult: number };
+  /** Something scares people away (stray dogs). */
+  scare?: { key: string; mult: number };
 }
 
 /** Indoors the weather changes thirst this much less (no sun, no rain on your head). */
@@ -148,7 +150,9 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
   if (i.festival) parts.push({ key: 'why.festival', kind: 'mul', value: fest });
   const ev = i.event?.mult ?? 1;
   if (i.event) parts.push({ key: i.event.key, kind: 'mul', value: ev });
-  const raw = CONFIG.BASE_STOP_CHANCE * (1 + ads) * w.thirst * comfort * repF * fest * ev;
+  const scare = i.scare?.mult ?? 1;
+  if (i.scare) parts.push({ key: i.scare.key, kind: 'mul', value: scare });
+  const raw = CONFIG.BASE_STOP_CHANCE * (1 + ads) * w.thirst * comfort * repF * fest * ev * scare;
   return { chance: Math.min(CONFIG.MAX_STOP_CHANCE, raw), raw, parts };
 }
 

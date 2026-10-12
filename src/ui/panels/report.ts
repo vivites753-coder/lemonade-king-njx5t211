@@ -80,6 +80,7 @@ export const reportPanel: Panel = {
           ${fbar(`🥤 ${t('hud.sold')}`, f.sold, f.passed)}
         </div>
         <div class="reasons">${reasons.filter(([, n]) => n > 0).map(([k, n]) => `<span>${k}: ${n}</span>`).join('')}</div>` : ''}
+        ${r.spilled ? `<div class="warn-box">💦 ${t('report.spilled', { n: r.spilled })}</div>` : ''}
         ${r.wastedCups ? `<div class="warn-box">🚰 ${t('report.waste', { n: r.wastedCups, c: r.wasteCost })}</div>` : ''}
         ${r.carriedCups ? `<div class="good-box">🧊 ${t('report.carried', { n: r.carriedCups })}</div>` : ''}
         ${r.freeCups ? `<div class="note">🎁 ${t('report.freeCups', { n: r.freeCups })}</div>` : ''}

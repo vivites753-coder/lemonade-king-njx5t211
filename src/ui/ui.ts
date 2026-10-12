@@ -438,6 +438,10 @@ export class UI implements UIApi {
       g.hitThief();
       return;
     }
+    // a lucky find (a cat, a wallet, a balloon, a coin)
+    for (const tt of this.r.tapTargets) {
+      if (Math.hypot(tt.x - x, tt.y - y) < tt.r && g.tapCritter(tt.id)) return;
+    }
     g.serve();
   }
 

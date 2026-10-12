@@ -2,6 +2,7 @@
 // Switched on by tapping "Entrepreneur" in the settings 5 times; remembered on this device only.
 import type { WeatherId } from '../core/types';
 import { DAY_EVENTS, type DayEventId } from '../data/events';
+import { ACCIDENTS, BONUSES } from '../data/incidents';
 import { WEATHER, WEATHER_IDS } from '../data/weather';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
@@ -54,6 +55,8 @@ export function devModal(g: Game, hooks: DevHooks): ModalSpec {
         <div class="dev-row">${WEATHER_IDS.map((w) => `<button class="btn btn-sm${g.D.weather === w ? ' btn-b' : ''}" data-act="weather:${w}">${WEATHER[w].icon}</button>`).join('')}</div>
         <h3>🎲 ${t('dev.events')}</h3>
         <div class="dev-row">${DAY_EVENTS.map((e) => `<button class="btn btn-sm" data-act="event:${e.id}">${e.icon} ${e.id}</button>`).join('')}</div>
+        <h3>🎭 ${t('dev.incidents')}</h3>
+        <div class="dev-row">${[...ACCIDENTS, ...BONUSES].map((a) => `<button class="btn btn-sm" data-act="inc:${a.id}" ${sell ? '' : 'disabled'}>${a.icon} ${a.id}</button>`).join('')}</div>
         <h3>⏩ ${t('dev.day')}</h3>
         <div class="dev-row">
           <button class="btn btn-sm" data-act="speed:6" ${sell ? '' : 'disabled'}>×6</button>
@@ -77,6 +80,10 @@ export function devModal(g: Game, hooks: DevHooks): ModalSpec {
         hooks.toast(`🎲 ${arg}`);
       }
       if (act === 'speed') g.setSpeed(Number(arg));
+      if (act === 'inc') {
+        g.devIncident(arg);
+        return true;
+      }
       if (act === 'end') {
         g.endDay();
         return true;
