@@ -52,11 +52,17 @@ export interface Thief {
   x: number;
   y: number;
   t: number;
-  state: 'run' | 'grab' | 'flee' | 'caught';
+  /** run: sneaks to the till; dodge: runs off after a hit; grab: at the till; flee: got away with money. */
+  state: 'run' | 'dodge' | 'grab' | 'flee' | 'caught';
   anim: number;
   moving: boolean;
   dirX: number;
   bag: boolean;
+  hits: number;
+  speed: number;
+  /** Where he runs to after a hit. */
+  tx: number;
+  ty: number;
 }
 
 export interface StreetHost {
@@ -308,7 +314,7 @@ export class Street {
 
   // ---------- thief (runs on real time so speed-ups don't make it unfair) ----------
   spawnThief(): void {
-    this.thief = { x: CONFIG.SPAWN_LEFT, y: 5.35, t: 0, state: 'run', anim: 0, moving: true, dirX: 1, bag: false };
+    this.thief = { x: CONFIG.SPAWN_LEFT, y: 5.35, t: 0, state: 'run', anim: 0, moving: true, dirX: 1, bag: false, hits: 0, speed: CONFIG.THIEF_SPEED, tx: 0, ty: 0 };
   }
 
   /** Returns 'steal' at the moment the thief grabs the money. */
@@ -317,9 +323,15 @@ export class Street {
     if (!th) return null;
     th.t += rdt;
     let result: 'steal' | null = null;
-    const mover = { x: th.x, y: th.y, vx: 0, vy: 0, speed: 2.2, moving: false };
+    const mover = { x: th.x, y: th.y, vx: 0, vy: 0, speed: th.speed, moving: false };
     if (th.state === 'run') {
-      if (this.moveTo(mover, CONFIG.STAND.x - 1.05, CONFIG.STAND.y + 0.8, rdt)) th.state = 'grab';
+      if (this.moveTo(mover, CONFIG.STAND.x - 1.05, CONFIG.STAND.y + 0.8, rdt)) {
+        th.state = 'grab';
+        th.t = 0;
+      }
+    } else if (th.state === 'dodge') {
+      // ran off after a hit; then he tries the till again
+      if (this.moveTo(mover, th.tx, th.ty, rdt)) th.state = 'run';
     } else if (th.state === 'grab') {
       mover.moving = false;
       if (th.t >= CONFIG.THIEF_WINDOW) {
@@ -328,7 +340,7 @@ export class Street {
         result = 'steal';
       }
     } else {
-      mover.speed = th.state === 'flee' ? 3.2 : 1.2;
+      mover.speed = th.state === 'flee' ? Math.max(3.2, th.speed) : 1.2;
       if (th.state === 'caught' && th.t < 1.3) mover.speed = 0;
       if (mover.speed > 0 && this.moveTo(mover, CONFIG.SPAWN_LEFT - 0.6, 5.6, rdt)) {
         this.thief = null;
@@ -343,11 +355,38 @@ export class Street {
     return result;
   }
 
-  catchThief(): boolean {
+  /** The fox can be tapped while he sneaks, dodges or is at the till. */
+  thiefCatchable(): boolean {
     const th = this.thief;
-    if (!th || (th.state !== 'run' && th.state !== 'grab')) return false;
-    th.state = 'caught';
+    return !!th && (th.state === 'run' || th.state === 'dodge' || th.state === 'grab');
+  }
+
+  /** A tap on the fox: he speeds up and runs off in another direction; the last hit catches him. */
+  hitThief(): 'hit' | 'caught' | null {
+    const th = this.thief;
+    if (!th || !this.thiefCatchable()) return null;
+    th.hits++;
+    if (th.hits >= CONFIG.THIEF_HITS) {
+      th.state = 'caught';
+      th.t = 0;
+      return 'caught';
+    }
+    th.speed = Math.min(CONFIG.THIEF_SPEED_MAX, th.speed * CONFIG.THIEF_SPEED_MULT);
+    // a new spot far from where he is (the dice here are cosmetic, so they do not touch the game RNG)
+    let best = { x: 2, y: 8 };
+    let bestD = -1;
+    for (let i = 0; i < 6; i++) {
+      const c = { x: 0.8 + Math.random() * 10.4, y: 4.6 + Math.random() * 4.8 };
+      const d = Math.hypot(c.x - th.x, c.y - th.y);
+      if (d > bestD) {
+        best = c;
+        bestD = d;
+      }
+    }
+    th.tx = best.x;
+    th.ty = best.y;
+    th.state = 'dodge';
     th.t = 0;
-    return true;
+    return 'hit';
   }
 }

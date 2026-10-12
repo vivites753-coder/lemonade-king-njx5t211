@@ -292,7 +292,7 @@ export const en: Record<I18nKey, string> = {
   'tip.queue': "Long queue! People don't like waiting — pour faster.",
   'tip.rain': "It's raining — few people outside. On days like this it's smarter to buy less.",
   'tip.spoiled': 'Lemons go bad! Buy only what you can sell in time.',
-  'tip.thief': 'The sneaky fox is running to the till! Tap it, quick!',
+  'tip.thief': 'The sneaky fox is creeping to the till! Tap right on him 3 times — after each hit he runs faster!',
   'tip.report': 'This is the daily report. Income minus expenses equals profit. If profit is below zero, you spent more than you earned.',
   'tip.report.kid': 'Green number — you earned. Red — you spent more than you earned.',
   'tip.shop': 'An upgrade is an investment: spend now to earn more later.',
@@ -780,4 +780,7 @@ export const en: Record<I18nKey, string> = {
   'dev.disable': 'Turn off developer mode',
   'update.available': 'A new version of the game is out!',
   'update.reload': 'Update',
+  // v0.5
+  'tip.thief_hit': 'Hit! The fox got scared and runs faster. Almost there — catch him!',
+  'update.wiped': 'The game was updated! To make everything work right, progress starts over.',
 };

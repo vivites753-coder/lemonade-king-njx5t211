@@ -74,7 +74,8 @@ export class Renderer {
   private items: Item[] = [];
   private bubbles: Bubble[] = [];
   private t = 0;
-  thiefScreen: { x: number; y: number } | null = null;
+  /** The fox on screen: centre of his body and the tap radius (only a tap on him counts). */
+  thiefScreen: { x: number; y: number; r: number } | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -86,6 +87,8 @@ export class Renderer {
     game.bus.on('thief', (e) => {
       if (e.state === 'caught') this.floats.push({ x: CONFIG.STAND.x - 1, y: CONFIG.STAND.y + 0.8, text: `+${e.amount}`, color: '#2b8a3e', t: 0 });
       if (e.state === 'stole' && e.amount) this.floats.push({ x: CONFIG.STAND.x, y: CONFIG.STAND.y, text: `−${e.amount}`, color: '#e03131', t: 0 });
+      const th = game.street.thief;
+      if (e.state === 'hit' && th) this.floats.push({ x: th.x, y: th.y, text: `💥 ${e.amount}/${CONFIG.THIEF_HITS}`, color: '#e8590c', t: 0 });
     });
     this.resize();
   }
@@ -300,17 +303,17 @@ export class Renderer {
       t: this.t,
     });
     ctx.globalAlpha = 1;
-    if (th.state === 'run' || th.state === 'grab') {
+    if (this.game.street.thiefCatchable()) {
       const pulse = 1 + Math.sin(this.t * 10) * 0.15;
       ctx.beginPath();
       ctx.ellipse(sx, sy - 22, 28 * pulse, 34 * pulse, 0, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(250,82,82,0.85)';
       ctx.lineWidth = 3;
       ctx.stroke();
-      this.bubbles.push({ sx, sy: headY - 4, emote: '❗', patience: -1 });
+      this.bubbles.push({ sx, sy: headY - 4, emote: th.hits ? `${th.hits}/${CONFIG.THIEF_HITS}` : '❗', patience: -1 });
     }
     const scr = this.worldToScreen(th.x, th.y, 22);
-    this.thiefScreen = scr;
+    this.thiefScreen = { x: scr.x, y: scr.y, r: Math.max(18, 30 * this.cam.s) };
   }
 
   private drawBubbles(ctx: Ctx): void {
@@ -341,7 +344,7 @@ export class Renderer {
   private drawWorkIndicators(ctx: Ctx): void {
     const g = this.game;
     if (g.serving) {
-      const k = Math.min(1, g.serving.t / CONFIG.SERVE_TIME);
+      const k = Math.min(1, g.serving.t / g.serving.dur);
       const spot = queueSpot(0);
       const [sx, sy] = P(spot.x, spot.y, 78);
       circle(ctx, sx, sy, 13, 'rgba(255,255,255,0.95)');
@@ -353,7 +356,7 @@ export class Renderer {
       drawCup(ctx, sx, sy + 1, 1.6);
     }
     if (g.making) {
-      const k = Math.min(1, g.making.t / CONFIG.PITCHER_TIME);
+      const k = Math.min(1, g.making.t / g.making.dur);
       const [sx, sy] = P(CONFIG.STAND.x - 0.1, CONFIG.STAND.y - 0.85, 96);
       circle(ctx, sx, sy, 15, 'rgba(255,255,255,0.95)');
       ctx.beginPath();

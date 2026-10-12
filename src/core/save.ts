@@ -52,6 +52,36 @@ function remove(key: string): void {
   }
 }
 
+const BUILD_KEY = 'lemonadeKing.build';
+/** Kept through updates: the developer-mode switch of this device. */
+const KEEP = new Set(['lemonadeKing.dev']);
+
+/**
+ * Every update of the game wipes all players and saves, so nobody plays with data from an older
+ * version. Returns true when something was wiped. Set WIPE_ON_UPDATE to false to keep progress.
+ */
+export const WIPE_ON_UPDATE = true;
+export function wipeOnUpdate(buildId: string): boolean {
+  const last = get(BUILD_KEY);
+  if (last === buildId) return false;
+  let wiped = false;
+  if (WIPE_ON_UPDATE && last !== null) {
+    try {
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('lemonadeKing.') && !KEEP.has(k) && k !== BUILD_KEY) keys.push(k);
+      }
+      for (const k of keys) remove(k);
+      wiped = keys.length > 0;
+    } catch {
+      /* storage blocked */
+    }
+  }
+  set(BUILD_KEY, buildId);
+  return wiped;
+}
+
 function newId(): string {
   return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
 }

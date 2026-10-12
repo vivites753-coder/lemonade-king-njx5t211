@@ -72,6 +72,11 @@ export const CONFIG = {
   THIEF_WINDOW: 5,
   THIEF_MAX: 40,
   THIEF_REWARD: 10,
+  /** Taps on the fox needed to catch him; every hit makes him faster and he runs off somewhere else. */
+  THIEF_HITS: 3,
+  THIEF_SPEED: 1.1,
+  THIEF_SPEED_MULT: 2,
+  THIEF_SPEED_MAX: 4.4,
 
   FORECAST_ACCURACY: 0.8,
 

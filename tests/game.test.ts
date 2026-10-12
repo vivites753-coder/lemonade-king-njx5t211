@@ -128,8 +128,16 @@ describe('day loop', () => {
     g.startSelling();
     g.debugForceEvent('thief');
     for (let i = 0; i < 5; i++) g.update(0.05);
-    expect(g.catchThief()).toBe(true);
+    // three taps: he speeds up after each one
+    expect(g.hitThief()).toBe('hit');
+    const speed = g.street.thief!.speed;
+    expect(speed).toBeCloseTo(CONFIG.THIEF_SPEED * CONFIG.THIEF_SPEED_MULT, 6);
+    expect(g.street.thief!.state).toBe('dodge');
+    expect(g.D.bonus).toBe(0);
+    expect(g.hitThief()).toBe('hit');
+    expect(g.hitThief()).toBe('caught');
     expect(g.D.bonus).toBe(CONFIG.THIEF_REWARD);
+    expect(g.hitThief()).toBeNull();
   });
 
   it('save and restore keep the exact state', () => {

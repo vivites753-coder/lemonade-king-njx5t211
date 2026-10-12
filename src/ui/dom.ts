@@ -19,13 +19,10 @@ export function signedCoin(n: number): string {
   return coin(signed(n), n > 0 ? 'pos' : n < 0 ? 'neg' : '');
 }
 
+/** Reputation as stars: a star lights up only when its level is reached (1.8 shows one star, 2.0 shows two). */
 export function stars(rep: number): string {
   let s = '<span class="stars">';
-  for (let i = 1; i <= 5; i++) {
-    if (rep >= i - 0.25) s += '★';
-    else if (rep >= i - 0.75) s += '<span style="position:relative">☆<span style="position:absolute;left:0;width:50%;overflow:hidden">★</span></span>';
-    else s += '<span class="off">★</span>';
-  }
+  for (let i = 1; i <= 5; i++) s += rep >= i - 1e-9 ? '★' : '<span class="off">★</span>';
   return s + '</span>';
 }
 

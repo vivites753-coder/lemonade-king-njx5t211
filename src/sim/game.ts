@@ -88,7 +88,7 @@ export type GameEvents = {
   toast: { key: string; params?: Params; kind?: 'info' | 'warn' | 'good' };
   sale: { x: number; y: number; amount: number; sat: number; free: boolean };
   sfx: { name: SfxName };
-  thief: { state: 'appear' | 'caught' | 'stole' | 'locked'; amount?: number };
+  thief: { state: 'appear' | 'hit' | 'caught' | 'stole' | 'locked'; amount?: number };
   changed: Record<string, never>;
   save: Snapshot;
   /** The kitchen opened or closed while selling. */
@@ -1083,15 +1083,30 @@ export class Game {
     this.changed();
   }
 
+  /** A tap on the fox. Three hits catch him. */
+  hitThief(): 'hit' | 'caught' | null {
+    const r = this.street.hitThief();
+    if (r === 'hit') {
+      this.bus.emit('thief', { state: 'hit', amount: this.street.thief?.hits ?? 0 });
+      this.sfx('pop');
+      this.tip('thief_hit');
+    }
+    if (r === 'caught') this.thiefCaught();
+    return r;
+  }
+
+  /** One hit on the fox (true when it hit him). */
   catchThief(): boolean {
-    if (!this.street.catchThief()) return false;
+    return this.hitThief() !== null;
+  }
+
+  private thiefCaught(): void {
     this.D.thief.caught = true;
     this.S.coins += CONFIG.THIEF_REWARD;
     this.D.bonus += CONFIG.THIEF_REWARD;
     this.bus.emit('thief', { state: 'caught', amount: CONFIG.THIEF_REWARD });
     this.sfx('fanfare');
     this.card('thiefCaught', '🦊', { n: CONFIG.THIEF_REWARD });
-    return true;
   }
 
   private thiefSteals(): void {

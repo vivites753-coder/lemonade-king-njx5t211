@@ -1,12 +1,15 @@
 import './styles.css';
 import { initAudio } from './audio/sfx';
-import { readSave, writeSave } from './core/save';
-import { setLang } from './i18n';
+import { readSave, wipeOnUpdate, writeSave } from './core/save';
+import { setLang, t } from './i18n';
 import { loadAssets } from './render/assets';
 import { Renderer } from './render/renderer';
 import { Game } from './sim/game';
 import { DebugPanel } from './ui/debug';
 import { UI } from './ui/ui';
+
+// a published update starts with clean saves (the dev server keeps them)
+const wiped = import.meta.env.PROD && wipeOnUpdate(__BUILD_ID__);
 
 const game = new Game(1);
 // remember the language of the last session for the title screen
@@ -24,6 +27,7 @@ const debug = new DebugPanel(document.getElementById('debug')!, game);
 ui.debugPanel = () => debug.toggle();
 
 game.bus.on('save', writeSave);
+if (wiped) setTimeout(() => ui.toast(t('update.wiped'), 'info'), 600);
 loadAssets();
 initAudio();
 

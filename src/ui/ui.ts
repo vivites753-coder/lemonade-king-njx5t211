@@ -427,9 +427,10 @@ export class UI implements UIApi {
   private onTap(x: number, y: number): void {
     const g = this.g;
     if (g.phase !== 'sell' || g.paused) return;
+    // only a tap right on the fox counts
     const th = this.r.thiefScreen;
-    if (th && Math.hypot(th.x - x, th.y - y) < 70) {
-      g.catchThief();
+    if (th && g.street.thiefCatchable() && Math.hypot(th.x - x, th.y - y) < th.r) {
+      g.hitThief();
       return;
     }
     g.serve();
