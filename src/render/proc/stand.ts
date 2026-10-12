@@ -8,6 +8,7 @@ import { drawSprite, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter } from './people';
+import { brokenMark } from './standExtras';
 
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
@@ -277,15 +278,35 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const up = S.upgrades;
   const [sx, sy] = P(SX, SY);
   const call = (extra: Partial<StandCall> = {}): StandCall => ({ x: SX, y: SY, sx, sy, s: 1, ...extra });
+  const br = S.broken;
   if (up.bike) drawSprite(ctx, 'stand_bike', call());
+  if (up.toolkit) drawSprite(ctx, 'stand_toolkit', call());
+  if (up.cooler) drawSprite(ctx, 'stand_cooler', call());
   drawSprite(ctx, 'stand_chair', call());
 
-  // the player stands behind the table
+  // the player stands behind the table, the helper (if hired) next to them
+  const making = playing && !!g.making;
+  const serving = playing && !!g.serving;
+  if (playing && g.D.helper) {
+    const hx = SX + 0.62;
+    const hy = SY - 0.8;
+    const [hpx, hpy] = P(hx, hy);
+    drawCharacter(ctx, 'char_helper_front', hx, hy, hpx, hpy, {
+      kind: 'player',
+      look: { ...playerLook(S.avatar === 'boy' ? 'girl' : 'boy'), shirt: '#51cf66', hair: '#3b2a20' },
+      scale: 0.95,
+      moving: false,
+      anim: 0,
+      facingCam: true,
+      dirX: 1,
+      serving,
+      apron: '#69db7c',
+      t: ENV.t,
+    });
+  }
   const px = SX - 0.1;
   const py = SY - 0.85;
   const [ppx, ppy] = P(px, py);
-  const making = playing && !!g.making;
-  const serving = playing && !!g.serving;
   drawCharacter(ctx, `char_player_${S.avatar}_front`, px, py, ppx, ppy, {
     kind: 'player',
     look: playerLook(S.avatar),
@@ -294,7 +315,7 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     anim: 0,
     facingCam: true,
     dirX: 1,
-    serving,
+    serving: serving && !g.D.helper,
     juicing: making && !ENV.reduceMotion,
     t: ENV.t,
   });
@@ -304,14 +325,30 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const lemons = lemonsTotal(S.stock);
   drawSprite(ctx, 'item_lemon_pile', call({ lemons: playing ? Math.max(lemons, 3) : lemons }));
   const level = playing ? g.D.cupsReady / CONFIG.CUPS_PER_PITCHER : 0.6;
-  drawSprite(ctx, 'item_pitcher', call({ level: Math.min(1, level) }));
-  drawSprite(ctx, 'item_cups_pack', call());
-  coinJar(ctx, playing ? g.D.sales : 0);
+  drawSprite(ctx, up.dispenser ? 'stand_dispenser' : 'item_pitcher', call({ level: Math.min(1, level) }));
+  drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
+  if (up.cash_lock) drawSprite(ctx, 'stand_cashbox', call());
+  else coinJar(ctx, playing ? g.D.sales : 0);
   if (up.juicer_lever) drawSprite(ctx, 'stand_juicer_lever', call());
   else if (up.juicer_hand) drawSprite(ctx, 'stand_juicer_hand', call());
   if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
   if (up.sign) drawSprite(ctx, 'stand_sign', call({ price: S.price }));
-  if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn }));
+  if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
+  if (up.mascot) drawSprite(ctx, 'stand_mascot', call());
   if (playing && g.isSoldOut()) soldOutPlate(ctx);
-  if (up.umbrella) drawSprite(ctx, 'stand_umbrella', call());
+  if (up.tent) drawSprite(ctx, 'stand_tent', call({ on: !!br.tent }));
+  else if (up.umbrella) {
+    ctx.save();
+    if (br.umbrella) ctx.globalAlpha = 0.5;
+    drawSprite(ctx, 'stand_umbrella', call());
+    ctx.restore();
+  }
+
+  // broken equipment gets a wrench bubble
+  if (br.speaker) brokenMark(ctx, SX + 1.23, SY - 0.42, 44);
+  if (br.umbrella && !up.tent) brokenMark(ctx, SX + 0.15, SY - 0.25, 108);
+  if (br.tent) brokenMark(ctx, SX, SY - 0.35, 128);
+  if (br.dispenser) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
+  if (br.juicer_hand || br.juicer_lever) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
+  if (br.bike) brokenMark(ctx, SX - 1.75, SY - 0.9, 40);
 }

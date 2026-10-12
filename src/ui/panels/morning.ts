@@ -1,4 +1,4 @@
-import type { LocationId } from '../../core/types';
+import type { EquipId, LocationId } from '../../core/types';
 import { LOCATIONS, LOCATION_IDS } from '../../data/locations';
 import { WEATHER } from '../../data/weather';
 import { t } from '../../i18n';
@@ -42,6 +42,7 @@ export const morningPanel: Panel = {
           <span class="grow"><b>${t('morning.forecast', { w: t(`weather.${D.forecast}`) })}</b><br><small class="muted">${t('morning.forecastNote')}</small></span>
         </div>
         <div class="card row"><span class="big-ico">📰</span><span class="grow"><b>${t('news.title')}</b><br>${t(D.newsKey)}</span></div>
+        ${Object.keys(g.S.broken).length ? `<div class="warn-box">🔧 ${t('morning.broken', { list: (Object.keys(g.S.broken) as EquipId[]).map((id) => t(`equip.${id}`)).join(', ') })}</div>` : ''}
         ${D.spoiledOvernight > 0 ? `<div class="warn-box">🍋💀 ${t('morning.spoiled', { n: D.spoiledOvernight })}</div>` : ''}
         <div class="note">${hasStock ? `<b>${t('morning.stock')}:</b> 🍋 ${lemonsTotal(st)} · 💧 ${st.water} · 🍬 ${st.sugar} · 🥤 ${st.cups}` : t('morning.noStock')}</div>
         <h3>${t('morning.where')}</h3>
@@ -51,7 +52,8 @@ export const morningPanel: Panel = {
       </div>
       <div class="panel-foot">
         <button class="btn btn-y btn-big" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>🛒 ${t('morning.toMarket', { h: g.tripHours() })}</button>
-        <button class="btn" data-act="skip" ${g.maxPitchersNow() >= 1 ? '' : 'disabled'}>📋 ${t('morning.skip')}</button>
+        ${g.S.upgrades.delivery ? `<button class="btn btn-b" data-act="delivery" ${g.canGoMarket(true) ? '' : 'disabled'}>🚚 ${t('morning.delivery')}</button>` : ''}
+        <button class="btn" data-act="skip" ${g.maxPitchersNow() >= 1 || g.D.cupsReady > 0 ? '' : 'disabled'}>🍳 ${t('morning.skip')}</button>
         <button class="btn btn-sm" data-act="rest">😴 ${t('morning.rest')}</button>
       </div>
     </div>`;
@@ -59,6 +61,7 @@ export const morningPanel: Panel = {
   act(g, ui, act, arg) {
     if (act === 'loc') g.chooseLocation(arg as LocationId);
     if (act === 'market') g.goMarket();
+    if (act === 'delivery') g.goMarket(true);
     if (act === 'skip') g.skipMarket();
     if (act === 'rest') ui.confirm(t('morning.restConfirm'), () => g.restDay());
   },

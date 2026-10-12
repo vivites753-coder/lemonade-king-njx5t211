@@ -38,6 +38,10 @@ export class Overlays {
       const cur = this.current;
       if (!cur) return;
       if (cur.kind === 'card') {
+        if (act === 'repair' && cur.card.repair) {
+          if (this.g.repair(cur.card.repair)) this.close();
+          return;
+        }
         if (act === 'ok') this.close();
         return;
       }
@@ -142,7 +146,10 @@ export class Overlays {
       <p>${esc(t(`card.${c.id}.text`, c.params))}</p>
       <div class="lesson">${lemiFace(true)}<div>${esc(t(`card.${c.id}.lemi`, c.params))}</div></div>
       <div class="modal-actions">
-        <button class="btn btn-y" data-act="ok">${t('btn.ok')}</button>
+        ${c.repair
+          ? `<button class="btn" data-act="ok">${t('card.later')}</button>
+             <button class="btn btn-g" data-act="repair" ${this.g.S.coins < this.g.repairCost(c.repair) ? 'disabled' : ''}>🔧 ${t('card.repair', { cost: this.g.repairCost(c.repair) })}</button>`
+          : `<button class="btn btn-y" data-act="ok">${t('btn.ok')}</button>`}
       </div>
     </div>`;
     this.modalEl.classList.remove('hidden');

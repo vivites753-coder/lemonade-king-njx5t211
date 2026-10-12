@@ -86,6 +86,14 @@ export function play(name: SfxName): void {
     case 'fanfare':
       [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, 'triangle', 0.1, i * 0.1));
       break;
+    case 'mix':
+      tone(180, 0.5, 'sawtooth', 0.03, 0, 260);
+      noise(0.45, 600, 0.05);
+      break;
+    case 'break':
+      tone(300, 0.12, 'square', 0.06, 0, 120);
+      noise(0.2, 300, 0.12);
+      break;
     case 'buy':
       tone(660, 0.1, 'triangle', 0.1);
       tone(990, 0.18, 'triangle', 0.1, 0.09);

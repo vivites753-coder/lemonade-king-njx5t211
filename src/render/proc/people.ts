@@ -24,6 +24,8 @@ export interface PersonOpts {
   bag?: boolean;
   dizzy?: boolean;
   t?: number;
+  /** Apron / cap colour for the player and the helper. */
+  apron?: string;
 }
 
 /**
@@ -104,7 +106,7 @@ export function drawPerson(ctx: Ctx, sx: number, sy: number, o: PersonOpts): num
   }
   // player apron
   if (o.kind === 'player' && o.facingCam) {
-    rrect(ctx, sx - torsoW / 2 + 2.5 * s, top + 3.5 * s, torsoW - 5 * s, torsoH - 1 * s, 3 * s, '#ffd43b');
+    rrect(ctx, sx - torsoW / 2 + 2.5 * s, top + 3.5 * s, torsoW - 5 * s, torsoH - 1 * s, 3 * s, o.apron ?? '#ffd43b');
     circle(ctx, sx, top + torsoH * 0.55, 2.2 * s, '#fab005');
   }
   // tourist camera
@@ -203,7 +205,7 @@ export function drawPerson(ctx: Ctx, sx: number, sy: number, o: PersonOpts): num
     headTop -= 4 * s;
   }
   if (o.kind === 'player') {
-    ellipse(ctx, hx, hy - headR + 1 * s, headR + 1 * s, 3 * s, '#ffd43b');
+    ellipse(ctx, hx, hy - headR + 1 * s, headR + 1 * s, 3 * s, o.apron ?? '#ffd43b');
     ellipse(ctx, hx + dir * (headR - 1 * s), hy - headR + 3 * s, 5 * s, 2 * s, '#fab005');
   }
 

@@ -1,6 +1,6 @@
 // UI controller: picks the panel for each phase, routes clicks/taps/keys, keeps the camera clear of panels.
 import { play, setSoundEnabled } from '../audio/sfx';
-import { clearSave, parseSave, readSave, serializeSave, writeSave } from '../core/save';
+import { activeProfile, clearSave, createProfile, deleteProfile, listProfiles, parseSave, readSave, serializeSave, setActiveProfile, writeSave } from '../core/save';
 import type { AgeMode, Avatar, Lang, Phase } from '../core/types';
 import { setLang, t } from '../i18n';
 import type { Game } from '../sim/game';
@@ -8,6 +8,7 @@ import type { Renderer } from '../render/renderer';
 import { Hud } from './hud';
 import { confirmModal, gateModal, glossaryModal, infoModal, settingsModal, stageModal } from './modals';
 import { Overlays } from './overlays';
+import { kitchenPanel } from './panels/kitchen';
 import { marketPanel } from './panels/market';
 import { morningPanel } from './panels/morning';
 import { preparePanel } from './panels/prepare';
@@ -16,18 +17,23 @@ import { shopPanel } from './panels/shop';
 import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
 import { esc } from './dom';
+import { ResourceBar, stockModal } from './resources';
 
 const PANELS: Partial<Record<Phase, Panel>> = {
   title: titlePanel,
   morning: morningPanel,
   market: marketPanel,
+  kitchen: kitchenPanel,
   prepare: preparePanel,
   report: reportPanel,
   shop: shopPanel,
 };
 
 export class UI implements UIApi {
-  newSel: { avatar: Avatar; mode: AgeMode } = { avatar: 'boy', mode: 'pro' };
+  newSel: { avatar: Avatar; mode: AgeMode; name: string } = { avatar: 'boy', mode: 'pro', name: '' };
+  /** A profile chosen on the title screen that has no game yet. */
+  private reuseProfile: string | null = null;
+  private resources: ResourceBar;
   titleScreen: 'main' | 'new' = 'main';
   private panelEl: HTMLElement;
   private toastsEl: HTMLElement;
@@ -44,6 +50,14 @@ export class UI implements UIApi {
     this.toastsEl = document.getElementById('toasts')!;
     this.hud = new Hud(document.getElementById('hud')!, g, (a, arg) => this.hudAct(a, arg));
     this.overlays = new Overlays(g, document.getElementById('lemi')!, document.getElementById('modal')!, () => play('click'));
+    this.resources = new ResourceBar(document.getElementById('resources')!, g, () => {
+      play('click');
+      this.openStock();
+    });
+    this.panelEl.addEventListener('input', (e) => {
+      const el = e.target as HTMLInputElement;
+      if (el.id === 'new-name') this.newSel.name = el.value;
+    });
 
     this.panelEl.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
@@ -78,10 +92,42 @@ export class UI implements UIApi {
   }
 
   startNewGame(): void {
+    const name = this.newSel.name.trim() || `${t('prof.new')} ${listProfiles().length + 1}`;
+    if (this.reuseProfile) setActiveProfile(this.reuseProfile);
+    else createProfile(name, this.newSel.avatar);
+    this.reuseProfile = null;
     this.titleScreen = 'main';
     this.userPaused = false;
-    this.g.newGame({ ageMode: this.newSel.mode, avatar: this.newSel.avatar, lang: this.g.S.lang });
+    this.g.newGame({ ageMode: this.newSel.mode, avatar: this.newSel.avatar, lang: this.g.S.lang, name });
     this.applySettings();
+  }
+
+  /** Title screen: tap a player. Continues their game, or starts one if they have none yet. */
+  selectProfile(id: string): void {
+    setActiveProfile(id);
+    if (readSave()) {
+      this.continueGame();
+      return;
+    }
+    const p = activeProfile();
+    this.reuseProfile = id;
+    this.newSel.name = p?.name ?? '';
+    if (p) this.newSel.avatar = p.avatar;
+    this.titleScreen = 'new';
+    this.refresh();
+  }
+
+  deleteProfile(id: string): void {
+    const p = listProfiles().find((x) => x.id === id);
+    if (!p) return;
+    this.confirm(t('prof.deleteAsk', { name: p.name }), () => {
+      deleteProfile(id);
+      this.refresh();
+    });
+  }
+
+  openStock(): void {
+    this.overlays.modal(stockModal(this.g));
   }
 
   continueGame(): void {
@@ -172,12 +218,17 @@ export class UI implements UIApi {
     setLang(l);
     this.g.setLang(l);
     this.hud.build();
+    this.resources.build();
     this.refresh();
     this.overlays.refresh();
   }
 
   refresh(): void {
     if (!this.current) return;
+    if (this.current.update) {
+      this.current.update(this.panelEl, this.g, this);
+      return;
+    }
     const body = this.panelEl.querySelector('.panel-body');
     const scroll = body ? body.scrollTop : 0;
     this.panelEl.innerHTML = this.current.render(this.g, this);
@@ -191,11 +242,15 @@ export class UI implements UIApi {
   private onPhase(p: Phase): void {
     this.hud.setPhase(p);
     const panel = PANELS[p] ?? null;
+    this.current?.unmount?.();
     this.current = panel;
     if (panel) {
       this.panelEl.classList.remove('hidden');
-      this.panelEl.classList.toggle('center', !panel.dock);
-      this.panelEl.innerHTML = panel.render(this.g, this);
+      this.panelEl.classList.toggle('center', !panel.dock && !panel.wide);
+      this.panelEl.classList.toggle('wide', !!panel.wide);
+      this.panelEl.classList.toggle('title-mode', p === 'title');
+      if (panel.mount) panel.mount(this.panelEl, this.g, this);
+      else this.panelEl.innerHTML = panel.render(this.g, this);
     } else {
       this.panelEl.classList.add('hidden');
       this.panelEl.innerHTML = '';
@@ -220,14 +275,17 @@ export class UI implements UIApi {
       bottom = compact ? 28 : 110;
       if (w > 860) right = compact ? 180 : 252;
     }
+    // the stock panel on the left edge
+    const left = p === 'title' ? 0 : compact ? 52 : 74;
     this.r.compact = compact;
-    this.r.insets = { top, right, bottom, left: 0 };
+    this.r.insets = { top, right, bottom, left };
   }
 
   update(): void {
     const sell = this.g.phase === 'sell';
     this.g.paused = sell && (this.userPaused || this.overlays.active);
     this.hud.update(this.userPaused);
+    this.resources.update(this.g.phase);
   }
 
   private toTitle(): void {

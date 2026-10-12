@@ -1,6 +1,10 @@
+import { listProfiles } from '../../core/save';
 import type { AgeMode, Avatar } from '../../core/types';
 import { t } from '../../i18n';
+import { coin, esc } from '../dom';
 import type { Panel } from './types';
+
+const AVATAR_ICON: Record<Avatar, string> = { boy: '👦', girl: '👧' };
 
 export const titlePanel: Panel = {
   id: 'title',
@@ -12,38 +16,61 @@ export const titlePanel: Panel = {
         `<button class="choice${sel ? ' sel' : ''}" data-act="${act}"><span class="big">${big}</span><b>${label}</b>${desc ? `<small>${desc}</small>` : ''}</button>`;
       return `<div class="title-card">
         <h2>${t('newgame.title')}</h2>
-        <h3>${t('newgame.avatar')}</h3>
-        <div class="choice-grid">
-          ${choice('avatar:boy', s.avatar === 'boy', '👦', t('newgame.boy'))}
-          ${choice('avatar:girl', s.avatar === 'girl', '👧', t('newgame.girl'))}
-        </div>
-        <h3>${t('newgame.mode')}</h3>
-        <div class="choice-grid">
-          ${choice('mode:kid', s.mode === 'kid', '🧸', t('mode.kid'), t('mode.kid.desc'))}
-          ${choice('mode:pro', s.mode === 'pro', '💼', t('mode.pro'), t('mode.pro.desc'))}
+        <label class="name-label" for="new-name">${t('prof.name')}</label>
+        <input id="new-name" class="input-name" maxlength="20" autocomplete="off" placeholder="${esc(t('prof.namePh'))}" value="${esc(s.name)}" />
+        <div class="new-grid">
+          <div>
+            <h3>${t('newgame.avatar')}</h3>
+            <div class="choice-grid">
+              ${choice('avatar:boy', s.avatar === 'boy', '👦', t('newgame.boy'))}
+              ${choice('avatar:girl', s.avatar === 'girl', '👧', t('newgame.girl'))}
+            </div>
+          </div>
+          <div>
+            <h3>${t('newgame.mode')}</h3>
+            <div class="choice-grid">
+              ${choice('mode:kid', s.mode === 'kid', '🧸', t('mode.kid'), t('mode.kid.desc'))}
+              ${choice('mode:pro', s.mode === 'pro', '💼', t('mode.pro'), t('mode.pro.desc'))}
+            </div>
+          </div>
         </div>
         <button class="btn btn-g btn-big" data-act="start">▶ ${t('btn.start')}</button>
         <button class="btn btn-sm" data-act="back">← ${t('btn.back')}</button>
       </div>`;
     }
     const lang = g.S.lang;
+    const profiles = listProfiles();
+    const cards = profiles
+      .map(
+        (p) => `<div class="prof">
+          <button class="prof-main" data-act="profile:${p.id}">
+            <span class="prof-ico">${AVATAR_ICON[p.avatar] ?? '🙂'}</span>
+            <span class="grow"><b>${esc(p.name)}</b><small>${p.day ? `${t('prof.day', { n: p.day })} · ${coin(p.coins ?? 0)}` : t('prof.notStarted')}</small></span>
+            <span class="prof-go">▶</span>
+          </button>
+          <button class="prof-del" data-act="delete:${p.id}" aria-label="${esc(t('prof.delete'))}" title="${esc(t('prof.delete'))}">🗑️</button>
+        </div>`,
+      )
+      .join('');
     return `<div class="title-card">
       <div class="logo">👑🍋</div>
       <h1>${t('app.title')}</h1>
       <p>${t('app.subtitle')}</p>
-      ${ui.hasSave() ? `<button class="btn btn-g btn-big" data-act="continue">▶ ${t('btn.continue')}</button>` : ''}
-      <button class="btn ${ui.hasSave() ? 'btn-y' : 'btn-g btn-big'}" data-act="new">✨ ${t('btn.newGame')}</button>
+      ${profiles.length ? `<h3>${t('prof.who')}</h3><div class="profs">${cards}</div>` : ''}
+      <button class="btn ${profiles.length ? 'btn-y' : 'btn-g btn-big'}" data-act="new">✨ ${profiles.length ? t('prof.new') : t('btn.newGame')}</button>
       <button class="btn" data-act="settings">⚙️ ${t('btn.settings')}</button>
       <div class="lang-row">
         <button class="btn btn-sm ${lang === 'uk' ? 'btn-y' : ''}" data-act="lang:uk">Українська</button>
         <button class="btn btn-sm ${lang === 'en' ? 'btn-y' : ''}" data-act="lang:en">English</button>
       </div>
+      ${profiles.length ? `<p class="note">🔒 ${t('prof.local')}</p>` : ''}
     </div>`;
   },
   act(_g, ui, act, arg) {
     switch (act) {
       case 'new':
         ui.titleScreen = 'new';
+        ui.newSel.name = '';
         break;
       case 'back':
         ui.titleScreen = 'main';
@@ -55,11 +82,13 @@ export const titlePanel: Panel = {
         ui.newSel.mode = arg as AgeMode;
         break;
       case 'start':
-        if (ui.hasSave()) ui.confirm(t('newgame.overwrite'), () => ui.startNewGame());
-        else ui.startNewGame();
+        ui.startNewGame();
         break;
-      case 'continue':
-        ui.continueGame();
+      case 'profile':
+        ui.selectProfile(arg);
+        break;
+      case 'delete':
+        ui.deleteProfile(arg);
         break;
       case 'settings':
         ui.openSettings();

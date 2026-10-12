@@ -49,6 +49,7 @@ export const marketPanel: Panel = {
     return `<div class="panel">
       <div class="panel-head"><h2>🛒 ${t('market.title', { time: fmtHour(g.D.hour) })}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
+        ${g.D.delivery ? `<div class="good-box">${t('market.delivery')}</div>` : ''}
         <div class="note">${t('market.need', { l: lemonsPer, s: S.recipe.sugar })}</div>
         <button class="btn btn-b" data-act="kit" style="width:100%">${t('market.kit')}</button>
         ${rows}

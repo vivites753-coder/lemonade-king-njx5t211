@@ -1,7 +1,8 @@
-import type { UpgradeId } from '../../core/types';
-import { UPGRADES, UPGRADE_ORDER } from '../../data/upgrades';
+import type { EquipId, UpgradeId } from '../../core/types';
+import { UPGRADES, UPGRADE_CATS, UPGRADE_ORDER } from '../../data/upgrades';
 import { t } from '../../i18n';
 import { coin } from '../dom';
+import { equipmentRows } from '../resources';
 import { goalHtml } from './report';
 import type { Panel } from './types';
 
@@ -10,7 +11,7 @@ export const shopPanel: Panel = {
   dock: true,
   render(g) {
     const S = g.S;
-    const cards = UPGRADE_ORDER.map((id) => {
+    const card = (id: UpgradeId) => {
       const u = UPGRADES[id];
       const can = g.canBuy(id);
       const owned = !!S.upgrades[id];
@@ -23,6 +24,10 @@ export const shopPanel: Panel = {
         <div><b>${t(`up.${id}.name`)}</b><small>${t(`up.${id}.desc`)}</small><span class="idea">💡 ${t(`up.${id}.idea`)}</span></div>
         <div>${btn}</div>
       </div>`;
+    };
+    const groups = UPGRADE_CATS.map((cat) => {
+      const ids = UPGRADE_ORDER.filter((id) => UPGRADES[id].cat === cat);
+      return `<h3>${t(`shop.cat.${cat}`)}</h3><div class="ups">${ids.map(card).join('')}</div>`;
     }).join('');
     const hist = S.history.slice(-7);
     const maxAbs = Math.max(1, ...hist.map((h) => Math.abs(h.profit)));
@@ -36,8 +41,10 @@ export const shopPanel: Panel = {
     return `<div class="panel">
       <div class="panel-head"><h2>🏪 ${t('shop.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
+        <h3>🔧 ${t('shop.equipment')}</h3>
+        <div class="card">${equipmentRows(g, 'shop')}</div>
         <div class="note">💡 ${t('shop.invest')}</div>
-        <div class="ups">${cards}</div>
+        ${groups}
         ${chart}
         ${goalHtml(S.coins, S.rep)}
       </div>
@@ -48,6 +55,8 @@ export const shopPanel: Panel = {
   },
   act(g, _ui, act, arg) {
     if (act === 'buy') g.buyUpgrade(arg as UpgradeId);
+    if (act === 'maintain') g.maintain(arg as EquipId);
+    if (act === 'repair') g.repair(arg as EquipId);
     if (act === 'sleep') g.sleep();
   },
 };
