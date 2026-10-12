@@ -14,6 +14,7 @@ const ROWS: { key: string; icon: string; label: string }[] = [
   { key: 'water', icon: '💧', label: 'res.water' },
   { key: 'sugar', icon: '🍬', label: 'res.sugar' },
   { key: 'cups', icon: '🥤', label: 'res.cups' },
+  { key: 'cookies', icon: '🍪', label: 'res.cookies' },
   { key: 'ready', icon: '🥛', label: 'res.ready' },
   { key: 'cooler', icon: '🧊', label: 'res.cooler' },
   { key: 'make', icon: '🏺', label: 'res.canMake' },
@@ -77,6 +78,10 @@ export class ResourceBar {
     this.set('water', `${st.water}${plus(st.water, w.water)}`);
     this.set('sugar', `${st.sugar}${plus(st.sugar, w.sugar)}`);
     this.set('cups', `${st.cups}${plus(st.cups, w.cups)}`);
+    const cookies = st.cookies ?? 0;
+    const cookiesAfter = market ? cookies + g.cart.cookies * 10 : cookies;
+    this.set('cookies', `${cookies}${plus(cookies, cookiesAfter)}`);
+    this.show('cookies', cookiesAfter > 0 || g.cookiesOpen());
     const ready = g.D.cupsReady;
     this.set('ready', String(ready));
     this.show('ready', ready > 0 || phase === 'sell' || phase === 'prepare');
@@ -96,6 +101,7 @@ export class ResourceBar {
     this.tip('water', `💧 ${t('res.water')}: ${st.water}`);
     this.tip('sugar', `🍬 ${t('res.sugar')}: ${st.sugar}`);
     this.tip('cups', `🥤 ${t('res.cups')}: ${st.cups}`);
+    this.tip('cookies', `🍪 ${t('res.cookies')}: ${cookies} · ${t('res.cookiePrice', { n: g.S.cookiePrice })}`);
     this.tip('ready', `🥛 ${t('res.ready')}: ${ready}`);
     this.tip('cooler', `🧊 ${t(night ? 'res.coolerNight' : 'res.coolerTip', { n: cooled })}`);
     this.tip('make', `🏺 ${t('res.canMake')}: ${canMake}`);

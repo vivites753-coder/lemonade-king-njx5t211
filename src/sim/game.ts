@@ -6,7 +6,7 @@ import { RNG } from '../core/rng';
 import type { AgeMode, Avatar, EquipId, GoodId, Lang, LocationId, MixResult, Params, Phase, UpgradeId, WeatherId } from '../core/types';
 import { EQUIPMENT } from '../data/equipment';
 import { BAD_LEMONS_SHARE, LOC_EVENTS, type DayEventId } from '../data/events';
-import { GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
+import { COOKIES, COOKIE_TASTE, GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
 import { TIP_GLOSSARY } from '../data/glossary';
 import { LOCATIONS, LOCATION_IDS, locationUnlocked } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
@@ -86,7 +86,7 @@ export type GameEvents = {
   tip: { key: string };
   card: CardInfo;
   toast: { key: string; params?: Params; kind?: 'info' | 'warn' | 'good' };
-  sale: { x: number; y: number; amount: number; sat: number; free: boolean };
+  sale: { x: number; y: number; amount: number; sat: number; free: boolean; cookie?: boolean };
   sfx: { name: SfxName };
   thief: { state: 'appear' | 'hit' | 'caught' | 'stole' | 'locked'; amount?: number };
   changed: Record<string, never>;
@@ -105,7 +105,7 @@ export interface Snapshot {
 }
 
 export type Cart = Record<GoodId, number>;
-export const emptyCart = (): Cart => ({ lemon: 0, lemon_cheap: 0, water: 0, sugar: 0, cups: 0, cups_super: 0 });
+export const emptyCart = (): Cart => ({ lemon: 0, lemon_cheap: 0, water: 0, sugar: 0, cups: 0, cups_super: 0, cookies: 0 });
 export type KitchenItem = 'lemon' | 'water' | 'sugar';
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -418,6 +418,8 @@ export class Game {
   }
 
   goodAvailable(id: GoodId): boolean {
+    const minRep = GOODS[id].minRep;
+    if (minRep && this.S.bestRep < minRep - 1e-9) return false;
     if (id === 'cups') return !this.D.events.cupsSoldOut;
     if (GOODS[id].onlyWhenCupsSoldOut) return this.D.events.cupsSoldOut;
     return true;
@@ -984,7 +986,7 @@ export class Game {
       f.tooExpensive++;
       this.street.setEmote(p, '💸', 2.4);
       this.tip('expensive');
-    } else if (this.street.queue.length >= CONFIG.MAX_QUEUE) {
+    } else if (this.street.queue.length >= this.maxQueue()) {
       f.queueFull++;
       this.street.setEmote(p, '⏳', 2);
       this.tip('queue');
@@ -999,6 +1001,44 @@ export class Game {
     this.S.rep = clamp(this.S.rep + CONFIG.REP_ANGRY, 0, 5);
     this.street.leave(p, '😠');
     this.tip('queue');
+  }
+
+  /** Places in the queue (the TV with cartoons adds some). */
+  maxQueue(): number {
+    let n: number = CONFIG.MAX_QUEUE;
+    for (const id of Object.keys(this.active()) as UpgradeId[]) n += UPGRADES[id].queueBonus ?? 0;
+    return n;
+  }
+
+  setCookiePrice(p: number): void {
+    this.S.cookiePrice = clamp(Math.round(p), COOKIES.PRICE_MIN, COOKIES.PRICE_MAX);
+    this.changed();
+  }
+
+  /** Cookies can be bought at the market from this reputation. */
+  cookiesOpen(): boolean {
+    return this.goodAvailable('cookies');
+  }
+
+  /** A lemonade customer may also take a cookie, if there are cookies and the price suits them. */
+  private maybeSellCookie(p: Ped): void {
+    const S = this.S;
+    if ((S.stock.cookies ?? 0) <= 0) return;
+    const wallet = COOKIES.FAIR * (LOCATIONS[S.location].fairPrice / 10) * PED_TYPES[p.type].priceMult * this.rng.range(0.85, 1.35);
+    const want = this.rng.chance(COOKIES.ATTACH * (COOKIE_TASTE[p.type] ?? 1));
+    if (!want) return;
+    if (S.cookiePrice > wallet) {
+      this.tip('cookie_expensive');
+      return;
+    }
+    S.stock.cookies--;
+    S.coins += S.cookiePrice;
+    this.D.sales += S.cookiePrice;
+    this.D.cookieSales += S.cookiePrice;
+    this.D.cookiesSold++;
+    S.totals.earned += S.cookiePrice;
+    this.bus.emit('sale', { x: p.x, y: p.y, amount: S.cookiePrice, sat: 1, free: false, cookie: true });
+    this.tip('cookie_first');
   }
 
   /** Player taps to pour a cup for the first customer in line (the helper calls it too). */
@@ -1044,6 +1084,7 @@ export class Game {
     const emote = free ? '🎁' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
     this.street.serveDone(p, emote);
     this.bus.emit('sale', { x: p.x, y: p.y, amount: paid, sat, free });
+    this.maybeSellCookie(p);
     this.sfx('coin');
     this.tip('first_sale');
     if (free) this.tip('loyalty');
@@ -1214,6 +1255,8 @@ export class Game {
     const f = { ...D.funnel };
     const report: DayReport = {
       sales: D.sales,
+      cookieSales: D.cookieSales,
+      cookiesSold: D.cookiesSold,
       bonus: D.bonus,
       income,
       expenses,

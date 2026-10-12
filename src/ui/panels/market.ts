@@ -13,6 +13,7 @@ const UNIT: Record<GoodId, string> = {
   sugar: 'unit.pack',
   cups: 'unit.pack',
   cups_super: 'unit.pack',
+  cookies: 'unit.pack',
 };
 
 export const marketPanel: Panel = {
@@ -21,8 +22,9 @@ export const marketPanel: Panel = {
   render(g) {
     const S = g.S;
     const st = S.stock;
-    const have: Record<string, number> = { lemons: lemonsTotal(st), water: st.water, sugar: st.sugar, cups: st.cups };
-    const rows = GOOD_IDS.filter((id) => !GOODS[id].onlyWhenCupsSoldOut || g.goodAvailable(id))
+    const have: Record<string, number> = { lemons: lemonsTotal(st), water: st.water, sugar: st.sugar, cups: st.cups, cookies: st.cookies ?? 0 };
+    // goods for a higher reputation (cookies) appear once they are open
+    const rows = GOOD_IDS.filter((id) => (!GOODS[id].onlyWhenCupsSoldOut && !GOODS[id].minRep) || g.goodAvailable(id))
       .map((id) => {
         const gd = GOODS[id];
         const avail = g.goodAvailable(id);

@@ -1,6 +1,7 @@
 // "Reputation road": every reputation level and what it opens (places, upgrades, features).
 // Opens from the reputation chip in the top bar. Built from the game data, so it stays in sync.
 import { CONFIG } from '../core/config';
+import { GOODS } from '../data/goods';
 import { LOCATIONS, LOCATION_IDS } from '../data/locations';
 import { POINTS } from '../data/staff';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades';
@@ -26,6 +27,7 @@ function itemsFor(g: Game, level: number): Item[] {
     out.push({ icon: LOCATIONS[id].icon, name: t(`loc.${id}.name`), kind: 'place', note: LOCATIONS[id].rent ? t('loc.rent', { n: coin(LOCATIONS[id].rent) }) : t('loc.free') });
   }
   if (level === CONFIG.HELPER_MIN_REP) out.push({ icon: '🍳', name: t('roadmap.helper'), kind: 'feature', note: t('points.wage', { n: CONFIG.HELPER_WAGE }) });
+  if (level === (GOODS.cookies.minRep ?? 1)) out.push({ icon: '🍪', name: t('roadmap.cookies'), kind: 'feature', note: t('roadmap.cookiesNote', { n: GOODS.cookies.price }) });
   if (level === POINTS.MIN_REP) out.push({ icon: '🏪', name: t('roadmap.points'), kind: 'feature', note: t('roadmap.pointsNote', { n: POINTS.COST }) });
   for (const id of UPGRADE_ORDER) {
     const u = UPGRADES[id];

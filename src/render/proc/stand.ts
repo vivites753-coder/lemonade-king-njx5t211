@@ -338,6 +338,8 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (up.sign) drawSprite(ctx, 'stand_sign', call({ price: S.price }));
   if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
   if (up.mascot) drawSprite(ctx, 'stand_mascot', call());
+  if (up.tv) drawSprite(ctx, 'stand_tv', call({ on: !!br.tv }));
+  if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
   if (playing && g.isSoldOut()) soldOutPlate(ctx);
   // under a roof the umbrella and the tent stay folded
   const outdoor = !LOCATIONS[S.location].indoor;
@@ -357,4 +359,5 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (br.juicer_hand || br.juicer_lever) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
   if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75, SY - 0.9, 40);
   if (br.scooter) brokenMark(ctx, SX - 1.6, SY - 0.7, 44);
+  if (br.tv) brokenMark(ctx, SX + 2.6, SY - 0.8, 76);
 }

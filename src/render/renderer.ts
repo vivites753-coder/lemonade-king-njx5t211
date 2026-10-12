@@ -83,7 +83,7 @@ export class Renderer {
   ) {
     this.ctx = canvas.getContext('2d')!;
     onAssetsChanged(() => (this.ground = null));
-    game.bus.on('sale', (e) => this.floats.push({ x: e.x, y: e.y, text: `+${e.amount}`, color: '#2b8a3e', t: 0 }));
+    game.bus.on('sale', (e) => this.floats.push({ x: e.x, y: e.y - (e.cookie ? 0.35 : 0), text: `+${e.amount}${e.cookie ? ' 🍪' : ''}`, color: e.cookie ? '#a0612b' : '#2b8a3e', t: 0 }));
     game.bus.on('thief', (e) => {
       if (e.state === 'caught') this.floats.push({ x: CONFIG.STAND.x - 1, y: CONFIG.STAND.y + 0.8, text: `+${e.amount}`, color: '#2b8a3e', t: 0 });
       if (e.state === 'stole' && e.amount) this.floats.push({ x: CONFIG.STAND.x, y: CONFIG.STAND.y, text: `−${e.amount}`, color: '#e03131', t: 0 });

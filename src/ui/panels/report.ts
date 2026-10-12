@@ -55,7 +55,8 @@ export const reportPanel: Panel = {
           <div class="profit ${r.profit < 0 ? 'neg' : ''}"><small>${t('report.profit')}</small><b>${signedCoin(r.profit)}</b></div>
         </div>
         ${kid ? '' : `<div class="card">
-          <div class="kv"><span>🥤 ${t('report.sales')}</span><span>${coin(r.sales)}</span></div>
+          <div class="kv"><span>🥤 ${t('report.sales')}</span><span>${coin(r.sales - (r.cookieSales ?? 0))}</span></div>
+          ${r.cookieSales ? `<div class="kv"><span>🍪 ${t('report.cookies', { n: r.cookiesSold })}</span><span>${coin(r.cookieSales)}</span></div>` : ''}
           ${r.bonus ? `<div class="kv"><span>🎁 ${t('report.bonus')}</span><span>${coin(r.bonus)}</span></div>` : ''}
           ${pointsIncome ? `<div class="kv"><span>🏪 ${t('report.pointsIncome')}</span><span>${coin(pointsIncome)}</span></div>` : ''}
           ${expenseRows.filter(([, v]) => v > 0).map(([k, v]) => `<div class="kv"><span>${k}</span><span class="neg">${coin('−' + v, 'neg')}</span></div>`).join('')}

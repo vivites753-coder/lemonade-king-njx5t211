@@ -14,6 +14,7 @@ export interface Stock {
   /** Spoons. */
   sugar: number;
   cups: number;
+  cookies: number;
 }
 
 export interface Recipe {
@@ -58,6 +59,8 @@ export interface GameState {
   nextPointId: number;
   location: LocationId;
   price: number;
+  /** Price of one cookie (cookies are sold together with lemonade). */
+  cookiePrice: number;
   recipe: Recipe;
   speakerOn: boolean;
   seenTips: Record<string, true>;
@@ -118,6 +121,8 @@ export type PointReport = PointDay & { id: number; loc: LocationId; nameId: numb
 
 export interface DayReport {
   sales: number;
+  cookieSales: number;
+  cookiesSold: number;
   bonus: number;
   income: number;
   expenses: number;
@@ -165,6 +170,9 @@ export interface DayState {
   /** Today's goods come by delivery (pricier, no trip). */
   delivery: boolean;
   sales: number;
+  /** Part of `sales` that came from cookies. */
+  cookieSales: number;
+  cookiesSold: number;
   bonus: number;
   expenses: { ingredients: number; rent: number; flyers: number; stolen: number; wages: number; repairs: number; training: number };
   flyers: boolean;
@@ -218,7 +226,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     coins: CONFIG.START_COINS,
     rep: CONFIG.START_REP,
     bestRep: CONFIG.START_REP,
-    stock: { lemons: [], water: 0, sugar: 0, cups: 0 },
+    stock: { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0 },
     upgrades: {},
     condition: { mixer: 100 },
     broken: {},
@@ -227,6 +235,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     nextPointId: 1,
     location: 'yard',
     price: 8,
+    cookiePrice: 5,
     recipe: { lemons: CONFIG.IDEAL_LEMONS, sugar: CONFIG.IDEAL_SUGAR },
     speakerOn: true,
     seenTips: {},
@@ -253,6 +262,8 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     marketTrips: 0,
     delivery: false,
     sales: 0,
+    cookieSales: 0,
+    cookiesSold: 0,
     bonus: 0,
     expenses: { ingredients: 0, rent: 0, flyers: 0, stolen: 0, wages: 0, repairs: 0, training: 0 },
     flyers: false,
@@ -289,9 +300,10 @@ export function normalizeState(S: GameState, D: DayState): void {
   }
   if (S.condition.mixer === undefined) S.condition.mixer = 100;
   S.bestRep = Math.max(S.bestRep, S.rep);
+  S.stock.cookies ??= 0;
   for (const id of Object.keys(S.upgrades)) {
     const eq = id as keyof GameState['condition'];
-    if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'scooter', 'dispenser'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
+    if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'scooter', 'dispenser', 'tv'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
   }
   const day = newDayState(S, D.weather ?? 'sunny', D.forecast ?? 'sunny');
   for (const k of Object.keys(day) as (keyof DayState)[]) {

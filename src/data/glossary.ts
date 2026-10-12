@@ -22,6 +22,7 @@ export const GLOSSARY_IDS = [
   'branch',
   'fixed',
   'trust',
+  'upsell',
 ] as const;
 
 export type GlossaryId = (typeof GLOSSARY_IDS)[number];
@@ -50,4 +51,5 @@ export const TIP_GLOSSARY: Record<string, GlossaryId[]> = {
   delivery: ['time'],
   points: ['branch', 'fixed'],
   hire: ['salary', 'trust'],
+  cookie_first: ['upsell'],
 };

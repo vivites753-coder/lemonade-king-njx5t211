@@ -27,6 +27,7 @@ export const EQUIPMENT: Record<EquipId, EquipDef> = {
   bike: { id: 'bike', icon: '🚲', upgrade: 'bike', wear: [4, 9], repair: 20 },
   scooter: { id: 'scooter', icon: '🛵', upgrade: 'scooter', wear: [3, 7], repair: 90, weather: { rain: 1.5 } },
   dispenser: { id: 'dispenser', icon: '🚰', upgrade: 'dispenser', wear: [4, 7], repair: 50 },
+  tv: { id: 'tv', icon: '📺', upgrade: 'tv', wear: [3, 6], repair: 90, weather: { rain: 1.5 } },
 };
 
 export const EQUIP_IDS = Object.keys(EQUIPMENT) as EquipId[];

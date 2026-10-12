@@ -60,6 +60,15 @@ export const preparePanel: Panel = {
           ${profit < 0 ? `<div class="warn-box">${t('prep.loss')}</div>` : ''}
         </div>
 
+        ${
+          (S.stock.cookies ?? 0) > 0
+            ? `<h3>🍪 ${t('prep.cookies')}</h3>
+        <div class="card">
+          <div class="kv"><span>${t('prep.cookiesHave', { n: S.stock.cookies })}</span>${stepper('cprice', `<i class="coin"></i>${S.cookiePrice}`, S.cookiePrice > 1, S.cookiePrice < 20)}</div>
+          <small class="muted">${t('prep.cookiesNote', { cost: 2, fair: Math.round(5 * (loc.fairPrice / 10)) })}</small>
+        </div>`
+            : ''
+        }
         ${toggle('flyers', D.flyers, `📄 ${t('prep.flyers', { n: CONFIG.FLYERS_COST })}`, t('prep.flyersDesc'))}
         ${
           g.helperOpen()
@@ -83,6 +92,7 @@ export const preparePanel: Panel = {
   act(g, ui, act, arg) {
     const d = Number(arg) || 0;
     if (act === 'price') g.setPrice(g.S.price + d);
+    if (act === 'cprice') g.setCookiePrice(g.S.cookiePrice + d);
     if (act === 'flyers') g.setFlyers(!g.D.flyers);
     if (act === 'helper') g.setHelper(!g.D.helper);
     if (act === 'kitchen') g.goKitchen();

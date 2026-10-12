@@ -157,6 +157,55 @@ function scooter(ctx: Ctx): void {
   });
 }
 
+/** A TV with cartoons behind the queue: people wait longer. */
+function tv(ctx: Ctx, broken: boolean): void {
+  const x = SX + 2.3;
+  const y = SY - 0.85;
+  const [gx, gy] = P(x + 0.35, y + 0.1);
+  shadow(ctx, gx, gy, 16, 0.16);
+  // stand
+  box(ctx, x + 0.3, y + 0.02, 0.1, 0.1, 30, 0, '#495057');
+  box(ctx, x + 0.1, y - 0.05, 0.5, 0.25, 3, 0, '#343a40');
+  // the screen faces the queue
+  faceY(ctx, x, y + 0.08, 30, () => {
+    rrect(ctx, -2, -34, 28, 26, 4, '#212529');
+    if (broken) {
+      for (let i = 0; i < 18; i++) {
+        ctx.fillStyle = Math.random() < 0.5 ? '#ced4da' : '#868e96';
+        ctx.fillRect(1 + (i % 6) * 4, -31 + Math.floor(i / 6) * 6.5, 4, 6.5);
+      }
+      return;
+    }
+    ctx.fillStyle = '#74c0fc';
+    ctx.fillRect(1, -31, 22, 20);
+    ctx.fillStyle = '#69db7c';
+    ctx.fillRect(1, -16, 22, 5);
+    const tt = ENV.reduceMotion ? 0 : ENV.t;
+    // a cartoon: a bouncing ball and a running character
+    const bx = 4 + ((tt * 9) % 16);
+    circle(ctx, bx, -17 - Math.abs(Math.sin(tt * 5)) * 7, 2.4, '#ff6b6b');
+    circle(ctx, 20 - ((tt * 6) % 16), -21, 3, '#ffd43b');
+    circle(ctx, 20 - ((tt * 6) % 16) + 1, -22, 0.8, '#212529');
+  });
+  // antenna
+  const [ax, ay] = P(x + 0.3, y + 0.05, 64);
+  line(ctx, ax, ay, ax - 5, ay - 9, '#495057', 1.2);
+  line(ctx, ax, ay, ax + 5, ay - 9, '#495057', 1.2);
+}
+
+/** A plate of cookies on the table. */
+function cookiePlate(ctx: Ctx, n: number): void {
+  const [x, y] = P(SX + 0.7, SY + 0.05, TABLE_H);
+  ellipse(ctx, x, y, 9, 4, '#f8f9fa', '#ced4da', 1);
+  const k = Math.min(5, Math.ceil(n / 4));
+  for (let i = 0; i < k; i++) {
+    const cx = x - 5 + (i % 3) * 5;
+    const cy = y - 1 - Math.floor(i / 3) * 3;
+    ellipse(ctx, cx, cy, 3.6, 2, '#d9a066', '#a0612b', 0.8);
+    circle(ctx, cx - 1, cy - 0.3, 0.6, '#5c3d1e');
+  }
+}
+
 /** A red wrench bubble above broken equipment. */
 export function brokenMark(ctx: Ctx, x: number, y: number, z: number): void {
   const [bx, by] = P(x, y, z);
@@ -174,4 +223,6 @@ registerProcs({
   stand_tent: (ctx, c) => tent(ctx, !!(c as Call).on),
   stand_mascot: (ctx) => mascot(ctx),
   stand_scooter: (ctx) => scooter(ctx),
+  stand_tv: (ctx, c) => tv(ctx, !!(c as Call).on),
+  item_cookies: (ctx, c) => cookiePlate(ctx, (c as Call).level ?? 0),
 });

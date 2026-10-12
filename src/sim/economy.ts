@@ -69,7 +69,8 @@ export function stockValue(stock: Stock): number {
     lemonsTotal(stock) * UNIT_COST.lemons +
       stock.water * UNIT_COST.water +
       stock.sugar * UNIT_COST.sugar +
-      stock.cups * UNIT_COST.cups,
+      stock.cups * UNIT_COST.cups +
+      (stock.cookies ?? 0) * UNIT_COST.cookies,
   );
 }
 
