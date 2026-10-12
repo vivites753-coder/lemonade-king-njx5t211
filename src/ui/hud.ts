@@ -41,7 +41,7 @@ export class Hud {
         <span class="chip">🕐 <b data-el="clock"></b></span>
         <span class="chip" data-el="weather"></span>
         <span class="chip" data-el="loc"></span>
-        <span class="chip" data-el="rep"></span>
+        <button class="chip chip-btn" data-hud="roadmap" data-el="rep" aria-label="${t('roadmap.title')}" title="${t('roadmap.title')}"></button>
         <div class="hud-goal"><span data-el="goal"></span><div class="goal-bar"><i data-el="goalfill"></i></div></div>
         <span class="spacer"></span>
         <div class="seg" data-el="speed">

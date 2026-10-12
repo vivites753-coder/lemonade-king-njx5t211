@@ -85,7 +85,8 @@ export const reportPanel: Panel = {
         ${r.unlocked?.length ? `<div class="good-box">🔓 ${t('report.unlocked', { list: r.unlocked.map((id) => t(`loc.${id}.name`)).join(', ') })}</div>` : ''}
         ${r.broke?.length ? `<div class="warn-box">🔧 ${t('report.broke', { list: r.broke.map((id) => t(`equip.${id}`)).join(', ') })}</div>` : ''}
         ${r.spoilTomorrow ? `<div class="warn-box">⚠️ ${t('report.spoilTomorrow', { n: r.spoilTomorrow })}</div>` : ''}
-        <div class="card row"><span class="grow"><b>⭐ ${t('report.rep')}</b><br>${stars(r.repEnd)} ${r.repEnd.toFixed(1)}</span>
+        <div class="card row"><span class="grow"><b>⭐ ${t('report.rep')}</b><br>${stars(r.repEnd)} ${r.repEnd.toFixed(1)}
+          <button class="link-btn" data-act="roadmap">🗺️ ${t('roadmap.title')}</button></span>
           <b class="${r.repEnd >= r.repStart ? 'pos' : 'neg'}">${r.repEnd >= r.repStart ? '▲' : '▼'} ${Math.abs(r.repEnd - r.repStart).toFixed(2)}</b></div>
         ${r.stockValue ? `<div class="note">📦 ${t('report.stock', { n: r.stockValue })}</div>` : ''}
         ${goalHtml(g.S.coins, g.S.rep)}
@@ -95,7 +96,8 @@ export const reportPanel: Panel = {
       </div>
     </div>`;
   },
-  act(g, _ui, act) {
+  act(g, ui, act) {
     if (act === 'shop') g.openShop();
+    if (act === 'roadmap') ui.openRoadmap();
   },
 };

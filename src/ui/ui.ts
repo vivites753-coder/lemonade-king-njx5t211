@@ -17,7 +17,9 @@ import { shopPanel } from './panels/shop';
 import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
 import { esc } from './dom';
+import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointsModal, type PointsHooks } from './points';
+import { roadmapModal } from './roadmap';
 import { ResourceBar, stockModal } from './resources';
 
 const PANELS: Partial<Record<Phase, Panel>> = {
@@ -152,6 +154,37 @@ export class UI implements UIApi {
     this.overlays.modal(pointsModal(this.g, this.pointsHooks));
   }
 
+  openRoadmap(): void {
+    this.overlays.modal(roadmapModal(this.g));
+  }
+
+  /** Set by main.ts: shows the developer stats panel. */
+  debugPanel: () => void = () => undefined;
+
+  openDev(): void {
+    this.overlays.modal(
+      devModal(this.g, {
+        disable: () => {
+          setDevMode(false);
+          this.toast(t('dev.off'), 'info');
+        },
+        debugPanel: () => this.debugPanel(),
+        toast: (text) => this.toast(text, 'info'),
+      }),
+    );
+  }
+
+  /** A new version of the game was published: offer to reload. */
+  showUpdate(): void {
+    if (document.getElementById('update-bar')) return;
+    const bar = document.createElement('button');
+    bar.id = 'update-bar';
+    bar.className = 'update-bar';
+    bar.innerHTML = `🔄 ${esc(t('update.available'))} <b>${esc(t('update.reload'))}</b>`;
+    bar.addEventListener('click', () => location.reload());
+    document.getElementById('app')!.appendChild(bar);
+  }
+
   continueGame(): void {
     const snap = readSave();
     if (!snap) return;
@@ -181,6 +214,13 @@ export class UI implements UIApi {
         toTitle: () => this.toTitle(),
         exportSave: () => this.exportSave(),
         importSave: () => this.pickSaveFile(),
+        devMode: () => devModeOn(),
+        enableDev: () => {
+          setDevMode(true);
+          this.toast(t('dev.on'), 'good');
+          this.overlays.refresh();
+        },
+        openDev: () => this.openDev(),
       }),
     );
   }
@@ -370,6 +410,9 @@ export class UI implements UIApi {
         break;
       case 'points':
         this.openPoints();
+        break;
+      case 'roadmap':
+        this.openRoadmap();
         break;
       case 'sound':
         g.updateSettings({ sound: !g.S.settings.sound });

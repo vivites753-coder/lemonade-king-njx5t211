@@ -71,9 +71,15 @@ export interface SettingsHooks {
   toTitle(): void;
   exportSave(): void;
   importSave(): void;
+  devMode(): boolean;
+  enableDev(): void;
+  openDev(): void;
 }
 
 export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
+  // taps on "Entrepreneur" in a row (a pause longer than 2 s starts over)
+  let taps = 0;
+  let lastTap = 0;
   return {
     wide: true,
     render: () => {
@@ -106,7 +112,8 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
           ${inGame ? `<button class="btn btn-sm" data-act="title">🏠 ${t('settings.toTitle')}</button>` : ''}
           <button class="btn btn-sm btn-r" data-act="reset">🗑️ ${t('settings.reset')}</button>
         </div>
-        <p class="note">${t('settings.edition', { e: EDITION === 'full' ? 'Full' : 'Demo' })} · v0.1</p>
+        ${hooks.devMode() ? `<h3>🛠 ${t('dev.title')}</h3><button class="btn btn-sm btn-b" data-act="dev">🛠 ${t('dev.open')}</button>` : ''}
+        <p class="note">${t('settings.edition', { e: EDITION === 'full' ? 'Full' : 'Demo' })} · v0.4</p>
         <div class="modal-actions"><button class="btn btn-y" data-act="close">${t('btn.close')}</button></div>`;
     },
     act: (act, arg) => {
@@ -117,7 +124,20 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         hooks.apply();
       }
       if (act === 'lang') hooks.setLang(arg === 'en' ? 'en' : 'uk');
-      if (act === 'mode') g.setAgeMode(arg === 'kid' ? 'kid' : 'pro');
+      if (act === 'mode') {
+        g.setAgeMode(arg === 'kid' ? 'kid' : 'pro');
+        const now = Date.now();
+        taps = arg === 'pro' && now - lastTap < 2000 ? taps + 1 : arg === 'pro' ? 1 : 0;
+        lastTap = now;
+        if (taps >= 5 && !hooks.devMode()) {
+          taps = 0;
+          hooks.enableDev();
+        }
+      }
+      if (act === 'dev') {
+        queueMicrotask(() => hooks.openDev());
+        return true;
+      }
       // open the next dialog only after this one has closed
       if (act === 'full') {
         queueMicrotask(() => hooks.openGate(() => hooks.info(t('settings.full'), t('settings.fullSoon'))));

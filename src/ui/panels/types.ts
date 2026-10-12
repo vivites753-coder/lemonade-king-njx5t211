@@ -7,6 +7,7 @@ export interface UIApi {
   openSettings(): void;
   openGlossary(): void;
   openStock(): void;
+  openRoadmap(): void;
   startNewGame(): void;
   continueGame(): void;
   hasSave(): boolean;

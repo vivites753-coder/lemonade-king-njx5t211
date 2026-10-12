@@ -1532,6 +1532,24 @@ export class Game {
     this.changed();
   }
 
+  /** Developer mode: coins as a top-up (not income, so the day report still adds up). */
+  devGift(n: number): void {
+    n = Math.max(-this.S.coins, Math.round(n));
+    this.S.coins += n;
+    this.D.coinsStart += n;
+    this.save();
+    this.changed();
+  }
+
+  /** Developer mode: set the reputation (places and upgrades open with it). */
+  devSetRep(r: number): void {
+    this.S.rep = clamp(r, 0, 5);
+    this.S.bestRep = Math.max(this.S.bestRep, this.S.rep);
+    this.refreshInterest();
+    this.save();
+    this.changed();
+  }
+
   debugSetWeather(w: WeatherId): void {
     this.D.weather = w;
     this.D.forecast = w;
