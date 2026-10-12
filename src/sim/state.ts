@@ -38,6 +38,15 @@ export interface DayHistory {
 }
 
 /** Everything that survives between days. */
+export interface TruckLook {
+  /** Colour scheme (see TRUCK_SKINS). */
+  skin: number;
+  /** Logo (see TRUCK_LOGOS). */
+  logo: number;
+  /** Text on the neon sign; empty = the default name. */
+  text: string;
+}
+
 export interface GameState {
   v: 1;
   seed: number;
@@ -54,6 +63,8 @@ export interface GameState {
   broken: Partial<Record<EquipId, true>>;
   /** Cups of lemonade kept in the cooler overnight. */
   carryCups: number;
+  /** How the food truck looks (chosen by the player). */
+  truck: TruckLook;
   /** Extra stands at other places, run by sellers. */
   points: Point[];
   nextPointId: number;
@@ -176,7 +187,10 @@ export interface DayState {
   bonus: number;
   expenses: { ingredients: number; rent: number; flyers: number; stolen: number; wages: number; repairs: number; training: number };
   flyers: boolean;
+  /** At least one helper today (kept for older saves and simple checks). */
   helper: boolean;
+  /** Helpers hired today: 0, 1 or 2 (two need a stand with two counters). */
+  helpers: number;
   /** The stand was open today (equipment wears out). */
   opened: boolean;
   kitchen: KitchenState;
@@ -231,6 +245,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     condition: { mixer: 100 },
     broken: {},
     carryCups: 0,
+    truck: { skin: 0, logo: 0, text: '' },
     points: [],
     nextPointId: 1,
     location: 'yard',
@@ -268,6 +283,7 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     expenses: { ingredients: 0, rent: 0, flyers: 0, stolen: 0, wages: 0, repairs: 0, training: 0 },
     flyers: false,
     helper: false,
+    helpers: 0,
     opened: false,
     kitchen: emptyKitchen(),
     kitchenJugs: 0,
@@ -312,6 +328,8 @@ export function normalizeState(S: GameState, D: DayState): void {
   D.expenses = { ...day.expenses, ...D.expenses };
   D.kitchen = { ...emptyKitchen(), ...D.kitchen };
   D.events = { ...emptyEvents(), ...D.events };
+  S.truck = Object.assign({ skin: 0, logo: 0, text: '' }, S.truck);
+  if (D.helpers === undefined || (D.helper && !D.helpers)) D.helpers = D.helper ? 1 : 0;
 }
 
 export function lemonsTotal(stock: Stock): number {

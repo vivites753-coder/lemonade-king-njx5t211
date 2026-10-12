@@ -10,6 +10,7 @@ import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter } from './people';
 import { brokenMark } from './standExtras';
+import { type TruckWorker } from './truck';
 
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
@@ -273,6 +274,48 @@ registerProcs({
   item_lemon_pile: (ctx, c) => lemonPile(ctx, (c as StandCall).lemons ?? 0),
 });
 
+/** The second counter of the big stand: a table section to the left with its own pitcher and cups. */
+function table2(ctx: Ctx, level: number): void {
+  const x0 = SX - 2.0;
+  const y0 = SY - 0.45;
+  box(ctx, x0, y0, 1.2, 0.9, TABLE_H, 0, '#fffaf0', { top: '#fff4cc' });
+  faceY(ctx, x0, y0 + 0.9, 0, () => {
+    for (let i = 0; i < 6; i++) if (i % 2 === 0) {
+      ctx.fillStyle = '#74c0fc';
+      ctx.fillRect(i * 6.4, -TABLE_H, 6.4, TABLE_H);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    ctx.fillRect(0, -3, 38.4, 3);
+  });
+  // a pitcher and cups for the second queue
+  const px = SX - 1.6;
+  const py = SY - 0.15;
+  const liquid = Math.max(0, Math.min(1, level));
+  if (liquid > 0) box(ctx, px + 0.02, py + 0.02, 0.2, 0.2, 18 * liquid, TABLE_H + 1, '#fcc419', { top: '#ffe066', left: '#fcc419', right: '#f2b705' });
+  box(ctx, px, py, 0.24, 0.24, 22, TABLE_H, '#d0ebff', { top: 'rgba(208,235,255,0.15)', left: 'rgba(208,235,255,0.22)', right: 'rgba(165,216,255,0.28)', stroke: 'rgba(116,192,252,0.9)' });
+  const [cx, cy] = P(SX - 1.15, SY + 0.12, TABLE_H);
+  for (let i = 0; i < 3; i++) rrect(ctx, cx - 4, cy - 3 - i * 3, 8, 3, 1, i === 2 ? '#ffffff' : '#f1f3f5', '#ced4da', 0.6);
+}
+
+/** Draws something moved by (dx, dy) tiles: equipment makes room for a wide stand. */
+function shifted(ctx: Ctx, on: boolean, dx: number, dy: number, draw: () => void): void {
+  if (!on) {
+    draw();
+    return;
+  }
+  const [ox, oy] = P(dx, dy);
+  ctx.save();
+  ctx.translate(ox, oy);
+  draw();
+  ctx.restore();
+}
+
+/** Where people stand at a stand with two counters (0: right counter, 1: left counter, back: the player when two helpers work). */
+const SPOTS = {
+  single: { player: [SX - 0.1, SY - 0.85], helper: [SX + 0.62, SY - 0.8] },
+  wide: { c0: [SX - 0.1, SY - 0.85], c1: [SX - 1.35, SY - 0.85], back: [SX - 0.75, SY - 1.5] },
+};
+
 /** Draws the whole stand for the current game state, back to front. */
 export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const S = g.S;
@@ -280,69 +323,92 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const [sx, sy] = P(SX, SY);
   const call = (extra: Partial<StandCall> = {}): StandCall => ({ x: SX, y: SY, sx, sy, s: 1, ...extra });
   const br = S.broken;
-  // the fastest vehicle is parked at the stand
-  if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
-  else if (up.bike) drawSprite(ctx, 'stand_bike', call());
-  if (up.toolkit) drawSprite(ctx, 'stand_toolkit', call());
-  if (up.cooler) drawSprite(ctx, 'stand_cooler', call());
-  drawSprite(ctx, 'stand_chair', call());
-
-  // the player stands behind the table, the helper (if hired) next to them
-  const making = playing && !!g.making;
-  const serving = playing && !!g.serving;
-  if (playing && g.D.helper) {
-    const hx = SX + 0.62;
-    const hy = SY - 0.8;
-    const [hpx, hpy] = P(hx, hy);
-    drawCharacter(ctx, 'char_helper_front', hx, hy, hpx, hpy, {
-      kind: 'player',
-      look: { ...playerLook(S.avatar === 'boy' ? 'girl' : 'boy'), shirt: '#51cf66', hair: '#3b2a20' },
-      scale: 0.95,
-      moving: false,
-      anim: 0,
-      facingCam: true,
-      dirX: 1,
-      serving,
-      apron: '#69db7c',
-      t: ENV.t,
-    });
-  }
-  const px = SX - 0.1;
-  const py = SY - 0.85;
-  const [ppx, ppy] = P(px, py);
-  drawCharacter(ctx, `char_player_${S.avatar}_front`, px, py, ppx, ppy, {
-    kind: 'player',
-    look: playerLook(S.avatar),
-    scale: 1,
-    moving: false,
-    anim: 0,
-    facingCam: true,
-    dirX: 1,
-    serving: serving && !g.D.helper,
-    juicing: making && !ENV.reduceMotion,
-    t: ENV.t,
+  const wide = g.counters() >= 2;
+  const isTruck = !!g.active().truck;
+  // the fastest vehicle is parked at the stand; boxes and vehicles make room for a wide stand
+  shifted(ctx, wide, -0.95, 0, () => {
+    if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
+    else if (up.bike) drawSprite(ctx, 'stand_bike', call());
+  });
+  shifted(ctx, wide, -0.35, -1.0, () => {
+    if (up.toolkit) drawSprite(ctx, 'stand_toolkit', call());
+    if (up.cooler) drawSprite(ctx, 'stand_cooler', call());
   });
 
-  drawSprite(ctx, 'stand_table', call());
-  if (up.banner) drawSprite(ctx, 'stand_banner', call());
-  const lemons = lemonsTotal(S.stock);
-  drawSprite(ctx, 'item_lemon_pile', call({ lemons: playing ? Math.max(lemons, 3) : lemons }));
+  const making = playing && !!g.making;
+  const helpers = playing ? g.D.helpers : 0;
+  const pouring = (c: number) => playing && !!g.servings[c];
   const level = playing ? g.D.cupsReady / CONFIG.CUPS_PER_PITCHER : 0.6;
-  drawSprite(ctx, up.dispenser ? 'stand_dispenser' : 'item_pitcher', call({ level: Math.min(1, level) }));
-  drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
-  if (up.cash_lock) drawSprite(ctx, 'stand_cashbox', call());
-  else coinJar(ctx, playing ? g.D.sales : 0);
-  if (up.juicer_lever) drawSprite(ctx, 'stand_juicer_lever', call());
-  else if (up.juicer_hand) drawSprite(ctx, 'stand_juicer_hand', call());
-  if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
-  if (up.sign) drawSprite(ctx, 'stand_sign', call({ price: S.price }));
-  if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
+
+  if (isTruck) {
+    // who stands at which window: helpers take their counters, the player the rest
+    const girl = S.avatar === 'girl';
+    const workers: TruckWorker[] = [];
+    if (helpers >= 2) {
+      workers.push({ kind: 'helper', slot: 0, serving: pouring(0), girl: !girl });
+      workers.push({ kind: 'helper', slot: 1, serving: pouring(1), girl });
+      workers.push({ kind: 'player', slot: 2, serving: false, girl });
+    } else {
+      workers.push({ kind: 'player', slot: 0, serving: pouring(0) || making, girl });
+      if (helpers === 1) workers.push({ kind: 'helper', slot: 1, serving: pouring(1), girl: !girl });
+    }
+    const label = S.truck.text.trim() || t('world.truckDefault');
+    drawSprite(ctx, 'stand_truck', call({ skin: S.truck.skin, logo: S.truck.logo, label, level: Math.min(1, level), workers }));
+  } else {
+    drawSprite(ctx, 'stand_chair', call());
+    const people: { id: string; kind: 'player' | 'helper'; x: number; y: number; serving: boolean; juicing: boolean }[] = [];
+    if (!wide) {
+      if (helpers > 0) people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
+      people.push({ id: `char_player_${S.avatar}_front`, kind: 'player', x: SPOTS.single.player[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });
+    } else if (helpers >= 2) {
+      people.push({ id: `char_player_${S.avatar}_front`, kind: 'player', x: SPOTS.wide.back[0], y: SPOTS.wide.back[1], serving: false, juicing: making });
+      people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
+      people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0), juicing: false });
+    } else {
+      if (helpers === 1) people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
+      people.push({ id: `char_player_${S.avatar}_front`, kind: 'player', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0) || (helpers === 0 && pouring(1)), juicing: making });
+    }
+    for (const p of people) {
+      const [px, py] = P(p.x, p.y);
+      const helperLook = { ...playerLook(S.avatar === 'boy' ? 'girl' : 'boy'), shirt: '#51cf66', hair: '#3b2a20' };
+      drawCharacter(ctx, p.id, p.x, p.y, px, py, {
+        kind: 'player',
+        look: p.kind === 'helper' ? helperLook : playerLook(S.avatar),
+        scale: p.kind === 'helper' ? 0.95 : 1,
+        moving: false,
+        anim: 0,
+        facingCam: true,
+        dirX: 1,
+        serving: p.serving,
+        juicing: p.juicing && !ENV.reduceMotion,
+        apron: p.kind === 'helper' ? '#69db7c' : undefined,
+        t: ENV.t,
+      });
+    }
+
+    if (wide) table2(ctx, level);
+    drawSprite(ctx, 'stand_table', call());
+    if (up.banner) drawSprite(ctx, 'stand_banner', call());
+    const lemons = lemonsTotal(S.stock);
+    drawSprite(ctx, 'item_lemon_pile', call({ lemons: playing ? Math.max(lemons, 3) : lemons }));
+    drawSprite(ctx, up.dispenser ? 'stand_dispenser' : 'item_pitcher', call({ level: Math.min(1, level) }));
+    drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
+    if (up.cash_lock) drawSprite(ctx, 'stand_cashbox', call());
+    else coinJar(ctx, playing ? g.D.sales : 0);
+    if (up.juicer_lever) drawSprite(ctx, 'stand_juicer_lever', call());
+    else if (up.juicer_hand) drawSprite(ctx, 'stand_juicer_hand', call());
+    if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
+    if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
+  }
+  // the price sign stands at the side when the second queue needs the space in front
+  if (up.sign) shifted(ctx, wide, -1.2, -0.45, () => drawSprite(ctx, 'stand_sign', call({ price: S.price })));
+  // next to the truck the speaker moves off the bar stools
+  if (up.speaker) shifted(ctx, isTruck, 0.75, 0.55, () => drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker })));
   if (up.mascot) drawSprite(ctx, 'stand_mascot', call());
   if (up.tv) drawSprite(ctx, 'stand_tv', call({ on: !!br.tv }));
-  if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
-  if (playing && g.isSoldOut()) soldOutPlate(ctx);
-  // under a roof the umbrella and the tent stay folded
-  const outdoor = !LOCATIONS[S.location].indoor;
+  if (playing && g.isSoldOut() && !isTruck) soldOutPlate(ctx);
+  // under a roof the umbrella and the tent stay folded; the truck has its own awning
+  const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
   if (up.tent && outdoor) drawSprite(ctx, 'stand_tent', call({ on: !!br.tent }));
   else if (up.umbrella && outdoor) {
     ctx.save();
@@ -352,12 +418,13 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   }
 
   // broken equipment gets a wrench bubble
-  if (br.speaker) brokenMark(ctx, SX + 1.23, SY - 0.42, 44);
+  if (br.speaker) brokenMark(ctx, SX + 1.23 + (isTruck ? 0.75 : 0), SY - 0.42 + (isTruck ? 0.55 : 0), 44);
   if (br.umbrella && !up.tent && outdoor) brokenMark(ctx, SX + 0.15, SY - 0.25, 108);
   if (br.tent && outdoor) brokenMark(ctx, SX, SY - 0.35, 128);
-  if (br.dispenser) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
-  if (br.juicer_hand || br.juicer_lever) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
-  if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75, SY - 0.9, 40);
-  if (br.scooter) brokenMark(ctx, SX - 1.6, SY - 0.7, 44);
+  if (br.dispenser && !isTruck) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
+  if ((br.juicer_hand || br.juicer_lever) && !isTruck) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
+  const vx = wide ? -0.95 : 0;
+  if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75 + vx, SY - 0.9, 40);
+  if (br.scooter) brokenMark(ctx, SX - 1.6 + vx, SY - 0.7, 44);
   if (br.tv) brokenMark(ctx, SX + 2.6, SY - 0.8, 76);
 }

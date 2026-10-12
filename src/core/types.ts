@@ -20,7 +20,9 @@ export type UpgradeId =
   | 'mixer_pro'
   | 'delivery'
   | 'scooter'
-  | 'tv';
+  | 'tv'
+  | 'big_stand'
+  | 'truck';
 /** Equipment that wears out and can break. The mixer is owned from the start. */
 export type EquipId = 'mixer' | 'umbrella' | 'tent' | 'juicer_hand' | 'juicer_lever' | 'speaker' | 'bike' | 'scooter' | 'dispenser' | 'tv';
 export type GoodId = 'lemon' | 'lemon_cheap' | 'water' | 'sugar' | 'cups' | 'cups_super' | 'cookies';

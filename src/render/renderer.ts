@@ -15,6 +15,7 @@ import { drawCharacter, drawCup } from './proc/people';
 import { drawCar } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawStand } from './proc/stand';
+import './proc/truck';
 import './proc/buildings';
 
 /** World-pixel area the camera keeps in view (the compact one crops building tops on phones). */
@@ -343,9 +344,11 @@ export class Renderer {
   /** Progress of pouring a cup / making a pitcher. */
   private drawWorkIndicators(ctx: Ctx): void {
     const g = this.game;
-    if (g.serving) {
-      const k = Math.min(1, g.serving.t / g.serving.dur);
-      const spot = queueSpot(0);
+    for (let c = 0; c < g.servings.length; c++) {
+      const s = g.servings[c];
+      if (!s) continue;
+      const k = Math.min(1, s.t / s.dur);
+      const spot = queueSpot(0, c);
       const [sx, sy] = P(spot.x, spot.y, 78);
       circle(ctx, sx, sy, 13, 'rgba(255,255,255,0.95)');
       ctx.beginPath();

@@ -71,10 +71,14 @@ export const preparePanel: Panel = {
         }
         ${toggle('flyers', D.flyers, `📄 ${t('prep.flyers', { n: CONFIG.FLYERS_COST })}`, t('prep.flyersDesc'))}
         ${
-          g.helperOpen()
-            ? toggle('helper', D.helper, `🍳 ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t('prep.helperDesc'))
-            : `<div class="note">🔒 🍳 ${t('prep.helperLocked', { n: CONFIG.HELPER_MIN_REP })}</div>`
+          g.helperCap() >= 2
+            ? `<div class="card"><div class="kv"><span>🍳 ${t('prep.helpers', { n: CONFIG.HELPER_WAGE })}</span>${stepper('helpers', String(D.helpers), D.helpers > 0, D.helpers < 2)}</div>
+          <small class="muted">${t('prep.helpersDesc')}</small></div>`
+            : g.helperOpen()
+              ? toggle('helper', D.helper, `🍳 ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t(g.counters() >= 2 ? 'prep.helperDesc2' : 'prep.helperDesc'))
+              : `<div class="note">🔒 🍳 ${t('prep.helperLocked', { n: CONFIG.HELPER_MIN_REP })}</div>`
         }
+        ${g.counters() >= 2 && g.helperCap() < 2 && g.helperOpen() ? `<div class="note">🔒 ${t('prep.helper2Locked', { n: CONFIG.HELPER2_MIN_REP })}</div>` : ''}
 
         <h3>📍 ${t(`loc.${S.location}.name`)}</h3>
         <div class="good-box">🕐 ${t('prep.open', { a: fmtHour(g.openingHour(false)), b: fmtHour(CONFIG.DAY_END) })}${loc.rent ? ` · ${t('prep.rent', { n: coin(loc.rent) })}` : ''}</div>
@@ -95,6 +99,7 @@ export const preparePanel: Panel = {
     if (act === 'cprice') g.setCookiePrice(g.S.cookiePrice + d);
     if (act === 'flyers') g.setFlyers(!g.D.flyers);
     if (act === 'helper') g.setHelper(!g.D.helper);
+    if (act === 'helpers') g.setHelpers(g.D.helpers + d);
     if (act === 'kitchen') g.goKitchen();
     if (act === 'place') {
       pickPlace = !pickPlace;

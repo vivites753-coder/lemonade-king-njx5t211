@@ -148,14 +148,18 @@ export class Hud {
     this.set('price', String(S.price));
     this.show('speaker', !!S.upgrades.speaker);
     this.set('speaker', `${S.speakerOn ? '🔊' : '🔇'}<span class="lbl"> ${t('hud.speaker')}: ${S.speakerOn ? t('hud.on') : t('hud.off')}</span>`);
-    const front = g.street.frontReady();
+    // the player can pour at any counter with a customer in front and nobody pouring there
+    const counters = [...Array(g.counters()).keys()];
+    const front = counters.some((c) => !!g.street.frontReady(c));
+    const free = counters.some((c) => !!g.street.frontReady(c) && !g.servings[c]);
     const serveBtn = this.els.serve as HTMLButtonElement;
-    const canServe = !!front && !g.serving && !g.making && D.cupsReady > 0;
+    const canServe = free && !g.making && D.cupsReady > 0;
     serveBtn.disabled = !front || !!g.making;
     serveBtn.classList.toggle('ready', canServe);
-    // the ring follows the real pouring time (the dispenser and the helper make it shorter)
-    serveBtn.style.setProperty('--p', g.serving ? String(Math.min(1, g.serving.t / g.serving.dur)) : '0');
-    this.set('cups', g.isSoldOut() ? `🚫 ${t('hud.soldOut')}` : `🥛<span class="lbl"> ${t('hud.cups')}:</span> <b>${D.cupsReady}</b> · 👥 ${g.street.queue.length}`);
+    // the ring shows the player's own pour (helpers' pours have their own rings over the stand)
+    const mine = g.servings.find((x) => x && !x.helper) ?? null;
+    serveBtn.style.setProperty('--p', mine ? String(Math.min(1, mine.t / mine.dur)) : '0');
+    this.set('cups', g.isSoldOut() ? `🚫 ${t('hud.soldOut')}` : `🥛<span class="lbl"> ${t('hud.cups')}:</span> <b>${D.cupsReady}</b> · 👥 ${g.street.queued}`);
     const canMake = g.canMakePitcher();
     this.show('make', canMake || !!g.making);
     const makeBtn = this.els.make as HTMLButtonElement;

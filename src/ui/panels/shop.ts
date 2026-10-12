@@ -42,6 +42,7 @@ export const shopPanel: Panel = {
     return `<div class="panel">
       <div class="panel-head"><h2>🏪 ${t('shop.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
+        ${S.upgrades.truck ? `<button class="btn btn-b" data-act="truck" style="width:100%">🎨 ${t('truck.customize')}</button>` : ''}
         <h3>🔧 ${t('shop.equipment')}</h3>
         <div class="card">${equipmentRows(g, 'shop')}</div>
         <div class="note">💡 ${t('shop.invest')}</div>
@@ -54,8 +55,12 @@ export const shopPanel: Panel = {
       </div>
     </div>`;
   },
-  act(g, _ui, act, arg) {
-    if (act === 'buy') g.buyUpgrade(arg as UpgradeId);
+  act(g, ui, act, arg) {
+    if (act === 'buy') {
+      g.buyUpgrade(arg as UpgradeId);
+      if (arg === 'truck' && g.S.upgrades.truck) ui.openTruck();
+    }
+    if (act === 'truck') ui.openTruck();
     if (act === 'maintain') g.maintain(arg as EquipId);
     if (act === 'repair') g.repair(arg as EquipId);
     if (act === 'sleep') g.sleep();

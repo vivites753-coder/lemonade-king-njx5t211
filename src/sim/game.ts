@@ -40,10 +40,12 @@ import {
   type DayReport,
   type DayState,
   type PointReport,
+  type TruckLook,
   type GameState,
   type Recipe,
 } from './state';
 import { POINTS, type WorkerIssue } from '../data/staff';
+import { TRUCK_LOGOS, TRUCK_SKINS, TRUCK_TEXT_MAX } from '../data/truck';
 import {
   candidates,
   freePlaces,
@@ -95,6 +97,14 @@ export type GameEvents = {
   kitchen: { open: boolean };
 };
 
+export interface Serving {
+  ped: Ped;
+  t: number;
+  dur: number;
+  /** Poured by a helper (faster), not by the player. */
+  helper: boolean;
+}
+
 export interface Snapshot {
   v: 1;
   S: GameState;
@@ -123,7 +133,8 @@ export class Game {
   readonly street: Street;
   speed = 1;
   paused = false;
-  serving: { ped: Ped; t: number; dur: number } | null = null;
+  /** Cups being poured, one slot per counter. */
+  servings: (Serving | null)[] = [null, null];
   /** Lemonade being made at the stand: `jugs` pitchers are ready when the time is up. */
   making: { t: number; dur: number; jugs: number } | null = null;
   /** The kitchen mini-game is open in the middle of the selling day (the world waits). */
@@ -131,8 +142,22 @@ export class Game {
   cart: Cart = emptyCart();
   interest: ReturnType<typeof interestChance>;
   radius: number = CONFIG.BASE_RADIUS;
-  /** Real seconds the helper has been idle with a customer waiting. */
-  private helperIdle = 0;
+  /** Real seconds each counter's helper has waited with a customer in front. */
+  private helperIdle = [0, 0];
+
+  /** The first counter's pour (the player's usual counter). */
+  get serving(): Serving | null {
+    return this.servings[0];
+  }
+
+  set serving(v: Serving | null) {
+    this.servings[0] = v;
+  }
+
+  /** Is anybody pouring a cup right now? */
+  busy(): boolean {
+    return this.servings.some((s) => s !== null);
+  }
 
   constructor(seed = 1) {
     this.rng = new RNG(seed);
@@ -161,7 +186,7 @@ export class Game {
         for (const id of Object.keys(this.active()) as UpgradeId[]) m = Math.max(m, UPGRADES[id].patience ?? 1);
         return m;
       },
-      servingPed: () => this.serving?.ped ?? null,
+      isServed: (p) => this.servings.some((s) => s?.ped === p),
       onSpawnCounted: () => {
         this.D.funnel.passed++;
       },
@@ -200,7 +225,7 @@ export class Game {
     this.D = clone(snap.D);
     normalizeState(this.S, this.D);
     this.setRng(this.S.seed, snap.rng);
-    this.serving = null;
+    this.servings = [null, null];
     this.making = null;
     this.midKitchen = false;
     this.paused = false;
@@ -286,7 +311,7 @@ export class Game {
     rollDayEvents(this);
     // the player cannot stand where a seller of theirs works
     if (this.S.day === 1 || pointAt(this.S, this.S.location)) this.S.location = 'yard';
-    this.serving = null;
+    this.servings = [null, null];
     this.making = null;
     this.paused = false;
     this.speed = 1;
@@ -784,15 +809,41 @@ export class Game {
     return this.S.bestRep >= CONFIG.HELPER_MIN_REP - 1e-9;
   }
 
+  /** How many helpers can work today: one from reputation 2, two at a stand with two counters from 3. */
+  helperCap(): number {
+    if (!this.helperOpen()) return 0;
+    return this.counters() >= 2 && this.S.bestRep >= CONFIG.HELPER2_MIN_REP - 1e-9 ? 2 : 1;
+  }
+
   setHelper(on: boolean): void {
-    if (this.phase !== 'prepare' || (on && !this.helperOpen())) return;
-    this.D.helper = on;
+    this.setHelpers(on ? 1 : 0);
+  }
+
+  setHelpers(n: number): void {
+    if (this.phase !== 'prepare') return;
+    this.D.helpers = clamp(Math.round(n), 0, this.helperCap());
+    this.D.helper = this.D.helpers > 0;
     this.changed();
+  }
+
+  /** Serving counters of the stand (the big stand and the truck have two). */
+  counters(): number {
+    let n = 1;
+    for (const id of Object.keys(this.active()) as UpgradeId[]) n = Math.max(n, UPGRADES[id].counters ?? 1);
+    return n;
+  }
+
+  /** A helper serves this counter by himself. One helper takes the second counter, two helpers take both. */
+  autoCounter(c: number): boolean {
+    const h = this.D.helpers;
+    if (h <= 0 || c >= this.counters()) return false;
+    if (this.counters() === 1) return c === 0;
+    return c === 1 || h >= 2;
   }
 
   /** Coins needed today before opening (rent, flyers, the helper's wage). */
   openingCosts(): number {
-    return LOCATIONS[this.S.location].rent + (this.D.flyers ? CONFIG.FLYERS_COST : 0) + (this.D.helper ? CONFIG.HELPER_WAGE : 0);
+    return LOCATIONS[this.S.location].rent + (this.D.flyers ? CONFIG.FLYERS_COST : 0) + this.D.helpers * CONFIG.HELPER_WAGE;
   }
 
   canStartSelling(): { ok: boolean; reason?: string } {
@@ -824,14 +875,17 @@ export class Game {
       this.S.coins -= CONFIG.FLYERS_COST;
       D.expenses.flyers += CONFIG.FLYERS_COST;
     }
-    if (D.helper) {
-      this.S.coins -= CONFIG.HELPER_WAGE;
-      D.expenses.wages += CONFIG.HELPER_WAGE;
+    // the helpers' wages (a stand with one counter has room for one helper)
+    D.helpers = Math.min(D.helpers, this.helperCap());
+    D.helper = D.helpers > 0;
+    if (D.helpers > 0) {
+      this.S.coins -= CONFIG.HELPER_WAGE * D.helpers;
+      D.expenses.wages += CONFIG.HELPER_WAGE * D.helpers;
     }
     if (D.events.thiefAt !== null) D.events.thiefAt = Math.max(D.events.thiefAt, D.startHour + 1);
-    this.serving = null;
+    this.servings = [null, null];
     this.making = null;
-    this.helperIdle = 0;
+    this.helperIdle = [0, 0];
     this.speed = 1;
     this.refreshInterest();
     D.funnel.passed += this.street.markAllCounted();
@@ -898,9 +952,11 @@ export class Game {
     this.refreshInterest();
     this.street.update(dt);
 
-    if (this.serving) {
-      this.serving.t += dt;
-      if (this.serving.t >= this.serving.dur) this.completeServe();
+    for (let c = 0; c < this.servings.length; c++) {
+      const s = this.servings[c];
+      if (!s) continue;
+      s.t += dt;
+      if (s.t >= s.dur) this.completeServe(c);
     }
     if (this.making) {
       this.making.t += dt;
@@ -913,16 +969,17 @@ export class Game {
       }
     }
 
-    // the helper serves by himself; making more lemonade is the player's decision
-    if (D.helper && !this.serving && !this.making) {
-      if (this.street.frontReady() && D.cupsReady > 0) {
-        this.helperIdle += rdt;
-        if (this.helperIdle >= CONFIG.HELPER_DELAY) this.serve();
-      } else this.helperIdle = 0;
+    // helpers serve their counters by themselves; making more lemonade is the player's decision
+    for (let c = 0; c < this.counters(); c++) {
+      if (!this.autoCounter(c) || this.servings[c] || this.making) continue;
+      if (this.street.frontReady(c) && D.cupsReady > 0) {
+        this.helperIdle[c] += rdt;
+        if (this.helperIdle[c] >= CONFIG.HELPER_DELAY) this.serveAt(c, true);
+      } else this.helperIdle[c] = 0;
     }
 
     // the lemonade is over: ask the player once (until the next refill)
-    if (D.cupsReady === 0 && !this.making && !this.serving && !D.outAsked && this.canMakePitcher()) {
+    if (D.cupsReady === 0 && !this.making && !this.busy() && !D.outAsked && this.canMakePitcher()) {
       D.outAsked = true;
       this.card('outOfLemonade', '🥛', undefined, undefined, {
         choices: [
@@ -959,7 +1016,7 @@ export class Game {
         D.soldOutAt = D.hour;
         this.toast('toast.soldOut', undefined, 'warn');
       }
-      if (this.street.queue.length) this.street.sendAwayQueue('😢');
+      if (this.street.queued) this.street.sendAwayQueue('😢');
     }
 
     if (D.hour >= CONFIG.DAY_END) this.endDay();
@@ -986,13 +1043,22 @@ export class Game {
       f.tooExpensive++;
       this.street.setEmote(p, '💸', 2.4);
       this.tip('expensive');
-    } else if (this.street.queue.length >= this.maxQueue()) {
-      f.queueFull++;
-      this.street.setEmote(p, '⏳', 2);
-      this.tip('queue');
     } else {
-      f.joined++;
-      this.street.joinQueue(p);
+      // people pick the shorter queue
+      let best = -1;
+      for (let c = 0; c < this.counters(); c++) {
+        const len = this.street.queueFor(c).length;
+        if (len < this.maxQueue() && (best < 0 || len < this.street.queueFor(best).length)) best = c;
+      }
+      if (best < 0) {
+        f.queueFull++;
+        this.street.setEmote(p, '⏳', 2);
+        this.tip('queue');
+      } else {
+        f.joined++;
+        this.street.joinQueue(p, best);
+        if (best === 1) this.tip('two_queues');
+      }
     }
   }
 
@@ -1041,28 +1107,47 @@ export class Game {
     this.tip('cookie_first');
   }
 
-  /** Player taps to pour a cup for the first customer in line (the helper calls it too). */
+  /**
+   * The player taps to pour a cup. They take a counter no helper looks after first; if every customer
+   * in front is at a helper's counter, the player helps there.
+   */
   serve(): 'ok' | 'busy' | 'making' | 'noCustomer' | 'noCups' | 'no' {
     if (this.phase !== 'sell' || this.paused) return 'no';
-    if (this.serving) return 'busy';
+    const order = [...Array(this.counters()).keys()].sort((a, b) => Number(this.autoCounter(a)) - Number(this.autoCounter(b)));
+    let last: ReturnType<Game['serve']> = 'noCustomer';
+    for (const c of order) {
+      const r = this.serveAt(c, false);
+      if (r === 'ok' || r === 'noCups' || r === 'making') return r;
+      if (r === 'busy') last = 'busy';
+    }
+    return last;
+  }
+
+  /** Pour a cup at one counter (by the player or by that counter's helper). */
+  serveAt(c: number, byHelper: boolean): 'ok' | 'busy' | 'making' | 'noCustomer' | 'noCups' | 'no' {
+    if (this.phase !== 'sell' || this.paused) return 'no';
+    if (this.servings[c]) return 'busy';
     if (this.making) return 'making';
-    const p = this.street.frontReady();
+    const p = this.street.frontReady(c);
     if (!p) return 'noCustomer';
     if (this.D.cupsReady <= 0) {
-      this.toast(this.canMakePitcher() ? 'toast.needPitcher' : 'toast.soldOut', undefined, 'warn');
-      this.sfx('buzz');
+      if (!byHelper) {
+        this.toast(this.canMakePitcher() ? 'toast.needPitcher' : 'toast.soldOut', undefined, 'warn');
+        this.sfx('buzz');
+      }
       return 'noCups';
     }
-    this.helperIdle = 0;
-    this.serving = { ped: p, t: 0, dur: serveTime(this.active(), this.D.helper) };
+    this.helperIdle[c] = 0;
+    // a counter that a helper looks after pours at the helper's speed
+    this.servings[c] = { ped: p, t: 0, dur: serveTime(this.active(), byHelper || this.autoCounter(c)), helper: byHelper };
     this.sfx('pour');
     return 'ok';
   }
 
-  private completeServe(): void {
-    const p = this.serving!.ped;
-    this.serving = null;
-    if (!this.street.queue.includes(p)) return;
+  private completeServe(c = 0): void {
+    const p = this.servings[c]!.ped;
+    this.servings[c] = null;
+    if (!this.street.inQueue(p)) return;
     const S = this.S;
     const D = this.D;
     const up = this.active();
@@ -1097,7 +1182,7 @@ export class Game {
    * The game UI opens the kitchen mini-game instead (`openKitchen`); tests and bots use this shortcut.
    */
   makePitcher(): boolean {
-    if (this.phase !== 'sell' || this.making || this.serving || this.paused) return false;
+    if (this.phase !== 'sell' || this.making || this.busy() || this.paused) return false;
     if (!this.canMakePitcher()) {
       this.toast('toast.noIngredients', undefined, 'warn');
       this.sfx('buzz');
@@ -1229,7 +1314,7 @@ export class Game {
   private finishDay(): void {
     const S = this.S;
     const D = this.D;
-    this.serving = null;
+    this.servings = [null, null];
     this.making = null;
     if (this.midKitchen) this.closeKitchen();
     this.street.sendAwayQueue();
@@ -1560,7 +1645,7 @@ export class Game {
   goTitle(): void {
     this.phase = 'title';
     this.paused = false;
-    this.serving = null;
+    this.servings = [null, null];
     this.making = null;
     this.bus.emit('phase', { phase: 'title' });
   }
@@ -1587,6 +1672,17 @@ export class Game {
 
   debugAddCoins(n: number): void {
     this.S.coins += n;
+    this.changed();
+  }
+
+  /** The player decorates the food truck. */
+  setTruckLook(look: Partial<TruckLook>): void {
+    const cur = this.S.truck;
+    if (look.skin !== undefined) cur.skin = clamp(Math.round(look.skin), 0, TRUCK_SKINS.length - 1);
+    if (look.logo !== undefined) cur.logo = clamp(Math.round(look.logo), 0, TRUCK_LOGOS.length - 1);
+    if (look.text !== undefined) cur.text = look.text.replace(/[<>]/g, '').trim().slice(0, TRUCK_TEXT_MAX);
+    this.sfx('pop');
+    this.save();
     this.changed();
   }
 

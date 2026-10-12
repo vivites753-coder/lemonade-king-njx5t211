@@ -17,6 +17,9 @@ export const CONFIG = {
   QUEUE_X0: 6.5,
   QUEUE_DX: 0.62,
   QUEUE_Y: 4.25,
+  /** The second counter (big stand, truck): its queue runs to the left. */
+  QUEUE2_X0: 4.45,
+  QUEUE2_DX: 0.55,
 
   LANES: [
     { id: 'near', y: 5.5, weight: 0.65 },
@@ -89,6 +92,8 @@ export const CONFIG = {
   /** Helper: daily wage, pours faster and serves by himself. Can be hired from this reputation. */
   HELPER_WAGE: 30,
   HELPER_MIN_REP: 2,
+  /** A second helper (for a stand with two counters) from this reputation. */
+  HELPER2_MIN_REP: 3,
   HELPER_SERVE_MULT: 0.6,
   /** Real seconds the helper waits before taking the next customer. */
   HELPER_DELAY: 0.35,
@@ -106,7 +111,9 @@ export const CONFIG = {
   MAINTENANCE_SHARE: 0.5,
 } as const;
 
-export function queueSpot(i: number): { x: number; y: number } {
+/** Place number i in the queue of a counter (0: to the right of the stand, 1: to the left). */
+export function queueSpot(i: number, counter = 0): { x: number; y: number } {
+  if (counter === 1) return { x: CONFIG.QUEUE2_X0 - CONFIG.QUEUE2_DX * i, y: CONFIG.QUEUE_Y };
   return { x: CONFIG.QUEUE_X0 + CONFIG.QUEUE_DX * i, y: CONFIG.QUEUE_Y };
 }
 

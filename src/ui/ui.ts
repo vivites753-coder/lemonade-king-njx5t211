@@ -20,6 +20,7 @@ import { esc } from './dom';
 import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointsModal, type PointsHooks } from './points';
 import { roadmapModal } from './roadmap';
+import { truckModal } from './truckModal';
 import { ResourceBar, stockModal } from './resources';
 
 const PANELS: Partial<Record<Phase, Panel>> = {
@@ -156,6 +157,10 @@ export class UI implements UIApi {
 
   openRoadmap(): void {
     this.overlays.modal(roadmapModal(this.g));
+  }
+
+  openTruck(): void {
+    this.overlays.modal(truckModal(this.g));
   }
 
   /** Set by main.ts: shows the developer stats panel. */

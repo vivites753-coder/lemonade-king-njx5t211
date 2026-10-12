@@ -40,7 +40,7 @@ export class ResourceBar {
       `<div class="res-head">${t('res.title')}</div>` +
       ROWS.map((r) => `<div class="res-row" data-row="${r.key}"><span class="ri">${r.icon}</span><b data-r="${r.key}"></b></div>`).join('') +
       `<div class="res-row res-warn" data-row="broken"><span class="ri">🔧</span><b data-r="broken"></b></div>` +
-      `<div class="res-row" data-row="helper"><span class="ri">🍳</span><b>✓</b></div>`;
+      `<div class="res-row" data-row="helper"><span class="ri">🍳</span><b data-r="helper"></b></div>`;
     this.els = {};
     this.cache.clear();
     for (const el of Array.from(this.root.querySelectorAll<HTMLElement>('[data-r],[data-row]'))) {
@@ -95,7 +95,8 @@ export class ResourceBar {
     const broken = Object.keys(g.S.broken) as EquipId[];
     this.set('broken', broken.map((id) => EQUIPMENT[id].icon).join(''));
     this.show('broken', broken.length > 0);
-    this.show('helper', g.D.helper);
+    this.show('helper', g.D.helpers > 0);
+    this.set('helper', g.D.helpers > 1 ? `×${g.D.helpers}` : '✓');
 
     this.tip('lemons', `🍋 ${t('res.lemons')}: ${lemonsTotal(st)}${old ? ` · ⚠ ${t('res.oldTip', { n: old })}` : ''}`);
     this.tip('water', `💧 ${t('res.water')}: ${st.water}`);

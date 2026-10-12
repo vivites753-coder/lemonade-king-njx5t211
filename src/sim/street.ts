@@ -38,6 +38,8 @@ export interface Ped {
   emoteT: number;
   hasCup: boolean;
   gone: boolean;
+  /** Which counter's queue the person stands in. */
+  counter: number;
 }
 
 export interface Car {
@@ -75,7 +77,8 @@ export interface StreetHost {
   selling(): boolean;
   radius(): number;
   patienceMult(): number;
-  servingPed(): Ped | null;
+  /** Someone is pouring a cup for this person right now (their patience does not run out). */
+  isServed(p: Ped): boolean;
   onSpawnCounted(): void;
   onInRange(p: Ped): void;
   onImpatient(p: Ped): void;
@@ -85,7 +88,10 @@ const CAR_COLORS = ['#e03131', '#1971c2', '#f59f00', '#2f9e44', '#f8f9fa', '#704
 
 export class Street {
   readonly peds: Ped[] = [];
+  /** The queue of the first counter (to the right of the stand). */
   readonly queue: Ped[] = [];
+  /** The queue of the second counter (big stand, truck), to the left. */
+  readonly queue2: Ped[] = [];
   readonly cars: Car[] = [];
   thief: Thief | null = null;
   private spawnAcc = 0;
@@ -97,6 +103,7 @@ export class Street {
   reset(prewarm: boolean): void {
     this.peds.length = 0;
     this.queue.length = 0;
+    this.queue2.length = 0;
     this.cars.length = 0;
     this.thief = null;
     this.spawnAcc = 0;
@@ -148,7 +155,7 @@ export class Street {
         }
       }
     } else {
-      const spot = queueSpot(this.queue.indexOf(p));
+      const spot = queueSpot(this.queueFor(p.counter).indexOf(p), p.counter);
       p.atSpot = this.moveTo(p, spot.x, spot.y, dt);
       if (p.atSpot) {
         p.state = 'queue';
@@ -157,7 +164,7 @@ export class Street {
       }
       if (p.state === 'queue') {
         p.waited += dt;
-        if (this.host.servingPed() !== p) {
+        if (!this.host.isServed(p)) {
           p.patience -= dt;
           if (p.patience <= 0) this.host.onImpatient(p);
         }
@@ -227,6 +234,7 @@ export class Street {
       emoteT: 0,
       hasCup: false,
       gone: false,
+      counter: 0,
     };
     this.peds.push(p);
     if (counted) h.onSpawnCounted();
@@ -245,9 +253,23 @@ export class Street {
     return n;
   }
 
-  joinQueue(p: Ped): void {
+  queueFor(counter: number): Ped[] {
+    return counter === 1 ? this.queue2 : this.queue;
+  }
+
+  /** People waiting at all counters. */
+  get queued(): number {
+    return this.queue.length + this.queue2.length;
+  }
+
+  inQueue(p: Ped): boolean {
+    return this.queue.includes(p) || this.queue2.includes(p);
+  }
+
+  joinQueue(p: Ped, counter = 0): void {
     const rng = this.host.rng;
-    this.queue.push(p);
+    p.counter = counter;
+    this.queueFor(counter).push(p);
     p.state = 'toQueue';
     p.path = [];
     p.atSpot = false;
@@ -258,8 +280,10 @@ export class Street {
   }
 
   leave(p: Ped, emote: string | null, emoteT = 2.5): void {
-    const i = this.queue.indexOf(p);
-    if (i >= 0) this.queue.splice(i, 1);
+    for (const q of [this.queue, this.queue2]) {
+      const i = q.indexOf(p);
+      if (i >= 0) q.splice(i, 1);
+    }
     p.state = 'leave';
     p.atSpot = false;
     const exitX = p.dir > 0 ? CONFIG.SPAWN_RIGHT : CONFIG.SPAWN_LEFT;
@@ -276,7 +300,7 @@ export class Street {
   }
 
   sendAwayQueue(emote: string | null = null): void {
-    for (const p of this.queue.slice()) this.leave(p, emote);
+    for (const p of [...this.queue, ...this.queue2]) this.leave(p, emote);
   }
 
   setEmote(p: Ped, emote: string, t: number): void {
@@ -284,8 +308,8 @@ export class Street {
     p.emoteT = t;
   }
 
-  frontReady(): Ped | null {
-    const p = this.queue[0];
+  frontReady(counter = 0): Ped | null {
+    const p = this.queueFor(counter)[0];
     return p && p.state === 'queue' && p.atSpot ? p : null;
   }
 
