@@ -6,7 +6,7 @@ import { t } from '../i18n';
 import { ownedEquipment } from '../sim/equipment';
 import type { Game } from '../sim/game';
 import { lemonsTotal } from '../sim/state';
-import { coin, esc } from './dom';
+import { coin } from './dom';
 import type { ModalSpec } from './overlays';
 
 const ROWS: { key: string; icon: string; label: string }[] = [
@@ -15,6 +15,7 @@ const ROWS: { key: string; icon: string; label: string }[] = [
   { key: 'sugar', icon: '🍬', label: 'res.sugar' },
   { key: 'cups', icon: '🥤', label: 'res.cups' },
   { key: 'ready', icon: '🥛', label: 'res.ready' },
+  { key: 'cooler', icon: '🧊', label: 'res.cooler' },
   { key: 'make', icon: '🏺', label: 'res.canMake' },
 ];
 
@@ -33,12 +34,12 @@ export class ResourceBar {
 
   build(): void {
     this.root.setAttribute('aria-label', t('res.open'));
-    this.root.title = t('res.open');
+    // hover tips (data-tip) explain every row; they are filled in update()
     this.root.innerHTML =
       `<div class="res-head">${t('res.title')}</div>` +
-      ROWS.map((r) => `<div class="res-row" data-row="${r.key}" title="${esc(t(r.label))}"><span class="ri">${r.icon}</span><b data-r="${r.key}"></b></div>`).join('') +
-      `<div class="res-row res-warn" data-row="broken" title="${esc(t('res.broken'))}"><span class="ri">🔧</span><b data-r="broken"></b></div>` +
-      `<div class="res-row" data-row="helper" title="${esc(t('res.helper'))}"><span class="ri">🍳</span><b>✓</b></div>`;
+      ROWS.map((r) => `<div class="res-row" data-row="${r.key}"><span class="ri">${r.icon}</span><b data-r="${r.key}"></b></div>`).join('') +
+      `<div class="res-row res-warn" data-row="broken"><span class="ri">🔧</span><b data-r="broken"></b></div>` +
+      `<div class="res-row" data-row="helper"><span class="ri">🍳</span><b>✓</b></div>`;
     this.els = {};
     this.cache.clear();
     for (const el of Array.from(this.root.querySelectorAll<HTMLElement>('[data-r],[data-row]'))) {
@@ -57,6 +58,12 @@ export class ResourceBar {
     this.els['row-' + row]?.classList.toggle('hidden', !on);
   }
 
+  private tip(row: string, text: string): void {
+    const el = this.els['row-' + row];
+    const full = `${text}\n${t('res.tapHint')}`;
+    if (el && el.dataset.tip !== full) el.dataset.tip = full;
+  }
+
   update(phase: Phase): void {
     this.root.classList.toggle('hidden', phase === 'title');
     if (phase === 'title') return;
@@ -73,12 +80,27 @@ export class ResourceBar {
     const ready = g.D.cupsReady;
     this.set('ready', String(ready));
     this.show('ready', ready > 0 || phase === 'sell' || phase === 'prepare');
+    // the cooler bag: yesterday's lemonade still left today, or what goes in tonight for tomorrow
+    const night = phase === 'report' || phase === 'shop';
+    const cooled = night ? g.S.carryCups : Math.min(ready, Math.max(0, g.D.carriedIn - g.D.funnel.sold));
+    this.set('cooler', String(cooled));
+    this.show('cooler', !!g.S.upgrades.cooler);
     const canMake = market ? g.pitchersWithCart() : g.maxPitchersNow();
     this.set('make', `×${canMake}`);
     const broken = Object.keys(g.S.broken) as EquipId[];
     this.set('broken', broken.map((id) => EQUIPMENT[id].icon).join(''));
     this.show('broken', broken.length > 0);
     this.show('helper', g.D.helper);
+
+    this.tip('lemons', `🍋 ${t('res.lemons')}: ${lemonsTotal(st)}${old ? ` · ⚠ ${t('res.oldTip', { n: old })}` : ''}`);
+    this.tip('water', `💧 ${t('res.water')}: ${st.water}`);
+    this.tip('sugar', `🍬 ${t('res.sugar')}: ${st.sugar}`);
+    this.tip('cups', `🥤 ${t('res.cups')}: ${st.cups}`);
+    this.tip('ready', `🥛 ${t('res.ready')}: ${ready}`);
+    this.tip('cooler', `🧊 ${t(night ? 'res.coolerNight' : 'res.coolerTip', { n: cooled })}`);
+    this.tip('make', `🏺 ${t('res.canMake')}: ${canMake}`);
+    this.tip('broken', `🔧 ${t('res.broken')}: ${broken.map((id) => t(`equip.${id}`)).join(', ')}`);
+    this.tip('helper', `🍳 ${t('res.helper')}`);
   }
 }
 

@@ -2450,3 +2450,246 @@ body.reduce-motion * {
   color: var(--red-d);
   font-size: 12px;
 }
+
+/* ================================================================ v0.4 interface */
+
+/* stock bar: hover tips on computers */
+.res-row {
+  position: relative;
+}
+@media (hover: hover) {
+  .res-row:hover {
+    background: #fff8db;
+  }
+  .res-row[data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: pre;
+    background: var(--ink);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    padding: 7px 11px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    z-index: 40;
+    pointer-events: none;
+  }
+}
+/* computers: a bigger stock bar */
+@media (min-width: 1000px) and (min-height: 620px) {
+  .res-bar {
+    width: 96px;
+    padding: 10px 8px;
+    gap: 5px;
+    border-radius: 20px;
+  }
+  .res-head {
+    font-size: 12px;
+  }
+  .res-row {
+    font-size: 19px;
+    gap: 6px;
+    padding: 4px 6px;
+  }
+  .res-row .ri {
+    font-size: 26px;
+    width: 30px;
+  }
+  .res-row small {
+    font-size: 12px;
+  }
+}
+
+/* market: the clear-cart label hides on small screens */
+.lbl-m {
+  display: inline;
+}
+
+/* hide / show the stage window (phones) */
+.panel-toggle {
+  display: none;
+}
+#panel.collapsed {
+  display: none;
+}
+
+/* ---------- phones: full-screen stage windows, smaller text and buttons ---------- */
+@media (max-height: 460px) {
+  #panel:not(.center):not(.title-mode),
+  #panel.wide {
+    left: calc(4px + var(--safe-l));
+    right: calc(4px + var(--safe-r));
+    width: auto;
+    top: calc(42px + var(--safe-t));
+    bottom: calc(4px + var(--safe-b));
+    z-index: 22;
+  }
+  .panel {
+    border-radius: 16px;
+    border-width: 2px;
+  }
+  .panel-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: absolute;
+    z-index: 26;
+    top: calc(46px + var(--safe-t));
+    right: calc(10px + var(--safe-r));
+    min-width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 0 var(--line), 0 4px 10px rgba(0, 0, 0, 0.12);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .panel-toggle.hidden {
+    display: none;
+  }
+  .panel-toggle.reopen {
+    top: auto;
+    bottom: calc(10px + var(--safe-b));
+    right: calc(10px + var(--safe-r));
+    height: 44px;
+    padding: 0 16px;
+    font-size: 15px;
+    background: var(--yellow);
+    box-shadow: 0 4px 0 var(--yellow-d), 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  .panel-head,
+  .kitchen .panel-head {
+    padding-right: 52px;
+  }
+  .panel-head h2 {
+    font-size: 16px;
+  }
+  .panel h3 {
+    font-size: 14px;
+    margin: 8px 2px 4px;
+  }
+  .panel-body {
+    padding: 2px 10px 8px;
+    font-size: 13px;
+  }
+  .card {
+    padding: 6px 10px;
+    margin: 5px 0;
+    border-radius: 12px;
+  }
+  small {
+    font-size: 11px;
+  }
+  .note {
+    font-size: 12px;
+    margin: 4px 2px;
+  }
+  .warn-box,
+  .good-box {
+    padding: 6px 8px;
+    font-size: 13px;
+    margin: 5px 0;
+  }
+  .kv {
+    font-size: 13px;
+  }
+  .big-ico {
+    font-size: 28px;
+  }
+  .btn {
+    min-height: 36px;
+    font-size: 13px;
+    padding: 5px 11px;
+    border-radius: 12px;
+  }
+  .btn-sm {
+    min-height: 30px;
+    font-size: 12px;
+    padding: 3px 9px;
+  }
+  .btn-big {
+    min-height: 40px;
+    font-size: 15px;
+    padding: 5px 14px;
+    border-radius: 14px;
+  }
+  .panel-foot .btn {
+    flex: 1 1 110px;
+  }
+  .chip {
+    font-size: 12px;
+    padding: 3px 8px;
+    min-height: 28px;
+  }
+  .chip.coins {
+    font-size: 13px;
+  }
+  .hud-btn,
+  .seg button {
+    min-height: 32px;
+    min-width: 32px;
+    font-size: 14px;
+  }
+  .loc {
+    padding: 5px 8px;
+    border-radius: 14px;
+  }
+  .loc b {
+    font-size: 14px;
+  }
+  .loc-ico {
+    font-size: 26px;
+  }
+  .loc-meta {
+    font-size: 11px;
+  }
+  .loc-lock,
+  .loc-ev,
+  .loc-own {
+    font-size: 12px;
+  }
+  .toggle b {
+    font-size: 13px;
+  }
+  .modal-card p {
+    font-size: 13px;
+  }
+  .lemi-bubble {
+    font-size: 13px;
+  }
+  .lbl-m {
+    display: none;
+  }
+  .good {
+    padding: 5px 8px;
+    gap: 8px;
+  }
+  .good .ico {
+    font-size: 24px;
+  }
+  .good .info b {
+    font-size: 14px;
+  }
+  .stepper b {
+    min-width: 24px;
+    font-size: 15px;
+  }
+  .stepper .btn {
+    min-width: 34px;
+    min-height: 32px;
+    font-size: 17px;
+  }
+  .total-line {
+    font-size: 15px;
+  }
+}

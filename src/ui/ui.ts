@@ -42,12 +42,21 @@ export class UI implements UIApi {
   private overlays: Overlays;
   private current: Panel | null = null;
   private userPaused = false;
+  /** Phones: the full-screen panel can be hidden to look at the scene. */
+  private panelHidden = false;
+  private toggleEl: HTMLElement;
 
   constructor(
     private g: Game,
     private r: Renderer,
   ) {
     this.panelEl = document.getElementById('panel')!;
+    this.toggleEl = document.getElementById('panel-toggle')!;
+    this.toggleEl.addEventListener('click', () => {
+      play('click');
+      this.panelHidden = !this.panelHidden;
+      this.applyPanelHidden();
+    });
     this.toastsEl = document.getElementById('toasts')!;
     this.hud = new Hud(document.getElementById('hud')!, g, (a, arg) => this.hudAct(a, arg));
     this.overlays = new Overlays(g, document.getElementById('lemi')!, document.getElementById('modal')!, () => play('click'));
@@ -271,6 +280,17 @@ export class UI implements UIApi {
     }
     if (p === 'sell') this.userPaused = false;
     if (p === 'report' && this.g.D.report?.stageGoalReached) this.overlays.push({ kind: 'modal', spec: stageModal(this.g) });
+    // a new stage always opens its window
+    this.panelHidden = false;
+    this.toggleEl.classList.toggle('hidden', !panel || p === 'title');
+    this.applyPanelHidden();
+  }
+
+  private applyPanelHidden(): void {
+    this.panelEl.classList.toggle('collapsed', this.panelHidden);
+    this.toggleEl.classList.toggle('reopen', this.panelHidden);
+    this.toggleEl.innerHTML = this.panelHidden ? `📋 ${t('ui.showPanel')}` : '✕';
+    this.toggleEl.setAttribute('aria-label', this.panelHidden ? t('ui.showPanel') : t('ui.hidePanel'));
     this.layout();
   }
 
@@ -283,7 +303,7 @@ export class UI implements UIApi {
     const top = p === 'title' ? 0 : compact ? 36 : 58;
     let right = 0;
     let bottom = 0;
-    if (this.current?.dock && w > 860) right = this.panelEl.getBoundingClientRect().width + 16;
+    if (this.current?.dock && w > 860 && !compact) right = this.panelEl.getBoundingClientRect().width + 16;
     if (p === 'sell') {
       // on phones the controls may overlap the empty corners of the diamond-shaped diorama
       bottom = compact ? 28 : 110;

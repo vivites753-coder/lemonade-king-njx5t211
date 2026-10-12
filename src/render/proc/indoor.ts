@@ -93,6 +93,62 @@ function wallTop(ctx: Ctx, color: string): void {
   poly(ctx, [P(-THICK, N, 0), P(0, N, 0), P(0, N, WALL_H), P(-THICK, N, WALL_H)], 'rgba(0,0,0,0.12)');
 }
 
+/**
+ * People walk in along the two walkways (tile rows 5.5 and 8.5), so the left wall has an open doorway at each
+ * of them; windows sit between the doors. In wall coordinates u = (12 − y) × 32.
+ */
+const DOOR_W = 58;
+const DOOR_H = 74;
+const DOORS = CONFIG.LANES.map((l) => (N - l.y) * 32 - DOOR_W / 2);
+
+/** Doormats on the floor in front of the doorways. */
+function doormats(ctx: Ctx): void {
+  for (const lane of CONFIG.LANES) {
+    poly(ctx, [P(0, lane.y - 0.75), P(0.55, lane.y - 0.75), P(0.55, lane.y + 0.75), P(0, lane.y + 0.75)], 'rgba(73,80,87,0.55)');
+  }
+}
+
+/** Door frames drawn over the opening (the opening itself is cut out together with the windows). */
+function doorFrames(ctx: Ctx, color: string, arch: boolean): void {
+  for (const u of DOORS) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(u, 0);
+    if (arch) {
+      ctx.lineTo(u, -DOOR_H + DOOR_W / 2);
+      ctx.arc(u + DOOR_W / 2, -DOOR_H + DOOR_W / 2, DOOR_W / 2, Math.PI, 0);
+    } else {
+      ctx.lineTo(u, -DOOR_H);
+      ctx.lineTo(u + DOOR_W, -DOOR_H);
+    }
+    ctx.lineTo(u + DOOR_W, 0);
+    ctx.stroke();
+  }
+}
+
+function doorPath(ctx: Ctx, arch: boolean): void {
+  for (const u of DOORS) {
+    ctx.moveTo(u, 0);
+    if (arch) {
+      ctx.lineTo(u, -DOOR_H + DOOR_W / 2);
+      ctx.arc(u + DOOR_W / 2, -DOOR_H + DOOR_W / 2, DOOR_W / 2, Math.PI, 0);
+    } else {
+      ctx.lineTo(u, -DOOR_H);
+      ctx.lineTo(u + DOOR_W, -DOOR_H);
+    }
+    ctx.lineTo(u + DOOR_W, 0);
+    ctx.closePath();
+  }
+}
+
+/** The street behind an open doorway: sky and weather above, pavement below. */
+function streetView(ctx: Ctx, u: number, w: number): void {
+  outside(ctx, u, -DOOR_H, w, DOOR_H);
+  ctx.fillStyle = '#ced4da';
+  ctx.fillRect(u, -16, w, 16);
+}
+
 // ---------------------------------------------------------------- mall
 
 function shopFront(ctx: Ctx, u: number, label: string, color: string, goods: (x: number, y: number) => void): void {
@@ -138,18 +194,34 @@ function mallWalls(ctx: Ctx): void {
     });
   });
   faceX(ctx, 0, N, 0, () => {
-    // a big window to the street: the weather outside
-    outside(ctx, 22, -88, 230, 72);
-    glassShine(ctx, 22, -88, 230, 72);
-    ctx.strokeStyle = '#adb5bd';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(22, -88, 230, 72);
-    for (const k of [1, 2]) line(ctx, 22 + (230 / 3) * k, -88, 22 + (230 / 3) * k, -16, '#adb5bd', 2.5);
+    // windows between the two entrance doors: the weather outside
+    const wins: [number, number][] = [
+      [10, DOORS[1] - 16],
+      [DOORS[1] + DOOR_W + 6, DOORS[0] - (DOORS[1] + DOOR_W) - 12],
+    ];
+    for (const [u, w] of wins) {
+      outside(ctx, u, -88, w, 66);
+      glassShine(ctx, u, -88, w, 66);
+      ctx.strokeStyle = '#adb5bd';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(u, -88, w, 66);
+    }
+    // open glass doors where people come in
+    for (const u of DOORS) {
+      streetView(ctx, u, DOOR_W);
+      ctx.fillStyle = 'rgba(208,235,255,0.35)';
+      ctx.fillRect(u, -DOOR_H, 10, DOOR_H);
+      ctx.fillRect(u + DOOR_W - 10, -DOOR_H, 10, DOOR_H);
+      rrect(ctx, u + 6, -DOOR_H - 14, DOOR_W - 12, 11, 3, '#40c057');
+      text(ctx, '⇄', u + DOOR_W / 2, -DOOR_H - 8.5, 9, '#ffffff', 'center', 900);
+    }
+    doorFrames(ctx, '#adb5bd', false);
     // the mall logo: an orange
     circle(ctx, 318, -70, 17, '#ff922b', '#e8590c', 2);
     ellipse(ctx, 323, -88, 6, 3, '#51cf66');
     text(ctx, t('world.mall'), 318, -38, 9, '#e8590c', 'center', 900);
   });
+  doormats(ctx);
   wallTop(ctx, '#e9dcc3');
 }
 
@@ -203,17 +275,25 @@ function stationWalls(ctx: Ctx): void {
   });
   faceX(ctx, 0, N, 0, () => {
     text(ctx, t('world.station'), LEN / 2, -95, 12, '#8d6e52', 'center', 900);
-    // tall arched windows with the platform and passing trains behind them
-    const wins = [28, 152, 276];
+    // tall arched windows and two arched doorways (where people come in) with the platform behind them
+    const wins: [number, number][] = [
+      [12, 64],
+      [DOORS[1] + DOOR_W + 8, DOORS[0] - (DOORS[1] + DOOR_W) - 16],
+      [DOORS[0] + DOOR_W + 22, 72],
+    ];
+    const winPath = () => {
+      for (const [u, w] of wins) {
+        ctx.moveTo(u, -12);
+        ctx.lineTo(u, -88 + w / 2);
+        ctx.arc(u + w / 2, -88 + w / 2, w / 2, Math.PI, 0);
+        ctx.lineTo(u + w, -12);
+        ctx.closePath();
+      }
+    };
     ctx.save();
     ctx.beginPath();
-    for (const u of wins) {
-      ctx.moveTo(u, -12);
-      ctx.lineTo(u, -62);
-      ctx.arc(u + 40, -62, 40, Math.PI, 0);
-      ctx.lineTo(u + 80, -12);
-      ctx.closePath();
-    }
+    winPath();
+    doorPath(ctx, true);
     ctx.clip();
     outside(ctx, 0, -104, LEN, 92);
     ctx.fillStyle = '#adb5bd';
@@ -232,17 +312,13 @@ function stationWalls(ctx: Ctx): void {
     ctx.restore();
     ctx.strokeStyle = '#8d6e52';
     ctx.lineWidth = 3;
-    for (const u of wins) {
-      ctx.beginPath();
-      ctx.moveTo(u, -12);
-      ctx.lineTo(u, -62);
-      ctx.arc(u + 40, -62, 40, Math.PI, 0);
-      ctx.lineTo(u + 80, -12);
-      ctx.closePath();
-      ctx.stroke();
-      line(ctx, u + 40, -102, u + 40, -12, '#8d6e52', 2);
-    }
+    ctx.beginPath();
+    winPath();
+    ctx.stroke();
+    for (const [u, w] of wins) line(ctx, u + w / 2, -88, u + w / 2, -12, '#8d6e52', 2);
+    doorFrames(ctx, '#8d6e52', true);
   });
+  doormats(ctx);
   wallTop(ctx, '#d8c9ad');
 }
 

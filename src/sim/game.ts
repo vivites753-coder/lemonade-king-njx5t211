@@ -435,6 +435,12 @@ export class Game {
     this.changed();
   }
 
+  /** Take everything out of the cart. */
+  clearCart(): void {
+    this.cart = emptyCart();
+    this.changed();
+  }
+
   /** Stock plus what is in the cart (units). */
   stockWithCart(): { lemons: number; water: number; sugar: number; cups: number } {
     const c = this.cart;

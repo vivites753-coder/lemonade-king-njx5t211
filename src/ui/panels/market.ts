@@ -51,7 +51,10 @@ export const marketPanel: Panel = {
       <div class="panel-body">
         ${g.D.delivery ? `<div class="good-box">${t('market.delivery')}</div>` : ''}
         <div class="note">${t('market.need', { l: lemonsPer, s: S.recipe.sugar })}</div>
-        <button class="btn btn-b" data-act="kit" style="width:100%">${t('market.kit')}</button>
+        <div class="row">
+          <button class="btn btn-b grow" data-act="kit">${t('market.kit')}</button>
+          <button class="btn" data-act="clear" ${total > 0 ? '' : 'disabled'} title="${t('market.clear')}">🗑️ <span class="lbl-m">${t('market.clear')}</span></button>
+        </div>
         ${rows}
         <div class="good-box">🍋 ${t('market.enough', { n: g.pitchersWithCart() })}</div>
       </div>
@@ -67,6 +70,7 @@ export const marketPanel: Panel = {
     if (act === 'inc') g.setCart(id, g.cart[id] + 1);
     if (act === 'dec') g.setCart(id, g.cart[id] - 1);
     if (act === 'kit') g.addPitcherKit();
+    if (act === 'clear') g.clearCart();
     if (act === 'pay') g.pay();
     if (act === 'leave') g.leaveMarket();
   },

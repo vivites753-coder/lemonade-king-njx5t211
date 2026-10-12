@@ -743,4 +743,13 @@ export const en: Record<I18nKey, string> = {
   'tip.kitchen_more.kid': 'Hooray, a pitcher is ready! Want more? Make another one the same way.',
   'tip.mixer': 'Now mix it! Press and hold the "Mixer" button until the line reaches the green zone — then let go. Too early and the sugar stays at the bottom, too late and it splashes!',
   'tip.mixer.kid': 'Press and hold "Mixer", and let go when the line is in the green!',
+  // v0.4: interface
+  'market.clear': 'Empty the cart',
+  'res.cooler': 'Cooler bag',
+  'res.coolerTip': 'Left in the cooler bag from yesterday: {n} cups (they sell first)',
+  'res.coolerNight': 'Goes into the cooler bag for tomorrow: {n} cups',
+  'res.oldTip': '{n} old, will spoil soon',
+  'res.tapHint': 'Tap to open the stock',
+  'ui.showPanel': 'Open the window',
+  'ui.hidePanel': 'Hide the window',
 };
