@@ -5,7 +5,7 @@ import { t } from '../../i18n';
 import { lemonsConsumed, quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
-import { coin, fmtHour, round1 } from '../dom';
+import { coin, fmtDur, fmtHour, round1 } from '../dom';
 import type { Panel, UIApi } from './types';
 
 const ITEMS: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' }[] = [
@@ -178,7 +178,7 @@ export const kitchenPanel: Panel = {
         <div class="k-tools">
           <button class="btn btn-sm btn-b" data-kact="repeat">🔁 ${t('kitchen.repeat')}</button>
           <button class="btn btn-sm" data-kact="reset">↺ ${t('kitchen.reset')}</button>
-          <button class="btn btn-sm" data-kact="market">🛒 ${t('prep.market', { h: g.tripHours() })}</button>
+          <button class="btn btn-sm" data-kact="market">🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
           <button class="btn btn-sm" data-kact="rest">😴 ${t('morning.rest')}</button>
         </div>
       </div>

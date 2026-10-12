@@ -2,7 +2,7 @@
 
 export const POINTS = {
   /** Best reputation needed to open extra stands. */
-  MIN_REP: 3,
+  MIN_REP: 4,
   MAX: 3,
   /** Building a second stand (table, pitcher, sign). */
   COST: 400,

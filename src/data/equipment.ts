@@ -25,6 +25,7 @@ export const EQUIPMENT: Record<EquipId, EquipDef> = {
   juicer_lever: { id: 'juicer_lever', icon: '⚙️', upgrade: 'juicer_lever', wear: [4, 8], repair: 60 },
   speaker: { id: 'speaker', icon: '🔊', upgrade: 'speaker', wear: [4, 8], repair: 70, weather: { rain: 2 } },
   bike: { id: 'bike', icon: '🚲', upgrade: 'bike', wear: [4, 9], repair: 20 },
+  scooter: { id: 'scooter', icon: '🛵', upgrade: 'scooter', wear: [3, 7], repair: 90, weather: { rain: 1.5 } },
   dispenser: { id: 'dispenser', icon: '🚰', upgrade: 'dispenser', wear: [4, 7], repair: 50 },
 };
 

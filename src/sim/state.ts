@@ -285,7 +285,7 @@ export function normalizeState(S: GameState, D: DayState): void {
   S.bestRep = Math.max(S.bestRep, S.rep);
   for (const id of Object.keys(S.upgrades)) {
     const eq = id as keyof GameState['condition'];
-    if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'dispenser'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
+    if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'scooter', 'dispenser'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
   }
   const day = newDayState(S, D.weather ?? 'sunny', D.forecast ?? 'sunny');
   for (const k of Object.keys(day) as (keyof DayState)[]) {

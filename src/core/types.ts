@@ -18,9 +18,10 @@ export type UpgradeId =
   | 'toolkit'
   | 'cooler'
   | 'mixer_pro'
-  | 'delivery';
+  | 'delivery'
+  | 'scooter';
 /** Equipment that wears out and can break. The mixer is owned from the start. */
-export type EquipId = 'mixer' | 'umbrella' | 'tent' | 'juicer_hand' | 'juicer_lever' | 'speaker' | 'bike' | 'dispenser';
+export type EquipId = 'mixer' | 'umbrella' | 'tent' | 'juicer_hand' | 'juicer_lever' | 'speaker' | 'bike' | 'scooter' | 'dispenser';
 export type GoodId = 'lemon' | 'lemon_cheap' | 'water' | 'sugar' | 'cups' | 'cups_super';
 export type StockKind = 'lemons' | 'water' | 'sugar' | 'cups';
 export type Phase = 'title' | 'morning' | 'market' | 'kitchen' | 'prepare' | 'sell' | 'report' | 'shop';

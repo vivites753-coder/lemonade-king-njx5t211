@@ -16,8 +16,8 @@ function freshGame(seed = 11): Game {
 function eveningWithStands(seed = 11): Game {
   const g = freshGame(seed);
   g.S.day = 20;
-  g.S.rep = 3.1;
-  g.S.bestRep = 3.1;
+  g.S.rep = 4.1;
+  g.S.bestRep = 4.1;
   g.S.coins = 2000;
   g.restDay();
   g.openShop();
@@ -25,11 +25,13 @@ function eveningWithStands(seed = 11): Game {
 }
 
 describe('my stands', () => {
-  it('open only with reputation 3, only in the evening, and cost money', () => {
+  it('open only with reputation 4, only in the evening, and cost money', () => {
     const g = freshGame();
     g.S.coins = 2000;
     expect(g.canOpenPoint('park').reason).toBe('locked');
     g.S.bestRep = 3;
+    expect(g.canOpenPoint('park').reason).toBe('locked');
+    g.S.bestRep = 4;
     expect(g.canOpenPoint('park').reason).toBe('evening');
     g.restDay();
     g.openShop();

@@ -898,6 +898,9 @@ small {
   padding: 10px;
   box-shadow: 0 2px 0 var(--line);
 }
+.up.locked {
+  opacity: 0.6;
+}
 .up.owned {
   background: #f4fce3;
 }

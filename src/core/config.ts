@@ -78,9 +78,12 @@ export const CONFIG = {
   /** Grandma's help when the player cannot afford even one pitcher. */
   GRANDMA_GIFT: 40,
   GRANDMA_GIFT_KID: 60,
+  /** Family helps in the morning when the purse is this empty. */
+  FAMILY_HELP_BELOW: 10,
 
-  /** Helper: daily wage, pours faster and serves by himself. */
+  /** Helper: daily wage, pours faster and serves by himself. Can be hired from this reputation. */
   HELPER_WAGE: 30,
+  HELPER_MIN_REP: 2,
   HELPER_SERVE_MULT: 0.6,
   /** Real seconds the helper waits before taking the next customer. */
   HELPER_DELAY: 0.35,

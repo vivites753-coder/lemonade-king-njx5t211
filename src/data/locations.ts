@@ -204,6 +204,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     travel: 2,
     fairPrice: 12,
     weatherSensitivity: 1.8,
+    minRep: 2,
     mix: { kid: 0.2, adult: 0.25, granny: 0, sport: 0.15, tourist: 0.4 },
     hourCurve: (h) => (h < 10 ? 0.4 : h < 12 ? 1.0 : h < 17 ? 1.8 : h < 19 ? 1.0 : 0.5),
     cars: false,
@@ -295,7 +296,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     weatherSensitivity: -0.6,
     indoor: true,
     walls: 'mall',
-    minRep: 2,
+    minRep: 3,
     mix: { kid: 0.25, adult: 0.4, granny: 0.1, sport: 0.05, tourist: 0.2 },
     // the mall opens at 10; most shoppers come after work
     hourCurve: (h) => (h < 10 ? 0.15 : h < 12 ? 0.8 : h < 17 ? 1.2 : 1.6),

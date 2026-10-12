@@ -280,7 +280,9 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const [sx, sy] = P(SX, SY);
   const call = (extra: Partial<StandCall> = {}): StandCall => ({ x: SX, y: SY, sx, sy, s: 1, ...extra });
   const br = S.broken;
-  if (up.bike) drawSprite(ctx, 'stand_bike', call());
+  // the fastest vehicle is parked at the stand
+  if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
+  else if (up.bike) drawSprite(ctx, 'stand_bike', call());
   if (up.toolkit) drawSprite(ctx, 'stand_toolkit', call());
   if (up.cooler) drawSprite(ctx, 'stand_cooler', call());
   drawSprite(ctx, 'stand_chair', call());
@@ -353,5 +355,6 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (br.tent && outdoor) brokenMark(ctx, SX, SY - 0.35, 128);
   if (br.dispenser) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
   if (br.juicer_hand || br.juicer_lever) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
-  if (br.bike) brokenMark(ctx, SX - 1.75, SY - 0.9, 40);
+  if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75, SY - 0.9, 40);
+  if (br.scooter) brokenMark(ctx, SX - 1.6, SY - 0.7, 44);
 }

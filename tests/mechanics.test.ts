@@ -139,6 +139,7 @@ describe('helper', () => {
     cook(g, 2);
     g.debugAddCoins(100);
     g.D.coinsStart += 100; // a test top-up, not income
+    g.S.bestRep = 2; // the helper is hired from reputation 2
     g.setHelper(true);
     const coins = g.S.coins;
     expect(g.startSelling()).toBe(true);

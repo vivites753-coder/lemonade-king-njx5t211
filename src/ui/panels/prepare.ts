@@ -1,10 +1,15 @@
 import { CONFIG } from '../../core/config';
+import type { LocationId } from '../../core/types';
 import { UNIT_COST } from '../../data/goods';
 import { LOCATIONS } from '../../data/locations';
 import { t } from '../../i18n';
 import { costPerCup, lemonsConsumed, tasteKey } from '../../sim/economy';
-import { coin, fmtHour, round1, toggle } from '../dom';
+import { coin, fmtDur, fmtHour, round1, toggle } from '../dom';
+import { locationCards } from './morning';
 import type { Panel } from './types';
+
+/** The place list is opened from the "Change place" button. */
+let pickPlace = false;
 
 function stepper(act: string, value: string, canDec: boolean, canInc: boolean): string {
   return `<span class="stepper">
@@ -56,14 +61,21 @@ export const preparePanel: Panel = {
         </div>
 
         ${toggle('flyers', D.flyers, `📄 ${t('prep.flyers', { n: CONFIG.FLYERS_COST })}`, t('prep.flyersDesc'))}
-        ${S.day >= 2 ? toggle('helper', D.helper, `🍳 ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t('prep.helperDesc')) : ''}
+        ${
+          g.helperOpen()
+            ? toggle('helper', D.helper, `🍳 ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t('prep.helperDesc'))
+            : `<div class="note">🔒 🍳 ${t('prep.helperLocked', { n: CONFIG.HELPER_MIN_REP })}</div>`
+        }
 
+        <h3>📍 ${t(`loc.${S.location}.name`)}</h3>
         <div class="good-box">🕐 ${t('prep.open', { a: fmtHour(g.openingHour(false)), b: fmtHour(CONFIG.DAY_END) })}${loc.rent ? ` · ${t('prep.rent', { n: coin(loc.rent) })}` : ''}</div>
+        <button class="btn btn-sm${chk.reason === 'toast.noRent' ? ' btn-y' : ''}" data-act="place">📍 ${t(pickPlace ? 'prep.placeHide' : 'prep.place')}</button>
+        ${pickPlace ? `<div class="locs" style="margin-top:8px">${locationCards(g)}</div>` : ''}
         ${!chk.ok && chk.reason ? `<div class="warn-box">${t(chk.reason, { rent: g.openingCosts() })}</div>` : ''}
       </div>
       <div class="panel-foot">
         <button class="btn btn-g btn-big" data-act="start" ${chk.ok ? '' : 'disabled'}>▶ ${t('prep.start')}</button>
-        <button class="btn" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>🛒 ${t('prep.market', { h: g.tripHours() })}</button>
+        <button class="btn" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
         ${!chk.ok ? `<button class="btn btn-sm" data-act="rest">😴 ${t('morning.rest')}</button>` : ''}
       </div>
     </div>`;
@@ -74,6 +86,14 @@ export const preparePanel: Panel = {
     if (act === 'flyers') g.setFlyers(!g.D.flyers);
     if (act === 'helper') g.setHelper(!g.D.helper);
     if (act === 'kitchen') g.goKitchen();
+    if (act === 'place') {
+      pickPlace = !pickPlace;
+      g.changed();
+    }
+    if (act === 'loc' && g.chooseLocation(arg as LocationId)) {
+      pickPlace = false;
+      g.changed();
+    }
     if (act === 'start') g.startSelling();
     if (act === 'market') g.goMarket();
     if (act === 'rest') ui.confirm(t('morning.restConfirm'), () => g.restDay());

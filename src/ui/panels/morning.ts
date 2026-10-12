@@ -4,19 +4,15 @@ import { LOCATIONS, LOCATION_IDS } from '../../data/locations';
 import { WEATHER } from '../../data/weather';
 import { t } from '../../i18n';
 import { lemonsTotal } from '../../sim/state';
-import { coin, dots, fmtHour } from '../dom';
+import type { Game } from '../../sim/game';
+import { coin, dots, fmtDur, fmtHour } from '../dom';
 import type { Panel } from './types';
 
-export const morningPanel: Panel = {
-  id: 'morning',
-  dock: true,
-  render(g) {
-    const S = g.S;
-    const D = g.D;
-    const w = WEATHER[D.forecast];
-    const st = S.stock;
-    const hasStock = lemonsTotal(st) + st.water + st.sugar + st.cups > 0;
-    const locCards = LOCATION_IDS.map((id) => {
+/** Cards of all places; a tap sends `loc:<id>`. */
+export function locationCards(g: Game): string {
+  const S = g.S;
+  const D = g.D;
+  return LOCATION_IDS.map((id) => {
       const l = LOCATIONS[id];
       const repLock = !g.unlocked(id);
       const own = S.points.find((p) => p.loc === id);
@@ -34,12 +30,24 @@ export const morningPanel: Panel = {
           <span class="loc-meta">
             <span>👥 ${dots(l.trafficStars)}</span>
             <span>${l.rent ? t('loc.rent', { n: coin(l.rent) }) : '✅ ' + t('loc.free')}</span>
-            <span>🕐 ${travel ? t('loc.travel', { h: travel }) : t('loc.travel0')}</span>
+            <span>🕐 ${travel ? t('loc.travel', { t: fmtDur(travel) }) : t('loc.travel0')}</span>
           </span>
           <small>⏰ ${t(`loc.${id}.peak`)}</small>
         </span>
       </button>`;
-    }).join('');
+  }).join('');
+}
+
+export const morningPanel: Panel = {
+  id: 'morning',
+  dock: true,
+  render(g) {
+    const S = g.S;
+    const D = g.D;
+    const w = WEATHER[D.forecast];
+    const st = S.stock;
+    const hasStock = lemonsTotal(st) + st.water + st.sugar + st.cups > 0;
+    const locCards = locationCards(g);
 
     return `<div class="panel">
       <div class="panel-head"><h2>☀️ ${t('morning.title', { n: S.day })}</h2></div>
@@ -58,7 +66,7 @@ export const morningPanel: Panel = {
         <div class="good-box">🕐 ${t('morning.openAt', { a: fmtHour(g.openingHour(true)), b: fmtHour(g.openingHour(false)) })}</div>
       </div>
       <div class="panel-foot">
-        <button class="btn btn-y btn-big" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>🛒 ${t('morning.toMarket', { h: g.tripHours() })}</button>
+        <button class="btn btn-y btn-big" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>🛒 ${t('morning.toMarket', { t: fmtDur(g.tripHours()) })}</button>
         ${g.S.upgrades.delivery ? `<button class="btn btn-b" data-act="delivery" ${g.canGoMarket(true) ? '' : 'disabled'}>🚚 ${t('morning.delivery')}</button>` : ''}
         <button class="btn" data-act="skip" ${g.maxPitchersNow() >= 1 || g.D.cupsReady > 0 ? '' : 'disabled'}>🍳 ${t('morning.skip')}</button>
         <button class="btn btn-sm" data-act="rest">😴 ${t('morning.rest')}</button>

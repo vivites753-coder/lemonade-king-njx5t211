@@ -1,4 +1,5 @@
 // Small HTML helpers for the DOM overlay UI.
+import { t } from '../i18n';
 export { fmtHour } from '../sim/lessons';
 
 export function esc(s: string): string {
@@ -41,6 +42,11 @@ export function lemiFace(mini = false): string {
 export function toggle(act: string, on: boolean, label: string, desc = ''): string {
   return `<button class="toggle${on ? ' on' : ''}" data-act="${act}" role="switch" aria-checked="${on}">
     <span class="sw"></span><span class="grow"><b>${label}</b>${desc ? `<br><small class="muted">${desc}</small>` : ''}</span></button>`;
+}
+
+/** Game hours as "2 год" or "20 хв". */
+export function fmtDur(h: number): string {
+  return h < 1 ? t('time.min', { n: Math.round(h * 60) }) : t('time.h', { n: Math.round(h * 10) / 10 });
 }
 
 export function round1(v: number): string {

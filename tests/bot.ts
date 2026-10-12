@@ -35,6 +35,11 @@ export interface BotOpts {
 const BOT_UPGRADES: UpgradeId[] = ['sign', 'umbrella', 'juicer_hand', 'banner', 'dispenser', 'speaker', 'bike'];
 
 function chooseLocation(g: Game): LocationId {
+  const want = wantedPlace(g);
+  return g.unlocked(want) ? want : g.S.coins >= 90 ? 'park' : 'yard';
+}
+
+function wantedPlace(g: Game): LocationId {
   if (g.S.day === 1) return 'yard';
   const w = g.D.forecast;
   // under a roof the rain brings more people, but the rent is high

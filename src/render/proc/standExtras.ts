@@ -135,6 +135,28 @@ function mascot(ctx: Ctx): void {
   ctx.stroke();
 }
 
+/** A small orange scooter parked next to the stand. */
+function scooter(ctx: Ctx): void {
+  const x = SX - 2.1;
+  const y = SY - 0.7;
+  const [gx, gy] = P(x + 0.45, y);
+  shadow(ctx, gx, gy, 20, 0.16);
+  faceY(ctx, x, y, 0, () => {
+    circle(ctx, 6, -6, 6, '#212529');
+    circle(ctx, 6, -6, 2.5, '#adb5bd');
+    circle(ctx, 34, -6, 6, '#212529');
+    circle(ctx, 34, -6, 2.5, '#adb5bd');
+    // body and floor
+    rrect(ctx, 8, -14, 22, 6, 3, '#ff922b');
+    rrect(ctx, 20, -22, 14, 10, 4, '#ff922b');
+    rrect(ctx, 22, -26, 10, 5, 2, '#343a40');
+    // steering column, handlebar and headlight
+    line(ctx, 8, -12, 4, -34, '#e8590c', 3);
+    line(ctx, -1, -35, 9, -35, '#212529', 2.5);
+    circle(ctx, 4, -29, 2.5, '#ffe066');
+  });
+}
+
 /** A red wrench bubble above broken equipment. */
 export function brokenMark(ctx: Ctx, x: number, y: number, z: number): void {
   const [bx, by] = P(x, y, z);
@@ -151,4 +173,5 @@ registerProcs({
   item_cups_branded: (ctx) => brandedCups(ctx),
   stand_tent: (ctx, c) => tent(ctx, !!(c as Call).on),
   stand_mascot: (ctx) => mascot(ctx),
+  stand_scooter: (ctx) => scooter(ctx),
 });

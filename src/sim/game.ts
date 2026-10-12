@@ -289,7 +289,8 @@ export class Game {
     this.street.reset(true);
     const gift = this.grandmaHelp();
     this.setPhase('morning');
-    if (gift > 0) this.card('grandmaHelp', '👵', { n: gift });
+    // grandma and the parents take turns
+    if (gift > 0) this.card(this.S.day % 2 ? 'grandmaHelp' : 'parentsHelp', this.S.day % 2 ? '👵' : '👪', { n: gift });
     if (this.S.day === 1) this.tip('welcome');
     this.tip('morning');
     if (this.S.day >= 2) this.tip('location');
@@ -307,18 +308,23 @@ export class Game {
     return locationUnlocked(this.S.bestRep, id);
   }
 
-  /** Soft safety net: if coins and stock cannot make even one pitcher, grandma helps. Counts as income (a gift). */
+  /**
+   * Soft safety net: when the purse is (almost) empty, or coins and stock cannot make even one pitcher,
+   * grandma or the parents help. Counts as income (a gift).
+   */
   private grandmaHelp(): number {
     const onePitcher = Math.ceil(pitcherCost(this.S.recipe, this.active())) + CONFIG.CUPS_PER_PITCHER;
-    if (this.S.coins + stockValue(this.S.stock) + this.D.cupsReady >= onePitcher) return 0;
+    const broke = this.S.coins <= CONFIG.FAMILY_HELP_BELOW;
+    if (!broke && this.S.coins + stockValue(this.S.stock) + this.D.cupsReady >= onePitcher) return 0;
     const gift = this.S.ageMode === 'kid' ? CONFIG.GRANDMA_GIFT_KID : CONFIG.GRANDMA_GIFT;
     this.S.coins += gift;
     this.D.bonus += gift;
     return gift;
   }
 
+  /** Pick the place for today: in the morning, or while preparing (e.g. when the rent is too high). */
   chooseLocation(id: LocationId): boolean {
-    if (this.phase !== 'morning') return false;
+    if (this.phase !== 'morning' && this.phase !== 'prepare') return false;
     if (this.S.day === 1 && id !== 'yard') {
       this.toast('toast.day1yard', undefined, 'warn');
       return false;
@@ -343,13 +349,17 @@ export class Game {
     return true;
   }
 
+  /** Market trip: the fastest vehicle you have counts (bike 1 h, scooter 20 min). */
   tripHours(delivery = false): number {
     if (delivery) return 0;
-    return this.active().bike ? UPGRADES.bike.tripHours ?? 1 : CONFIG.MARKET_TRIP_H;
+    let h: number = CONFIG.MARKET_TRIP_H;
+    for (const id of Object.keys(this.active()) as UpgradeId[]) h = Math.min(h, UPGRADES[id].tripHours ?? h);
+    return h;
   }
 
   travelHours(id: LocationId = this.S.location): number {
-    const reduce = this.active().bike ? UPGRADES.bike.travelReduce ?? 0 : 0;
+    let reduce = 0;
+    for (const u of Object.keys(this.active()) as UpgradeId[]) reduce = Math.max(reduce, UPGRADES[u].travelReduce ?? 0);
     return Math.max(0, LOCATIONS[id].travel - reduce);
   }
 
@@ -701,8 +711,13 @@ export class Game {
     this.changed();
   }
 
+  /** The helper can be hired once the reputation reaches 2. */
+  helperOpen(): boolean {
+    return this.S.bestRep >= CONFIG.HELPER_MIN_REP - 1e-9;
+  }
+
   setHelper(on: boolean): void {
-    if (this.phase !== 'prepare') return;
+    if (this.phase !== 'prepare' || (on && !this.helperOpen())) return;
     this.D.helper = on;
     this.changed();
   }
@@ -1356,9 +1371,10 @@ export class Game {
     if (Object.values(this.S.condition).some((c) => (c ?? 100) < 60)) this.tip('maintenance');
   }
 
-  canBuy(id: UpgradeId): { ok: boolean; reason?: 'owned' | 'requires' | 'money' } {
+  canBuy(id: UpgradeId): { ok: boolean; reason?: 'owned' | 'rep' | 'requires' | 'money' } {
     const u = UPGRADES[id];
     if (this.S.upgrades[id]) return { ok: false, reason: 'owned' };
+    if (u.minRep && this.S.bestRep < u.minRep - 1e-9) return { ok: false, reason: 'rep' };
     if (u.requires && !this.S.upgrades[u.requires]) return { ok: false, reason: 'requires' };
     if (this.S.coins < u.price) return { ok: false, reason: 'money' };
     return { ok: true };

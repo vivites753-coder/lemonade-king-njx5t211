@@ -99,7 +99,7 @@ export const uk = {
   'loc.beach.peak': 'Найбільше людей з 12:00 до 17:00.',
   'loc.rent': 'Оренда: {n}/день',
   'loc.free': 'Безкоштовно',
-  'loc.travel': 'Дорога: {h} год',
+  'loc.travel': 'Дорога: {t}',
   'loc.travel0': 'Поруч з домом',
   'loc.traffic': 'Людей',
 
@@ -108,7 +108,7 @@ export const uk = {
   'morning.forecastNote': 'Прогноз іноді помиляється',
   'morning.where': 'Де будемо продавати?',
   'morning.openAt': 'З ринком продаж почнеться о {a}, без ринку — о {b}.',
-  'morning.toMarket': 'На ринок (−{h} год)',
+  'morning.toMarket': 'На ринок (−{t})',
   'morning.skip': 'На кухню без ринку',
   'morning.rest': 'Відпочити сьогодні',
   'morning.restConfirm': 'Відпочити сьогодні? Продажу не буде, і день закінчиться.',
@@ -184,7 +184,7 @@ export const uk = {
   'prep.open': 'Продаж: з {a} до {b}',
   'prep.rent': 'Оренда сьогодні: {n}',
   'prep.start': 'Почати продаж',
-  'prep.market': 'Ще раз на ринок (−{h} год)',
+  'prep.market': 'Ще раз на ринок (−{t})',
   'prep.noStock': 'Не вистачає інгредієнтів навіть на 1 глечик.',
   'prep.spoils': 'Лимонад свіжий лише один день: що не продаси — доведеться вилити.',
 
@@ -710,6 +710,19 @@ export const uk = {
   'gl.fixed.text': 'Витрати, які платиш щодня, навіть коли продажів мало: оренда, зарплата.',
   'gl.trust.term': 'Довіра і контроль',
   'gl.trust.text': 'Працівникам треба довіряти, але й перевіряти: рахувати касу та стежити за результатами.',
+  // v0.4: tiers, scooter, family help
+  'time.min': '{n} хв',
+  'time.h': '{n} год',
+  'up.scooter.name': 'Скутер',
+  'up.scooter.desc': 'Ринок — лише 20 хвилин замість 2 годин, до далеких місць на годину швидше.',
+  'up.scooter.idea': 'Ідея: швидкість — це перевага',
+  'equip.scooter': 'Скутер',
+  'card.parentsHelp.title': 'Батьки допомагають 👪',
+  'card.parentsHelp.text': 'Батьки побачили, що гаманець майже порожній, і дали тобі {n} монет.',
+  'card.parentsHelp.lemi': 'Допомога рідних — це підтримка. Спробуй завтра заробити більше, ніж витратити!',
+  'prep.helperLocked': 'Помічника можна найняти з репутацією ⭐ {n}',
+  'prep.place': 'Змінити місце',
+  'prep.placeHide': 'Сховати місця',
 };
 
 export type I18nKey = keyof typeof uk;
