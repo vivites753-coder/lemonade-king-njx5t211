@@ -14,6 +14,8 @@ export interface DecorDef {
   back?: boolean;
 }
 
+export type WallStyle = 'station' | 'mall';
+
 export interface LocationDef {
   id: LocationId;
   icon: string;
@@ -23,8 +25,14 @@ export interface LocationDef {
   /** Hours to get there from home. */
   travel: number;
   fairPrice: number;
-  /** 0.7 = weather matters less than usual, 1.8 = much more. */
+  /** 0.7 = weather matters less than usual, 1.8 = much more; below 0 = bad weather brings people in. */
   weatherSensitivity: number;
+  /** Under a roof: the weather barely changes thirst, rain brings people inside, no umbrella needed. */
+  indoor?: boolean;
+  /** Back walls of an indoor place. */
+  walls?: WallStyle;
+  /** Opens when the best reputation reaches this many stars. */
+  minRep?: number;
   mix: Record<PedTypeId, number>;
   hourCurve: (h: number) => number;
   cars: boolean;
@@ -230,6 +238,102 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       { id: 'prop_beachball', x: 4.2, y: 6.5 },
     ],
   },
+
+  station: {
+    id: 'station',
+    icon: '🚉',
+    density: 20,
+    rent: 45,
+    travel: 1,
+    fairPrice: 11,
+    weatherSensitivity: -0.5,
+    indoor: true,
+    walls: 'station',
+    minRep: 2,
+    mix: { kid: 0.1, adult: 0.45, granny: 0.1, sport: 0.05, tourist: 0.3 },
+    // trains bring waves of people: morning and evening rush, a smaller one at lunch
+    hourCurve: (h) => (h < 9.5 ? 1.8 : h < 12 ? 0.9 : h < 13.5 ? 1.4 : h < 16.5 ? 0.8 : h < 19 ? 1.8 : 1.0),
+    cars: false,
+    trafficStars: 5,
+    map: [
+      'kkkkkkkkkkkk',
+      'kkkkkkkkkkkk',
+      'kkkkkkkkkkkk',
+      'kkkkkkkkkkkk',
+      'kkkkkkkkkkkk',
+      'KKKKKKKKKKKK',
+      'kkkkkkkkkkkk',
+      'kkkkkkkkkkkk',
+      'KKKKKKKKKKKK',
+      'kkkkkkkkkkkk',
+      'kkkkkkkkkkkk',
+      'kkkkkkkkkkkk',
+    ],
+    decor: [
+      { id: 'prop_vending', x: 0.7, y: 1.2 },
+      { id: 'prop_column', x: 2.6, y: 2.4 },
+      { id: 'prop_column', x: 9.0, y: 2.4 },
+      { id: 'prop_bench', x: 10.5, y: 1.6 },
+      { id: 'prop_luggage', x: 11.3, y: 2.6 },
+      { id: 'prop_sign_platform', x: 11.2, y: 4.5 },
+      { id: 'prop_bin', x: 3.6, y: 4.6 },
+      { id: 'prop_bin', x: 1.6, y: 9.8 },
+      { id: 'prop_bench', x: 4.4, y: 10.0 },
+      { id: 'prop_luggage', x: 5.6, y: 10.6 },
+      { id: 'prop_bench', x: 7.8, y: 10.0 },
+      { id: 'prop_vending', x: 10.8, y: 10.5 },
+    ],
+  },
+
+  mall: {
+    id: 'mall',
+    icon: '🏬',
+    density: 21,
+    rent: 70,
+    travel: 1,
+    fairPrice: 13,
+    weatherSensitivity: -0.6,
+    indoor: true,
+    walls: 'mall',
+    minRep: 2,
+    mix: { kid: 0.25, adult: 0.4, granny: 0.1, sport: 0.05, tourist: 0.2 },
+    // the mall opens at 10; most shoppers come after work
+    hourCurve: (h) => (h < 10 ? 0.15 : h < 12 ? 0.8 : h < 17 ? 1.2 : 1.6),
+    cars: false,
+    trafficStars: 4,
+    map: [
+      'mmmmmmmmmmmm',
+      'mmmmmmmmmmmm',
+      'mmmmmmmmmmmm',
+      'mmmmmmmmmmmm',
+      'mmmmmmmmmmmm',
+      'nnnnnnnnnnnn',
+      'mmmmmmmmmmmm',
+      'mmmmmmmmmmmm',
+      'nnnnnnnnnnnn',
+      'mmmmmmmmmmmm',
+      'mmmmmmmmmmmm',
+      'mmmmmmmmmmmm',
+    ],
+    decor: [
+      { id: 'bld_stage', x: 0.4, y: 0.5, w: 2.8, d: 1.8, back: true },
+      { id: 'prop_plant', x: 3.9, y: 0.6 },
+      { id: 'prop_balloons', x: 8.4, y: 1.4 },
+      { id: 'prop_kiosk_info', x: 10.3, y: 2.0 },
+      { id: 'prop_plant', x: 11.4, y: 0.6 },
+      { id: 'prop_bench', x: 2.3, y: 4.4 },
+      { id: 'prop_plant', x: 0.6, y: 4.5 },
+      { id: 'prop_plant', x: 1.0, y: 10.2 },
+      { id: 'prop_bench', x: 3.6, y: 10.0 },
+      { id: 'prop_plant', x: 6.2, y: 10.4 },
+      { id: 'prop_bench', x: 8.6, y: 10.0 },
+      { id: 'prop_balloons', x: 11.0, y: 10.3 },
+    ],
+  },
 };
 
 export const LOCATION_IDS = Object.keys(LOCATIONS) as LocationId[];
+
+export function locationUnlocked(bestRep: number, id: LocationId): boolean {
+  return bestRep >= (LOCATIONS[id].minRep ?? 0) - 1e-9;
+}

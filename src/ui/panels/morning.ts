@@ -1,4 +1,5 @@
 import type { EquipId, LocationId } from '../../core/types';
+import { LOC_EVENTS } from '../../data/events';
 import { LOCATIONS, LOCATION_IDS } from '../../data/locations';
 import { WEATHER } from '../../data/weather';
 import { t } from '../../i18n';
@@ -17,12 +18,16 @@ export const morningPanel: Panel = {
     const hasStock = lemonsTotal(st) + st.water + st.sugar + st.cups > 0;
     const locCards = LOCATION_IDS.map((id) => {
       const l = LOCATIONS[id];
-      const locked = S.day === 1 && id !== 'yard';
+      const repLock = !g.unlocked(id);
+      const locked = repLock || (S.day === 1 && id !== 'yard');
       const travel = g.travelHours(id);
-      return `<button class="loc${S.location === id ? ' sel' : ''}" data-act="loc:${id}" ${locked ? 'disabled' : ''}>
-        <span class="loc-ico">${l.icon}</span>
+      const ev = repLock ? undefined : LOC_EVENTS.find((e) => e.loc === id && D.events[e.id]);
+      return `<button class="loc${S.location === id ? ' sel' : ''}${repLock ? ' rep-lock' : ''}" data-act="loc:${id}" ${locked ? 'disabled' : ''}>
+        <span class="loc-ico">${repLock ? '🔒' : l.icon}</span>
         <span class="grow">
-          <b>${t(`loc.${id}.name`)}</b>
+          <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}
+          ${repLock ? `<span class="loc-lock">⭐ ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}
+          ${ev ? `<span class="loc-ev">${t(`loc.ev.${ev.id}`)}</span>` : ''}
           <small>${t(`loc.${id}.desc`)}</small>
           <span class="loc-meta">
             <span>👥 ${dots(l.trafficStars)}</span>

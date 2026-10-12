@@ -1,5 +1,6 @@
 // The lemonade stand. Every upgrade is a separate layer (own asset ID) so it visibly appears when bought.
 import { CONFIG } from '../../core/config';
+import { LOCATIONS } from '../../data/locations';
 import { t } from '../../i18n';
 import type { Game } from '../../sim/game';
 import { playerLook } from '../../sim/looks';
@@ -336,8 +337,10 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
   if (up.mascot) drawSprite(ctx, 'stand_mascot', call());
   if (playing && g.isSoldOut()) soldOutPlate(ctx);
-  if (up.tent) drawSprite(ctx, 'stand_tent', call({ on: !!br.tent }));
-  else if (up.umbrella) {
+  // under a roof the umbrella and the tent stay folded
+  const outdoor = !LOCATIONS[S.location].indoor;
+  if (up.tent && outdoor) drawSprite(ctx, 'stand_tent', call({ on: !!br.tent }));
+  else if (up.umbrella && outdoor) {
     ctx.save();
     if (br.umbrella) ctx.globalAlpha = 0.5;
     drawSprite(ctx, 'stand_umbrella', call());
@@ -346,8 +349,8 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
 
   // broken equipment gets a wrench bubble
   if (br.speaker) brokenMark(ctx, SX + 1.23, SY - 0.42, 44);
-  if (br.umbrella && !up.tent) brokenMark(ctx, SX + 0.15, SY - 0.25, 108);
-  if (br.tent) brokenMark(ctx, SX, SY - 0.35, 128);
+  if (br.umbrella && !up.tent && outdoor) brokenMark(ctx, SX + 0.15, SY - 0.25, 108);
+  if (br.tent && outdoor) brokenMark(ctx, SX, SY - 0.35, 128);
   if (br.dispenser) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
   if (br.juicer_hand || br.juicer_lever) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
   if (br.bike) brokenMark(ctx, SX - 1.75, SY - 0.9, 40);

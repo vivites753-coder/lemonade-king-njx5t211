@@ -27,6 +27,11 @@ const STYLES: Record<string, TileStyle> = {
   e: { a: '#dcc68d', b: '#d6c086', side: '#b39550', img: 'tile_sand' },
   w: { a: '#56c1e6', b: '#4fb8de', side: '#2f8fb8', img: 'tile_water' },
   d: { a: '#c99a63', b: '#c1925b', side: '#8a5d33', img: 'tile_boardwalk' },
+  // indoor floors
+  m: { a: '#f8f3eb', b: '#ede5d6', side: '#b8a98f', img: 'tile_mall' },
+  n: { a: '#ead9bf', b: '#e4d2b6', side: '#b8a98f', img: 'tile_mall_walk' },
+  k: { a: '#ddd5c7', b: '#d6cdbd', side: '#9a8f7e', img: 'tile_station' },
+  K: { a: '#cdc2b0', b: '#c7bba8', side: '#9a8f7e', img: 'tile_station_walk' },
 };
 
 /** Cheap deterministic noise for tile details. */
@@ -84,6 +89,19 @@ function drawTile(ctx: Ctx, ch: string, x: number, y: number): void {
       line(ctx, cx - 10, cy - 2, cx + 2, cy - 2, 'rgba(255,255,255,0.35)', 1.5);
       line(ctx, cx - 2, cy + 4, cx + 9, cy + 4, 'rgba(255,255,255,0.25)', 1.5);
       break;
+    case 'm':
+      // polished floor: a soft shine
+      line(ctx, cx - 12, cy - 3, cx - 4, cy - 7, 'rgba(255,255,255,0.7)', 2);
+      break;
+    case 'n':
+    case 'k':
+      poly(ctx, [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], undefined, ch === 'n' ? '#d6c29f' : '#c4b9a6', 1);
+      break;
+    case 'K': {
+      // tactile guide strip for the walkway
+      poly(ctx, [P(x, y + 0.42), P(x + 1, y + 0.42), P(x + 1, y + 0.58), P(x, y + 0.58)], '#fcc419');
+      break;
+    }
     case 'd':
       for (let k = 0; k <= 4; k++) {
         const [a1, b1] = P(x + k / 4, y);

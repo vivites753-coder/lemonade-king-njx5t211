@@ -43,6 +43,8 @@ export interface GameState {
   day: number;
   coins: number;
   rep: number;
+  /** Highest reputation ever reached: places unlocked by reputation stay open. */
+  bestRep: number;
   stock: Stock;
   upgrades: Partial<Record<UpgradeId, true>>;
   /** Equipment condition, 0–100. */
@@ -86,6 +88,14 @@ export interface DayEvents {
   sugarHike: boolean;
   cupsSoldOut: boolean;
   badLemons: boolean;
+  /** Station: trains from the big city (many people). */
+  trains: boolean;
+  /** Station: track repairs (few trains, few people). */
+  trackRepair: boolean;
+  /** Mall: a concert in the evening. */
+  concert: boolean;
+  /** Mall: a big sale (more shoppers all day). */
+  mallSale: boolean;
 }
 
 /** The jug being made in the kitchen mini-game (nothing is used up until it is poured). */
@@ -125,6 +135,8 @@ export interface DayReport {
   stockValue: number;
   spoilTomorrow: number;
   broke: EquipId[];
+  /** Places that opened tonight (reputation milestone). */
+  unlocked: LocationId[];
   stageGoalReached: boolean;
 }
 
@@ -173,6 +185,10 @@ export function emptyFunnel(): Funnel {
   return { passed: 0, inRange: 0, stopped: 0, tooExpensive: 0, queueFull: 0, soldOut: 0, joined: 0, sold: 0, impatient: 0 };
 }
 
+export function emptyEvents(): DayEvents {
+  return { festival: false, thiefAt: null, sugarHike: false, cupsSoldOut: false, badLemons: false, trains: false, trackRepair: false, concert: false, mallSale: false };
+}
+
 export function emptyKitchen(): KitchenState {
   return { juice: 0, sugar: 0, water: 0, mix: 'none', hand: false, stir: 0 };
 }
@@ -185,6 +201,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     day: 1,
     coins: CONFIG.START_COINS,
     rep: CONFIG.START_REP,
+    bestRep: CONFIG.START_REP,
     stock: { lemons: [], water: 0, sugar: 0, cups: 0 },
     upgrades: {},
     condition: { mixer: 100 },
@@ -211,7 +228,7 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
   return {
     weather,
     forecast,
-    events: { festival: false, thiefAt: null, sugarHike: false, cupsSoldOut: false, badLemons: false },
+    events: emptyEvents(),
     newsKey: 'news.calm0',
     hour: CONFIG.DAY_START,
     startHour: CONFIG.DAY_START,
@@ -251,6 +268,7 @@ export function normalizeState(S: GameState, D: DayState): void {
     if (S[k] === undefined) (S as unknown as Record<string, unknown>)[k] = fresh[k];
   }
   if (S.condition.mixer === undefined) S.condition.mixer = 100;
+  S.bestRep = Math.max(S.bestRep, S.rep);
   for (const id of Object.keys(S.upgrades)) {
     const eq = id as keyof GameState['condition'];
     if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'dispenser'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
@@ -261,6 +279,7 @@ export function normalizeState(S: GameState, D: DayState): void {
   }
   D.expenses = { ...day.expenses, ...D.expenses };
   D.kitchen = { ...emptyKitchen(), ...D.kitchen };
+  D.events = { ...emptyEvents(), ...D.events };
 }
 
 export function lemonsTotal(stock: Stock): number {

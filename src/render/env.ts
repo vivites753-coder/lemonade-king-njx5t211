@@ -8,4 +8,9 @@ export const ENV = {
   reduceMotion: false,
   /** 0 = day, 1 = night (lamps glow). */
   dusk: 0,
+  /** The current place has a roof (no rain particles, no umbrellas). */
+  indoor: false,
+  /** Place events the scenery reacts to. */
+  concert: false,
+  trains: false,
 };

@@ -81,9 +81,9 @@ export class WeatherFx {
     }
   }
 
-  update(dt: number, w: number, h: number, weather: WeatherId, reduceMotion: boolean): void {
+  update(dt: number, w: number, h: number, weather: WeatherId, reduceMotion: boolean, indoor = false): void {
     for (const c of this.clouds) c.x += c.v * dt * (weather === 'wind' ? 5 : 1);
-    const wantDrops = weather === 'rain' ? (reduceMotion ? 50 : 160) : 0;
+    const wantDrops = weather === 'rain' && !indoor ? (reduceMotion ? 50 : 160) : 0;
     while (this.drops.length < wantDrops) this.drops.push({ x: Math.random() * w, y: Math.random() * h, v: 500 + Math.random() * 300, l: 10 + Math.random() * 10 });
     if (this.drops.length > wantDrops) this.drops.length = wantDrops;
     for (const d of this.drops) {
@@ -94,7 +94,7 @@ export class WeatherFx {
         d.x = Math.random() * (w + 100);
       }
     }
-    const wantLeaves = weather === 'wind' ? (reduceMotion ? 6 : 24) : 0;
+    const wantLeaves = weather === 'wind' && !indoor ? (reduceMotion ? 6 : 24) : 0;
     while (this.leaves.length < wantLeaves)
       this.leaves.push({ x: -Math.random() * w, y: Math.random() * h, v: 140 + Math.random() * 120, a: Math.random() * 6, c: Math.random() < 0.5 ? '#82c91e' : '#f59f00' });
     if (this.leaves.length > wantLeaves) this.leaves.length = wantLeaves;
@@ -109,7 +109,7 @@ export class WeatherFx {
     }
   }
 
-  drawOverlay(ctx: Ctx, w: number, h: number, weather: WeatherId, hour: number, t: number, reduceMotion: boolean): void {
+  drawOverlay(ctx: Ctx, w: number, h: number, weather: WeatherId, hour: number, t: number, reduceMotion: boolean, indoor = false): void {
     // weather tint
     const tint: Partial<Record<WeatherId, string>> = {
       cloudy: 'rgba(60,70,90,0.10)',
@@ -117,11 +117,11 @@ export class WeatherFx {
       cold: 'rgba(160,190,230,0.16)',
       hot: 'rgba(255,170,60,0.07)',
     };
-    if (tint[weather]) {
+    if (tint[weather] && !indoor) {
       ctx.fillStyle = tint[weather]!;
       ctx.fillRect(0, 0, w, h);
     }
-    if (weather === 'hot' && !reduceMotion) {
+    if (weather === 'hot' && !reduceMotion && !indoor) {
       ctx.strokeStyle = 'rgba(255,255,255,0.08)';
       ctx.lineWidth = 6;
       for (let i = 0; i < 5; i++) {

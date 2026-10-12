@@ -599,6 +599,38 @@ small {
   font-weight: 800;
   margin: 3px 0;
 }
+.pill-out {
+  display: inline-block !important;
+  font-weight: 800 !important;
+  color: var(--blue-d) !important;
+}
+.loc .tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--blue-d);
+  background: #e7f5ff;
+  border-radius: 8px;
+  padding: 1px 6px;
+  vertical-align: 2px;
+}
+.loc-lock,
+.loc-ev {
+  display: block;
+  font-size: 13px;
+  font-weight: 900;
+  margin: 2px 0;
+}
+.loc-lock {
+  color: var(--red-d);
+}
+.loc-ev {
+  color: #7048e8;
+}
+.loc.rep-lock:disabled {
+  opacity: 0.75;
+  background: #f4f1e8;
+}
 .dots {
   color: var(--orange);
   letter-spacing: 1px;

@@ -1,26 +1,38 @@
 // How many people walk past: depends on the location, the hour, the weather and events — never on the player.
 import { CONFIG } from '../core/config';
 import type { LocationId, WeatherId } from '../core/types';
-import { FESTIVAL_PED } from '../data/events';
+import { FESTIVAL_PED, LOC_EVENTS, type LocEventId } from '../data/events';
 import { LOCATIONS } from '../data/locations';
 import { WEATHER } from '../data/weather';
+
+/** The day's events that change the crowd. */
+export type Crowd = { festival: boolean } & Partial<Record<LocEventId, boolean>>;
+
+export const NO_EVENTS: Crowd = { festival: false };
 
 export function weatherPedFactor(loc: LocationId, weather: WeatherId): number {
   const w = WEATHER[weather];
   return Math.max(0.05, 1 + (w.ped - 1) * LOCATIONS[loc].weatherSensitivity);
 }
 
+/** Crowd multiplier from today's events at this place (the city festival is outdoors only). */
+export function eventPedFactor(loc: LocationId, hour: number, ev: Crowd): number {
+  let m = ev.festival && !LOCATIONS[loc].indoor ? FESTIVAL_PED : 1;
+  for (const e of LOC_EVENTS) if (e.loc === loc && ev[e.id]) m *= e.ped(hour);
+  return m;
+}
+
 /** Pedestrians per game hour. */
-export function spawnRatePerHour(loc: LocationId, hour: number, weather: WeatherId, festival: boolean): number {
+export function spawnRatePerHour(loc: LocationId, hour: number, weather: WeatherId, ev: Crowd): number {
   const l = LOCATIONS[loc];
-  return l.density * l.hourCurve(hour) * weatherPedFactor(loc, weather) * (festival ? FESTIVAL_PED : 1);
+  return l.density * l.hourCurve(hour) * weatherPedFactor(loc, weather) * eventPedFactor(loc, hour, ev);
 }
 
 /** Expected pedestrians between two hours (numeric integration). */
-export function passersBetween(loc: LocationId, weather: WeatherId, from: number, to: number, festival: boolean): number {
+export function passersBetween(loc: LocationId, weather: WeatherId, from: number, to: number, ev: Crowd): number {
   const step = 1 / 60;
   let sum = 0;
-  for (let h = from; h < to; h += step) sum += spawnRatePerHour(loc, h + step / 2, weather, festival) * step;
+  for (let h = from; h < to; h += step) sum += spawnRatePerHour(loc, h + step / 2, weather, ev) * step;
   return sum;
 }
 

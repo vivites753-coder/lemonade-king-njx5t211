@@ -13,6 +13,7 @@ import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
 import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
 import { drawCharacter, drawCup } from './proc/people';
 import { drawCar } from './proc/props';
+import { drawWalls } from './proc/indoor';
 import { drawStand } from './proc/stand';
 import './proc/buildings';
 
@@ -137,6 +138,10 @@ export class Renderer {
     ENV.weather = g.D.weather;
     ENV.reduceMotion = reduce;
     ENV.dusk = smooth(18, 19.5, hour);
+    const place = LOCATIONS[g.S.location];
+    ENV.indoor = !!place.indoor;
+    ENV.concert = g.D.events.concert && hour >= 14.5;
+    ENV.trains = g.D.events.trains;
 
     // the canvas can change size without a resize event (hidden tab, WebView rotation)
     const cw = this.canvas.clientWidth;
@@ -156,7 +161,7 @@ export class Renderer {
     }
 
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    this.fx.update(dt, this.w, this.h, g.D.weather, reduce);
+    this.fx.update(dt, this.w, this.h, g.D.weather, reduce, ENV.indoor);
     this.fx.drawSky(ctx, this.w, this.h, g.D.weather, hour);
 
     ctx.save();
@@ -165,7 +170,7 @@ export class Renderer {
     this.drawWorld(ctx, dt);
     ctx.restore();
 
-    this.fx.drawOverlay(ctx, this.w, this.h, g.D.weather, hour, this.t, reduce);
+    this.fx.drawOverlay(ctx, this.w, this.h, g.D.weather, hour, this.t, reduce, ENV.indoor);
   }
 
   private drawWorld(ctx: Ctx, dt: number): void {
@@ -180,6 +185,8 @@ export class Renderer {
     ellipse(ctx, 0, 230, 470, 150, 'rgba(0,0,0,0.08)');
     ctx.drawImage(this.ground.canvas, GROUND_BOUNDS.x, GROUND_BOUNDS.y, GROUND_BOUNDS.w, GROUND_BOUNDS.h);
     this.drawWater(ctx);
+    const walls = LOCATIONS[loc].walls;
+    if (walls) drawWalls(ctx, walls);
 
     if (selling && g.S.settings.showZone) {
       groundCircle(ctx, CONFIG.STAND.x, CONFIG.STAND.y, g.radius);
@@ -269,7 +276,7 @@ export class Renderer {
       facingCam,
       dirX,
       hasCup: p.hasCup,
-      umbrella: this.game.D.weather === 'rain' && p.id % 3 !== 0 && !inQueue,
+      umbrella: this.game.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue,
     });
     if (p.emote || p.state === 'queue') {
       this.bubbles.push({ sx, sy: headY, emote: p.emote, patience: p.state === 'queue' ? p.patience / Math.max(1, p.patienceMax) : -1 });

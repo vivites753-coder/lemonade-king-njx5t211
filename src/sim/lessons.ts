@@ -20,7 +20,9 @@ export function pickLesson(S: GameState, D: DayState, r: DayReport): { key: stri
   // the very first evening teaches the main formula
   if (S.day === 1) return { key: 'lesson.profit', params: { income: r.income, expenses: r.expenses, profit: r.profit } };
   if (r.broke.length) return { key: 'lesson.breakdown', params: { item: `@equip.${r.broke[0]}`, cost: r.repairs } };
-  if ((D.weather === 'rain' || D.weather === 'cold') && f.sold < 15)
+  const badWeather = D.weather === 'rain' || D.weather === 'cold';
+  if (loc.indoor && badWeather && f.passed > 0) return { key: 'lesson.indoorRain', params: { w: `@weather.${D.weather}`, n: f.passed } };
+  if (badWeather && f.sold < 15)
     return { key: 'lesson.weather', params: { w: `@weather.${D.weather}`, n: f.passed } };
   if (D.soldOutAt !== null && D.soldOutAt < CONFIG.DAY_END - 1.5)
     return { key: 'lesson.soldout', params: { time: fmtHour(D.soldOutAt) } };

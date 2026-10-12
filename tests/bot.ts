@@ -37,13 +37,15 @@ const BOT_UPGRADES: UpgradeId[] = ['sign', 'umbrella', 'juicer_hand', 'banner', 
 function chooseLocation(g: Game): LocationId {
   if (g.S.day === 1) return 'yard';
   const w = g.D.forecast;
+  // under a roof the rain brings more people, but the rent is high
+  if ((w === 'rain' || w === 'cold') && g.S.coins >= 220 && g.unlocked('station')) return 'station';
   if (w === 'rain' || w === 'cold') return 'yard';
   if ((w === 'hot' || w === 'sunny') && g.S.coins >= 170) return 'beach';
   if (g.S.coins >= 90) return 'park';
   return 'yard';
 }
 
-const WANT: Record<LocationId, number> = { yard: 2, park: 4, school: 3, beach: 6 };
+const WANT: Record<LocationId, number> = { yard: 2, park: 4, school: 3, beach: 6, station: 5, mall: 5 };
 
 /** Makes lemonade in the kitchen like a careful player. */
 export function cook(g: Game, pitchers: number): boolean {

@@ -8,7 +8,7 @@ import { UPGRADES } from '../data/upgrades';
 import { WEATHER } from '../data/weather';
 import type { Recipe, Stock } from './state';
 import { lemonsTotal } from './state';
-import { passersBetween, nearShare } from './traffic';
+import { NO_EVENTS, nearShare, passersBetween } from './traffic';
 
 export type Owned = Partial<Record<UpgradeId, true>>;
 
@@ -98,11 +98,17 @@ export interface InterestInput {
   rep: number;
   festival: boolean;
   location?: LocationId;
+  /** Stop-chance multiplier from a place event (a concert), with its "Why?" key. */
+  event?: { key: string; mult: number };
 }
 
+/** Indoors the weather changes thirst this much less (no sun, no rain on your head). */
+export const INDOOR_THIRST_DAMPING = 0.4;
+
 /** Weather factor for the stop chance; a tent removes part of the bad-weather penalty. */
-export function weatherThirst(weather: WeatherId, up: Owned): number {
+export function weatherThirst(weather: WeatherId, up: Owned, indoor = false): number {
   const t = WEATHER[weather].thirst;
+  if (indoor) return 1 + (t - 1) * INDOOR_THIRST_DAMPING;
   if (t >= 1) return t;
   let shield = 0;
   for (const id of Object.keys(up) as UpgradeId[]) shield = Math.max(shield, UPGRADES[id].weatherShield ?? 0);
@@ -129,16 +135,19 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
     ads += 0.25;
     parts.push({ key: 'why.flyers', kind: 'add', value: 0.25 });
   }
-  const w = { thirst: weatherThirst(i.weather, i.upgrades) };
-  parts.push({ key: `why.weather.${i.weather}`, kind: 'mul', value: w.thirst });
+  const indoor = !!(i.location && LOCATIONS[i.location].indoor);
+  const w = { thirst: weatherThirst(i.weather, i.upgrades, indoor) };
+  parts.push({ key: indoor ? 'why.indoor' : `why.weather.${i.weather}`, kind: 'mul', value: w.thirst });
   let comfort = 1;
-  for (const id of Object.keys(i.upgrades) as UpgradeId[]) comfort *= UPGRADES[id].comfort ?? 1;
+  for (const id of Object.keys(i.upgrades) as UpgradeId[]) if (!(indoor && UPGRADES[id].outdoorOnly)) comfort *= UPGRADES[id].comfort ?? 1;
   if (comfort !== 1) parts.push({ key: 'why.comfort', kind: 'mul', value: comfort });
   const repF = 0.85 + 0.06 * i.rep;
   parts.push({ key: 'why.rep', kind: 'mul', value: repF });
   const fest = i.festival ? 1.3 : 1;
   if (i.festival) parts.push({ key: 'why.festival', kind: 'mul', value: fest });
-  const raw = CONFIG.BASE_STOP_CHANCE * (1 + ads) * w.thirst * comfort * repF * fest;
+  const ev = i.event?.mult ?? 1;
+  if (i.event) parts.push({ key: i.event.key, kind: 'mul', value: ev });
+  const raw = CONFIG.BASE_STOP_CHANCE * (1 + ads) * w.thirst * comfort * repF * fest * ev;
   return { chance: Math.min(CONFIG.MAX_STOP_CHANCE, raw), raw, parts };
 }
 
@@ -196,7 +205,7 @@ export function expectedDay(o: {
 }): { passers: number; inRange: number; buyers: number; revenue: number; profit: number; profitPerPasser: number } {
   const loc = LOCATIONS[o.loc];
   const to = o.to ?? CONFIG.DAY_END;
-  const passers = passersBetween(o.loc, o.weather, o.from, to, false);
+  const passers = passersBetween(o.loc, o.weather, o.from, to, NO_EVENTS);
   const radius = attentionRadius(o.upgrades, o.speakerOn ?? true);
   const inRange = passers * (nearShare(radius) + (1 - CONFIG.LANES[0].weight) * farCoverage(radius));
   const base = interestChance({

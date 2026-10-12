@@ -2,6 +2,7 @@
 import { CONFIG } from '../core/config';
 import type { RNG } from '../core/rng';
 import type { EquipId, UpgradeId, WeatherId } from '../core/types';
+import { LOCATIONS } from '../data/locations';
 import { BREAK_RISK_BELOW, EQUIPMENT, EQUIP_IDS, MIDDAY_RISK_BELOW, MIDDAY_RISK_PER_POINT, PRO_MIXER_WEAR } from '../data/equipment';
 import { UPGRADES } from '../data/upgrades';
 import type { Owned } from './economy';
@@ -15,11 +16,16 @@ export function ownedEquipment(S: GameState): EquipId[] {
   });
 }
 
-/** Upgrades that work right now: broken equipment gives no bonus. */
+/** Equipment that stays in the bag at an indoor place (an umbrella in a mall). */
+export function unusedHere(S: GameState, id: UpgradeId | EquipId): boolean {
+  return !!LOCATIONS[S.location].indoor && !!UPGRADES[id as UpgradeId]?.outdoorOnly;
+}
+
+/** Upgrades that work right now: broken equipment gives no bonus, an umbrella is useless indoors. */
 export function activeUpgrades(S: GameState): Owned {
   const out: Owned = {};
   for (const id of Object.keys(S.upgrades) as UpgradeId[]) {
-    if (S.broken[id as EquipId]) continue;
+    if (S.broken[id as EquipId] || unusedHere(S, id)) continue;
     out[id] = true;
   }
   return out;
@@ -51,7 +57,7 @@ export function applyWear(S: GameState, rng: RNG, weather: WeatherId, usedMixer:
   const toolkit = upgradeMult(S, 'wearMult');
   for (const id of ownedEquipment(S)) {
     if (S.broken[id]) continue;
-    if (id === 'mixer' ? !usedMixer : !opened) continue;
+    if (id === 'mixer' ? !usedMixer : !opened || unusedHere(S, id)) continue;
     const def = EQUIPMENT[id];
     let wear = rng.range(def.wear[0], def.wear[1]) * (def.weather?.[weather] ?? 1) * toolkit;
     if (id === 'mixer' && S.upgrades.mixer_pro) wear *= PRO_MIXER_WEAR;
@@ -77,7 +83,7 @@ export function rollBreaks(S: GameState, rng: RNG): EquipId[] {
 /** During selling, roughly once per game hour: a worn item may break right now. */
 export function rollMiddayBreak(S: GameState, rng: RNG, weather: WeatherId): EquipId | null {
   for (const id of ownedEquipment(S)) {
-    if (id === 'mixer' || S.broken[id]) continue;
+    if (id === 'mixer' || S.broken[id] || unusedHere(S, id)) continue;
     const cond = S.condition[id] ?? 100;
     if (cond >= MIDDAY_RISK_BELOW) continue;
     const p = (MIDDAY_RISK_BELOW - cond) * MIDDAY_RISK_PER_POINT * (EQUIPMENT[id].weather?.[weather] ?? 1);

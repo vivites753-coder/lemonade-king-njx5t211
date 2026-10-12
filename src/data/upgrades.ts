@@ -41,6 +41,8 @@ export interface UpgradeDef {
   repairMult?: number;
   /** Unsold lemonade keeps until tomorrow. */
   carryOver?: boolean;
+  /** Only useful outdoors: no effect and no wear under a roof (station, mall). */
+  outdoorOnly?: boolean;
   /** Mixing in the kitchen is always perfect. */
   perfectMix?: boolean;
   /** Market prices markup when the goods are delivered (no trip). */
@@ -56,11 +58,11 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   mascot: { id: 'mascot', icon: '🍋', price: 220, cat: 'ads', ads: 0.15, adsSpecial: 0.4 },
   speaker: { id: 'speaker', icon: '🔊', price: 250, cat: 'ads', ads: 0.35, radius: 2.3, toggle: true },
   // comfort and speed
-  umbrella: { id: 'umbrella', icon: '⛱️', price: 80, cat: 'comfort', comfort: 1.1, patience: 1.3 },
+  umbrella: { id: 'umbrella', icon: '⛱️', price: 80, cat: 'comfort', comfort: 1.1, patience: 1.3, outdoorOnly: true },
   dispenser: { id: 'dispenser', icon: '🚰', price: 180, cat: 'comfort', serveMult: 0.7 },
   bike: { id: 'bike', icon: '🚲', price: 300, cat: 'comfort', tripHours: 1, travelReduce: 1 },
   delivery: { id: 'delivery', icon: '🚚', price: 80, cat: 'comfort', deliveryMarkup: 1.1 },
-  tent: { id: 'tent', icon: '⛺', price: 400, cat: 'comfort', requires: 'umbrella', weatherShield: 0.5, comfort: 1.05 },
+  tent: { id: 'tent', icon: '⛺', price: 400, cat: 'comfort', requires: 'umbrella', weatherShield: 0.5, comfort: 1.05, outdoorOnly: true },
   // production
   juicer_hand: { id: 'juicer_hand', icon: '🍋', price: 120, cat: 'production', lemonReduce: 1 },
   juicer_lever: { id: 'juicer_lever', icon: '⚙️', price: 300, cat: 'production', requires: 'juicer_hand', lemonReduce: 2 },

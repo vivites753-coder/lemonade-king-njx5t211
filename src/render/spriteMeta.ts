@@ -30,4 +30,16 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   bld_fountain: { h: 80, anchor: [0.5, 0.75] },
   bld_lifeguard: { h: 110, anchor: [0.5, 0.92] },
   stand_table: { h: 70, anchor: [0.5, 0.7] },
+  // indoor places: the wall image covers both back walls; its anchor is the back corner on the floor
+  wall_mall: { h: 311, anchor: [0.5, 0.383] },
+  wall_station: { h: 311, anchor: [0.5, 0.383] },
+  bld_stage: { h: 130, anchor: [0.5, 0.7] },
+  prop_vending: { h: 70, anchor: [0.5, 0.85] },
+  prop_column: { h: 120, anchor: [0.5, 0.95] },
+  prop_luggage: { h: 44, anchor: [0.5, 0.8] },
+  prop_sign_platform: { h: 64, anchor: [0.5, 0.95] },
+  prop_bin: { h: 24, anchor: [0.5, 0.9] },
+  prop_plant: { h: 54, anchor: [0.5, 0.92] },
+  prop_balloons: { h: 80, anchor: [0.5, 0.97] },
+  prop_kiosk_info: { h: 80, anchor: [0.5, 0.8] },
 };

@@ -5,10 +5,10 @@ import { CONFIG } from '../core/config';
 import { RNG } from '../core/rng';
 import type { AgeMode, Avatar, EquipId, GoodId, Lang, LocationId, MixResult, Params, Phase, UpgradeId, WeatherId } from '../core/types';
 import { EQUIPMENT } from '../data/equipment';
-import { BAD_LEMONS_SHARE, type DayEventId } from '../data/events';
+import { BAD_LEMONS_SHARE, LOC_EVENTS, type DayEventId } from '../data/events';
 import { GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
 import { TIP_GLOSSARY } from '../data/glossary';
-import { LOCATIONS } from '../data/locations';
+import { LOCATIONS, LOCATION_IDS, locationUnlocked } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
 import { UPGRADES } from '../data/upgrades';
 import { WEATHER, WEATHER_ORDER } from '../data/weather';
@@ -120,7 +120,7 @@ export class Game {
       hour: () => this.D.hour,
       location: () => this.S.location,
       weather: () => this.D.weather,
-      festival: () => this.D.events.festival,
+      crowd: () => this.D.events,
       selling: () => this.phase === 'sell',
       radius: () => this.radius,
       patienceMult: () => {
@@ -269,6 +269,12 @@ export class Game {
     for (const id of broke) this.card('broke', EQUIPMENT[id].icon, { item: equipName(id), cost: repairCost(this.S, id) }, id);
     if (broke.length) this.tip('breakdown');
     if (this.D.events.festival) this.card('festival', '🎉');
+    for (const e of LOC_EVENTS) if (this.D.events[e.id]) this.card(`ev.${e.id}`, e.icon);
+  }
+
+  /** Places open for the player (some need a better reputation). */
+  unlocked(id: LocationId): boolean {
+    return locationUnlocked(this.S.bestRep, id);
   }
 
   /** Soft safety net: if coins and stock cannot make even one pitcher, grandma helps. Counts as income (a gift). */
@@ -287,8 +293,14 @@ export class Game {
       this.toast('toast.day1yard', undefined, 'warn');
       return false;
     }
+    if (!this.unlocked(id)) {
+      this.toast('toast.locLocked', { n: LOCATIONS[id].minRep ?? 0 }, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
     if (this.S.location === id) return true;
     this.S.location = id;
+    if (LOCATIONS[id].indoor) this.tip('indoor');
     this.street.reset(true);
     this.refreshInterest();
     this.sfx('pop');
@@ -737,9 +749,17 @@ export class Game {
       flyers: this.D.flyers,
       weather: this.D.weather,
       rep: this.S.rep,
-      festival: this.D.events.festival,
+      // the city festival is outdoors; indoor places have their own events
+      festival: this.D.events.festival && !LOCATIONS[this.S.location].indoor,
       location: this.S.location,
+      event: this.placeEventBoost(),
     });
+  }
+
+  /** A place event that makes people stop more often (a concert at the mall). */
+  private placeEventBoost(): { key: string; mult: number } | undefined {
+    const e = LOC_EVENTS.find((x) => x.loc === this.S.location && x.stop && this.D.events[x.id]);
+    return e ? { key: `why.ev.${e.id}`, mult: e.stop! } : undefined;
   }
 
   refreshInterest(): void {
@@ -1072,8 +1092,13 @@ export class Game {
       stockValue: stockValue(S.stock),
       spoilTomorrow: S.stock.lemons.filter((b) => b.age + 1 >= CONFIG.LEMON_SPOIL_AGE).reduce((n, b) => n + b.n, 0),
       broke: [...D.brokeToday],
+      unlocked: [],
       stageGoalReached: false,
     };
+    // reputation milestones open new places for good
+    const before = S.bestRep;
+    S.bestRep = Math.max(S.bestRep, S.rep);
+    report.unlocked = LOCATION_IDS.filter((id) => !locationUnlocked(before, id) && locationUnlocked(S.bestRep, id));
     report.lesson = pickLesson(S, D, report);
     if (!S.stageDone && S.coins >= CONFIG.GOAL_COINS && S.rep >= CONFIG.GOAL_REP) {
       report.stageGoalReached = true;
@@ -1085,6 +1110,10 @@ export class Game {
     this.setPhase('report');
     this.tip('report');
     if (report.stageGoalReached) this.sfx('fanfare');
+    if (report.unlocked.length) {
+      this.card('locUnlocked', '🔓', { list: report.unlocked.map((id) => `@loc.${id}.name`).join(', ') });
+      this.sfx('fanfare');
+    }
   }
 
   // ---------------------------------------------------------------- evening

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LocationId, WeatherId } from '../src/core/types';
 import { LOCATIONS, LOCATION_IDS } from '../src/data/locations';
 import { expectedDay } from '../src/sim/economy';
-import { passersBetween, spawnRatePerHour, weatherPedFactor } from '../src/sim/traffic';
+import { NO_EVENTS, passersBetween, spawnRatePerHour, weatherPedFactor } from '../src/sim/traffic';
 
 const day = (loc: LocationId, weather: WeatherId = 'sunny', price = LOCATIONS[loc].fairPrice) =>
   expectedDay({ loc, weather, price, upgrades: {}, from: 10 });
@@ -16,11 +16,11 @@ describe('foot traffic', () => {
   });
 
   it('school has short crowded breaks', () => {
-    expect(spawnRatePerHour('school', 12.5, 'sunny', false)).toBeGreaterThan(5 * spawnRatePerHour('school', 14, 'sunny', false));
+    expect(spawnRatePerHour('school', 12.5, 'sunny', NO_EVENTS)).toBeGreaterThan(5 * spawnRatePerHour('school', 14, 'sunny', NO_EVENTS));
   });
 
   it('festival brings more people', () => {
-    expect(passersBetween('park', 'sunny', 10, 20, true)).toBeGreaterThan(passersBetween('park', 'sunny', 10, 20, false));
+    expect(passersBetween('park', 'sunny', 10, 20, { festival: true })).toBeGreaterThan(passersBetween('park', 'sunny', 10, 20, NO_EVENTS));
   });
 
   it('locations teach different lessons', () => {

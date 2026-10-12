@@ -67,6 +67,7 @@ export const reportPanel: Panel = {
         ${r.wastedCups ? `<div class="warn-box">🚰 ${t('report.waste', { n: r.wastedCups, c: r.wasteCost })}</div>` : ''}
         ${r.carriedCups ? `<div class="good-box">🧊 ${t('report.carried', { n: r.carriedCups })}</div>` : ''}
         ${r.freeCups ? `<div class="note">🎁 ${t('report.freeCups', { n: r.freeCups })}</div>` : ''}
+        ${r.unlocked?.length ? `<div class="good-box">🔓 ${t('report.unlocked', { list: r.unlocked.map((id) => t(`loc.${id}.name`)).join(', ') })}</div>` : ''}
         ${r.broke?.length ? `<div class="warn-box">🔧 ${t('report.broke', { list: r.broke.map((id) => t(`equip.${id}`)).join(', ') })}</div>` : ''}
         ${r.spoilTomorrow ? `<div class="warn-box">⚠️ ${t('report.spoilTomorrow', { n: r.spoilTomorrow })}</div>` : ''}
         <div class="card row"><span class="grow"><b>⭐ ${t('report.rep')}</b><br>${stars(r.repEnd)} ${r.repEnd.toFixed(1)}</span>

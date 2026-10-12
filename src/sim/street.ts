@@ -5,7 +5,7 @@ import type { LocationId, PedTypeId, Vec, WeatherId } from '../core/types';
 import { LOCATIONS } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
 import { randomLook, type Look } from './looks';
-import { spawnRatePerHour } from './traffic';
+import { spawnRatePerHour, type Crowd } from './traffic';
 
 export type PedState = 'walk' | 'toQueue' | 'queue' | 'leave';
 
@@ -64,7 +64,8 @@ export interface StreetHost {
   hour(): number;
   location(): LocationId;
   weather(): WeatherId;
-  festival(): boolean;
+  /** Today's events that change the crowd. */
+  crowd(): Crowd;
   selling(): boolean;
   radius(): number;
   patienceMult(): number;
@@ -94,14 +95,14 @@ export class Street {
     this.thief = null;
     this.spawnAcc = 0;
     if (!prewarm) return;
-    const rate = spawnRatePerHour(this.host.location(), this.host.hour(), this.host.weather(), this.host.festival());
+    const rate = spawnRatePerHour(this.host.location(), this.host.hour(), this.host.weather(), this.host.crowd());
     const n = Math.min(CONFIG.MAX_PEDS - 10, Math.round(rate));
     for (let i = 0; i < n; i++) this.spawn(true);
   }
 
   update(dt: number): void {
     const h = this.host;
-    const rate = spawnRatePerHour(h.location(), h.hour(), h.weather(), h.festival());
+    const rate = spawnRatePerHour(h.location(), h.hour(), h.weather(), h.crowd());
     this.spawnAcc += (rate * dt) / CONFIG.HOUR_SEC;
     while (this.spawnAcc >= 1) {
       this.spawnAcc -= 1;

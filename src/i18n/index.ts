@@ -18,12 +18,21 @@ export function has(key: string): boolean {
   return key in DICTS[current] || key in uk;
 }
 
-/** Translate a key. Params like {n} are replaced; a param value starting with "@" is itself translated. */
+/**
+ * Translate a key. Params like {n} are replaced; a param value starting with "@" is itself translated
+ * (a list "@a, @b" translates each part).
+ */
 export function t(key: string, params?: Params): string {
   let s = DICTS[current][key] ?? (uk as Record<string, string>)[key] ?? key;
   if (params) {
     for (const [k, v] of Object.entries(params)) {
-      const val = typeof v === 'string' && v.startsWith('@') ? t(v.slice(1)) : String(v);
+      const val =
+        typeof v === 'string' && v.startsWith('@')
+          ? v
+              .split(', ')
+              .map((p) => (p.startsWith('@') ? t(p.slice(1)) : p))
+              .join(', ')
+          : String(v);
       s = s.split(`{${k}}`).join(val);
     }
   }

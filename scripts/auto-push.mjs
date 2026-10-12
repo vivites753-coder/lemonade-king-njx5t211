@@ -17,7 +17,7 @@ const NL = '\n';
 
 const say = (msg) => process.stdout.write(JSON.stringify({ systemMessage: msg }));
 const git = (args, input) => execFileSync('git', args, { cwd: repo, env, encoding: 'utf8', input }).trim();
-const npm = (script) => spawnSync('npm', ['run', '-s', script], { cwd: repo, env, encoding: 'utf8', shell: process.platform === 'win32' }).status === 0;
+const npm = (script) => spawnSync(`npm run -s ${script}`, { cwd: repo, env, encoding: 'utf8', shell: true }).status === 0;
 
 const gitDir = join(repo, '.git');
 if (['MERGE_HEAD', 'rebase-merge', 'rebase-apply'].some((f) => existsSync(join(gitDir, f)))) process.exit(0);

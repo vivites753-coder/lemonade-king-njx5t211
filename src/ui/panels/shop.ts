@@ -21,7 +21,7 @@ export const shopPanel: Panel = {
       else btn = `<button class="btn ${can.ok ? 'btn-g' : ''} btn-sm" data-act="buy:${id}" ${can.ok ? '' : 'disabled'}>${coin(u.price)}</button>`;
       return `<div class="up${owned ? ' owned' : ''}">
         <div class="ico">${u.icon}</div>
-        <div><b>${t(`up.${id}.name`)}</b><small>${t(`up.${id}.desc`)}</small><span class="idea">💡 ${t(`up.${id}.idea`)}</span></div>
+        <div><b>${t(`up.${id}.name`)}</b><small>${t(`up.${id}.desc`)}</small>${u.outdoorOnly ? `<small class="pill-out">☀️ ${t('shop.outdoorOnly')}</small>` : ''}<span class="idea">💡 ${t(`up.${id}.idea`)}</span></div>
         <div>${btn}</div>
       </div>`;
     };
