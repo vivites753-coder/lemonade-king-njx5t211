@@ -67,7 +67,13 @@ export function standSpriteId(base: string, serving: boolean, juicing: boolean):
   return { id: `${base}_front`, cup: serving };
 }
 
+/** A seller or helper standing at the stand doing nothing. */
+const IDLE_STAND = /^char_(player|helper)_(boy|girl)_front$/;
+
 export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: number, sy: number, o: PersonOpts): number {
+  // doing nothing: the sharp drawn picture that just breathes (the idle loop cut from a video is softer and wobbles)
+  const still = IDLE_STAND.test(id) ? getImage(id) : undefined;
+  if (still) return drawAnimated(ctx, id, still, sx, sy, { ...o, moving: false });
   const loop = getLoop(id);
   if (loop) return drawLoop(ctx, id, loop, x, sx, sy, o);
   const img = getImage(id);
@@ -85,63 +91,12 @@ export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: nu
  * A character that is a looping animation (the player, the helpers, the fox). People at the stand loop all the time;
  * the fox only while it moves. Facing left is a mirror image.
  */
-/**
- * The calm part of an idle loop: the frame closest to the average pose and its neighbours, played forth and back.
- * The seller then moves about half as much as drawn, and every frame is a real, sharp picture (no blending).
- */
-const calmSeqs = new Map<string, number[]>();
-function calmSequence(id: string, loop: LoopInfo): number[] {
-  const known = calmSeqs.get(id);
-  if (known) return known;
-  const all = [...Array(loop.n).keys()];
-  let seq = all;
-  try {
-    const c = document.createElement('canvas');
-    c.width = loop.fw;
-    c.height = loop.fh;
-    const x = c.getContext('2d', { willReadFrequently: true })!;
-    const frames: Uint8ClampedArray[] = [];
-    for (let i = 0; i < loop.n; i++) {
-      x.clearRect(0, 0, loop.fw, loop.fh);
-      x.drawImage(loop.img, i * loop.fw, 0, loop.fw, loop.fh, 0, 0, loop.fw, loop.fh);
-      frames.push(x.getImageData(0, 0, loop.fw, loop.fh).data);
-    }
-    // the average pose, then the frame nearest to it
-    const len = frames[0].length;
-    const mean = new Float32Array(len);
-    for (const f of frames) for (let k = 0; k < len; k += 4) mean[k + 3] += f[k + 3] / loop.n;
-    const dist = frames.map((f) => {
-      let d = 0;
-      for (let k = 3; k < len; k += 16) d += Math.abs(f[k] - mean[k]);
-      return d;
-    });
-    const centre = dist.indexOf(Math.min(...dist));
-    // a third of the loop around it (about half of the swing), forth and back
-    const half = Math.max(1, Math.round(loop.n / 6));
-    const fwd: number[] = [];
-    for (let k = -half; k <= half; k++) fwd.push((centre + k + loop.n) % loop.n);
-    seq = [...fwd, ...fwd.slice(1, -1).reverse()];
-  } catch {
-    seq = all;
-  }
-  calmSeqs.set(id, seq);
-  return seq;
-}
-
-/** The calm loop plays a little slower than drawn. */
-const IDLE_SPEED = 0.7;
-
 function drawLoop(ctx: Ctx, id: string, loop: LoopInfo, wx: number, sx: number, sy: number, o: PersonOpts): number {
   const dir = o.dirX < 0 ? -1 : 1;
   const fox = id.includes('_fox_');
   const playing = !ENV.reduceMotion && (!fox || o.moving || id.endsWith('_dizzy'));
   const t = (o.t ?? ENV.t) + wx * 0.37; // neighbours do not move in lockstep
-  const idle = playing && /^char_(player|helper)_(boy|girl)_front$/.test(id);
-  let frame = playing ? Math.floor(t * loop.fps) % loop.n : 0;
-  if (idle) {
-    const seq = calmSequence(id, loop);
-    frame = seq[Math.floor(t * loop.fps * IDLE_SPEED) % seq.length];
-  }
+  const frame = playing ? Math.floor(t * loop.fps) % loop.n : 0;
   const scale = (loop.h * o.scale) / loop.figH;
   shadow(ctx, sx, sy, 10 * o.scale, 0.2);
   ctx.save();
