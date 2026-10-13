@@ -87,6 +87,73 @@ def seamless(im, band=0.22):
     return Image.fromarray(np.clip(rolled * (1 - mask) + arr * mask, 0, 255).astype(np.uint8))
 
 
+def box_blur(a, r):
+    """Separable box blur with wrap-free edges (the canvas is 3x3 tiles, only the centre is used)."""
+    k = 2 * r + 1
+    for axis in (0, 1):
+        pad = np.pad(a, [(r, r) if i == axis else (0, 0) for i in range(2)], mode='edge')
+        c = np.cumsum(pad, axis=axis, dtype=np.float64)
+        c = np.concatenate([np.zeros_like(np.take(c, [0], axis=axis)), c], axis=axis)
+        a = (np.take(c, range(k, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - k), axis=axis)) / k
+    return a
+
+
+def gauss(a, r):
+    for _ in range(3):
+        a = box_blur(a, max(1, r // 2))
+    return a
+
+
+def pavement(kind, seed):
+    """Clean rounded paving slabs with a soft clay bevel. Slab edges sit on a grid that repeats exactly every tile."""
+    import random
+    rnd = random.Random(seed)
+    N = 3 * S
+    gap, rad = 14, 20
+    slabs = []  # (x0, y0, x1, y1) in tile units, 0..1 repeating
+    if kind == 'grid2':  # 2x2 square slabs
+        for i in range(-2, 5):
+            for j in range(-2, 5):
+                slabs.append((i / 2, j / 2, (i + 1) / 2, (j + 1) / 2))
+    elif kind == 'brick':  # running bond, two rows per tile
+        for j in range(-2, 5):
+            off = 0.25 if j % 2 else 0
+            for i in range(-3, 5):
+                slabs.append((i / 2 + off, j / 2, (i + 1) / 2 + off, (j + 1) / 2))
+    elif kind == 'grid3':  # 3x3 smaller square slabs
+        for i in range(-3, 7):
+            for j in range(-3, 7):
+                slabs.append((i / 3, j / 3, (i + 1) / 3, (j + 1) / 3))
+    mask = Image.new('L', (N, N), 0)
+    tone = np.zeros((N, N), dtype=np.float32)
+    toneimg = Image.new('F', (N, N), 0)
+    d = ImageDraw.Draw(mask)
+    dt = ImageDraw.Draw(toneimg)
+    tones = {}
+    for (x0, y0, x1, y1) in slabs:
+        # tone repeats with the tile, so the key is taken modulo one tile
+        key = (round(x0 % 1, 3), round(y0 % 1, 3))
+        if key not in tones:
+            tones[key] = rnd.uniform(-7, 7)
+        box = [S + x0 * S + gap / 2, S + y0 * S + gap / 2, S + x1 * S - gap / 2 - 1, S + y1 * S - gap / 2 - 1]
+        d.rounded_rectangle(box, rad, fill=255)
+        dt.rounded_rectangle(box, rad, fill=tones[key])
+    m = np.asarray(mask).astype(np.float32) / 255
+    tone = np.asarray(toneimg)
+    h = gauss(m, 14)
+    gy, gx = np.gradient(h)
+    lit = (gx + gy) * 420  # light from the top-left
+    ma = gauss(m, 2)
+    base = np.array([224, 227, 231], dtype=np.float32)
+    joint = np.array([172, 178, 187], dtype=np.float32)
+    col = base[None, None, :] + tone[..., None] + lit[..., None]
+    col = col * ma[..., None] + joint[None, None, :] * (1 - ma[..., None])
+    noise = gauss(np.random.RandomState(seed).randn(N, N).astype(np.float32), 1) * 9
+    col = col + noise[..., None]
+    out = np.clip(col[S:2 * S, S:2 * S], 0, 255).astype(np.uint8)
+    return Image.fromarray(out)
+
+
 def road_dash(asphalt):
     """A short soft dash lying along +x, close to the tile's y=0 edge (where the game's centre line is)."""
     im = asphalt.convert('RGBA')
@@ -139,6 +206,8 @@ def main():
         sq = sq.crop((0, 0, side, side)).resize((S, S), Image.LANCZOS)
         if mode in ('noise', 'road'):
             sq = seamless(flatten(sq))
+        if name.startswith('pavement'):
+            sq = pavement({'pavement_1': 'grid2', 'pavement_2': 'brick', 'pavement_3': 'grid2'}[name], i)
         if name == 'road_dash':
             # the dash is drawn here, so use the plain asphalt (same crop as 'road', flipped to differ a little)
             plain = tiles['road_tex']
