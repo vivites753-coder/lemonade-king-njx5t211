@@ -23,7 +23,7 @@ python tools/cut_sheet.py <лист.jpg> <папка> <id1,id2,...> [стовп�
 | 02 | земля (тайли) | 5×4 | готово, `assets/tiles`, `tools/make_tiles.py` |
 | 03 | вулиця: дерева, лавка, машини, пляж | 5×5 | готово, встановлено (крім машин і хмар: гра малює їх з напрямком руху) |
 | 04 | будівлі й предмети залів | 5×5 | готово, встановлено; склад, кафе, кіоск, магазин, вишка (синя) і соковижималка лежать у `art/cut` до потрібних етапів |
-| 05 | прилавок і обладнання | 5×5 | |
+| 05 | прилавок і обладнання | 5×5 | промпт готовий, чекає на лист |
 | 06 | люди (спереду) | | |
 | 07 | люди (ззаду) | | |
 | 08 | предмети, інгредієнти, іконки UI | | |
@@ -51,6 +51,21 @@ prop_bin,bld_kiosk,bld_cafe,bld_warehouse
 ```
 
 Стіни залів (`wall_mall`, `wall_station`) лишаються з коду: на них гра сама малює вивіски, щоб працювали переклади.
+
+## Лист 05 — прилавок і обладнання (5×5), імена за порядком
+
+```
+stand_table,stand_table_blue,stand_chair,stand_umbrella,stand_tent,
+stand_banner,stand_scooter,stand_toolkit,stand_cashbox,stand_juicer_hand,
+stand_juicer_electric,stand_dispenser,stand_flyers,stand_mascot,item_cups_pack,
+item_cups_branded,item_lemon_pile,item_coin_jar,item_pitcher_empty,item_pitcher_full,
+item_lemon_half,item_lemon_rotten,item_spoon,item_ice_bag,item_piggy
+```
+
+Беремо з наявних листів: `stand_juicer_lever` (лист 04), `stand_cooler`=cooler, `stand_speaker`=speaker, `stand_tv`=tv, `stand_bike`=bike,
+`stand_sign`=sign, `item_cookies`=cookies (лист 01).
+Стан малює гра: ціна на дошці, рівень у глечику (повний глечик обрізається за рівнем), вкл/викл колонки й ТБ.
+Вагончик (`stand_truck`) лишається з коду: його кольори, логотип і текст налаштовує гравець.
 
 ## Далі
 
