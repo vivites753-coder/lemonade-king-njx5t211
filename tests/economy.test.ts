@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../src/core/config';
+import { UPGRADES } from '../src/data/upgrades';
 import {
   acceptProb,
   attentionRadius,
@@ -78,5 +79,16 @@ describe('economy', () => {
     }
     expect(acceptProb('school', 'kid', 8)).toBe(0);
     expect(acceptProb('beach', 'tourist', 12)).toBe(1);
+  });
+});
+
+describe('stop chance ceiling', () => {
+  it('never goes above 40 %, even with every upgrade on a hot festival day with 5 stars', () => {
+    const all = Object.fromEntries(Object.keys(UPGRADES).map((id) => [id, true]));
+    const r = interestChance({ upgrades: all, speakerOn: true, flyers: true, weather: 'hot', rep: 5, festival: true, location: 'school' });
+    expect(r.chance).toBeLessThanOrEqual(0.4);
+    // and all the advertising on an ordinary sunny day with 5 stars just about reaches it
+    const s = interestChance({ upgrades: all, speakerOn: true, flyers: true, weather: 'sunny', rep: 5, festival: false });
+    expect(s.chance).toBeGreaterThan(0.36);
   });
 });

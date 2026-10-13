@@ -8,7 +8,10 @@ export const CONFIG = {
 
   /** Chance that a pedestrian inside the attention zone stops, before modifiers. */
   BASE_STOP_CHANCE: 0.18,
-  MAX_STOP_CHANCE: 0.8,
+  /** Never more than this, whatever is bought (all the upgrades on a sunny day with 5 stars just reach it). */
+  MAX_STOP_CHANCE: 0.4,
+  /** Flyers of the day add this to the advertising. */
+  FLYERS_ADS: 0.15,
   MAX_QUEUE: 6,
 
   /** Stand centre in tile coordinates (same in every location). */

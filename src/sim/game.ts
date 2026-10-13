@@ -855,6 +855,11 @@ export class Game {
     return n;
   }
 
+  /** Queues that form at the stand: a seller alone serves one queue, even at a stand with two counters. */
+  queues(): number {
+    return this.counters() >= 2 && this.D.helpers >= 1 ? 2 : 1;
+  }
+
   /** A helper serves this counter by himself. One helper takes the second counter, two helpers take both. */
   autoCounter(c: number): boolean {
     const h = this.D.helpers;
@@ -1068,9 +1073,9 @@ export class Game {
       this.street.setEmote(p, '💸', 2.4);
       this.tip('expensive');
     } else {
-      // people pick the shorter queue
+      // people pick the shorter queue (a second queue only forms when a helper works at the second counter)
       let best = -1;
-      for (let c = 0; c < this.counters(); c++) {
+      for (let c = 0; c < this.queues(); c++) {
         const len = this.street.queueFor(c).length;
         if (len < this.maxQueue() && (best < 0 || len < this.street.queueFor(best).length)) best = c;
       }

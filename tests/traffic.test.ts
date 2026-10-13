@@ -44,9 +44,9 @@ describe('foot traffic', () => {
     expect(day('yard', 'rain').profit).toBeGreaterThan(0);
   });
 
-  it('a first day at the yard sells around a pitcher', () => {
+  it('a first day at the yard sells most of a pitcher', () => {
     const d = day('yard', 'sunny', 8);
-    expect(d.buyers).toBeGreaterThan(8);
+    expect(d.buyers).toBeGreaterThan(5);
     expect(d.buyers).toBeLessThan(20);
   });
 });

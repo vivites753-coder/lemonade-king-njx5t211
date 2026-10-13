@@ -17,4 +17,11 @@ describe('which way people face', () => {
     expect(pedFacing({ state: 'walk', x: 3, vx: 1, vy: 0 })).toEqual({ facingCam: true, dirX: 1 }); // down-right
     expect(pedFacing({ state: 'walk', x: 3, vx: -1, vy: 0 })).toEqual({ facingCam: false, dirX: -1 }); // up-left
   });
+
+  it('people on their way to the line face where they walk (no walking backwards)', () => {
+    // from the near sidewalk up to the line: up the screen, seen from behind
+    expect(pedFacing({ state: 'toQueue', x: 7, vx: 0, vy: -1 })).toEqual({ facingCam: false, dirX: 1 });
+    expect(pedFacing({ state: 'toQueue', x: 7, vx: -1, vy: 0 })).toEqual({ facingCam: false, dirX: -1 });
+    expect(pedFacing({ state: 'toQueue', x: 3, vx: 1, vy: 0 })).toEqual({ facingCam: true, dirX: 1 });
+  });
 });

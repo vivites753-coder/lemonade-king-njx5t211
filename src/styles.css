@@ -2467,7 +2467,7 @@ body.reduce-motion * {
 }
 .k-wrap {
   position: relative;
-  width: max(320px, min(100%, calc((100vh - 400px) * 1.339)));
+  width: max(320px, min(100%, calc((var(--app-h, 100vh) - 400px) * 1.339)));
   aspect-ratio: 900 / 672;
   margin: 0 auto;
   overflow: hidden;
@@ -2657,13 +2657,13 @@ body.reduce-motion * {
   pointer-events: none;
 }
 .k-jug {
-  left: 468px;
-  top: 388px;
-  width: 64px;
-  height: 80px;
+  left: 436px;
+  top: 318px;
+  width: 128px;
+  height: 150px;
   z-index: 4;
-  border-radius: 8px 8px 16px 16px;
-  border: 3px solid rgba(116, 192, 252, 0.95);
+  border-radius: 12px 12px 26px 26px;
+  border: 5px solid rgba(116, 192, 252, 0.95);
   border-top-width: 3px;
   background: rgba(208, 235, 255, 0.35);
   overflow: hidden;
@@ -2726,17 +2726,17 @@ body.reduce-motion * {
   right: 14%;
   bottom: 6%;
   color: #fff;
-  font-size: 11px;
+  font-size: 20px;
   line-height: 0.7;
   text-align: center;
   word-break: break-all;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
 }
 .k-glass {
-  left: 468px;
-  top: 388px;
-  width: 64px;
-  height: 80px;
+  left: 436px;
+  top: 318px;
+  width: 128px;
+  height: 150px;
   z-index: 7;
   pointer-events: none;
   border-radius: 14px 14px 30px 30px;
@@ -2754,7 +2754,7 @@ body.reduce-motion * {
 .k-splash,
 .k-drops {
   left: 425px;
-  top: 328px;
+  top: 258px;
   width: 150px;
   height: 140px;
   z-index: 8;
@@ -2789,8 +2789,8 @@ body.reduce-motion * {
   animation: k-pour 0.9s ease-in-out;
 }
 @keyframes k-pour {
-  25% { transform: translateX(34px) rotate(32deg); }
-  60% { transform: translateX(34px) rotate(32deg); }
+  25% { transform: translateX(60px) rotate(32deg); }
+  60% { transform: translateX(60px) rotate(32deg); }
 }
 
 /* the mixer: it rests on its own shelf, flies into the jug while it works and goes back */
@@ -2837,8 +2837,8 @@ body.reduce-motion * {
   opacity: 0.8;
 }
 .k-spoon {
-  left: 480px;
-  top: 300px;
+  left: 470px;
+  top: 250px;
   font-size: 70px;
   z-index: 6;
   opacity: 0;
@@ -2854,9 +2854,9 @@ body.reduce-motion * {
   100% { opacity: 0; transform: rotate(-10deg); }
 }
 .k-meter {
-  left: 425px;
-  top: 340px;
-  width: 150px;
+  left: 440px;
+  top: 282px;
+  width: 120px;
   height: 22px;
   border-radius: 99px;
   background: linear-gradient(90deg, #ffe8a3, #ffc9c9);
@@ -2881,7 +2881,7 @@ body.reduce-motion * {
   left: 0;
 }
 .k-cups-art {
-  left: 566px;
+  left: 150px;
   top: 376px;
   width: 92px;
   height: 92px;
@@ -2903,20 +2903,25 @@ body.reduce-motion * {
   font-size: calc(var(--lab) * 0.85px / var(--ks));
 }
 .k-ready {
-  left: 668px;
-  top: 388px;
-  width: 212px;
-  height: 80px;
+  left: 0;
+  top: 0;
+  width: 900px;
+  height: 672px;
   z-index: 3;
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
 }
-.k-ready .k-img {
-  flex: none;
-  width: 64px;
-  height: 80px;
-  margin: 0 calc(var(--ov, 6px) * -1) 0 0;
+.k-pj {
+  position: absolute;
+  width: 128px;
+  height: 150px;
+}
+.k-pj .k-img {
+  width: 100%;
+  height: 100%;
+}
+.k-pj.new .k-img {
   animation: k-appear 0.4s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 .k-ready .k-mark {
@@ -3104,7 +3109,7 @@ body.reduce-motion * {
   }
   .k-wrap {
     flex: none;
-    width: calc((100vh - 165px) * 1.339);
+    width: calc((var(--app-h, 100vh) - 165px) * 1.339);
     max-width: 62%;
     margin: 0;
     --lab: 11;
@@ -3235,4 +3240,142 @@ body.reduce-motion * {
 }
 .k-stream.sugar {
   filter: drop-shadow(0 0 1px rgba(90, 100, 110, 0.55));
+}
+
+/* ---------- very low screens (a phone held sideways with the browser bars showing) ---------- */
+@media (max-height: 380px) {
+  .chip {
+    font-size: 12px;
+    padding: 2px 8px;
+    min-height: 28px;
+  }
+  .chip.coins {
+    font-size: 13px;
+  }
+  .hud-top .chip .ico-img {
+    height: 22px;
+    margin: -2px 0;
+  }
+  .hud-top .chip .stars .ico-img {
+    height: 18px;
+  }
+  .coin-art .hud-top .chip .coin,
+  .coin-art .chip.coins .coin {
+    width: 20px;
+    height: 20px;
+  }
+  .hud-btn,
+  .seg button {
+    min-height: 30px;
+    min-width: 30px;
+    font-size: 14px;
+  }
+  #panel:not(.center):not(.title-mode),
+  #panel.wide {
+    top: calc(38px + var(--safe-t));
+  }
+  .panel-toggle {
+    top: calc(40px + var(--safe-t));
+    height: 30px;
+    min-width: 30px;
+  }
+  .panel-head {
+    padding: 3px 10px 2px;
+  }
+  .panel-head h2 {
+    font-size: 15px;
+  }
+  .panel-head .chip.coins {
+    display: none;
+  }
+  .panel-body {
+    padding: 2px 10px 6px;
+  }
+  .panel-foot {
+    padding: 4px 8px 5px;
+    gap: 6px;
+  }
+  .panel-foot .btn,
+  .panel-foot .btn-big {
+    min-height: 34px;
+    padding: 3px 12px;
+    font-size: 14px;
+  }
+  .k-wrap {
+    width: calc((var(--app-h, 100vh) - 140px) * 1.339);
+    --lab: 8;
+  }
+  .k-meta {
+    padding: 2px 5px 3px;
+  }
+  .k-mixer-btn {
+    justify-self: start;
+    min-width: 130px;
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+  .k-counts {
+    font-size: 11px;
+  }
+  .k-tools .btn {
+    min-height: 28px;
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+  .k-pour {
+    font-size: 12px;
+  }
+}
+
+/* dialogs and cards on very low screens: tighter, and the buttons stay in view */
+@media (max-height: 380px) {
+  #modal {
+    padding: 4px;
+  }
+  .modal-card {
+    padding: 8px 12px 0;
+    border-radius: 18px;
+    border-width: 2px;
+  }
+  .modal-card h2 {
+    font-size: 17px;
+    margin: 2px 0 4px;
+  }
+  .modal-card h3 {
+    font-size: 13px;
+    margin: 6px 0 2px;
+  }
+  .modal-card p {
+    font-size: 13px;
+    line-height: 1.25;
+    margin: 4px 0;
+  }
+  .modal-card .ev-ico {
+    font-size: 34px;
+  }
+  .toggle {
+    padding: 4px 10px;
+    margin: 3px 0;
+    border-radius: 12px;
+  }
+  .modal-actions {
+    position: sticky;
+    bottom: 0;
+    margin-top: 6px;
+    padding: 6px 0 8px;
+    background: var(--cream);
+  }
+  .modal-actions .btn {
+    min-height: 34px;
+    padding: 3px 12px;
+    font-size: 14px;
+  }
+  .card {
+    padding: 6px 10px;
+  }
+  .note,
+  small {
+    font-size: 11px;
+  }
 }

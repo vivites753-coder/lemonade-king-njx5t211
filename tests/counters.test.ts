@@ -72,12 +72,13 @@ describe('stands with two counters', () => {
     expect(g.D.report!.sold).toBeGreaterThan(8);
   });
 
-  it('the player can serve both queues alone, and the queues stay within their length', () => {
+  it('a seller alone keeps one queue even at the big stand, and it stays within its length', () => {
     const g = standGame({ up: 'big_stand', rep: 2, seed: 9 });
+    expect(g.queues()).toBe(1);
     g.startSelling();
     const r = runDay(g, true);
+    expect(r.maxQ2).toBe(0);
     expect(r.maxQ1).toBeLessThanOrEqual(g.maxQueue());
-    expect(r.maxQ2).toBeLessThanOrEqual(g.maxQueue());
-    expect(g.D.report!.sold).toBeGreaterThan(10);
+    expect(g.D.report!.sold).toBeGreaterThan(5);
   });
 });

@@ -506,10 +506,18 @@ export const kitchenPanel: Panel = {
       btn.title = can === 'full' ? t('kitchen.full') : can === 'noStock' ? t('kitchen.noStock') : '';
     }
     set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>🥤 ${st.cups}</small>`);
-    const readyN = Math.min(24, g.D.kitchenJugs);
-    // as many jugs as are prepared; the more there are, the closer they stand
-    q(el, '.k-ready').style.setProperty('--ov', `${readyN > 3 ? Math.min(40, Math.round((readyN - 3) * 3.2 + 8)) : 6}px`);
-    set('ready', readyN > 0 ? readyJug().repeat(readyN) : '');
+    // as many jugs as are prepared: two to a row, the next row stands behind and a little higher, shifted by half a jug
+    const readyN = Math.min(12, g.D.kitchenJugs);
+    const prev = Number(el.dataset.ready ?? 0);
+    el.dataset.ready = String(readyN);
+    let jugsHtml = '';
+    for (let i = readyN - 1; i >= 0; i--) {
+      const row = Math.floor(i / 2);
+      const cx = 826 - (i % 2) * 120 - (row % 2) * 60;
+      const top = 468 - row * 36 - 150;
+      jugsHtml += `<span class="k-pj${readyN > prev && i === readyN - 1 ? ' new' : ''}" style="left:${cx - 64}px;top:${top}px">${readyJug()}</span>`;
+    }
+    set('ready', jugsHtml);
     set('cooler', g.D.cupsReady && g.S.upgrades.cooler ? `🥛 ${g.D.cupsReady}` : '');
     // jug contents
     const fill = Math.min(95, k.water * 32 + k.juice * 5);

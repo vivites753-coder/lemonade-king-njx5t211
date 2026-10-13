@@ -5,6 +5,7 @@ import { LANGS, asLang, t } from '../i18n';
 import type { Lang } from '../core/types';
 import type { Game } from '../sim/game';
 import { esc, ico, toggle } from './dom';
+import { toggleFullscreen } from './fullscreen';
 import type { ModalSpec } from './overlays';
 
 export function confirmModal(text: string, onYes: () => void): ModalSpec {
@@ -91,6 +92,7 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         ${toggle('set:showZone', s.showZone, `🟡 ${t('settings.showZone')}`)}
         ${toggle('set:reduceMotion', s.reduceMotion, `🐢 ${t('settings.reduceMotion')}`)}
         ${toggle('set:dyslexia', s.dyslexia, `🔤 ${t('settings.dyslexia')}`)}
+        <div class="row" style="margin:6px 0"><button class="btn btn-sm" data-act="fullscreen">⛶ ${t('settings.fullscreen')}</button></div>
         <h3>🌍 ${t('settings.lang')}</h3>
         <div class="row">
           ${LANGS.map((l) => `<button class="btn btn-sm ${g.S.lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
@@ -122,6 +124,10 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         const key = arg as keyof typeof g.S.settings;
         g.updateSettings({ [key]: !g.S.settings[key] });
         hooks.apply();
+      }
+      if (act === 'fullscreen') {
+        toggleFullscreen();
+        return false;
       }
       if (act === 'lang') hooks.setLang(asLang(arg));
       if (act === 'mode') {

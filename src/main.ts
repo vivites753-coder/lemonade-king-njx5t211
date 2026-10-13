@@ -6,10 +6,12 @@ import { loadAssets } from './render/assets';
 import { Renderer } from './render/renderer';
 import { Game } from './sim/game';
 import { DebugPanel } from './ui/debug';
+import { initFullscreen } from './ui/fullscreen';
 import { UI } from './ui/ui';
 
 // a published update starts with clean saves (the dev server keeps them)
 const wiped = import.meta.env.PROD && wipeOnUpdate(__BUILD_ID__);
+initFullscreen();
 
 const game = new Game(1);
 // remember the language of the last session for the title screen

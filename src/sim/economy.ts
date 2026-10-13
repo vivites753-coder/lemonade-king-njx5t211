@@ -135,8 +135,8 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
     parts.push({ key: `why.up.${id}`, kind: 'add', value: v });
   }
   if (i.flyers) {
-    ads += 0.25;
-    parts.push({ key: 'why.flyers', kind: 'add', value: 0.25 });
+    ads += CONFIG.FLYERS_ADS;
+    parts.push({ key: 'why.flyers', kind: 'add', value: CONFIG.FLYERS_ADS });
   }
   const indoor = !!(i.location && LOCATIONS[i.location].indoor);
   const w = { thirst: weatherThirst(i.weather, i.upgrades, indoor) };
