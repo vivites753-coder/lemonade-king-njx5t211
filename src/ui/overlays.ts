@@ -31,6 +31,12 @@ export class Overlays {
       if (el.dataset.lemi === 'ok') this.close();
     });
     modalEl.addEventListener('click', (e) => {
+      // a tap on the dim background closes an ordinary dialog (cards with choices wait for an answer)
+      if (e.target === modalEl && this.current?.kind === 'modal') {
+        this.click();
+        this.close();
+        return;
+      }
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
       if (!el || (el as HTMLButtonElement).disabled) return;
       this.click();

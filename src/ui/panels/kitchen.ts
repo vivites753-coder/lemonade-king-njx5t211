@@ -506,15 +506,16 @@ export const kitchenPanel: Panel = {
       btn.title = can === 'full' ? t('kitchen.full') : can === 'noStock' ? t('kitchen.noStock') : '';
     }
     set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>🥤 ${st.cups}</small>`);
-    // as many jugs as are prepared: two to a row, the next row stands behind and a little higher, shifted by half a jug
-    const readyN = Math.min(12, g.D.kitchenJugs);
+    // as many jugs as are prepared: four to a row on the right half of the counter (they overlap a little), the next
+    // row stands behind and a little higher, shifted by half a step
+    const readyN = Math.min(16, g.D.kitchenJugs);
     const prev = Number(el.dataset.ready ?? 0);
     el.dataset.ready = String(readyN);
     let jugsHtml = '';
     for (let i = readyN - 1; i >= 0; i--) {
-      const row = Math.floor(i / 2);
-      const cx = 826 - (i % 2) * 120 - (row % 2) * 60;
-      const top = 468 - row * 36 - 150;
+      const row = Math.floor(i / 4);
+      const cx = 812 - (i % 4) * 63 - (row % 2) * 31;
+      const top = 468 - row * 22 - 150;
       jugsHtml += `<span class="k-pj${readyN > prev && i === readyN - 1 ? ' new' : ''}" style="left:${cx - 64}px;top:${top}px">${readyJug()}</span>`;
     }
     set('ready', jugsHtml);

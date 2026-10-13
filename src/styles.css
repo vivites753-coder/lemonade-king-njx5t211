@@ -1179,8 +1179,9 @@ small {
   border: 3px solid #fff;
   box-shadow: var(--shadow);
   width: min(460px, 100%);
-  max-height: 100%;
+  max-height: calc(var(--app-h, 100vh) - 8px);
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 18px;
   animation: pop 0.25s ease-out;
 }
@@ -3377,5 +3378,23 @@ body.reduce-motion * {
   .note,
   small {
     font-size: 11px;
+  }
+}
+
+/* dialogs on phones held sideways (up to 520 px high): the buttons stay in view at the bottom */
+@media (max-height: 520px) {
+  #modal {
+    padding: 4px;
+  }
+  .modal-card {
+    padding: 8px 14px 0;
+  }
+  .modal-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 6px;
+    padding: 6px 0 8px;
+    background: var(--cream);
   }
 }

@@ -35,12 +35,6 @@ async function enter(): Promise<void> {
   } catch {
     return;
   }
-  try {
-    // the game is played sideways
-    await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape');
-  } catch {
-    /* not allowed here */
-  }
 }
 
 /** The settings button: full screen on or off. */
@@ -65,10 +59,12 @@ export function initFullscreen(): void {
   document.addEventListener('fullscreenchange', () => setTimeout(setH, 100));
   const coarse = window.matchMedia('(pointer: coarse)').matches;
   if (!coarse) return;
+  // one try on the first tap only: a refused request must never be repeated on every tap
+  let tried = false;
   const ask = () => {
-    if (isFullscreen() || storedOff()) return;
+    if (tried || isFullscreen() || storedOff()) return;
+    tried = true;
     void enter();
   };
   window.addEventListener('pointerup', ask, { passive: true });
-  window.addEventListener('click', ask, { passive: true });
 }
