@@ -22,7 +22,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_beachball: { h: 16, anchor: [0.5, 0.85] },
   prop_ball: { h: 14, anchor: [0.5, 0.85] },
   prop_flagpole: { h: 110, anchor: [0.5, 0.98] },
-  prop_bike_rack: { h: 26, anchor: [0.5, 0.85] },
+  prop_bike_rack: { h: 46, anchor: [0.5, 0.85] },
   prop_duck: { h: 16, anchor: [0.5, 0.8] },
   prop_car_a: { h: 44, anchor: [0.5, 0.75] },
   // the anchor is the centre of the footprint, not the front corner: the front corner is about 40 px lower
