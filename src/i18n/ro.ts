@@ -574,8 +574,6 @@ export const ro: Record<I18nKey, string> = {
   'loc.mall.peak': 'Se deschide la 10:00. Cei mai mulți oameni seara, după serviciu.',
   'loc.locked': 'Necesită reputație ⭐ {n}',
   'loc.indoor': 'Sub acoperiș',
-  'loc.busy.high': 'Azi e multă lume aici',
-  'loc.busy.low': 'Azi e liniște aici, puțină lume',
   'loc.ev.trains': '🚆 Azi vin trenuri din oraș!',
   'loc.ev.trackRepair': '🚧 Azi se repară liniile',
   'loc.ev.concert': '🎤 Concert diseară!',

@@ -36,9 +36,6 @@ export const CONFIG = {
   /** A day's crowd at one place is this many times the usual: from half to a bit more than usual. */
   CROWD_DAY_MIN: 0.5,
   CROWD_DAY_MAX: 1.4,
-  /** The morning card says "many people" / "few people" beyond these. */
-  CROWD_HIGH: 1.2,
-  CROWD_LOW: 0.75,
 
   /** Attention radius in tiles. */
   BASE_RADIUS: 2.6,
