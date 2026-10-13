@@ -27,7 +27,7 @@ export interface SpriteMeta {
 }
 
 const PREFIX_DEFAULTS: [string, SpriteMeta][] = [
-  ['char_', { h: 58, anchor: [0.5, 0.96] }],
+  ['char_', { h: 58, anchor: [0.5, 0.975] }],
   ['bld_', { h: 170, anchor: [0.5, 0.8] }],
   ['stand_', { h: 140, anchor: [0.5, 0.75] }],
   ['item_', { h: 22, anchor: [0.5, 0.9] }],
@@ -39,7 +39,7 @@ const procs = new Map<string, ProcDraw>();
 const images = new Map<string, HTMLImageElement>();
 let onLoadCb: (() => void) | null = null;
 
-function metaFor(id: string): SpriteMeta {
+export function metaFor(id: string): SpriteMeta {
   const own = SPRITE_META[id];
   if (own) return own;
   for (const [p, m] of PREFIX_DEFAULTS) if (id.startsWith(p)) return m;

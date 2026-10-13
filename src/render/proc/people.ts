@@ -1,6 +1,7 @@
 // Procedural people: chunky "chibi" characters built from rounded shapes.
 import type { Look } from '../../sim/looks';
-import { drawSprite, hasImage } from '../assets';
+import { drawSprite, getImage, hasImage, metaFor } from '../assets';
+import { ENV } from '../env';
 import { circle, ellipse, line, rrect, shade, shadow, type Ctx } from '../iso';
 
 export type PersonKind = 'kid' | 'adult' | 'granny' | 'sport' | 'tourist' | 'player' | 'fox';
@@ -32,14 +33,118 @@ export interface PersonOpts {
  * Draws a character with its feet at (sx, sy). Uses char_<kind>_<variant>_<front|back> PNGs if present.
  * Returns the y of the top of the head (for emotes).
  */
+const VARIANTS = ['a', 'b', 'c', 'd'];
+
+/** Sprite id of a pedestrian. Types drawn with fewer variants than the look asks for reuse an existing one. */
+export function pedSpriteId(type: string, variant: number, front: boolean): string {
+  const side = front ? 'front' : 'back';
+  for (let i = 0; i < VARIANTS.length; i++) {
+    const id = `char_${type}_${VARIANTS[(variant + i) % VARIANTS.length]}_${side}`;
+    if (hasImage(id)) return id;
+  }
+  return `char_${type}_${VARIANTS[variant % VARIANTS.length]}_${side}`;
+}
+
 export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: number, sy: number, o: PersonOpts): number {
-  const bob = o.moving ? Math.abs(Math.sin(o.anim)) * 2.2 * o.scale : 0;
+  const img = getImage(id);
+  if (img && id.startsWith('char_')) return drawAnimated(ctx, id, img, sx, sy, o);
   if (hasImage(id)) {
+    const bob = o.moving ? Math.abs(Math.sin(o.anim)) * 2.2 * o.scale : 0;
     shadow(ctx, sx, sy, 10 * o.scale);
     drawSprite(ctx, id, { x, y, sx, sy: sy - bob, s: o.scale, flip: o.dirX < 0 });
     return sy - 58 * o.scale - bob;
   }
   return drawPerson(ctx, sx, sy, o);
+}
+
+/** Share of the sprite height that belongs to the legs (the part that steps). Skirts and dresses step less. */
+function legShare(id: string): number {
+  if (/granny|adult_b|kid_b|tourist_b/.test(id)) return 0.2;
+  if (/kid/.test(id)) return 0.27;
+  return 0.31;
+}
+
+/**
+ * A walking character made from ONE still picture:
+ *  - the legs are cut into a left and a right half that lift and swing in turn (a real step, not just a hop);
+ *  - the upper body bobs, squashes on every foot contact and stretches in the air;
+ *  - the whole figure sways a little from side to side, and the shadow shrinks while the body is up;
+ *  - standing still, the figure breathes.
+ * Facing left is a mirror image. Cups and umbrellas are drawn on top.
+ */
+function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, sy: number, o: PersonOpts): number {
+  const m = metaFor(id);
+  const sc = o.scale;
+  const H = m.h * sc;
+  const W = (H * img.naturalWidth) / img.naturalHeight;
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  const ax = W * m.anchor[0];
+  const ay = H * m.anchor[1];
+  const dir = o.dirX < 0 ? -1 : 1;
+  const motion = !ENV.reduceMotion;
+  const walking = o.moving && motion;
+  const s1 = walking ? Math.sin(o.anim) : 0;
+  const k = Math.abs(s1); // 0 = foot on the ground, 1 = mid-step
+  const bob = k * 1.5 * sc;
+  const breath = !o.moving && motion ? Math.sin((o.t ?? ENV.t) * 2.4 + o.anim * 3.1) * 0.014 : 0;
+  const sqY = walking ? 0.972 + 0.05 * k : 1 + breath;
+  const sqX = walking ? 1.028 - 0.04 * k : 1 - breath * 0.6;
+
+  shadow(ctx, sx, sy, 10 * sc * (1 - 0.2 * k), 0.22 - 0.05 * k);
+  ctx.save();
+  ctx.translate(sx, sy);
+  ctx.rotate(s1 * 0.05);
+  if (dir < 0) ctx.scale(-1, 1);
+
+  const legF = legShare(id);
+  const feetSrc = ih * m.anchor[1];
+  const toDestY = (srcY: number) => (srcY / ih) * H - ay;
+  if (walking) {
+    // The cut sits below the hips, so the waistband and the hem never break. The whole figure hops a little,
+    // the stepping leg lifts more and swings forward; legs only ever move UP, under the upper body, so no gap opens.
+    const cutSrc = feetSrc - ih * legF * 0.72;
+    const midSrc = iw * m.anchor[0];
+    const lift = 2.2 * sc;
+    const stride = 0.9 * sc;
+    ctx.translate(0, -bob);
+    for (const [x0, x1, ph] of [
+      [0, midSrc, s1],
+      [midSrc, iw, -s1],
+    ] as const) {
+      const up = Math.max(0, ph) * lift;
+      const dx = Math.max(0, ph) * stride;
+      ctx.drawImage(img, x0, cutSrc, x1 - x0, ih - cutSrc, (x0 / iw) * W - ax + dx, toDestY(cutSrc) - up, ((x1 - x0) / iw) * W, ((ih - cutSrc) / ih) * H);
+    }
+    // upper body over the legs (1 px of overlap), squashed and stretched around the cut line
+    const overSrc = Math.min(ih - cutSrc, (1.2 / H) * ih);
+    const hipY = toDestY(cutSrc);
+    ctx.save();
+    ctx.translate(0, hipY);
+    ctx.scale(sqX, sqY);
+    ctx.drawImage(img, 0, 0, iw, cutSrc + overSrc, -ax, -hipY + toDestY(0), W, ((cutSrc + overSrc) / ih) * H);
+    ctx.restore();
+  } else {
+    ctx.scale(sqX, sqY);
+    ctx.drawImage(img, -ax, -ay, W, H);
+  }
+  ctx.restore();
+
+  const headTop = sy - ay * sqY - bob;
+  if (o.hasCup) drawCup(ctx, sx + dir * W * 0.3, sy - H * 0.42 - bob, sc);
+  if (o.umbrella) return umbrella(ctx, sx + dir * 5 * sc, sy - H * 0.5 - bob, headTop, sc, o.look.accent);
+  return headTop;
+}
+
+/** A rain umbrella held above the head; returns the new top. */
+function umbrella(ctx: Ctx, ux: number, handY: number, headTop: number, s: number, color: string): number {
+  line(ctx, ux, handY, ux, headTop - 10 * s, '#495057', 1.2 * s);
+  ctx.beginPath();
+  ctx.ellipse(ux, headTop - 10 * s, 15 * s, 8 * s, 0, Math.PI, Math.PI * 2);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  return headTop - 16 * s;
 }
 
 export function drawPerson(ctx: Ctx, sx: number, sy: number, o: PersonOpts): number {
@@ -210,16 +315,7 @@ export function drawPerson(ctx: Ctx, sx: number, sy: number, o: PersonOpts): num
   }
 
   // rain umbrella
-  if (o.umbrella) {
-    const ux = sx + dir * 5 * s;
-    line(ctx, ux, top + 6 * s, ux, headTop - 10 * s, '#495057', 1.2 * s);
-    ctx.beginPath();
-    ctx.ellipse(ux, headTop - 10 * s, 15 * s, 8 * s, 0, Math.PI, Math.PI * 2);
-    ctx.closePath();
-    ctx.fillStyle = L.accent;
-    ctx.fill();
-    headTop -= 16 * s;
-  }
+  if (o.umbrella) headTop = umbrella(ctx, sx + dir * 5 * s, top + 6 * s, headTop, s, L.accent);
 
   // juice splashes while making a pitcher
   if (o.juicing) {

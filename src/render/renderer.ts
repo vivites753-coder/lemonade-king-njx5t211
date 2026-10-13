@@ -12,7 +12,7 @@ import { ENV } from './env';
 import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
 import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
-import { drawCharacter, drawCup } from './proc/people';
+import { drawCharacter, drawCup, pedSpriteId } from './proc/people';
 import { drawCar } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawCritter } from './proc/critters';
@@ -53,7 +53,6 @@ export interface Insets {
   left: number;
 }
 
-const LETTERS = ['a', 'b', 'c'];
 
 /** People and cars fade in/out at the left and right edges of the diorama. */
 function edgeAlpha(x: number, inset = 0): number {
@@ -297,7 +296,7 @@ export class Renderer {
     const facingCam = inQueue ? true : p.vx + p.vy >= 0;
     const dirX = inQueue ? 1 : p.vx - p.vy >= 0 ? 1 : -1;
     const type = PED_TYPES[p.type];
-    const id = `char_${p.type}_${LETTERS[p.look.variant] ?? 'a'}_${facingCam ? 'front' : 'back'}`;
+    const id = pedSpriteId(p.type, p.look.variant, facingCam);
     const headY = drawCharacter(ctx, id, p.x, p.y, sx, sy, {
       kind: p.type,
       look: p.look,

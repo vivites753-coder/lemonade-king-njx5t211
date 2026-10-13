@@ -1,11 +1,14 @@
 """Cuts a 5x5 sprite sheet on a flat magenta background into transparent PNGs.
-Usage: python cut_sheet.py <sheet.jpg> <out_dir> <name1,name2,...> [cols] [rows]"""
+Usage: python cut_sheet.py <sheet.jpg> <out_dir> <name1,name2,...> [cols] [rows] [--pairs]
+With --pairs each cell is split at the gap between its two figures into char_<name>_front and char_<name>_back."""
 import os
 import sys
 
 import numpy as np
 from PIL import Image
 
+PAIRS = '--pairs' in sys.argv  # every cell holds two views of one character: left = front, right = back
+sys.argv = [a for a in sys.argv if a != '--pairs']
 src, out, names = sys.argv[1], sys.argv[2], sys.argv[3].split(',')
 cols = int(sys.argv[4]) if len(sys.argv) > 4 else 5
 rows = int(sys.argv[5]) if len(sys.argv) > 5 else 5
@@ -124,11 +127,33 @@ for i, name in enumerate(names):
     cell[:, :m_, 3] = 0
     cell[:, -m_:, 3] = 0
     cell = keep_big_parts(cell)
-    ys, xs = np.where(cell[..., 3] > 12)
-    if len(xs) == 0:
-        print('EMPTY', name)
+    def save(img, fname):
+        ys, xs = np.where(img[..., 3] > 12)
+        if len(xs) == 0:
+            print('EMPTY', fname)
+            return
+        bx0, bx1 = max(xs.min() - pad, 0), min(xs.max() + pad + 1, img.shape[1])
+        by0, by1 = max(ys.min() - pad, 0), min(ys.max() + pad + 1, img.shape[0])
+        Image.fromarray(img[by0:by1, bx0:bx1], 'RGBA').save(os.path.join(out, f'{fname}.png'))
+        print(f'{fname:24s} {bx1 - bx0}x{by1 - by0}')
+
+    if not PAIRS:
+        save(cell, name)
         continue
-    bx0, bx1 = max(xs.min() - pad, 0), min(xs.max() + pad + 1, cell.shape[1])
-    by0, by1 = max(ys.min() - pad, 0), min(ys.max() + pad + 1, cell.shape[0])
-    Image.fromarray(cell[by0:by1, bx0:bx1], 'RGBA').save(os.path.join(out, f'{name}.png'))
-    print(f'{name:14s} {bx1 - bx0}x{by1 - by0}')
+    occ = (cell[..., 3] > 40).sum(axis=0)
+    cols_on = np.where(occ > 0)[0]
+    lo_, hi_ = cols_on.min(), cols_on.max()
+    best, run_start = (0, (lo_ + hi_) // 2), None
+    for x in range(lo_, hi_ + 1):
+        if occ[x] == 0 and run_start is None:
+            run_start = x
+        if occ[x] > 0 and run_start is not None:
+            if x - run_start > best[0]:
+                best = (x - run_start, (run_start + x) // 2)
+            run_start = None
+    split = best[1]
+    left, right = cell.copy(), cell.copy()
+    left[:, split:, 3] = 0
+    right[:, :split, 3] = 0
+    save(left, f'char_{name}_front')
+    save(right, f'char_{name}_back')
