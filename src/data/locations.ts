@@ -185,7 +185,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       G12,
     ],
     decor: [
-      { id: 'bld_school', x: 0.6, y: 0.2, w: 8.2, d: 2.3, back: true },
+      { id: 'bld_school', x: -0.3, y: 0.7, w: 8.2, d: 2.3, back: true }, // the entrance is next to the stand
       { id: 'prop_flagpole', x: 9.6, y: 1.4 },
       { id: 'prop_tree_a', x: 11.0, y: 0.7 },
       { id: 'prop_tree_c', x: 11.2, y: 3.0, s: 0.8 },

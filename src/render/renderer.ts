@@ -12,6 +12,7 @@ import { ENV } from './env';
 import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
 import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
+import { pedFacing } from './facing';
 import { drawCharacter, drawCup, pedSpriteId } from './proc/people';
 import { drawCar } from './proc/props';
 import { drawWalls } from './proc/indoor';
@@ -293,8 +294,7 @@ export class Renderer {
   private drawPedInner(ctx: Ctx, p: Ped): void {
     const [sx, sy] = P(p.x, p.y);
     const inQueue = p.state === 'queue' || p.state === 'toQueue';
-    const facingCam = inQueue ? true : p.vx + p.vy >= 0;
-    const dirX = inQueue ? 1 : p.vx - p.vy >= 0 ? 1 : -1;
+    const { facingCam, dirX } = pedFacing(p);
     const type = PED_TYPES[p.type];
     const id = pedSpriteId(p.type, p.look.variant, facingCam);
     const headY = drawCharacter(ctx, id, p.x, p.y, sx, sy, {

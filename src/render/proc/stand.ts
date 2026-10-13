@@ -8,7 +8,7 @@ import { lemonsTotal } from '../../sim/state';
 import { drawSprite, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
-import { drawCharacter } from './people';
+import { drawCharacter, standSpriteId } from './people';
 import { brokenMark } from './standExtras';
 import { type TruckWorker } from './truck';
 
@@ -358,21 +358,23 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     drawSprite(ctx, 'stand_chair', call());
     const people: { id: string; kind: 'player' | 'helper'; x: number; y: number; serving: boolean; juicing: boolean }[] = [];
     if (!wide) {
-      if (helpers > 0) people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
-      people.push({ id: `char_player_${S.avatar}_front`, kind: 'player', x: SPOTS.single.player[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });
+      if (helpers > 0) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
+      people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: SPOTS.single.player[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });
     } else if (helpers >= 2) {
-      people.push({ id: `char_player_${S.avatar}_front`, kind: 'player', x: SPOTS.wide.back[0], y: SPOTS.wide.back[1], serving: false, juicing: making });
-      people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
-      people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0), juicing: false });
+      people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: SPOTS.wide.back[0], y: SPOTS.wide.back[1], serving: false, juicing: making });
+      people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
+      people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0), juicing: false });
     } else {
-      if (helpers === 1) people.push({ id: 'char_helper_front', kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
-      people.push({ id: `char_player_${S.avatar}_front`, kind: 'player', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0) || (helpers === 0 && pouring(1)), juicing: making });
+      if (helpers === 1) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
+      people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0) || (helpers === 0 && pouring(1)), juicing: making });
     }
     for (const p of people) {
       const [px, py] = P(p.x, p.y);
       const helperLook = { ...playerLook(S.avatar === 'boy' ? 'girl' : 'boy'), shirt: '#51cf66', hair: '#3b2a20' };
-      drawCharacter(ctx, p.id, p.x, p.y, px, py, {
+      const pick = standSpriteId(p.id, p.serving, p.juicing);
+      drawCharacter(ctx, pick.id, p.x, p.y, px, py, {
         kind: 'player',
+        hasCup: pick.cup,
         look: p.kind === 'helper' ? helperLook : playerLook(S.avatar),
         scale: p.kind === 'helper' ? 0.95 : 1,
         moving: false,

@@ -45,6 +45,17 @@ export function pedSpriteId(type: string, variant: number, front: boolean): stri
   return `char_${type}_${VARIANTS[variant % VARIANTS.length]}_${side}`;
 }
 
+/**
+ * The picture of someone standing at the stand. `base` is e.g. char_player_boy or char_helper_girl; the pose picture
+ * (_juicing, _serving) is used when it exists. A missing serving picture falls back to the standing one and `cup` asks
+ * the caller to draw the cup in the hand.
+ */
+export function standSpriteId(base: string, serving: boolean, juicing: boolean): { id: string; cup: boolean } {
+  if (juicing && hasImage(`${base}_juicing`)) return { id: `${base}_juicing`, cup: false };
+  if (serving && hasImage(`${base}_serving`)) return { id: `${base}_serving`, cup: false };
+  return { id: `${base}_front`, cup: serving };
+}
+
 export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: number, sy: number, o: PersonOpts): number {
   const img = getImage(id);
   if (img && id.startsWith('char_')) return drawAnimated(ctx, id, img, sx, sy, o);
