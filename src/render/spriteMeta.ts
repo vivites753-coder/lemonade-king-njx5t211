@@ -26,6 +26,15 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_duck: { h: 16, anchor: [0.5, 0.8] },
   prop_car_a: { h: 44, anchor: [0.5, 0.75] },
   // the anchor is the centre of the footprint, not the front corner: the front corner is about 40 px lower
+  // the stand people: the same size for every pose of one person (their pictures differ in height)
+  char_player_boy_front: { h: 42.9, anchor: [0.5, 0.975] },
+  char_player_boy_juicing: { h: 42.9, anchor: [0.5, 0.975] },
+  char_player_boy_splashed: { h: 43.0, anchor: [0.5, 0.975] },
+  char_player_girl_front: { h: 47.4, anchor: [0.5, 0.975] },
+  char_player_girl_juicing: { h: 46.7, anchor: [0.5, 0.975] },
+  char_helper_boy_front: { h: 42.8, anchor: [0.5, 0.975] },
+  char_helper_boy_serving: { h: 43.5, anchor: [0.5, 0.975] },
+  char_helper_girl_front: { h: 45.2, anchor: [0.5, 0.975] },
   char_fox_front: { h: 54, anchor: [0.5, 0.975] },
   char_fox_back: { h: 54, anchor: [0.5, 0.975] },
   char_fox_dizzy: { h: 64, anchor: [0.5, 0.975] },
