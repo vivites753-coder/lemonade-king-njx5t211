@@ -2630,7 +2630,7 @@ body.reduce-motion * {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  left: 290px;
+  left: 276px;
   top: 308px;
   width: 160px;
   height: 160px;
@@ -2644,7 +2644,7 @@ body.reduce-motion * {
   height: 150px;
 }
 .k-cap {
-  left: 290px;
+  left: 276px;
   top: 474px;
   width: 160px;
   text-align: center;
@@ -2657,13 +2657,13 @@ body.reduce-motion * {
   pointer-events: none;
 }
 .k-jug {
-  left: 485px;
-  top: 254px;
-  width: 150px;
-  height: 214px;
+  left: 468px;
+  top: 388px;
+  width: 64px;
+  height: 80px;
   z-index: 4;
-  border-radius: 14px 14px 30px 30px;
-  border: 5px solid rgba(116, 192, 252, 0.95);
+  border-radius: 8px 8px 16px 16px;
+  border: 3px solid rgba(116, 192, 252, 0.95);
   border-top-width: 3px;
   background: rgba(208, 235, 255, 0.35);
   overflow: hidden;
@@ -2726,17 +2726,17 @@ body.reduce-motion * {
   right: 14%;
   bottom: 6%;
   color: #fff;
-  font-size: 20px;
+  font-size: 11px;
   line-height: 0.7;
   text-align: center;
   word-break: break-all;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
 }
 .k-glass {
-  left: 485px;
-  top: 254px;
-  width: 150px;
-  height: 214px;
+  left: 468px;
+  top: 388px;
+  width: 64px;
+  height: 80px;
   z-index: 7;
   pointer-events: none;
   border-radius: 14px 14px 30px 30px;
@@ -2753,8 +2753,8 @@ body.reduce-motion * {
 }
 .k-splash,
 .k-drops {
-  left: 485px;
-  top: 194px;
+  left: 425px;
+  top: 328px;
   width: 150px;
   height: 140px;
   z-index: 8;
@@ -2789,8 +2789,8 @@ body.reduce-motion * {
   animation: k-pour 0.9s ease-in-out;
 }
 @keyframes k-pour {
-  25% { transform: translateX(60px) rotate(32deg); }
-  60% { transform: translateX(60px) rotate(32deg); }
+  25% { transform: translateX(34px) rotate(32deg); }
+  60% { transform: translateX(34px) rotate(32deg); }
 }
 
 /* the mixer: it rests on its own shelf, flies into the jug while it works and goes back */
@@ -2837,8 +2837,8 @@ body.reduce-motion * {
   opacity: 0.8;
 }
 .k-spoon {
-  left: 540px;
-  top: 214px;
+  left: 480px;
+  top: 300px;
   font-size: 70px;
   z-index: 6;
   opacity: 0;
@@ -2854,9 +2854,9 @@ body.reduce-motion * {
   100% { opacity: 0; transform: rotate(-10deg); }
 }
 .k-meter {
-  left: 465px;
-  top: 214px;
-  width: 190px;
+  left: 425px;
+  top: 340px;
+  width: 150px;
   height: 22px;
   border-radius: 99px;
   background: linear-gradient(90deg, #ffe8a3, #ffc9c9);
@@ -2881,7 +2881,7 @@ body.reduce-motion * {
   left: 0;
 }
 .k-cups-art {
-  left: 662px;
+  left: 566px;
   top: 376px;
   width: 92px;
   height: 92px;
@@ -2903,20 +2903,20 @@ body.reduce-motion * {
   font-size: calc(var(--lab) * 0.85px / var(--ks));
 }
 .k-ready {
-  left: 765px;
-  top: 386px;
-  width: 115px;
-  height: 84px;
+  left: 668px;
+  top: 388px;
+  width: 212px;
+  height: 80px;
   z-index: 3;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-start;
 }
 .k-ready .k-img {
   flex: none;
-  width: 58px;
-  height: 78px;
-  margin: 0 -6px;
+  width: 64px;
+  height: 80px;
+  margin: 0 calc(var(--ov, 6px) * -1) 0 0;
   animation: k-appear 0.4s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 .k-ready .k-mark {

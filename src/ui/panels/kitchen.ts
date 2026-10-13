@@ -96,9 +96,9 @@ function pourStream(el: HTMLElement, item: 'water' | 'sugar', ms: number): void 
   const j = inScene(jug, scene);
   const s = q(el, '.k-stream');
   s.className = `k-stream ${item}`;
-  s.style.left = `${j.x + 56 - (item === 'water' ? 6 : 12)}px`;
+  s.style.left = `${j.x + j.w / 2 - (item === 'water' ? 6 : 13)}px`;
   s.style.top = `${j.y - 16}px`;
-  s.style.height = `${j.h * 0.62}px`;
+  s.style.height = `${j.h * 0.7 + 16}px`;
   s.animate(
     [
       { transform: 'scaleY(0)', opacity: 1 },
@@ -111,8 +111,8 @@ function pourStream(el: HTMLElement, item: 'water' | 'sugar', ms: number): void 
   // water splash or sugar puff where it lands
   const puff = q(el, '.k-puff');
   puff.innerHTML = pourFx(item);
-  puff.style.left = `${j.x + 40}px`;
-  puff.style.top = `${j.y + j.h * 0.4}px`;
+  puff.style.left = `${j.x + j.w / 2 - 35}px`;
+  puff.style.top = `${j.y + j.h * 0.25}px`;
   puff.animate(
     [
       { opacity: 0, transform: 'scale(0.4)' },
@@ -167,7 +167,8 @@ function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): voi
     return;
   }
   // bottle / sack: its centre goes above the jug mouth, a bit to the left, so that the neck points into the jug
-  const tx = b.x + 14 - sx;
+  // the neck of the tilted bottle (or the mouth of the sack) is about 43 px right of its centre
+  const tx = b.x + b.w / 2 - 43 - sx;
   const ty = b.y - 36 - sy;
   const mx = tx * 0.6;
   const my = ty - 50;
@@ -282,7 +283,7 @@ function mixerFly(el: HTMLElement, on: boolean): void {
   const b = inScene(jug, scene);
   // the beaters (lower left of the picture) go into the liquid
   const tx = b.x + b.w * 0.5 - (a.x + a.w * 0.5) + 10;
-  const ty = b.y + b.h * 0.34 - (a.y + a.h * 0.5);
+  const ty = b.y + b.h * 0.1 - (a.y + a.h * 0.5);
   mx.style.transform = `translate(${tx}px,${ty}px) rotate(-8deg) scale(0.92)`;
   mx.classList.add('in');
 }
@@ -366,7 +367,7 @@ export const kitchenPanel: Panel = {
               <div class="k-decor" style="inset:0" aria-hidden="true">${kitchenDecor()}</div>
               ${PLANKS.map((y) => `<div class="k-plank" style="top:${y}px"></div>`).join('')}<div class="k-plank m" style="top:306px"></div>
               ${ITEMS.map(
-                (i, n) => `<button class="k-item" data-item="${i.id}" style="left:42px;top:${PLANKS[n] + 3 - 96}px"><span class="k-art" data-k="art-${i.id}"></span>
+                (i, n) => `<button class="k-item" data-item="${i.id}" style="left:68px;top:${PLANKS[n] + 3 - 96}px"><span class="k-art" data-k="art-${i.id}"></span>
                   <span class="k-meta"><b>${t(`kitchen.${i.id}`)}</b><small data-k="left-${i.id}"></small></span></button>`,
               ).join('')}
               <div class="k-mixer${mixKind === 'pro' ? ' pro' : ''}${mixKind === 'broken' ? ' off' : ''}" data-k="mixer"><div class="k-mixer-art">${mixer(mixKind)}</div></div>
@@ -505,7 +506,9 @@ export const kitchenPanel: Panel = {
       btn.title = can === 'full' ? t('kitchen.full') : can === 'noStock' ? t('kitchen.noStock') : '';
     }
     set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>🥤 ${st.cups}</small>`);
-    const readyN = Math.min(4, g.D.kitchenJugs);
+    const readyN = Math.min(24, g.D.kitchenJugs);
+    // as many jugs as are prepared; the more there are, the closer they stand
+    q(el, '.k-ready').style.setProperty('--ov', `${readyN > 3 ? Math.min(40, Math.round((readyN - 3) * 3.2 + 8)) : 6}px`);
     set('ready', readyN > 0 ? readyJug().repeat(readyN) : '');
     set('cooler', g.D.cupsReady && g.S.upgrades.cooler ? `🥛 ${g.D.cupsReady}` : '');
     // jug contents
