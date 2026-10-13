@@ -26,7 +26,8 @@ SHEET = [
 ]
 # file names the game looks for (tileImage() picks _1.._4 variants first, then the plain name)
 OUT_NAME = {
-    'grass_1': 'tile_grass_1', 'grass_2': 'tile_grass_2', 'grass_3': 'tile_grass_3',
+    # four grass variants: two plain, one mirrored, one with flowers (so that flowers are scattered, not everywhere)
+    'grass_1': 'tile_grass_1', 'grass_3': 'tile_grass_2', 'grass_1m': 'tile_grass_3', 'grass_2': 'tile_grass_4',
     'pavement_1': 'tile_pavement_1', 'pavement_2': 'tile_pavement_2', 'pavement_3': 'tile_pavement_3',
     'road': 'tile_road', 'road_dash': 'tile_road_dash',
     'sand_1': 'tile_sand_1', 'sand_2': 'tile_sand_2', 'sand_3': 'tile_sand_3',
@@ -173,18 +174,32 @@ def road_dash(asphalt):
 
 
 def to_diamond(tex):
-    """Square texture (S x S) -> 128x64 RGBA isometric diamond (swatch x axis = game +x, y axis = game +y)."""
+    """Square texture (S x S) -> 128x64 RGBA isometric diamond (swatch x axis = game +x, y axis = game +y).
+
+    The texture is repeated around itself before the projection, so the picture simply continues beyond the tile
+    edge (no ringing from transparent borders, and the 3% overlap shows the same pattern as the neighbour).
+    The diamond outline is cut with a separately antialiased mask.
+    """
     sc = 4
     W, H = TW * sc, TH * sc
     k = OVER
-    src = tex.convert('RGBA')
+    src = Image.new('RGB', (S * 3, S * 3))
+    for dx in range(3):
+        for dy in range(3):
+            src.paste(tex.convert('RGB'), (dx * S, dy * S))
     c = (1 / (W * k), 1 / (H * k))
-    # u = X/(Wk) + Y/(Hk) + 0.5 - 1/k ; v = Y/(Hk) - X/(Wk) + 0.5
+    # u = X/(Wk) + Y/(Hk) + 0.5 - 1/k ; v = Y/(Hk) - X/(Wk) + 0.5 ; the source is offset by one texture size
     coeffs = (
-        S * c[0], S * c[1], S * (0.5 - 1 / k),
-        -S * c[0], S * c[1], S * 0.5,
+        S * c[0], S * c[1], S * (0.5 - 1 / k) + S,
+        -S * c[0], S * c[1], S * 0.5 + S,
     )
-    out = src.transform((W, H), Image.AFFINE, coeffs, resample=Image.BICUBIC)
+    rgb = src.transform((W, H), Image.AFFINE, coeffs, resample=Image.BICUBIC)
+    mask = Image.new('L', (W, H), 0)
+    ImageDraw.Draw(mask).polygon(
+        [(W / 2, H / 2 - H / 2 * k), (W / 2 + W / 2 * k, H / 2), (W / 2, H / 2 + H / 2 * k), (W / 2 - W / 2 * k, H / 2)], fill=255
+    )
+    out = rgb.convert('RGBA')
+    out.putalpha(mask)
     return out.resize((TW, TH), Image.LANCZOS)
 
 
@@ -221,8 +236,9 @@ def main():
     # the dashed road is the same asphalt (mirrored, so the grain differs) plus the drawn dash
     tex['road_dash'] = road_dash(tex['road'].transpose(Image.FLIP_LEFT_RIGHT))
 
+    tex['grass_1m'] = tex['grass_1'].transpose(Image.FLIP_TOP_BOTTOM)
     tiles = {}
-    for name, _mode in SHEET:
+    for name in OUT_NAME:
         tiles[name] = to_diamond(tex[name])
         tiles[name].save(os.path.join(out_dir, OUT_NAME[name] + '.png'))
         print(OUT_NAME[name])
@@ -233,7 +249,7 @@ def main():
             'ssssssbbww', 'ssssssbbww', 'qqqqqqtttt', 'mmmmmmnnnn', 'kkkkkkKKKK',
         ]
         pick = {
-            'g': ['grass_1', 'grass_2', 'grass_3'], 'p': ['pavement_1', 'pavement_2', 'pavement_3'], 'r': ['road'],
+            'g': ['grass_1', 'grass_3', 'grass_1m', 'grass_2'], 'p': ['pavement_1', 'pavement_2', 'pavement_3'], 'r': ['road'],
             'R': ['road_dash'], 's': ['sand_1', 'sand_2', 'sand_3'], 'b': ['boardwalk'], 'w': ['water_1', 'water_2'],
             'q': ['path'], 't': ['schoolyard'], 'm': ['mall'], 'n': ['mall_walk'], 'k': ['station'], 'K': ['station_walk'],
         }

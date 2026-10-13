@@ -14,7 +14,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_flowers: { h: 22, anchor: [0.5, 0.8] },
   prop_bench: { h: 34, anchor: [0.5, 0.8] },
   prop_lamp: { h: 78, anchor: [0.5, 0.97] },
-  prop_fence_post: { h: 24, anchor: [0.3, 0.9] },
+  prop_fence_post: { h: 34, anchor: [0.04, 0.52] },
   prop_mailbox: { h: 34, anchor: [0.5, 0.95] },
   prop_parasol: { h: 62, anchor: [0.5, 0.92] },
   prop_boat: { h: 50, anchor: [0.5, 0.75] },

@@ -43,9 +43,12 @@ export interface LocationDef {
   decor: DecorDef[];
 }
 
+/** A fence along x: one section (about a tile long) per step, evenly spread over x0..x1. */
 function fence(y: number, x0: number, x1: number): DecorDef[] {
   const out: DecorDef[] = [];
-  for (let x = x0; x < x1 - 0.01; x += 0.5) out.push({ id: 'prop_fence_post', x, y });
+  const n = Math.max(1, Math.round(x1 - x0));
+  const step = (x1 - x0) / n;
+  for (let i = 0; i < n; i++) out.push({ id: 'prop_fence_post', x: x0 + i * step, y, s: step });
   return out;
 }
 

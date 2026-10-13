@@ -40,6 +40,30 @@ spill = np.maximum(np.minimum(col[..., 0], col[..., 2]) - col[..., 1], 0)
 spill = np.where(band, spill, 0)[..., None]
 col = col - spill * np.array([1, 0, 1], dtype=np.float32)
 col = np.clip(col, 0, 255)
+
+
+def blur(a, r):
+    """Box blur (three passes ~ gaussian) on an HxWxC array."""
+    k = 2 * r + 1
+    for _ in range(3):
+        for axis in (0, 1):
+            pad = np.pad(a, [(r, r) if i == axis else (0, 0) for i in range(a.ndim)], mode='edge')
+            c = np.cumsum(pad, axis=axis, dtype=np.float64)
+            z = np.zeros_like(np.take(c, [0], axis=axis))
+            c = np.concatenate([z, c], axis=axis)
+            a = (np.take(c, range(k, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - k), axis=axis)) / k
+    return a
+
+
+# Edge colours still carry a magenta tint (a purple outline on green trees). Replace the colour of every
+# semi-transparent pixel with the average colour of the solid pixels around it, and thin the soft edge a little.
+solid = (alpha > 0.96).astype(np.float64)
+num = blur(col * solid[..., None], 3)
+den = blur(solid[..., None], 3)
+inner_col = np.where(den > 0.02, num / np.maximum(den, 1e-6), col)
+edge = (alpha < 0.96)[..., None]
+col = np.where(edge, inner_col, col)
+alpha = np.clip((alpha - 0.2) / 0.8, 0, 1)
 rgba = np.dstack([col, alpha * 255]).astype(np.uint8)
 
 

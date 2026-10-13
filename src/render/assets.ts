@@ -115,6 +115,10 @@ export function tileImage(base: string, x: number, y: number): HTMLImageElement 
     const v = images.get(`${base}_${i}`);
     if (v) variants.push(v);
   }
-  if (variants.length) return variants[(x * 7 + y * 13) % variants.length];
+  if (variants.length) {
+    // a hash, not (x*a + y*b) % n: that would lay the variants in regular diagonal stripes
+    const h = Math.imul(x + 1, 73856093) ^ Math.imul(y + 1, 19349663);
+    return variants[((h >>> 8) % variants.length + variants.length) % variants.length];
+  }
   return images.get(base);
 }

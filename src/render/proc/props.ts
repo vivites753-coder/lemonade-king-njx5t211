@@ -87,10 +87,11 @@ function lamp(ctx: Ctx, c: SpriteCall): void {
 
 function fencePost(ctx: Ctx, c: SpriteCall): void {
   const { x, y } = c;
+  const len = c.s || 1; // length of this section in tiles
   box(ctx, x, y - 0.04, 0.08, 0.08, 18, 0, '#f1e3c8');
   // rails to the next post
-  poly(ctx, [P(x + 0.08, y, 13), P(x + 0.5, y, 13), P(x + 0.5, y, 10), P(x + 0.08, y, 10)], '#e6d3ae');
-  poly(ctx, [P(x + 0.08, y, 6), P(x + 0.5, y, 6), P(x + 0.5, y, 3), P(x + 0.08, y, 3)], '#e6d3ae');
+  poly(ctx, [P(x + 0.08, y, 13), P(x + len, y, 13), P(x + len, y, 10), P(x + 0.08, y, 10)], '#e6d3ae');
+  poly(ctx, [P(x + 0.08, y, 6), P(x + len, y, 6), P(x + len, y, 3), P(x + 0.08, y, 3)], '#e6d3ae');
 }
 
 function mailbox(ctx: Ctx, c: SpriteCall): void {
