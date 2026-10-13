@@ -365,7 +365,8 @@ export function standSideParts(g: Game): { part: StandPart; x: number; y: number
   // the sign stands in front of the left end of the table: it is drawn after the table
   if (up.sign) out.push({ part: 'sign', x: SX - 0.9 + (wide ? (isTruck ? -2.3 : -1.9) : 0), y: SY + 1.0 + (wide ? (isTruck ? 0.5 : -0.2) : 0) });
   if (up.mascot) out.push({ part: 'mascot', x: SX - 1.55 + (wide ? -0.3 : 0), y: SY + 1.25 + (wide ? 1.0 : 0) });
-  if (up.tv) out.push({ part: 'tv', x: SX + 3.12, y: SY - 0.28 });
+  // next to the table, in front of the speaker and the scooter
+  if (up.tv) out.push({ part: 'tv', x: SX + 2.2, y: SY + 0.35 });
   return out;
 }
 
@@ -407,7 +408,7 @@ export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
     shifted(ctx, wide, -0.3, 1.0, () => drawSprite(ctx, 'stand_mascot', call({ sy: sy - hop })));
   } else {
     drawSprite(ctx, 'stand_tv', call({ on: !!br.tv }));
-    if (br.tv) brokenMark(ctx, SX + 3.07, SY - 0.33, 76);
+    if (br.tv) brokenMark(ctx, SX + 2.2, SY + 0.35, 76);
   }
 }
 

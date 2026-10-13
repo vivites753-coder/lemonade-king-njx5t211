@@ -67,7 +67,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   stand_mascot: { h: 44, anchor: [0.5, 0.95], dx: -90, dy: -5 },
   stand_tent: { h: 139, anchor: [0.5, 0.74], dx: 11, dy: -6 },
   stand_speaker: { h: 31, anchor: [0.5, 0.92], dx: 50, dy: 9 },
-  stand_tv: { h: 54, anchor: [0.5, 0.93], dx: 108, dy: 47 },
+  stand_tv: { h: 54, anchor: [0.5, 0.93], dx: 66, dy: 42 },
   stand_sign: { h: 42, anchor: [0.5, 0.92], dx: -68, dy: 12 },
   item_cookies: { h: 13, anchor: [0.5, 0.85], dx: 21, dy: -10 },
   stand_juicer_lever: { h: 30, anchor: [0.5, 0.9], dx: 17, dy: -19 },
