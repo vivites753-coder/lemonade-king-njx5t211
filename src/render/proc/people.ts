@@ -1,6 +1,7 @@
 // Procedural people: chunky "chibi" characters built from rounded shapes.
 import type { Look } from '../../sim/looks';
-import { drawSprite, getImage, getWalk, hasImage, metaFor } from '../assets';
+import type { LoopInfo } from '../assets';
+import { drawSprite, getImage, getLoop, getWalk, hasArt, hasImage, metaFor } from '../assets';
 import { ENV } from '../env';
 import { circle, ellipse, line, rrect, shade, shadow, type Ctx } from '../iso';
 
@@ -51,12 +52,14 @@ export function pedSpriteId(type: string, variant: number, front: boolean): stri
  * the caller to draw the cup in the hand.
  */
 export function standSpriteId(base: string, serving: boolean, juicing: boolean): { id: string; cup: boolean } {
-  if (juicing && hasImage(`${base}_juicing`)) return { id: `${base}_juicing`, cup: false };
-  if (serving && hasImage(`${base}_serving`)) return { id: `${base}_serving`, cup: false };
+  if (juicing && hasArt(`${base}_juicing`)) return { id: `${base}_juicing`, cup: false };
+  if (serving && hasArt(`${base}_serving`)) return { id: `${base}_serving`, cup: false };
   return { id: `${base}_front`, cup: serving };
 }
 
 export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: number, sy: number, o: PersonOpts): number {
+  const loop = getLoop(id);
+  if (loop) return drawLoop(ctx, id, loop, x, sx, sy, o);
   const img = getImage(id);
   if (img && id.startsWith('char_')) return drawAnimated(ctx, id, img, sx, sy, o);
   if (hasImage(id)) {
@@ -66,6 +69,28 @@ export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: nu
     return sy - 58 * o.scale - bob;
   }
   return drawPerson(ctx, sx, sy, o);
+}
+
+/**
+ * A character that is a looping animation (the player, the helpers, the fox). People at the stand loop all the time;
+ * the fox only while it moves. Facing left is a mirror image.
+ */
+function drawLoop(ctx: Ctx, id: string, loop: LoopInfo, wx: number, sx: number, sy: number, o: PersonOpts): number {
+  const dir = o.dirX < 0 ? -1 : 1;
+  const fox = id.includes('_fox_');
+  const playing = !ENV.reduceMotion && (!fox || o.moving || id.endsWith('_dizzy'));
+  const t = (o.t ?? ENV.t) + wx * 0.37; // neighbours do not move in lockstep
+  const frame = playing ? Math.floor(t * loop.fps) % loop.n : 0;
+  const scale = (loop.h * o.scale) / loop.figH;
+  shadow(ctx, sx, sy, 10 * o.scale, 0.2);
+  ctx.save();
+  ctx.translate(sx, sy);
+  if (dir > 0 && fox) ctx.scale(-1, 1); // the fox pictures look to the lower LEFT
+  ctx.drawImage(loop.img, frame * loop.fw, 0, loop.fw, loop.fh, -loop.cx * scale, -loop.feetY * scale, loop.fw * scale, loop.fh * scale);
+  ctx.restore();
+  const top = sy - loop.h * o.scale;
+  if (o.hasCup) drawCup(ctx, sx + dir * 9 * o.scale, sy - loop.h * o.scale * 0.45, o.scale);
+  return top;
 }
 
 /** Share of the sprite height that belongs to the legs (the part that steps). Skirts and dresses step less. */

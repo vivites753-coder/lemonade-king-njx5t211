@@ -75,6 +75,28 @@ let walkManifest: Record<string, Omit<WalkInfo, 'img'>> = {};
 const walkFiles = import.meta.glob('/assets/chars/anim/walk.json', { eager: true, import: 'default' }) as Record<string, Record<string, Omit<WalkInfo, 'img'>>>;
 for (const m of Object.values(walkFiles)) walkManifest = m;
 
+export interface LoopInfo extends WalkInfo {
+  /** On-screen figure height in world px. */
+  h: number;
+  fps: number;
+}
+
+let loopManifest: Record<string, Omit<LoopInfo, 'img'>> = {};
+const loopFiles = import.meta.glob('/assets/chars/anim/loops.json', { eager: true, import: 'default' }) as Record<string, Record<string, Omit<LoopInfo, 'img'>>>;
+for (const m of Object.values(loopFiles)) loopManifest = m;
+
+/** A looping animation of one pose (idle, serving, squeezing, walking in place ...), if its strip has loaded. */
+export function getLoop(id: string): LoopInfo | undefined {
+  const g = loopManifest[id];
+  const img = images.get(`${id}_loop`);
+  return g && img ? { ...g, img } : undefined;
+}
+
+/** The sprite id has a picture, a still one or an animation. */
+export function hasArt(id: string): boolean {
+  return images.has(id) || !!loopManifest[id];
+}
+
 /** The walking loop of a character sprite (e.g. char_kid_a_front), if its strip has loaded. */
 export function getWalk(id: string): WalkInfo | undefined {
   const g = walkManifest[id];

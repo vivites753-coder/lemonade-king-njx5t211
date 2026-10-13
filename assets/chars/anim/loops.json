@@ -1,0 +1,167 @@
+{
+ "char_fox_back": {
+  "cx": 66.7,
+  "feetY": 220,
+  "fh": 224,
+  "figH": 216,
+  "fps": 12.0,
+  "fw": 150,
+  "h": 50.5,
+  "n": 12,
+  "reversed": false
+ },
+ "char_fox_dizzy": {
+  "cx": 79.5,
+  "feetY": 232,
+  "fh": 236,
+  "figH": 228,
+  "fps": 12.0,
+  "fw": 166,
+  "h": 53.4,
+  "n": 13,
+  "reversed": false
+ },
+ "char_fox_front": {
+  "cx": 69.4,
+  "feetY": 220,
+  "fh": 224,
+  "figH": 216,
+  "fps": 12.0,
+  "fw": 160,
+  "h": 50.5,
+  "n": 12,
+  "reversed": false
+ },
+ "char_helper_boy_front": {
+  "cx": 52.8,
+  "feetY": 209,
+  "fh": 213,
+  "figH": 205,
+  "fps": 12.0,
+  "fw": 112,
+  "h": 43.6,
+  "n": 9,
+  "reversed": false
+ },
+ "char_helper_boy_serving": {
+  "cx": 68.2,
+  "feetY": 228,
+  "fh": 232,
+  "figH": 224,
+  "fps": 12.0,
+  "fw": 150,
+  "h": 47.7,
+  "n": 12,
+  "reversed": false
+ },
+ "char_helper_girl_front": {
+  "cx": 56.6,
+  "feetY": 220,
+  "fh": 224,
+  "figH": 216,
+  "fps": 12.0,
+  "fw": 120,
+  "h": 46.0,
+  "n": 11,
+  "reversed": false
+ },
+ "char_helper_girl_serving": {
+  "cx": 111.5,
+  "feetY": 226,
+  "fh": 230,
+  "figH": 222,
+  "fps": 12.0,
+  "fw": 202,
+  "h": 47.3,
+  "n": 10,
+  "reversed": false
+ },
+ "char_player_boy_front": {
+  "cx": 61.0,
+  "feetY": 206,
+  "fh": 210,
+  "figH": 202,
+  "fps": 12.0,
+  "fw": 116,
+  "h": 43.0,
+  "n": 12,
+  "reversed": false
+ },
+ "char_player_boy_juicing": {
+  "cx": 65.6,
+  "feetY": 246,
+  "fh": 246,
+  "figH": 242,
+  "fps": 12.0,
+  "fw": 128,
+  "h": 51.5,
+  "n": 12,
+  "reversed": false
+ },
+ "char_player_boy_serving": {
+  "cx": 65.3,
+  "feetY": 206,
+  "fh": 210,
+  "figH": 202,
+  "fps": 12.0,
+  "fw": 154,
+  "h": 43.0,
+  "n": 12,
+  "reversed": false
+ },
+ "char_player_boy_splashed": {
+  "cx": 77.1,
+  "feetY": 212,
+  "fh": 216,
+  "figH": 208,
+  "fps": 12.0,
+  "fw": 148,
+  "h": 44.3,
+  "n": 18,
+  "reversed": false
+ },
+ "char_player_girl_front": {
+  "cx": 73.1,
+  "feetY": 222,
+  "fh": 226,
+  "figH": 222,
+  "fps": 12.0,
+  "fw": 134,
+  "h": 47.3,
+  "n": 10,
+  "reversed": false
+ },
+ "char_player_girl_juicing": {
+  "cx": 72.5,
+  "feetY": 221,
+  "fh": 225,
+  "figH": 221,
+  "fps": 12.0,
+  "fw": 140,
+  "h": 47.0,
+  "n": 18,
+  "reversed": false
+ },
+ "char_player_girl_serving": {
+  "cx": 81.0,
+  "feetY": 222,
+  "fh": 226,
+  "figH": 222,
+  "fps": 12.0,
+  "fw": 174,
+  "h": 47.3,
+  "n": 10,
+  "reversed": false
+ },
+ "char_player_girl_splashed": {
+  "cx": 89.0,
+  "feetY": 222,
+  "fh": 226,
+  "figH": 222,
+  "fps": 12.0,
+  "fw": 174,
+  "h": 47.3,
+  "n": 13,
+  "reversed": false
+ }
+}
