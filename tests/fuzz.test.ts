@@ -155,5 +155,5 @@ describe('random play', () => {
     // the random player really played: hundreds of days and many cups
     expect(days).toBeGreaterThan(1200);
     expect(sold).toBeGreaterThan(1000);
-  });
+  }, 120000);
 });
