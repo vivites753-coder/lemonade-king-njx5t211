@@ -1,6 +1,6 @@
 // Procedural people: chunky "chibi" characters built from rounded shapes.
 import type { Look } from '../../sim/looks';
-import { drawSprite, getImage, hasImage, metaFor } from '../assets';
+import { drawSprite, getImage, getWalk, hasImage, metaFor } from '../assets';
 import { ENV } from '../env';
 import { circle, ellipse, line, rrect, shade, shadow, type Ctx } from '../iso';
 
@@ -95,6 +95,23 @@ function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, s
   const breath = !o.moving && motion ? Math.sin((o.t ?? ENV.t) * 2.4 + o.anim * 3.1) * 0.014 : 0;
   const sqY = walking ? 0.972 + 0.05 * k : 1 + breath;
   const sqX = walking ? 1.028 - 0.04 * k : 1 - breath * 0.6;
+
+  // a real walking loop (drawn frames) beats the cut-and-hop trick below
+  const loop = walking ? getWalk(id) : undefined;
+  if (loop) {
+    const frame = Math.floor((((o.anim / (Math.PI * 2)) % 1) + 1) % 1 * loop.n) % loop.n;
+    const scale = (H * ((ih - 12) / ih)) / loop.figH; // same figure height as the still picture
+    shadow(ctx, sx, sy, 10 * sc * 0.92, 0.2);
+    ctx.save();
+    ctx.translate(sx, sy);
+    if (mirror) ctx.scale(-1, 1);
+    ctx.drawImage(loop.img, frame * loop.fw, 0, loop.fw, loop.fh, -loop.cx * scale, -loop.feetY * scale, loop.fw * scale, loop.fh * scale);
+    ctx.restore();
+    const top = sy - loop.figH * scale;
+    if (o.hasCup) drawCup(ctx, sx + dir * W * 0.3, sy - H * 0.42, sc);
+    if (o.umbrella) return umbrella(ctx, sx + dir * 5 * sc, sy - H * 0.5, top, sc, o.look.accent);
+    return top;
+  }
 
   shadow(ctx, sx, sy, 10 * sc * (1 - 0.2 * k), 0.22 - 0.05 * k);
   ctx.save();

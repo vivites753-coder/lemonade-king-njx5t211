@@ -54,6 +54,31 @@ export function registerProcs(map: Record<string, ProcDraw>): void {
   for (const [id, fn] of Object.entries(map)) procs.set(id, fn);
 }
 
+/** Geometry of a walking-loop strip (assets/chars/anim): frames side by side, all the same size. */
+export interface WalkInfo {
+  img: HTMLImageElement;
+  n: number;
+  fw: number;
+  fh: number;
+  /** Ground line inside a frame (px from the top). */
+  feetY: number;
+  /** Height of the figure itself (px). */
+  figH: number;
+  /** Horizontal anchor of the body (px from the left). */
+  cx: number;
+}
+
+let walkManifest: Record<string, Omit<WalkInfo, 'img'>> = {};
+const walkFiles = import.meta.glob('/assets/chars/anim/walk.json', { eager: true, import: 'default' }) as Record<string, Record<string, Omit<WalkInfo, 'img'>>>;
+for (const m of Object.values(walkFiles)) walkManifest = m;
+
+/** The walking loop of a character sprite (e.g. char_kid_a_front), if its strip has loaded. */
+export function getWalk(id: string): WalkInfo | undefined {
+  const g = walkManifest[id];
+  const img = images.get(`${id}_walk`);
+  return g && img ? { ...g, img } : undefined;
+}
+
 export function hasImage(id: string): boolean {
   return images.has(id);
 }
