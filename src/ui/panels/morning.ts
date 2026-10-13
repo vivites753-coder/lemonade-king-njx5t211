@@ -1,3 +1,4 @@
+import { CONFIG } from '../../core/config';
 import type { EquipId, LocationId } from '../../core/types';
 import { LOC_EVENTS } from '../../data/events';
 import { LOCATIONS, LOCATION_IDS } from '../../data/locations';
@@ -19,12 +20,14 @@ export function locationCards(g: Game): string {
       const locked = repLock || !!own || (S.day === 1 && id !== 'yard');
       const travel = g.travelHours(id);
       const ev = repLock ? undefined : LOC_EVENTS.find((e) => e.loc === id && D.events[e.id]);
+      const busy = repLock ? 1 : (D.events.busy?.[id] ?? 1);
       return `<button class="loc${S.location === id ? ' sel' : ''}${repLock ? ' rep-lock' : ''}" data-act="loc:${id}" ${locked ? 'disabled' : ''}>
         <span class="loc-ico">${repLock ? '🔒' : l.icon}</span>
         <span class="grow">
           <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}
           ${repLock ? `<span class="loc-lock">⭐ ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}
           ${ev ? `<span class="loc-ev">${t(`loc.ev.${ev.id}`)}</span>` : ''}
+          ${busy >= CONFIG.CROWD_HIGH ? `<span class="loc-ev">👥 ${t('loc.busy.high')}</span>` : busy <= CONFIG.CROWD_LOW ? `<span class="loc-ev">🍃 ${t('loc.busy.low')}</span>` : ''}
           ${own ? `<span class="loc-own">🏪 ${t('loc.ownPoint')}</span>` : ''}
           <small>${t(`loc.${id}.desc`)}</small>
           <span class="loc-meta">

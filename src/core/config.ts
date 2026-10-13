@@ -31,6 +31,14 @@ export const CONFIG = {
   SPAWN_LEFT: -0.2,
   SPAWN_RIGHT: 12.2,
   MAX_PEDS: 80,
+  /** All places have 40 % fewer passers than the base densities say. */
+  CROWD_SCALE: 0.6,
+  /** A day's crowd at one place is this many times the usual: from half to a bit more than usual. */
+  CROWD_DAY_MIN: 0.5,
+  CROWD_DAY_MAX: 1.4,
+  /** The morning card says "many people" / "few people" beyond these. */
+  CROWD_HIGH: 1.2,
+  CROWD_LOW: 0.75,
 
   /** Attention radius in tiles. */
   BASE_RADIUS: 2.6,

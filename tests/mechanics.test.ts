@@ -167,7 +167,7 @@ describe('helper', () => {
     expect(g.S.coins).toBe(coins - CONFIG.HELPER_WAGE);
     sellWholeDay(g, false); // the player does nothing
     const r = g.D.report!;
-    expect(r.sold).toBeGreaterThan(5);
+    expect(r.sold).toBeGreaterThan(1);
     expect(r.wages).toBe(CONFIG.HELPER_WAGE);
     expect(g.S.coins - g.D.coinsStart).toBe(r.profit);
   });
@@ -291,5 +291,22 @@ describe('new upgrades', () => {
   it('the mascot works best at the school', () => {
     const base = { speakerOn: true, flyers: false, weather: 'sunny' as const, rep: 1, festival: false, upgrades: { mascot: true as const } };
     expect(interestChance({ ...base, location: 'school' }).raw).toBeGreaterThan(interestChance({ ...base, location: 'park' }).raw);
+  });
+});
+
+describe('busy and quiet days', () => {
+  it('every morning each place gets its own crowd between half and a bit more than usual, and it differs from day to day', () => {
+    const g = freshGame(5);
+    const seen = new Set<number>();
+    for (let i = 0; i < 12; i++) {
+      for (const [id, v] of Object.entries(g.D.events.busy ?? {})) {
+        expect(v, id).toBeGreaterThanOrEqual(CONFIG.CROWD_DAY_MIN);
+        expect(v, id).toBeLessThanOrEqual(CONFIG.CROWD_DAY_MAX);
+        seen.add(v);
+      }
+      g.restDay();
+      g.sleep();
+    }
+    expect(seen.size).toBeGreaterThan(10);
   });
 });

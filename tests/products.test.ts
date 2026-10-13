@@ -47,7 +47,7 @@ describe('cookies', () => {
     const g = freshGame();
     dayWithCookies(g, 4);
     const r = g.D.report!;
-    expect(r.cookiesSold).toBeGreaterThan(3);
+    expect(r.cookiesSold).toBeGreaterThan(0);
     expect(r.cookieSales).toBe(r.cookiesSold * 4);
     expect(r.sales).toBeGreaterThan(r.cookieSales);
     expect(g.S.stock.cookies).toBe(30 - r.cookiesSold);

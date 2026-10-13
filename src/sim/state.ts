@@ -116,6 +116,8 @@ export interface DayEvents {
   concert: boolean;
   /** Mall: a big sale (more shoppers all day). */
   mallSale: boolean;
+  /** How busy each place is today (1 = usual). Missing (old saves, tests) means 1. */
+  busy?: Partial<Record<LocationId, number>>;
 }
 
 /** The jug being made in the kitchen mini-game (nothing is used up until it is poured). */
@@ -236,7 +238,7 @@ export function emptyFunnel(): Funnel {
 }
 
 export function emptyEvents(): DayEvents {
-  return { festival: false, thiefAt: null, sugarHike: false, cupsSoldOut: false, badLemons: false, trains: false, trackRepair: false, concert: false, mallSale: false };
+  return { festival: false, thiefAt: null, sugarHike: false, cupsSoldOut: false, badLemons: false, trains: false, trackRepair: false, concert: false, mallSale: false, busy: {} };
 }
 
 export function emptyKitchen(): KitchenState {

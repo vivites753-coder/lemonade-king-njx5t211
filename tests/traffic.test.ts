@@ -50,3 +50,15 @@ describe('foot traffic', () => {
     expect(d.buyers).toBeLessThan(20);
   });
 });
+
+describe('crowd size', () => {
+  it('is 40 % lower than the base density, and a busy day scales it per place', () => {
+    const l = LOCATIONS.park;
+    const base = l.density * l.hourCurve(12) * weatherPedFactor('park', 'sunny');
+    expect(spawnRatePerHour('park', 12, 'sunny', NO_EVENTS)).toBeCloseTo(base * 0.6, 6);
+    const half = spawnRatePerHour('park', 12, 'sunny', { festival: false, busy: { park: 0.5 } });
+    expect(half).toBeCloseTo(spawnRatePerHour('park', 12, 'sunny', NO_EVENTS) * 0.5, 6);
+    // another place is not touched by the park's busy day
+    expect(spawnRatePerHour('mall', 12, 'sunny', { festival: false, busy: { park: 0.5 } })).toBe(spawnRatePerHour('mall', 12, 'sunny', NO_EVENTS));
+  });
+});

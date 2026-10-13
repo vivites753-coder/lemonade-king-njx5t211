@@ -573,6 +573,8 @@ export const en: Record<I18nKey, string> = {
   'loc.mall.peak': 'Opens at 10:00. Busiest in the evening, after work.',
   'loc.locked': 'Needs reputation ⭐ {n}',
   'loc.indoor': 'Under a roof',
+  'loc.busy.high': 'Lots of people here today',
+  'loc.busy.low': 'Quiet here today, few people',
   'loc.ev.trains': '🚆 Trains from the city today!',
   'loc.ev.trackRepair': '🚧 Track repairs today',
   'loc.ev.concert': '🎤 Concert tonight!',

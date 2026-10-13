@@ -1,4 +1,5 @@
 import { CONFIG } from '../core/config';
+import { LOCATION_IDS } from '../data/locations';
 import { DAY_EVENTS, LOC_EVENTS, NEWS_FLAVOURS, type DayEventId } from '../data/events';
 import type { Game } from './game';
 
@@ -14,6 +15,12 @@ export function rollDayEvents(g: Game): void {
   }
   const placeNews = LOC_EVENTS.find((e) => D.events[e.id]);
   D.newsKey = D.events.festival ? 'news.festival' : placeNews ? `news.${placeNews.id}` : `news.calm${rng.int(0, NEWS_FLAVOURS - 1)}`;
+  // every place has its own busy or quiet day (two rolls averaged: ordinary days are the most common)
+  D.events.busy = {};
+  for (const id of LOCATION_IDS) {
+    const u = (rng.next() + rng.next()) / 2;
+    D.events.busy[id] = Math.round((CONFIG.CROWD_DAY_MIN + (CONFIG.CROWD_DAY_MAX - CONFIG.CROWD_DAY_MIN) * u) * 100) / 100;
+  }
 }
 
 export function applyEvent(g: Game, id: DayEventId, on: boolean): void {

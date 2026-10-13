@@ -6,7 +6,7 @@ import { LOCATIONS } from '../data/locations';
 import { WEATHER } from '../data/weather';
 
 /** The day's events that change the crowd. */
-export type Crowd = { festival: boolean } & Partial<Record<LocEventId, boolean>>;
+export type Crowd = { festival: boolean; busy?: Partial<Record<LocationId, number>> } & Partial<Record<LocEventId, boolean>>;
 
 export const NO_EVENTS: Crowd = { festival: false };
 
@@ -17,7 +17,7 @@ export function weatherPedFactor(loc: LocationId, weather: WeatherId): number {
 
 /** Crowd multiplier from today's events at this place (the city festival is outdoors only). */
 export function eventPedFactor(loc: LocationId, hour: number, ev: Crowd): number {
-  let m = ev.festival && !LOCATIONS[loc].indoor ? FESTIVAL_PED : 1;
+  let m = (ev.festival && !LOCATIONS[loc].indoor ? FESTIVAL_PED : 1) * (ev.busy?.[loc] ?? 1);
   for (const e of LOC_EVENTS) if (e.loc === loc && ev[e.id]) m *= e.ped(hour);
   return m;
 }
@@ -31,7 +31,7 @@ export function placeEventStop(loc: LocationId, ev: Crowd): { key: string; mult:
 /** Pedestrians per game hour. */
 export function spawnRatePerHour(loc: LocationId, hour: number, weather: WeatherId, ev: Crowd): number {
   const l = LOCATIONS[loc];
-  return l.density * l.hourCurve(hour) * weatherPedFactor(loc, weather) * eventPedFactor(loc, hour, ev);
+  return CONFIG.CROWD_SCALE * l.density * l.hourCurve(hour) * weatherPedFactor(loc, weather) * eventPedFactor(loc, hour, ev);
 }
 
 /** Expected pedestrians between two hours (numeric integration). */
