@@ -156,6 +156,45 @@ A large flat top-down texture of [МАТЕРІАЛ], filling the entire square c
 
 Матеріали: `fresh light-green grass with tiny soft tufts and a few small white and yellow flowers` · `warm yellow beach sand with soft ripples and a few tiny shells` · `turquoise water with soft light-blue wavy lines` · `dark gray asphalt with fine soft grain`.
 
+## КУХНЯ. Лист 16: предмети кухні (5×5, FLAT)
+
+Кухня в грі показується спереду (як сцена на екрані), а не ізометрично, тому заголовок FLAT. Рівні запасів (скільки лимонів, води, цукру) гра вибирає з кількох станів.
+
+СІТКА 25 / 5×5 / 78% + FLAT +
+
+```
+Each item is a single kitchen object seen straight from the FRONT, slightly glossy clay material.
+
+Row 1 (lemons): 1) an empty wooden crate, 2) a wooden crate with only three lemons at the bottom, 3) a wooden crate half full of lemons, 4) a wooden crate full of fresh lemons heaping above the rim, 5) a single whole fresh lemon with a leaf.
+Row 2 (water and sugar): 6) one plastic water bottle, 1.5 liters, blue cap, 7) two plastic water bottles side by side, 8) three plastic water bottles in a row, 9) an empty open paper sugar sack, 10) a full open paper sugar sack with white sugar crystals heaping at the top, no text.
+Row 3 (sugar and cups): 11) a half-full open paper sugar sack, 12) a stack of two white paper cups, 13) a stack of three white paper cups, 14) a tall stack of five white paper cups, 15) a stack of four yellow paper cups each with a small lemon drawing.
+Row 4 (tools): 16) a wide white bowl with a half lemon pressed on a reamer (hand squeezing), 17) a lever citrus juicer machine, orange and steel, with a big lever, 18) a wooden cutting board with a knife, 19) a pink hand mixer with two beaters, 20) a modern stainless-steel stand mixer with a mixing bowl.
+Row 5: 21) the pink hand mixer BROKEN: cracked casing, a loose cable, a small wrench lying next to it, 22) a blue cooler bag with a zipper and a handle, 23) a red toolbox with a handle, closed, 24) a big EMPTY pitcher with a handle, opaque light-blue, wide open top, 25) the same big pitcher FILLED to the top with yellow lemonade and a lemon slice on the rim, opaque.
+```
+
+Імена: `kt_crate_0, kt_crate_1, kt_crate_2, kt_crate_3, kt_lemon, kt_water_1, kt_water_2, kt_water_3, kt_sugar_0, kt_sugar_3, kt_sugar_2, kt_cups_2, kt_cups_3, kt_cups_5, kt_cups_branded, kt_juicer_hand, kt_juicer_lever, kt_board, kt_mixer_basic, kt_mixer_pro, kt_mixer_broken, kt_cooler, kt_toolkit, kt_pitcher_empty, kt_pitcher_full`
+
+## КУХНЯ. Лист 17: ефекти й оздоблення кухні (5×4, FLAT)
+
+СІТКА 20 / 5×4 / 78% + FLAT +
+
+```
+Row 1 (effects): 1) a yellow lemon-juice splash burst, 2) three yellow juice drops, 3) a small pile of white sugar crystals with sparkles, 4) a blue water splash with drops, 5) a yellow swirl of mixing lines in a circle.
+Row 2: 6) a lemon half cut open, 7) a lemon slice wheel, 8) a curl of yellow lemon peel, 9) a golden sparkle star (perfect mix), 10) a wrench crossed with a screwdriver (broken marker).
+Row 3 (furniture): 11) a long wooden work table seen from the front, empty top, four legs, one drawer, 12) a wooden wall shelf with two boards and brackets, empty, 13) a window with white frame and a small curtain, opaque sky-blue pane, 14) a round wall clock, blank face with ticks only, 15) a small wooden stool.
+Row 4 (decor): 16) a pot with fresh green mint, 17) a kitchen towel hanging on a hook, 18) a yellow apron hanging on a peg, 19) a blank black chalkboard in a wooden frame, 20) a fruit bowl with lemons and an apple.
+```
+
+Імена: `kt_fx_splash, kt_fx_drops, kt_fx_sugar, kt_fx_water, kt_fx_swirl, kt_lemon_half, kt_lemon_slice, kt_peel, kt_sparkle, kt_broken, kt_table, kt_shelf, kt_window, kt_clock, kt_stool, kt_mint, kt_towel, kt_apron, kt_chalkboard, kt_fruit_bowl`
+
+## КУХНЯ. Фон (одна велика картинка, без предметів)
+
+```
+A single wide 3D render of an empty cozy home kitchen back wall seen straight from the front, canvas 2048x1536 (4:3), nothing on the wall except the room itself: mint-green square glossy wall tiles in the upper part, a wooden floor strip at the bottom, a wide white-framed window on the left with soft daylight (opaque pale sky-blue pane), a small empty wooden wall shelf on the right. NO furniture, NO table, NO food, NO tools, NO characters, NO text. Cute stylized soft clay / toy-like look, bright cheerful saturated colors, soft light from the top-left, FRONT VIEW, no perspective distortion, very high detail. The lower third must be a calm empty floor and wall area so objects can be placed on top.
+```
+
+Ім'я: `kt_bg`. Після генерації я заміню ними нинішню намальовану кодом кухню: полиця запасів, стіл, інструменти, глечик (повний глечик обрізатиметься за рівнем), бризки.
+
 ## Анімації: як замовляти ще
 
 Для кожного листа з людьми/тваринами, пари «спереду + ззаду», можна замовити відео ходьби тим самим способом, що й для пішоходів (сітка з клітинок, фігури крокують на місці, лист на магентовому фоні, цикл мінімум 1 с). Далі `tools/walk_analyze.py` та `tools/make_walk.py`.

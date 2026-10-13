@@ -97,6 +97,9 @@ for i, name in enumerate(NAMES):
                 best = (d, t0)
         t0 = best[1]
         seq = region[t0:t0 + LOOP:STEP]
+        if side == 'back':
+            # in the generated video the back views step in the opposite direction: reverse the loop
+            seq = seq[::-1]
         n = len(seq)
         # one crop box for all frames
         al = np.max([f[..., 3] for f in seq], axis=0) > 40
