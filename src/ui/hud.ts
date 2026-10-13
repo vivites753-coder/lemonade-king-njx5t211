@@ -1,5 +1,4 @@
 // Heads-up display: top bar (always), funnel card and selling controls (only while selling).
-import { CONFIG } from '../core/config';
 import type { Phase } from '../core/types';
 import { LOCATIONS } from '../data/locations';
 import { t } from '../i18n';
@@ -50,7 +49,6 @@ export class Hud {
         <span class="chip" data-el="weather"></span>
         <span class="chip" data-el="loc"></span>
         <button class="chip chip-btn" data-hud="roadmap" data-el="rep" aria-label="${t('roadmap.title')}" title="${t('roadmap.title')}"></button>
-        <div class="hud-goal"><span data-el="goal"></span><div class="goal-bar"><i data-el="goalfill"></i></div></div>
         <span class="spacer"></span>
         <div class="seg" data-el="speed">
           <button data-hud="speed:0" aria-label="${t('hud.pause')}">⏸</button>
@@ -133,9 +131,6 @@ export class Hud {
     this.set('weather', `${weatherIco(D.weather)}<span class="lbl"> ${t(`weather.${D.weather}`)}</span>`);
     this.set('loc', `${LOCATIONS[S.location].icon}<span class="lbl"> ${t(`loc.${S.location}.name`)}</span>`);
     this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">${ico('star_full', '⭐')}</span> ${S.rep.toFixed(1)}`);
-    this.set('goal', `🏁 ${t('hud.goal', { coins: S.coins, goal: CONFIG.GOAL_COINS })}`);
-    const fill = `${Math.round(Math.min(1, S.coins / CONFIG.GOAL_COINS) * 100)}%`;
-    if (this.els.goalfill.style.width !== fill) this.els.goalfill.style.width = fill;
     this.set('sound', S.settings.sound ? '🔊' : '🔇');
     this.show('points', g.pointsOpen() || S.points.length > 0);
     if (this.phase !== 'sell') return;

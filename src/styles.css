@@ -208,31 +208,6 @@ button {
   font-size: 18px;
   background: #fffbe6;
 }
-.hud-goal {
-  flex: 1 1 140px;
-  min-width: 120px;
-  max-width: 280px;
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 999px;
-  padding: 4px 10px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
-  font-size: 12px;
-  font-weight: 800;
-}
-.goal-bar {
-  height: 8px;
-  border-radius: 99px;
-  background: #f1ead2;
-  overflow: hidden;
-  margin-top: 2px;
-}
-.goal-bar i {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--yellow), var(--green));
-  border-radius: 99px;
-  transition: width 0.4s;
-}
 .spacer {
   flex: 1;
 }
@@ -1501,9 +1476,6 @@ small {
   .panel-foot {
     padding: 6px 10px 8px;
   }
-  .hud-goal {
-    display: none;
-  }
 }
 @media (max-width: 860px) {
   #panel:not(.center) {
@@ -1830,13 +1802,6 @@ body.reduce-motion * {
     animation: none;
   }
   .lemi-bubble::before {
-    display: none;
-  }
-}
-
-/* the top bar must always fit on one line, or its buttons slide under the stock panel */
-@media (max-width: 920px) {
-  .hud-goal {
     display: none;
   }
 }

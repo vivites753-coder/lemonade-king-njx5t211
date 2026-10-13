@@ -1,5 +1,5 @@
 // Settings, glossary, parental gate, confirmations and the stage-complete screen.
-import { CONFIG, EDITION } from '../core/config';
+import { EDITION } from '../core/config';
 import { GLOSSARY_IDS } from '../data/glossary';
 import { LANGS, asLang, t } from '../i18n';
 import type { Lang } from '../core/types';
@@ -186,7 +186,6 @@ export function stageModal(g: Game): ModalSpec {
       <h2 class="ev-title">${t('stage.title')}</h2>
       <p>${t('stage.text', { coins: g.S.coins, stars: g.S.rep.toFixed(1) })}</p>
       <p>${EDITION === 'demo' ? t('stage.demo') : t('stage.full')}</p>
-      <p class="note">🏁 ${CONFIG.GOAL_COINS} · ${CONFIG.GOAL_REP}★</p>
       <div class="modal-actions"><button class="btn btn-g btn-big" data-act="ok">${t('stage.continue')}</button></div>`,
     act: (act) => act === 'ok',
   };

@@ -1,4 +1,3 @@
-import { CONFIG } from '../../core/config';
 import { LOCATIONS } from '../../data/locations';
 import { t } from '../../i18n';
 import { coin, ico, lemiFace, signedCoin, stars } from '../dom';
@@ -7,13 +6,6 @@ import type { Panel } from './types';
 function fbar(label: string, n: number, max: number): string {
   const w = max > 0 ? Math.max(2, Math.round((n / max) * 100)) : 0;
   return `<div class="fbar"><span>${label}</span><b>${n}</b><div class="bar"><i style="width:${w}%"></i></div></div>`;
-}
-
-export function goalHtml(coins: number, rep: number): string {
-  const k = Math.min(1, coins / CONFIG.GOAL_COINS);
-  return `<div class="card"><b>🏁 ${t('report.goal')}</b>: ${coin(coins)} / ${coin(CONFIG.GOAL_COINS)} ${t('hud.goalStars', { stars: CONFIG.GOAL_REP })}
-    <div class="goal-bar" style="height:12px;margin-top:6px"><i style="width:${Math.round(k * 100)}%;display:block;height:100%;background:linear-gradient(90deg,#ffd43b,#51cf66);border-radius:99px"></i></div>
-    <small class="muted">${stars(rep)} ${rep.toFixed(1)}</small></div>`;
 }
 
 export const reportPanel: Panel = {
@@ -91,7 +83,6 @@ export const reportPanel: Panel = {
           <button class="link-btn" data-act="roadmap">🗺️ ${t('roadmap.title')}</button></span>
           <b class="${r.repEnd >= r.repStart ? 'pos' : 'neg'}">${r.repEnd >= r.repStart ? ico('profit_up', '▲') : ico('profit_down', '▼')} ${Math.abs(r.repEnd - r.repStart).toFixed(2)}</b></div>
         ${r.stockValue ? `<div class="note">📦 ${t('report.stock', { n: r.stockValue })}</div>` : ''}
-        ${goalHtml(g.S.coins, g.S.rep)}
       </div>
       <div class="panel-foot">
         <button class="btn btn-y btn-big" data-act="shop">🏪 ${t('report.toShop')}</button>

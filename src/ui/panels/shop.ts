@@ -3,7 +3,6 @@ import { UPGRADES, UPGRADE_CATS, UPGRADE_ORDER } from '../../data/upgrades';
 import { t } from '../../i18n';
 import { coin } from '../dom';
 import { equipmentRows } from '../resources';
-import { goalHtml } from './report';
 import type { Panel } from './types';
 
 export const shopPanel: Panel = {
@@ -48,7 +47,6 @@ export const shopPanel: Panel = {
         <div class="note">💡 ${t('shop.invest')}</div>
         ${groups}
         ${chart}
-        ${goalHtml(S.coins, S.rep)}
       </div>
       <div class="panel-foot">
         <button class="btn btn-b btn-big" data-act="sleep">🌙 ${t('shop.sleep')}</button>
