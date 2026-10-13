@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from edgefix import bleed  # noqa: E402
+from edgefix import bleed, matte  # noqa: E402
 
 src, out = sys.argv[1], sys.argv[2]
 max_h = int(sys.argv[3]) if len(sys.argv) > 3 else 900
@@ -115,8 +115,8 @@ for _ in range(3):
 alpha = alpha * np.kron(g, np.ones((f, f), dtype=bool))[:H, :W]
 
 # remove the background tint from the edge pixels
-col = bleed(im, alpha)
-alpha = np.clip((alpha - 0.15) / 0.85, 0, 1)
+col, alpha = matte(im, bg, alpha)
+alpha = np.clip((alpha - 0.08) / 0.92, 0, 1)
 
 rgba = np.dstack([col, alpha * 255]).clip(0, 255).astype(np.uint8)
 ys, xs = np.where(alpha > 0.04)

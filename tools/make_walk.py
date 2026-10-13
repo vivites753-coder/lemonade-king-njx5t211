@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from edgefix import bleed  # noqa: E402
+from edgefix import bleed, matte  # noqa: E402
 
 frames_dir, out_dir, gif_dir = sys.argv[1], sys.argv[2], sys.argv[3]
 LOOP = int(sys.argv[4]) if len(sys.argv) > 4 else 26
@@ -53,8 +53,8 @@ def key(img):
     """RGB (magenta background) -> RGBA float, edge colours replaced by neighbouring solid colours."""
     m = np.minimum(img[..., 0], img[..., 2]) - img[..., 1]
     alpha = np.clip((m_bg * 0.8 - m) / (m_bg * 0.5), 0, 1)
-    col = bleed(img, alpha)
-    alpha = np.clip((alpha - 0.2) / 0.8, 0, 1)
+    col, alpha = matte(img, bg, alpha, erode=2, grow=3)
+    alpha = np.clip((alpha - 0.08) / 0.92, 0, 1)
     return np.dstack([col, alpha * 255])
 
 

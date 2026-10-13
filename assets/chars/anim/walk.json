@@ -1,6 +1,6 @@
 {
  "char_adult_a_back": {
-  "cx": 47.2,
+  "cx": 47.0,
   "feetY": 176,
   "fh": 181,
   "figH": 172,
@@ -8,79 +8,79 @@
   "n": 13
  },
  "char_adult_a_front": {
-  "cx": 52.3,
-  "feetY": 173,
-  "fh": 178,
-  "figH": 168,
+  "cx": 52.2,
+  "feetY": 175,
+  "fh": 180,
+  "figH": 170,
   "fw": 106,
   "n": 13
  },
  "char_adult_b_back": {
-  "cx": 47.5,
-  "feetY": 173,
-  "fh": 178,
-  "figH": 168,
+  "cx": 47.4,
+  "feetY": 174,
+  "fh": 179,
+  "figH": 169,
   "fw": 98,
   "n": 13
  },
  "char_adult_b_front": {
-  "cx": 50.1,
-  "feetY": 177,
-  "fh": 182,
-  "figH": 172,
-  "fw": 104,
-  "n": 13
- },
- "char_adult_c_back": {
-  "cx": 50.9,
-  "feetY": 177,
-  "fh": 182,
-  "figH": 172,
+  "cx": 50.0,
+  "feetY": 178,
+  "fh": 183,
+  "figH": 173,
   "fw": 106,
   "n": 13
  },
+ "char_adult_c_back": {
+  "cx": 51.1,
+  "feetY": 178,
+  "fh": 183,
+  "figH": 173,
+  "fw": 108,
+  "n": 13
+ },
  "char_adult_c_front": {
-  "cx": 58.0,
+  "cx": 59.7,
   "feetY": 177,
   "fh": 182,
   "figH": 172,
-  "fw": 114,
+  "fw": 118,
   "n": 13
  },
  "char_granny_a_back": {
-  "cx": 50.8,
+  "cx": 50.4,
   "feetY": 173,
   "fh": 178,
   "figH": 168,
-  "fw": 104,
+  "fw": 106,
   "n": 13
  },
  "char_granny_a_front": {
-  "cx": 54.8,
+  "cx": 56.6,
   "feetY": 192,
   "fh": 192,
   "figH": 188,
-  "fw": 110,
+  "fw": 112,
   "n": 13
  },
  "char_granny_b_back": {
-  "cx": 52.3,
-  "feetY": 173,
-  "fh": 178,
-  "figH": 168,
+  "cx": 52.1,
+  "feetY": 175,
+  "fh": 180,
+  "figH": 170,
   "fw": 112,
   "n": 13
  },
  "char_granny_b_front": {
-  "cx": 57.8,
-  "feetY": 175,
-  "fh": 180,
-  "figH": 170,
-  "fw": 118,
+  "cx": 59.5,
+  "feetY": 177,
+  "fh": 182,
+  "figH": 172,
+  "fw": 120,
   "n": 13
  },
  "char_kid_a_back": {
-  "cx": 42.5,
+  "cx": 43.1,
   "feetY": 155,
   "fh": 160,
   "figH": 150,
@@ -88,39 +88,39 @@
   "n": 13
  },
  "char_kid_a_front": {
-  "cx": 45.7,
-  "feetY": 153,
-  "fh": 158,
-  "figH": 148,
+  "cx": 46.1,
+  "feetY": 155,
+  "fh": 160,
+  "figH": 150,
   "fw": 92,
   "n": 13
  },
  "char_kid_b_back": {
-  "cx": 46.1,
-  "feetY": 147,
-  "fh": 152,
-  "figH": 142,
-  "fw": 96,
-  "n": 13
- },
- "char_kid_b_front": {
-  "cx": 50.8,
-  "feetY": 151,
-  "fh": 156,
-  "figH": 146,
-  "fw": 100,
-  "n": 13
- },
- "char_kid_c_back": {
-  "cx": 47.3,
+  "cx": 45.9,
   "feetY": 149,
   "fh": 154,
   "figH": 144,
   "fw": 96,
   "n": 13
  },
+ "char_kid_b_front": {
+  "cx": 51.7,
+  "feetY": 151,
+  "fh": 156,
+  "figH": 146,
+  "fw": 101,
+  "n": 13
+ },
+ "char_kid_c_back": {
+  "cx": 47.3,
+  "feetY": 151,
+  "fh": 156,
+  "figH": 146,
+  "fw": 96,
+  "n": 13
+ },
  "char_kid_c_front": {
-  "cx": 50.0,
+  "cx": 49.8,
   "feetY": 151,
   "fh": 156,
   "figH": 146,
@@ -128,7 +128,7 @@
   "n": 13
  },
  "char_sport_a_back": {
-  "cx": 46.3,
+  "cx": 46.6,
   "feetY": 178,
   "fh": 183,
   "figH": 174,
@@ -136,39 +136,39 @@
   "n": 13
  },
  "char_sport_a_front": {
-  "cx": 54.4,
-  "feetY": 173,
-  "fh": 178,
-  "figH": 168,
+  "cx": 54.2,
+  "feetY": 176,
+  "fh": 181,
+  "figH": 171,
   "fw": 110,
   "n": 13
  },
  "char_sport_b_back": {
-  "cx": 46.6,
-  "feetY": 173,
-  "fh": 178,
-  "figH": 168,
-  "fw": 92,
+  "cx": 46.5,
+  "feetY": 174,
+  "fh": 179,
+  "figH": 169,
+  "fw": 94,
   "n": 13
  },
  "char_sport_b_front": {
-  "cx": 46.4,
+  "cx": 47.1,
   "feetY": 176,
   "fh": 181,
   "figH": 176,
-  "fw": 102,
+  "fw": 103,
   "n": 13
  },
  "char_tourist_a_back": {
-  "cx": 50.2,
-  "feetY": 170,
-  "fh": 175,
-  "figH": 168,
+  "cx": 50.0,
+  "feetY": 172,
+  "fh": 177,
+  "figH": 170,
   "fw": 102,
   "n": 13
  },
  "char_tourist_a_front": {
-  "cx": 52.2,
+  "cx": 52.1,
   "feetY": 177,
   "fh": 182,
   "figH": 172,
@@ -176,18 +176,18 @@
   "n": 13
  },
  "char_tourist_b_back": {
-  "cx": 54.1,
+  "cx": 56.0,
   "feetY": 172,
   "fh": 177,
   "figH": 168,
-  "fw": 106,
+  "fw": 110,
   "n": 13
  },
  "char_tourist_b_front": {
-  "cx": 55.1,
-  "feetY": 175,
-  "fh": 180,
-  "figH": 170,
+  "cx": 55.4,
+  "feetY": 177,
+  "fh": 182,
+  "figH": 172,
   "fw": 114,
   "n": 13
  }

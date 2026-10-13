@@ -34,3 +34,28 @@ def bleed(col, alpha, solid=0.96, radii=(2, 4, 8, 16, 32), fallback=(128, 128, 1
             have = np.where(fill, 1.0, have)
     out = np.where((have < 0.5)[..., None], np.array(fallback, dtype=np.float64), out)
     return np.where((alpha < solid)[..., None], out, col)
+
+
+def matte(img, bg, alpha0, core=0.995, erode=3, grow=4, min_sep=45.0):
+    """Proper matting of an object photographed on a flat background colour `bg`.
+
+    alpha0: a first rough alpha (HxW, 0..1). Pixels that are surely the object (alpha0 >= core, `erode` px away from any
+    doubtful pixel) keep their colour. For the doubtful ring around them the object colour F is taken from the surrounding
+    sure pixels (colour bleeding), and the real transparency follows from the mix pixel = a*F + (1-a)*bg:
+        a = dot(pixel - bg, F - bg) / |F - bg|^2
+    so a green leaf edge that was mixed with magenta becomes a clean, slightly transparent green pixel.
+    Returns (colour HxWx3, alpha HxW in 0..1)."""
+    sure = alpha0 >= core
+    inner = box_blur(sure.astype(np.float64), erode, passes=1) > 0.9999  # eroded: all neighbours within `erode` are sure
+    outer = box_blur((alpha0 > 0.02).astype(np.float64), grow, passes=1) > 0.0001  # anything near the object
+    ring = outer & ~inner
+    F = bleed(img.astype(np.float64), inner.astype(np.float64), solid=0.5)
+    B = np.asarray(bg, dtype=np.float64)
+    d = F - B
+    n2 = (d * d).sum(axis=2)
+    a_est = ((img - B) * d).sum(axis=2) / np.maximum(n2, 1e-6)
+    a_est = np.clip(a_est, 0, 1)
+    a_est = np.where(n2 < min_sep * min_sep, alpha0, a_est)  # object colour too close to the background: trust the rough alpha
+    alpha = np.where(inner, 1.0, np.where(ring, a_est, 0.0))
+    col = np.where(inner[..., None], img, F)
+    return col, alpha

@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from edgefix import bleed  # noqa: E402
+from edgefix import bleed, matte  # noqa: E402
 
 PAIRS = '--pairs' in sys.argv  # every cell holds two views of one character: left = front, right = back
 sys.argv = [a for a in sys.argv if a != '--pairs']
@@ -31,40 +31,8 @@ m_bg = float(np.minimum(bg[0], bg[2]) - bg[1])
 lo, hi = m_bg * 0.30, m_bg * 0.80
 alpha = np.clip((hi - m) / (hi - lo), 0, 1)
 
-# remove the background's contribution from semi-transparent edge pixels
-a3 = alpha[..., None]
-safe = np.maximum(a3, 0.05)
-col = np.where(a3 < 0.98, (im - (1 - a3) * bg) / safe, im)
-col = np.clip(col, 0, 255)
-# edge band: pixels close to the background. Remove the leftover magenta there (min(R,B) -> G).
-trans = alpha < 0.98
-band = trans.copy()
-for _ in range(3):
-    p = np.pad(band, 1)
-    band = p[1:-1, 1:-1] | p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
-spill = np.maximum(np.minimum(col[..., 0], col[..., 2]) - col[..., 1], 0)
-spill = np.where(band, spill, 0)[..., None]
-col = col - spill * np.array([1, 0, 1], dtype=np.float32)
-col = np.clip(col, 0, 255)
-
-
-def blur(a, r):
-    """Box blur (three passes ~ gaussian) on an HxWxC array."""
-    k = 2 * r + 1
-    for _ in range(3):
-        for axis in (0, 1):
-            pad = np.pad(a, [(r, r) if i == axis else (0, 0) for i in range(a.ndim)], mode='edge')
-            c = np.cumsum(pad, axis=axis, dtype=np.float64)
-            z = np.zeros_like(np.take(c, [0], axis=axis))
-            c = np.concatenate([z, c], axis=axis)
-            a = (np.take(c, range(k, c.shape[axis]), axis=axis) - np.take(c, range(0, c.shape[axis] - k), axis=axis)) / k
-    return a
-
-
-# Edge colours still carry a magenta tint (a purple outline on green trees). Replace the colour of every
-# semi-transparent pixel with the average colour of the solid pixels around it, and thin the soft edge a little.
-col = bleed(col, alpha)
-alpha = np.clip((alpha - 0.2) / 0.8, 0, 1)
+col, alpha = matte(im, bg, alpha)
+alpha = np.clip((alpha - 0.08) / 0.92, 0, 1)
 rgba = np.dstack([col, alpha * 255]).astype(np.uint8)
 
 
@@ -119,12 +87,12 @@ for i, name in enumerate(names):
     x0, x1 = int(c * cw), int((c + 1) * cw)
     y0, y1 = int(r * ch), int((r + 1) * ch)
     cell = rgba[y0:y1, x0:x1].copy()
-    m_ = 12  # items never touch the cell edge: anything there belongs to a neighbour
+    m_ = 3  # a thin guard only: some items (a lamp base) come very close to the cell edge
     cell[:m_, :, 3] = 0
     cell[-m_:, :, 3] = 0
     cell[:, :m_, 3] = 0
     cell[:, -m_:, 3] = 0
-    cell = keep_big_parts(cell)
+    cell = keep_big_parts(cell, 0.08)  # separate small bits (parts of neighbours) are dropped
     def save(img, fname):
         ys, xs = np.where(img[..., 3] > 12)
         if len(xs) == 0:
