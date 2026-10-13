@@ -1,6 +1,8 @@
 // Drawings for the kitchen work table. The tools on the table follow the player's upgrades
 // (juicer, mixer, cups, cooler bag, toolkit), so buying something visibly changes the kitchen.
 
+import { t } from '../i18n';
+
 const svg = (w: number, h: number, body: string) => `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true">${body}</svg>`;
 
 /** A wooden crate; the number of lemons shown follows the stock (up to 7). */
@@ -50,7 +52,7 @@ export function sugarBag(n: number): string {
      <path d="M10 12 Q25 4 40 12" fill="none" stroke="#adb5bd" stroke-width="1.5"/>
      <rect x="13" y="${45 - 30 * level}" width="24" height="${30 * level}" fill="#fff" opacity="0.9"/>
      <rect x="12" y="22" width="26" height="11" rx="2" fill="#4dabf7"/>
-     <text x="25" y="30.5" font-size="8" font-weight="900" fill="#fff" text-anchor="middle">SUGAR</text>`,
+     <text x="25" y="30.5" font-size="8" font-weight="900" fill="#fff" text-anchor="middle">${t('world.sugar')}</text>`,
   );
 }
 

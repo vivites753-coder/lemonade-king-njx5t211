@@ -867,6 +867,9 @@ export const uk = {
   'why.dogs': 'Бродячі собаки — люди бояться',
   'report.spilled': 'Через пригоди розлито склянок: {n}',
   'dev.incidents': 'Пригоди й знахідки (під час продажу)',
+  // v0.5: Romanian, translated signs
+  'world.sugar': 'ЦУКОР',
+  'prof.default': 'Гравець {n}',
 };
 
 export type I18nKey = keyof typeof uk;

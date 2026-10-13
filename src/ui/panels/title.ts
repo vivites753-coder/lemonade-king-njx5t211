@@ -1,6 +1,6 @@
 import { listProfiles } from '../../core/save';
 import type { AgeMode, Avatar } from '../../core/types';
-import { t } from '../../i18n';
+import { LANGS, asLang, t } from '../../i18n';
 import { coin, esc } from '../dom';
 import type { Panel } from './types';
 
@@ -60,8 +60,7 @@ export const titlePanel: Panel = {
       <button class="btn ${profiles.length ? 'btn-y' : 'btn-g btn-big'}" data-act="new">✨ ${profiles.length ? t('prof.new') : t('btn.newGame')}</button>
       <button class="btn" data-act="settings">⚙️ ${t('btn.settings')}</button>
       <div class="lang-row">
-        <button class="btn btn-sm ${lang === 'uk' ? 'btn-y' : ''}" data-act="lang:uk">Українська</button>
-        <button class="btn btn-sm ${lang === 'en' ? 'btn-y' : ''}" data-act="lang:en">English</button>
+        ${LANGS.map((l) => `<button class="btn btn-sm ${lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
       </div>
       ${profiles.length ? `<p class="note">🔒 ${t('prof.local')}</p>` : ''}
     </div>`;
@@ -94,7 +93,7 @@ export const titlePanel: Panel = {
         ui.openSettings();
         break;
       case 'lang':
-        ui.setLang(arg === 'en' ? 'en' : 'uk');
+        ui.setLang(asLang(arg));
         break;
     }
   },

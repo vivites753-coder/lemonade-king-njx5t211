@@ -1,13 +1,26 @@
 import type { AgeMode, Lang, Params } from '../core/types';
 import { en } from './en';
+import { ro } from './ro';
 import { uk } from './uk';
 
-const DICTS: Record<Lang, Record<string, string>> = { uk, en };
+const DICTS: Record<Lang, Record<string, string>> = { uk, en, ro };
 let current: Lang = 'uk';
 
+/** Language buttons, in the order they are shown. */
+export const LANGS: { id: Lang; name: string }[] = [
+  { id: 'uk', name: 'Українська' },
+  { id: 'en', name: 'English' },
+  { id: 'ro', name: 'Română' },
+];
+
+/** A saved or clicked value that may not be a known language. */
+export function asLang(v: unknown): Lang {
+  return typeof v === 'string' && v in DICTS ? (v as Lang) : 'uk';
+}
+
 export function setLang(l: Lang): void {
-  current = l;
-  if (typeof document !== 'undefined') document.documentElement.lang = l;
+  current = asLang(l);
+  if (typeof document !== 'undefined') document.documentElement.lang = current;
 }
 
 export function getLang(): Lang {

@@ -1,4 +1,4 @@
-import type { AgeMode, Avatar } from '../../core/types';
+import type { AgeMode, Avatar, Lang } from '../../core/types';
 import type { Game } from '../../sim/game';
 
 /** What panels may ask the UI controller to do. */
@@ -12,7 +12,7 @@ export interface UIApi {
   startNewGame(): void;
   continueGame(): void;
   hasSave(): boolean;
-  setLang(l: 'uk' | 'en'): void;
+  setLang(l: Lang): void;
   toast(text: string, kind?: 'info' | 'warn' | 'good'): void;
   newSel: { avatar: Avatar; mode: AgeMode; name: string };
   titleScreen: 'main' | 'new';

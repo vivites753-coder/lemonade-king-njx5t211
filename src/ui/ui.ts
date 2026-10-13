@@ -107,7 +107,7 @@ export class UI implements UIApi {
   }
 
   startNewGame(): void {
-    const name = this.newSel.name.trim() || `${t('prof.new')} ${listProfiles().length + 1}`;
+    const name = this.newSel.name.trim() || t('prof.default', { n: listProfiles().length + 1 });
     if (this.reuseProfile) setActiveProfile(this.reuseProfile);
     else createProfile(name, this.newSel.avatar);
     this.reuseProfile = null;

@@ -7,6 +7,7 @@ import { UPGRADE_ORDER } from '../src/data/upgrades';
 import { WEATHER_IDS } from '../src/data/weather';
 import { GOOD_IDS } from '../src/data/goods';
 import { en } from '../src/i18n/en';
+import { ro } from '../src/i18n/ro';
 import { uk } from '../src/i18n/uk';
 
 function sourceFiles(dir: string): string[] {
@@ -25,6 +26,15 @@ describe('translations', () => {
   it('English has every Ukrainian key and no extra ones', () => {
     expect(Object.keys(en).sort()).toEqual(Object.keys(uk).sort());
     for (const [k, v] of Object.entries(en)) expect(v, k).not.toBe('');
+  });
+
+  it('Romanian has every Ukrainian key, with the same {placeholders}', () => {
+    expect(Object.keys(ro).sort()).toEqual(Object.keys(uk).sort());
+    const ph = (s: string) => [...new Set(s.match(/\{\w+\}/g) ?? [])].sort();
+    for (const [k, v] of Object.entries(ro)) {
+      expect(v, k).not.toBe('');
+      expect(ph(v), k).toEqual(ph(en[k as keyof typeof en]));
+    }
   });
 
   it('every literal t("…") key used in the code exists', () => {

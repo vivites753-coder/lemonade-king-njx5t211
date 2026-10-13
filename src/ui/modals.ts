@@ -1,7 +1,8 @@
 // Settings, glossary, parental gate, confirmations and the stage-complete screen.
 import { CONFIG, EDITION } from '../core/config';
 import { GLOSSARY_IDS } from '../data/glossary';
-import { t } from '../i18n';
+import { LANGS, asLang, t } from '../i18n';
+import type { Lang } from '../core/types';
 import type { Game } from '../sim/game';
 import { esc, toggle } from './dom';
 import type { ModalSpec } from './overlays';
@@ -63,7 +64,7 @@ export function gateModal(onPass: () => void): ModalSpec {
 }
 
 export interface SettingsHooks {
-  setLang(l: 'uk' | 'en'): void;
+  setLang(l: Lang): void;
   apply(): void;
   openGate(onPass: () => void): void;
   info(title: string, text: string): void;
@@ -92,8 +93,7 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         ${toggle('set:dyslexia', s.dyslexia, `🔤 ${t('settings.dyslexia')}`)}
         <h3>🌍 ${t('settings.lang')}</h3>
         <div class="row">
-          <button class="btn btn-sm ${g.S.lang === 'uk' ? 'btn-y' : ''}" data-act="lang:uk">Українська</button>
-          <button class="btn btn-sm ${g.S.lang === 'en' ? 'btn-y' : ''}" data-act="lang:en">English</button>
+          ${LANGS.map((l) => `<button class="btn btn-sm ${g.S.lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
         </div>
         ${inGame ? `<h3>🎚️ ${t('settings.mode')}</h3>
         <div class="row">
@@ -123,7 +123,7 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         g.updateSettings({ [key]: !g.S.settings[key] });
         hooks.apply();
       }
-      if (act === 'lang') hooks.setLang(arg === 'en' ? 'en' : 'uk');
+      if (act === 'lang') hooks.setLang(asLang(arg));
       if (act === 'mode') {
         g.setAgeMode(arg === 'kid' ? 'kid' : 'pro');
         const now = Date.now();

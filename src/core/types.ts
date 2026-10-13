@@ -30,7 +30,7 @@ export type StockKind = 'lemons' | 'water' | 'sugar' | 'cups' | 'cookies';
 export type Phase = 'title' | 'morning' | 'market' | 'kitchen' | 'prepare' | 'sell' | 'report' | 'shop';
 export type MixResult = 'none' | 'under' | 'perfect' | 'over';
 export type AgeMode = 'kid' | 'pro';
-export type Lang = 'uk' | 'en';
+export type Lang = 'uk' | 'en' | 'ro';
 export type Avatar = 'boy' | 'girl';
 
 export interface Vec {

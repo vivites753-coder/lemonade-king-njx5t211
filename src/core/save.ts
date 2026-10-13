@@ -3,6 +3,7 @@
 //   lemonadeKing.save.<id>     — that profile's game
 // A save from before profiles existed (lemonadeKing.save) becomes the first profile automatically.
 import type { Snapshot } from '../sim/game';
+import { t } from '../i18n';
 import type { Avatar } from './types';
 
 const INDEX_KEY = 'lemonadeKing.profiles';
@@ -103,7 +104,7 @@ function readIndex(): ProfilesIndex {
     const id = newId();
     idx.list.push({
       id,
-      name: legacy.S.playerName || 'Гравець 1',
+      name: legacy.S.playerName || t('prof.default', { n: 1 }),
       avatar: legacy.S.avatar,
       createdAt: Date.now(),
       day: legacy.S.day,
@@ -140,7 +141,7 @@ export function setActiveProfile(id: string): void {
 
 export function createProfile(name: string, avatar: Avatar): ProfileInfo {
   const idx = readIndex();
-  const p: ProfileInfo = { id: newId(), name: name.trim().slice(0, 20) || `Гравець ${idx.list.length + 1}`, avatar, createdAt: Date.now() };
+  const p: ProfileInfo = { id: newId(), name: name.trim().slice(0, 20) || t('prof.default', { n: idx.list.length + 1 }), avatar, createdAt: Date.now() };
   idx.list.push(p);
   idx.active = p.id;
   writeIndex(idx);
@@ -160,7 +161,7 @@ export function writeSave(s: Snapshot): void {
   const idx = readIndex();
   let p = idx.list.find((x) => x.id === idx.active);
   if (!p) {
-    p = { id: newId(), name: s.S.playerName || `Гравець ${idx.list.length + 1}`, avatar: s.S.avatar, createdAt: Date.now() };
+    p = { id: newId(), name: s.S.playerName || t('prof.default', { n: idx.list.length + 1 }), avatar: s.S.avatar, createdAt: Date.now() };
     idx.list.push(p);
     idx.active = p.id;
   }

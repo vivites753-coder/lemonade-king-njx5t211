@@ -868,4 +868,7 @@ export const en: Record<I18nKey, string> = {
   'why.dogs': 'Stray dogs — people are afraid',
   'report.spilled': 'Cups spilled in accidents: {n}',
   'dev.incidents': 'Accidents and finds (while selling)',
+  // v0.5: Romanian, translated signs
+  'world.sugar': 'SUGAR',
+  'prof.default': 'Player {n}',
 };

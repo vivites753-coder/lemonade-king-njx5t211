@@ -1,7 +1,7 @@
 import './styles.css';
 import { initAudio } from './audio/sfx';
 import { readSave, wipeOnUpdate, writeSave } from './core/save';
-import { setLang, t } from './i18n';
+import { asLang, setLang, t } from './i18n';
 import { loadAssets } from './render/assets';
 import { Renderer } from './render/renderer';
 import { Game } from './sim/game';
@@ -15,7 +15,7 @@ const game = new Game(1);
 // remember the language of the last session for the title screen
 const saved = readSave();
 if (saved) {
-  game.S.lang = saved.S.lang;
+  game.S.lang = asLang(saved.S.lang);
   Object.assign(game.S.settings, saved.S.settings);
 }
 setLang(game.S.lang);
