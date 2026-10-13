@@ -8,7 +8,7 @@ import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
 import { lemonsTotal } from '../../sim/state';
 import { coin, fmtDur, fmtHour } from '../dom';
-import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
+import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 
 /** Scene pixels: the scene is 900x600 and is scaled to the panel. Planks of the wall shelf are at PLANKS. */
@@ -73,38 +73,6 @@ function inScene(elm: HTMLElement, scene: HTMLElement): { x: number; y: number; 
   return { x, y, w: elm.offsetWidth, h: elm.offsetHeight };
 }
 
-/** A copy of the ingredient's picture flies from the shelf to where it is used. */
-function fly(el: HTMLElement, item: KitchenItem, done: () => void): void {
-  const scene = q(el, '.k-scene');
-  const from = q(el, `.k-item[data-item="${item}"] .k-art`);
-  const to = q(el, item === 'lemon' ? '.k-juicer' : '.k-jug');
-  if (!from || !to || !from.animate || document.body.classList.contains('reduce-motion')) {
-    done();
-    return;
-  }
-  const a = inScene(from, scene);
-  const b = inScene(to, scene);
-  const tx = b.x + b.w / 2 - (a.x + a.w / 2);
-  const ty = b.y + (item === 'lemon' ? b.h * 0.3 : 10) - (a.y + a.h / 2);
-  const f = document.createElement('div');
-  f.className = 'k-fly';
-  f.style.cssText = `left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px`;
-  f.innerHTML = from.innerHTML;
-  scene.appendChild(f);
-  const anim = f.animate(
-    [
-      { transform: 'translate(0,0) scale(1) rotate(0)' },
-      { transform: `translate(${tx * 0.5}px,${Math.min(0, ty) - 70}px) scale(0.85) rotate(-14deg)`, offset: 0.5 },
-      { transform: `translate(${tx}px,${ty}px) scale(0.45) rotate(${item === 'lemon' ? 0 : 55}deg)`, opacity: 0.85 },
-    ],
-    { duration: 430, easing: 'cubic-bezier(.4,0,.8,.6)' },
-  );
-  anim.onfinish = () => {
-    f.remove();
-    done();
-  };
-}
-
 function flash(el: HTMLElement, sel: string, cls: string, ms: number): void {
   const n = el.querySelector<HTMLElement>(sel);
   if (!n) return;
@@ -114,21 +82,141 @@ function flash(el: HTMLElement, sel: string, cls: string, ms: number): void {
   setTimeout(() => n.classList.remove(cls), ms);
 }
 
+/** Size of the single thing that is carried (scene pixels). */
+const CARRY: Record<KitchenItem, { w: number; h: number }> = {
+  lemon: { w: 54, h: 57 },
+  water: { w: 44, h: 96 },
+  sugar: { w: 74, h: 84 },
+};
+
+/** The stream that runs from a tilted bottle or sack into the jug. */
+function pourStream(el: HTMLElement, item: 'water' | 'sugar', ms: number): void {
+  const scene = q(el, '.k-scene');
+  const jug = q(el, '.k-jug');
+  const j = inScene(jug, scene);
+  const s = q(el, '.k-stream');
+  s.className = `k-stream ${item}`;
+  s.style.left = `${j.x + 56 - (item === 'water' ? 6 : 12)}px`;
+  s.style.top = `${j.y - 16}px`;
+  s.style.height = `${j.h * 0.62}px`;
+  s.animate(
+    [
+      { transform: 'scaleY(0)', opacity: 1 },
+      { transform: 'scaleY(1)', opacity: 1, offset: 0.18 },
+      { transform: 'scaleY(1)', opacity: 1, offset: 0.82 },
+      { transform: 'scaleY(1)', opacity: 0 },
+    ],
+    { duration: ms, easing: 'linear' },
+  );
+  // water splash or sugar puff where it lands
+  const puff = q(el, '.k-puff');
+  puff.innerHTML = pourFx(item);
+  puff.style.left = `${j.x + 40}px`;
+  puff.style.top = `${j.y + j.h * 0.4}px`;
+  puff.animate(
+    [
+      { opacity: 0, transform: 'scale(0.4)' },
+      { opacity: 0.95, transform: 'scale(1)', offset: 0.25 },
+      { opacity: 0.95, transform: 'scale(1.12)', offset: 0.8 },
+      { opacity: 0, transform: 'scale(1.3)' },
+    ],
+    { duration: ms, easing: 'ease-out' },
+  );
+}
+
+/**
+ * One lemon flies to the juicer; a bottle is lifted over the jug, tilted, and the water runs out;
+ * a sack is lifted, tilted and the sugar pours out. `apply` puts the ingredient into the jug at the right moment.
+ */
+function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): void {
+  const scene = q(el, '.k-scene');
+  const from = q(el, `.k-item[data-item="${item}"] .k-art`);
+  const target = q(el, item === 'lemon' ? '.k-juicer' : '.k-jug');
+  if (!from || !target || !from.animate || document.body.classList.contains('reduce-motion')) {
+    apply();
+    return;
+  }
+  const a = inScene(from, scene);
+  const b = inScene(target, scene);
+  const size = CARRY[item];
+  const sx = a.x + a.w / 2 - 6;
+  const sy = a.y + a.h / 2;
+  const f = document.createElement('div');
+  f.className = 'k-fly';
+  f.style.cssText = `left:${sx - size.w / 2}px;top:${sy - size.h / 2}px;width:${size.w}px;height:${size.h}px`;
+  f.innerHTML = itemGhost(item);
+  scene.appendChild(f);
+  const busyKey = `busy${item}`;
+  el.dataset[busyKey] = '1';
+  if (item === 'lemon') {
+    const tx = b.x + b.w / 2 - sx;
+    const ty = b.y + b.h * 0.3 - sy;
+    const anim = f.animate(
+      [
+        { transform: 'translate(0,0) scale(1) rotate(0)' },
+        { transform: `translate(${tx * 0.5}px,${Math.min(0, ty) - 70}px) scale(0.95) rotate(-90deg)`, offset: 0.5 },
+        { transform: `translate(${tx}px,${ty}px) scale(0.6) rotate(-200deg)`, opacity: 0.9 },
+      ],
+      { duration: 480, easing: 'cubic-bezier(.4,0,.8,.6)' },
+    );
+    anim.onfinish = () => {
+      f.remove();
+      delete el.dataset[busyKey];
+      apply();
+    };
+    return;
+  }
+  // bottle / sack: its centre goes above the jug mouth, a bit to the left, so that the neck points into the jug
+  const tx = b.x + 14 - sx;
+  const ty = b.y - 36 - sy;
+  const mx = tx * 0.6;
+  const my = ty - 50;
+  const DUR = 1500;
+  const tilt = item === 'water' ? 105 : 112;
+  const anim = f.animate(
+    [
+      { transform: 'translate(0,0) rotate(0) scale(1)', easing: 'ease-out' },
+      { transform: `translate(${mx}px,${my}px) rotate(0) scale(1.1)`, offset: 0.3, easing: 'ease-in-out' },
+      { transform: `translate(${tx}px,${ty}px) rotate(${tilt}deg) scale(1.1)`, offset: 0.52 },
+      { transform: `translate(${tx}px,${ty}px) rotate(${tilt + 6}deg) scale(1.1)`, offset: 0.86, easing: 'ease-in-out' },
+      { transform: 'translate(0,0) rotate(0) scale(1)' },
+    ],
+    { duration: DUR },
+  );
+  setTimeout(() => pourStream(el, item as 'water' | 'sugar', DUR * 0.36), DUR * 0.5);
+  setTimeout(apply, DUR * 0.62);
+  anim.onfinish = () => {
+    f.remove();
+    delete el.dataset[busyKey];
+  };
+}
+
 function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
-  const r = g.kitchenAdd(item);
-  if (r === 'ok') {
-    fly(el, item, () => {
+  const can = g.kitchenCanAdd(item);
+  if (can === 'full') {
+    ui.toast(t('kitchen.full'), 'warn');
+    return;
+  }
+  if (can === 'noStock') {
+    ui.toast(t('kitchen.noStock'), 'warn');
+    return;
+  }
+  // a bottle or a sack is already on its way
+  if (el.dataset[`busy${item}`]) return;
+  addAnimated(el, item, () => {
+    const r = g.kitchenAdd(item);
+    if (r === 'full') ui.toast(t('kitchen.full'), 'warn');
+    else if (r === 'noStock') ui.toast(t('kitchen.noStock'), 'warn');
+    else if (r === 'ok') {
       if (item === 'lemon') {
         bump(q(el, '.k-juicer'), 'k-squeeze');
         flash(el, '.k-drops', 'show', 700);
         bump(q(el, '.k-jug'), 'drip');
       } else {
         bump(q(el, '.k-jug'), 'k-bump');
-        flash(el, '.k-drops', 'show', 700);
       }
-    });
-  } else if (r === 'full') ui.toast(t('kitchen.full'), 'warn');
-  else if (r === 'noStock') ui.toast(t('kitchen.noStock'), 'warn');
+    }
+  });
 }
 
 function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HTMLElement): void {
@@ -292,6 +380,8 @@ export const kitchenPanel: Panel = {
               <div class="k-glass${jugPic ? ' has-art' : ''}">${jugPic}</div>
               <div class="k-drops">${dropsArt()}</div>
               <div class="k-splash">${splashArt()}</div>
+              <div class="k-stream" data-k="stream"></div>
+              <div class="k-puff" data-k="puff"></div>
               <div class="k-spoon" data-k="spoon">🥄</div>
               <div class="k-cups-art" data-k="cupsart"></div>
               <div class="k-ready" data-k="ready"></div>

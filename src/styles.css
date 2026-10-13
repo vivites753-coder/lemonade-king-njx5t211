@@ -3189,3 +3189,50 @@ body.reduce-motion * {
   width: 26px;
   height: 26px;
 }
+
+/* water runs, sugar pours */
+.k-stream {
+  width: 12px;
+  height: 100px;
+  z-index: 8;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 0;
+  border-radius: 6px;
+}
+.k-stream.water {
+  background: repeating-linear-gradient(180deg, #7cc8f0 0 12px, #d4efff 12px 20px);
+  background-size: 100% 20px;
+  animation: k-flow 0.22s linear infinite;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+.k-stream.sugar {
+  width: 26px;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 30% 30%, #fff 0 2.5px, transparent 3px) 0 0 / 9px 11px,
+    radial-gradient(circle at 70% 60%, #fff 0 2.5px, transparent 3px) 4px 5px / 9px 11px,
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: k-flow 0.3s linear infinite;
+}
+@keyframes k-flow {
+  to { background-position-y: 20px, 20px, 0; }
+}
+.k-puff {
+  width: 70px;
+  height: 70px;
+  z-index: 8;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 40px;
+}
+.k-puff .k-img {
+  width: 100%;
+  height: 100%;
+}
+.k-fly {
+  transform-origin: 50% 50%;
+}
+.k-stream.sugar {
+  filter: drop-shadow(0 0 1px rgba(90, 100, 110, 0.55));
+}

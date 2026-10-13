@@ -232,3 +232,8 @@ export function itemGhost(item: 'lemon' | 'water' | 'sugar'): string {
 export function readyJug(): string {
   return pic('pitcher_full') || '<span class="k-mark">🥛</span>';
 }
+
+/** What happens where water or sugar lands in the jug (a splash or a puff of sugar). */
+export function pourFx(item: 'water' | 'sugar'): string {
+  return pic(item === 'water' ? 'fx_water' : 'fx_sugar') || (item === 'water' ? '💦' : '✨');
+}
