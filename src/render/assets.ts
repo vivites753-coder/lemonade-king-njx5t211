@@ -45,6 +45,9 @@ let onLoadCb: (() => void) | null = null;
 export function metaFor(id: string): SpriteMeta {
   const own = SPRITE_META[id];
   if (own) return own;
+  // a picture cut from a walking strip (the person with an umbrella): its size follows from the strip
+  const w = walkManifest[id];
+  if (w?.u) return { h: w.fh * w.u, anchor: [w.cx / w.fw, w.feetY / w.fh] };
   for (const [p, m] of PREFIX_DEFAULTS) if (id.startsWith(p)) return m;
   return { h: 64, anchor: [0.5, 0.9] };
 }
@@ -69,6 +72,8 @@ export interface WalkInfo {
   figH: number;
   /** Horizontal anchor of the body (px from the left). */
   cx: number;
+  /** World px per strip px at scale 1 (strips whose size is not taken from a still picture: people with umbrellas). */
+  u?: number;
 }
 
 let walkManifest: Record<string, Omit<WalkInfo, 'img'>> = {};

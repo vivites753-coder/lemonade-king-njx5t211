@@ -46,6 +46,16 @@ export function pedSpriteId(type: string, variant: number, front: boolean): stri
   return `char_${type}_${VARIANTS[variant % VARIANTS.length]}_${side}`;
 }
 
+/** Sprite id of a pedestrian holding an umbrella (drawn pictures), or undefined when there is none for this look. */
+export function pedUmbrellaSpriteId(type: string, variant: number, front: boolean): string | undefined {
+  const side = front ? 'front' : 'back';
+  for (let i = 0; i < VARIANTS.length; i++) {
+    const id = `char_${type}_${VARIANTS[(variant + i) % VARIANTS.length]}_umb_${side}`;
+    if (hasImage(id)) return id;
+  }
+  return undefined;
+}
+
 /**
  * The picture of someone standing at the stand. `base` is e.g. char_player_boy or char_helper_girl; the pose picture
  * (_juicing, _serving) is used when it exists. A missing serving picture falls back to the standing one and `cup` asks
@@ -166,7 +176,7 @@ function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, s
   const loop = walking ? getWalk(id) : undefined;
   if (loop) {
     const frame = Math.floor((((o.anim / (Math.PI * 2)) % 1) + 1) % 1 * loop.n) % loop.n;
-    const scale = (H * ((ih - 12) / ih)) / loop.figH; // same figure height as the still picture
+    const scale = loop.u ? loop.u * sc : (H * ((ih - 12) / ih)) / loop.figH; // same figure height as the still picture
     shadow(ctx, sx, sy, 10 * sc * 0.92, 0.2);
     ctx.save();
     ctx.translate(sx, sy);

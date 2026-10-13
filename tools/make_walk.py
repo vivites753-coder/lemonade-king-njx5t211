@@ -1,6 +1,10 @@
 """Cuts walking loops of the people out of a video made from the people sheet (3x4 cells, front + back figure per cell).
 
-Usage: python tools/make_walk.py <frames_dir> <out_assets_dir> <gif_dir> [loop=26] [cols=3] [rows=4] [step=2]
+Usage: python tools/make_walk.py <frames_dir> <out_assets_dir> <gif_dir> [loop=26] [cols=3] [rows=4] [step=2] [suffix]
+
+With a suffix (e.g. umb) the strips are named char_<name>_<suffix>_<front|back>, walk.json is MERGED (not replaced), the
+first frame is written as the still picture next to the assets folder, and every strip gets `u` (world px per video px):
+the figure holds an umbrella, so its body is smaller in the video than the plain one by RATIO and is scaled to match it.
 
 For every figure:
   * the magenta background is keyed out (edges re-coloured from the solid pixels, no purple halo);
@@ -25,6 +29,11 @@ LOOP = int(sys.argv[4]) if len(sys.argv) > 4 else 26
 cols = int(sys.argv[5]) if len(sys.argv) > 5 else 3
 rows = int(sys.argv[6]) if len(sys.argv) > 6 else 4
 STEP = int(sys.argv[7]) if len(sys.argv) > 7 else 2  # keep every STEP-th frame of the loop (24 fps -> 12 fps)
+SUFFIX = sys.argv[8] if len(sys.argv) > 8 else ''
+# the body of a figure with an umbrella is this share of the plain figure's height in the same grid (measured by eye)
+RATIO = {'kid': 0.86, 'adult': 0.91, 'granny': 0.80, 'sport': 0.94, 'tourist': 0.93}
+STILL_DIR = os.path.dirname(os.path.normpath(out_dir))
+BASE_H = 58.0  # world px of a pedestrian still at scale 1 (PREFIX_DEFAULTS char_)
 NAMES = ['kid_a', 'kid_b', 'kid_c', 'adult_a', 'adult_b', 'adult_c', 'granny_a', 'granny_b', 'sport_a', 'sport_b', 'tourist_a', 'tourist_b']
 PAD = 5
 os.makedirs(out_dir, exist_ok=True)
@@ -58,6 +67,27 @@ def key(img):
     return np.dstack([col, alpha * 255])
 
 
+def keep_main(f, margin=12):
+    """Drops stray bits of the neighbouring figures (their umbrella tops / feet reach into this cell): keeps the biggest
+    connected part (a 5x5 neighbourhood bridges thin gaps) and the small parts that lie beside it (a cane, a bag)."""
+    import cv2
+    m = (f[..., 3] > 40).astype(np.uint8)
+    lab_n, lab, stats, cent = cv2.connectedComponentsWithStats(cv2.dilate(m, np.ones((5, 5), np.uint8)), connectivity=8)
+    if lab_n <= 2:
+        return f
+    main = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    x, y, w, h = (int(stats[main, k]) for k in (cv2.CC_STAT_LEFT, cv2.CC_STAT_TOP, cv2.CC_STAT_WIDTH, cv2.CC_STAT_HEIGHT))
+    keep = np.zeros(lab_n, dtype=bool)
+    keep[main] = True
+    for i in range(1, lab_n):
+        cx, cy = cent[i]
+        if x - margin <= cx <= x + w + margin and y - margin <= cy <= y + h + margin and stats[i, cv2.CC_STAT_AREA] >= 0.004 * stats[main, cv2.CC_STAT_AREA] and stats[i, cv2.CC_STAT_TOP] < y + h - 8:
+            keep[i] = True
+    out = f.copy()
+    out[..., 3] = np.where(keep[lab], out[..., 3], 0)
+    return out
+
+
 def cell_halves(r, c):
     """x ranges of the front and back figure inside a cell (split at the widest gap of the whole video)."""
     cw, ch = W / cols, H / rows
@@ -85,8 +115,13 @@ previews = {}
 for i, name in enumerate(NAMES):
     r, c = divmod(i, cols)
     for side, (x0, x1, y0, y1) in zip(('front', 'back'), cell_halves(r, c)):
-        sid = f'char_{name}_{side}'
-        region = [key(raw[t][y0:y1, x0:x1]) for t in range(T)]
+        sid = f'char_{name}_{SUFFIX}_{side}' if SUFFIX else f'char_{name}_{side}'
+        if SUFFIX:
+            # umbrellas poke out of their cell at the top: look a little higher and drop the neighbours' bits
+            ye = 16
+            region = [keep_main(key(raw[t][max(y0 - ye, 0):y1, x0:x1])) for t in range(T)]
+        else:
+            region = [key(raw[t][y0:y1, x0:x1]) for t in range(T)]
         # best seamless start: frame t and t+LOOP must look the same
         best = None
         for t0 in range(6, T - LOOP - 1):
@@ -135,16 +170,29 @@ for i, name in enumerate(NAMES):
             frames.append(p)
         frames[0].save(os.path.join(gif_dir, f'{sid}.gif'), save_all=True, append_images=frames[1:], duration=int(1000 / 24 * STEP), loop=0, transparency=255, disposal=2)
         previews[sid] = (strip, fw, fh, n)
+        if SUFFIX:
+            base = f'char_{name}_{side}'
+            old = json.load(open(os.path.join(out_dir, 'walk.json'), encoding='utf-8'))[base]
+            ih = Image.open(os.path.join(STILL_DIR, base + '.png')).height
+            u_base = BASE_H * (ih - 12) / ih / old['figH']
+            manifest[sid]['u'] = round(u_base / RATIO[name.split('_')[0]], 5)
+            Image.fromarray(strip[:, :fw], 'RGBA').save(os.path.join(STILL_DIR, sid + '.png'), optimize=True)
         print(f'{sid:22s} start {t0:3d} seam {best[0]:.1f}  frame {fw}x{fh}  figure {manifest[sid]["figH"]}px')
 
+if SUFFIX:
+    merged = json.load(open(os.path.join(out_dir, 'walk.json'), encoding='utf-8'))
+    merged.update(manifest)
+    manifest_out = merged
+else:
+    manifest_out = manifest
 with open(os.path.join(out_dir, 'walk.json'), 'w', encoding='utf-8') as fp:
-    json.dump(manifest, fp, indent=1, sort_keys=True)
+    json.dump(manifest_out, fp, indent=1, sort_keys=True)
 
 # one preview GIF with all figures on a light background
 NN = next(iter(previews.values()))[3]
 cell_w = max(v[1] for v in previews.values()) + 4
 cell_h = max(v[2] for v in previews.values()) + 4
-ids = [f'char_{n}_{s}' for n in NAMES for s in ('front', 'back')]
+ids = [(f'char_{n}_{SUFFIX}_{s}' if SUFFIX else f'char_{n}_{s}') for n in NAMES for s in ('front', 'back')]
 gcols = 6
 grows = (len(ids) + gcols - 1) // gcols
 bgc = (186, 220, 140)
@@ -157,5 +205,5 @@ for k in range(NN):
         gx, gy = (j % gcols) * cell_w, (j // gcols) * cell_h
         sheet.paste(im, (gx + (cell_w - fw) // 2, gy + cell_h - fh - 2), im)
     out_frames.append(sheet.quantize(colors=128, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE))
-out_frames[0].save(os.path.join(gif_dir, 'walk_preview.gif'), save_all=True, append_images=out_frames[1:], duration=int(1000 / 24 * STEP), loop=0)
+out_frames[0].save(os.path.join(gif_dir, f'walk_preview{"_" + SUFFIX if SUFFIX else ""}.gif'), save_all=True, append_images=out_frames[1:], duration=int(1000 / 24 * STEP), loop=0)
 print('done', len(manifest), 'figures')

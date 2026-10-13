@@ -13,7 +13,7 @@ import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
 import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
 import { pedFacing } from './facing';
-import { drawCharacter, drawCup, pedSpriteId } from './proc/people';
+import { drawCharacter, drawCup, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
 import { drawCar } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawCritter } from './proc/critters';
@@ -301,7 +301,10 @@ export class Renderer {
     const inQueue = p.state === 'queue' || p.state === 'toQueue';
     const { facingCam, dirX } = pedFacing(p);
     const type = PED_TYPES[p.type];
-    const id = pedSpriteId(p.type, p.look.variant, facingCam);
+    const wantUmbrella = this.game.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue;
+    // a drawn picture of the person with an umbrella, if there is one; otherwise the umbrella is drawn over the plain picture
+    const umbId = wantUmbrella ? pedUmbrellaSpriteId(p.type, p.look.variant, facingCam) : undefined;
+    const id = umbId ?? pedSpriteId(p.type, p.look.variant, facingCam);
     const headY = drawCharacter(ctx, id, p.x, p.y, sx, sy, {
       kind: p.type,
       look: p.look,
@@ -312,7 +315,7 @@ export class Renderer {
       dirX,
       // people who have bought lemonade carry no cup for now (an own animation will come later)
       hasCup: false,
-      umbrella: this.game.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue,
+      umbrella: wantUmbrella && !umbId,
     });
     if (p.emote || p.state === 'queue') {
       this.bubbles.push({ sx, sy: headY, emote: p.emote, patience: p.state === 'queue' ? p.patience / Math.max(1, p.patienceMax) : -1 });

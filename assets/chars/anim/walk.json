@@ -15,6 +15,24 @@
   "fw": 106,
   "n": 13
  },
+ "char_adult_a_umb_back": {
+  "cx": 65.9,
+  "feetY": 190,
+  "fh": 195,
+  "figH": 185,
+  "fw": 136,
+  "n": 13,
+  "u": 0.35909
+ },
+ "char_adult_a_umb_front": {
+  "cx": 73.5,
+  "feetY": 198,
+  "fh": 203,
+  "figH": 197,
+  "fw": 135,
+  "n": 13,
+  "u": 0.37184
+ },
  "char_adult_b_back": {
   "cx": 47.4,
   "feetY": 172,
@@ -30,6 +48,24 @@
   "figH": 172,
   "fw": 104,
   "n": 13
+ },
+ "char_adult_b_umb_back": {
+  "cx": 63.9,
+  "feetY": 189,
+  "fh": 194,
+  "figH": 184,
+  "fw": 136,
+  "n": 13,
+  "u": 0.36748
+ },
+ "char_adult_b_umb_front": {
+  "cx": 80.8,
+  "feetY": 195,
+  "fh": 200,
+  "figH": 190,
+  "fw": 147,
+  "n": 13,
+  "u": 0.357
  },
  "char_adult_c_back": {
   "cx": 49.1,
@@ -47,6 +83,24 @@
   "fw": 115,
   "n": 13
  },
+ "char_adult_c_umb_back": {
+  "cx": 68.9,
+  "feetY": 192,
+  "fh": 197,
+  "figH": 187,
+  "fw": 138,
+  "n": 13,
+  "u": 0.357
+ },
+ "char_adult_c_umb_front": {
+  "cx": 72.5,
+  "feetY": 194,
+  "fh": 199,
+  "figH": 189,
+  "fw": 136,
+  "n": 13,
+  "u": 0.35692
+ },
  "char_granny_a_back": {
   "cx": 50.3,
   "feetY": 171,
@@ -62,6 +116,24 @@
   "figH": 187,
   "fw": 110,
   "n": 13
+ },
+ "char_granny_a_umb_back": {
+  "cx": 63.4,
+  "feetY": 183,
+  "fh": 188,
+  "figH": 178,
+  "fw": 132,
+  "n": 13,
+  "u": 0.42032
+ },
+ "char_granny_a_umb_front": {
+  "cx": 77.2,
+  "feetY": 187,
+  "fh": 192,
+  "figH": 182,
+  "fw": 142,
+  "n": 13,
+  "u": 0.37373
  },
  "char_granny_b_back": {
   "cx": 51.1,
@@ -79,6 +151,24 @@
   "fw": 118,
   "n": 13
  },
+ "char_granny_b_umb_back": {
+  "cx": 61.2,
+  "feetY": 184,
+  "fh": 189,
+  "figH": 179,
+  "fw": 130,
+  "n": 13,
+  "u": 0.41556
+ },
+ "char_granny_b_umb_front": {
+  "cx": 84.2,
+  "feetY": 187,
+  "fh": 192,
+  "figH": 182,
+  "fw": 154,
+  "n": 13,
+  "u": 0.41068
+ },
  "char_kid_a_back": {
   "cx": 43.1,
   "feetY": 154,
@@ -94,6 +184,24 @@
   "figH": 146,
   "fw": 90,
   "n": 13
+ },
+ "char_kid_a_umb_back": {
+  "cx": 54.7,
+  "feetY": 161,
+  "fh": 166,
+  "figH": 156,
+  "fw": 116,
+  "n": 13,
+  "u": 0.43403
+ },
+ "char_kid_a_umb_front": {
+  "cx": 66.8,
+  "feetY": 169,
+  "fh": 174,
+  "figH": 164,
+  "fw": 123,
+  "n": 13,
+  "u": 0.44282
  },
  "char_kid_b_back": {
   "cx": 44.9,
@@ -111,6 +219,24 @@
   "fw": 99,
   "n": 13
  },
+ "char_kid_b_umb_back": {
+  "cx": 62.7,
+  "feetY": 164,
+  "fh": 169,
+  "figH": 159,
+  "fw": 130,
+  "n": 13,
+  "u": 0.45774
+ },
+ "char_kid_b_umb_front": {
+  "cx": 75.7,
+  "feetY": 171,
+  "fh": 176,
+  "figH": 166,
+  "fw": 144,
+  "n": 13,
+  "u": 0.44268
+ },
  "char_kid_c_back": {
   "cx": 47.2,
   "feetY": 147,
@@ -126,6 +252,24 @@
   "figH": 145,
   "fw": 99,
   "n": 13
+ },
+ "char_kid_c_umb_back": {
+  "cx": 68.6,
+  "feetY": 165,
+  "fh": 170,
+  "figH": 160,
+  "fw": 138,
+  "n": 13,
+  "u": 0.45459
+ },
+ "char_kid_c_umb_front": {
+  "cx": 74.7,
+  "feetY": 170,
+  "fh": 175,
+  "figH": 165,
+  "fw": 138,
+  "n": 13,
+  "u": 0.44553
  },
  "char_sport_a_back": {
   "cx": 46.6,
@@ -143,6 +287,24 @@
   "fw": 108,
   "n": 13
  },
+ "char_sport_a_umb_back": {
+  "cx": 62.8,
+  "feetY": 185,
+  "fh": 190,
+  "figH": 180,
+  "fw": 125,
+  "n": 13,
+  "u": 0.34577
+ },
+ "char_sport_a_umb_front": {
+  "cx": 70.8,
+  "feetY": 196,
+  "fh": 201,
+  "figH": 196,
+  "fw": 136,
+  "n": 13,
+  "u": 0.35346
+ },
  "char_sport_b_back": {
   "cx": 45.5,
   "feetY": 171,
@@ -158,6 +320,24 @@
   "figH": 174,
   "fw": 102,
   "n": 13
+ },
+ "char_sport_b_umb_back": {
+  "cx": 59.8,
+  "feetY": 181,
+  "fh": 186,
+  "figH": 176,
+  "fw": 124,
+  "n": 13,
+  "u": 0.35789
+ },
+ "char_sport_b_umb_front": {
+  "cx": 74.7,
+  "feetY": 181,
+  "fh": 186,
+  "figH": 176,
+  "fw": 136,
+  "n": 13,
+  "u": 0.3422
  },
  "char_tourist_a_back": {
   "cx": 50.1,
@@ -175,6 +355,24 @@
   "fw": 104,
   "n": 13
  },
+ "char_tourist_a_umb_back": {
+  "cx": 67.4,
+  "feetY": 184,
+  "fh": 189,
+  "figH": 179,
+  "fw": 142,
+  "n": 13,
+  "u": 0.35752
+ },
+ "char_tourist_a_umb_front": {
+  "cx": 81.8,
+  "feetY": 189,
+  "fh": 194,
+  "figH": 184,
+  "fw": 145,
+  "n": 13,
+  "u": 0.34928
+ },
  "char_tourist_b_back": {
   "cx": 54.1,
   "feetY": 172,
@@ -190,5 +388,23 @@
   "figH": 170,
   "fw": 113,
   "n": 13
+ },
+ "char_tourist_b_umb_back": {
+  "cx": 65.4,
+  "feetY": 179,
+  "fh": 184,
+  "figH": 174,
+  "fw": 135,
+  "n": 13,
+  "u": 0.35735
+ },
+ "char_tourist_b_umb_front": {
+  "cx": 79.8,
+  "feetY": 185,
+  "fh": 190,
+  "figH": 180,
+  "fw": 145,
+  "n": 13,
+  "u": 0.35331
  }
 }
