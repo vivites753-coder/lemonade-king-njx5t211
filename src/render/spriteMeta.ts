@@ -76,7 +76,8 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   stand_flyers: { h: 8, anchor: [0.5, 0.8], dx: 7, dy: -9 },
   // in front of the stand
   stand_mascot: { h: 44, anchor: [0.5, 0.95], dx: -90, dy: -5 },
-  stand_tent: { h: 139, anchor: [0.5, 0.74], dx: 11, dy: -6 },
+  // the anchor is the middle of the four legs; the legs stand 2.3 tiles apart around the table and the seller
+  stand_tent: { h: 205, anchor: [0.493, 0.759], dx: 14, dy: -2 },
   stand_speaker: { h: 31, anchor: [0.5, 0.92], dx: 50, dy: 9 },
   stand_tv: { h: 54, anchor: [0.5, 0.93], dx: 66, dy: 42 },
   stand_sign: { h: 42, anchor: [0.5, 0.92], dx: -68, dy: 12 },

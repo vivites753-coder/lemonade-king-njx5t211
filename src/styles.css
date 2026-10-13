@@ -3398,3 +3398,20 @@ body.reduce-motion * {
     background: var(--cream);
   }
 }
+
+/* pictures of the upgrades in the shop and of the equipment */
+.up .ico .ico-img {
+  height: 46px;
+  width: 46px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+.up {
+  grid-template-columns: 52px 1fr auto;
+}
+.eq-row .ico .ico-img {
+  height: 30px;
+  width: 30px;
+  object-fit: contain;
+  vertical-align: middle;
+}

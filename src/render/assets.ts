@@ -136,6 +136,38 @@ export function loadAssets(): void {
   }
 }
 
+/** Pictures that cast no shadow of their own here: ground tiles, people and cars (they draw theirs), things on a table or on water. */
+const NO_SHADOW = /^(tile_|char_|item_|prop_(car|van)_|prop_(flowers|duck|boat|cloud))/;
+/** [share of the picture width the shadow spans, darkness] for kinds of pictures. */
+function shadowLook(id: string): [number, number] {
+  if (id.startsWith('bld_')) return [0.4, 0.16];
+  if (id.startsWith('prop_tree') || id === 'prop_palm') return [0.3, 0.22];
+  if (id === 'stand_tent') return [0.44, 0.12];
+  if (id === 'stand_umbrella') return [0.38, 0.13];
+  return [0.36, 0.2];
+}
+
+/**
+ * A soft shadow on the ground under a picture. The light comes from the upper left, so the shadow sits a little to
+ * the lower right of the foot point. Drawn in a pass before the objects themselves, so it never darkens anything.
+ */
+export function spriteShadow(ctx: Ctx, id: string, sx: number, sy: number, s = 1): void {
+  const img = images.get(id);
+  if (!img || NO_SHADOW.test(id)) return;
+  const m = metaFor(id);
+  const h = m.h * s;
+  const w = (h * img.naturalWidth) / img.naturalHeight;
+  const [share, alpha] = shadowLook(id);
+  const rx = Math.max(7 * s, w * share);
+  const ry = rx * 0.42;
+  const cx = sx + (m.dx ?? 0) * s + rx * 0.22;
+  const cy = sy + (m.dy ?? 0) * s + ry * 0.18;
+  ctx.fillStyle = `rgba(30,40,20,${alpha})`;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 export function drawSprite(ctx: Ctx, id: string, call: SpriteCall): void {
   const img = images.get(id);
   if (img) {

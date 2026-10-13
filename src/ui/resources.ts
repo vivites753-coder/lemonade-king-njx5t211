@@ -3,10 +3,10 @@ import { CONFIG } from '../core/config';
 import type { EquipId, Phase } from '../core/types';
 import { EQUIPMENT } from '../data/equipment';
 import { t } from '../i18n';
-import { ownedEquipment } from '../sim/equipment';
+import { inUseEquipment } from '../sim/equipment';
 import type { Game } from '../sim/game';
 import { lemonsTotal } from '../sim/state';
-import { coin } from './dom';
+import { coin, ico } from './dom';
 import type { ModalSpec } from './overlays';
 
 const ROWS: { key: string; icon: string; label: string }[] = [
@@ -117,7 +117,7 @@ function condBar(c: number, broken: boolean): string {
 }
 
 export function equipmentRows(g: Game, mode: 'repair' | 'shop'): string {
-  return ownedEquipment(g.S)
+  return inUseEquipment(g.S)
     .map((id) => {
       const broken = !!g.S.broken[id];
       const c = g.S.condition[id] ?? 100;
@@ -130,7 +130,7 @@ export function equipmentRows(g: Game, mode: 'repair' | 'shop'): string {
         btn = cost > 0 ? `<button class="btn btn-sm" data-act="maintain:${id}" ${g.S.coins < cost ? 'disabled' : ''}>🧽 ${t('shop.maintain')} ${coin(cost)}</button>` : `<small class="pos">${t('shop.okTag')}</small>`;
       }
       return `<div class="eq-row">
-        <span class="ico">${EQUIPMENT[id].icon}</span>
+        <span class="ico">${ico(`up_${id}`, EQUIPMENT[id].icon)}</span>
         <span class="grow"><b>${t(`equip.${id}`)}</b> <small class="${broken ? 'neg' : 'muted'}">${broken ? t('shop.brokenTag') : t('stock.cond', { n: Math.round(c) })}</small>${condBar(c, broken)}</span>
         ${btn}
       </div>`;

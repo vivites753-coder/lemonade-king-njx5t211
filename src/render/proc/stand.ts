@@ -5,7 +5,7 @@ import { t } from '../../i18n';
 import type { Game } from '../../sim/game';
 import { playerLook } from '../../sim/looks';
 import { lemonsTotal } from '../../sim/state';
-import { drawSprite, getImage, hasImage, metaFor, registerProcs, type SpriteCall } from '../assets';
+import { drawSprite, getImage, hasImage, metaFor, registerProcs, spriteShadow, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter, standSpriteId } from './people';
@@ -278,6 +278,27 @@ registerProcs({
   item_lemon_pile: (ctx, c) => lemonPile(ctx, (c as StandCall).lemons ?? 0),
 });
 
+/** The top part of the umbrella picture (the canopy), drawn again over the people at the stand. */
+const CANOPY_SHARE = 0.54;
+function umbrellaCanopy(ctx: Ctx, sx: number, sy: number, wide: boolean, alpha: number): void {
+  const img = getImage('stand_umbrella');
+  if (!img) return;
+  const m = metaFor('stand_umbrella');
+  const h = m.h;
+  const w = (h * img.naturalWidth) / img.naturalHeight;
+  const left = sx + (m.dx ?? 0) - w * m.anchor[0];
+  const top = sy + (m.dy ?? 0) - h * m.anchor[1];
+  shifted(ctx, wide, -0.6, 0, () => {
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.beginPath();
+    ctx.rect(left - 2, top - 2, w + 4, h * CANOPY_SHARE + 2);
+    ctx.clip();
+    ctx.drawImage(img, left, top, w, h);
+    ctx.restore();
+  });
+}
+
 /** The pitcher picture: the empty one, with the full one shown up to the lemonade level. */
 function pitcherPicture(ctx: Ctx, sx: number, sy: number, level: number): void {
   const call = { x: SX, y: SY, sx, sy, s: 1 };
@@ -385,6 +406,28 @@ function priceLabel(ctx: Ctx, cx: number, cy: number, price: number): void {
   circle(ctx, 6.5, 0, 3.3, '#fcc419', '#b8860b', 0.9);
   circle(ctx, 6.5, 0, 1.2, '#fff3c4');
   ctx.restore();
+}
+
+/** The shadows of the stand on the ground (drawn before the stand and the people). */
+export function drawStandShadows(ctx: Ctx, g: Game): void {
+  const S = g.S;
+  const up = S.upgrades;
+  const [sx, sy] = P(SX, SY);
+  const wide = g.counters() >= 2;
+  const isTruck = !!g.active().truck;
+  const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
+  if (isTruck) return;
+  if (up.tent && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_tent', sx, sy, wide ? 1.22 : 1));
+  else if (up.umbrella && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_umbrella', sx, sy));
+  if (wide) spriteShadow(ctx, 'stand_table_blue', sx, sy);
+  spriteShadow(ctx, 'stand_table', sx, sy);
+  if (up.scooter) spriteShadow(ctx, 'stand_scooter', sx, sy);
+  else if (up.bike) spriteShadow(ctx, 'stand_bike', sx, sy);
+  if (up.speaker) spriteShadow(ctx, 'stand_speaker', sx, sy);
+  if (up.cooler) spriteShadow(ctx, 'stand_cooler', sx, sy);
+  if (up.tv) spriteShadow(ctx, 'stand_tv', sx, sy);
+  if (up.sign) shifted(ctx, wide, -1.9, -0.2, () => spriteShadow(ctx, 'stand_sign', sx, sy));
+  if (up.mascot) shifted(ctx, wide, -0.3, 1.0, () => spriteShadow(ctx, 'stand_mascot', sx, sy));
 }
 
 /** Draws one side part of the stand (see standSideParts). */
@@ -511,6 +554,8 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
     if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
     if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
+    // the canopy of the umbrella is over the heads of the sellers (its pole stays behind the table)
+    if (!up.tent && up.umbrella && outdoor) umbrellaCanopy(ctx, sx, sy, wide, br.umbrella ? 0.5 : 1);
   }
   // the truck carries its speaker on the roof, at the right end (the bar stools take the space in front)
   if (up.speaker && isTruck) {
@@ -525,7 +570,7 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (up.tent && outdoor) {
     // the picture is drawn a little taller than the footprint so the seller's head shows under the roof;
     // over a big stand it moves left and grows so it covers both tables
-    const big = hasImage('stand_tent') ? (wide ? 1.55 : 1.3) : 1;
+    const big = hasImage('stand_tent') && wide ? 1.22 : 1;
     shifted(ctx, wide && hasImage('stand_tent'), -0.6, 0, () => drawSprite(ctx, 'stand_tent', call({ on: !!br.tent, s: big })));
   }
 

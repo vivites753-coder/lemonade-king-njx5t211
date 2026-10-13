@@ -73,7 +73,8 @@ const IDLE_STAND = /^char_(player|helper)_(boy|girl)_front$/;
 export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: number, sy: number, o: PersonOpts): number {
   // doing nothing: the sharp drawn picture that just breathes (the idle loop cut from a video is softer and wobbles)
   const still = IDLE_STAND.test(id) ? getImage(id) : undefined;
-  if (still) return drawAnimated(ctx, id, still, sx, sy, { ...o, moving: false });
+  // the still pictures look to the lower RIGHT, the loops cut from the video to the lower LEFT: keep the same direction
+  if (still) return drawAnimated(ctx, id, still, sx, sy, { ...o, moving: false, dirX: -o.dirX });
   const loop = getLoop(id);
   if (loop) return drawLoop(ctx, id, loop, x, sx, sy, o);
   const img = getImage(id);

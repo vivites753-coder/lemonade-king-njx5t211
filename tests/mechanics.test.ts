@@ -313,7 +313,7 @@ describe('busy and quiet days', () => {
 
 describe('bike and scooter', () => {
   it('the bike does not wear out or break while a working scooter does the trips', async () => {
-    const { applyWear, rollBreaks, rollMiddayBreak, sparedByScooter } = await import('../src/sim/equipment');
+    const { applyWear, rollBreaks, rollMiddayBreak, retired, inUseEquipment } = await import('../src/sim/equipment');
     const { RNG } = await import('../src/core/rng');
     const g = freshGame(3);
     g.S.upgrades.bike = true;
@@ -326,7 +326,8 @@ describe('bike and scooter', () => {
     // with a scooter it stays as good as new
     g.S.upgrades.scooter = true;
     g.S.condition.scooter = 100;
-    expect(sparedByScooter(g.S, 'bike')).toBe(true);
+    expect(retired(g.S, 'bike')).toBe(true);
+    expect(inUseEquipment(g.S)).not.toContain('bike');
     for (let i = 0; i < 20; i++) applyWear(g.S, rng, 'sunny', false, true);
     expect(g.S.condition.bike).toBe(100);
     g.S.condition.bike = 5;
@@ -337,6 +338,26 @@ describe('bike and scooter', () => {
     }
     // a broken scooter puts the bike back to work
     g.S.broken.scooter = true;
-    expect(sparedByScooter(g.S, 'bike')).toBe(false);
+    expect(retired(g.S, 'bike')).toBe(false);
+    expect(inUseEquipment(g.S)).toContain('bike');
+  });
+});
+
+describe('replaced equipment', () => {
+  it('the hand juicer and the umbrella are not looked after once the lever juicer and the tent work', async () => {
+    const { inUseEquipment, retired } = await import('../src/sim/equipment');
+    const g = freshGame(4);
+    g.S.upgrades.juicer_hand = true;
+    g.S.upgrades.umbrella = true;
+    expect(inUseEquipment(g.S)).toEqual(expect.arrayContaining(['juicer_hand', 'umbrella']));
+    g.S.upgrades.juicer_lever = true;
+    g.S.upgrades.tent = true;
+    expect(retired(g.S, 'juicer_hand')).toBe(true);
+    expect(retired(g.S, 'umbrella')).toBe(true);
+    expect(inUseEquipment(g.S)).not.toContain('juicer_hand');
+    expect(inUseEquipment(g.S)).not.toContain('umbrella');
+    // a broken tent: the umbrella is needed again
+    g.S.broken.tent = true;
+    expect(inUseEquipment(g.S)).toContain('umbrella');
   });
 });

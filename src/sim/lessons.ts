@@ -2,7 +2,7 @@
 import { CONFIG } from '../core/config';
 import type { EquipId, Params } from '../core/types';
 import { LOCATIONS } from '../data/locations';
-import { maintenanceCost, ownedEquipment } from './equipment';
+import { inUseEquipment, maintenanceCost } from './equipment';
 import type { DayReport, DayState, GameState } from './state';
 
 export function fmtHour(h: number): string {
@@ -35,7 +35,7 @@ export function pickLesson(S: GameState, D: DayState, r: DayReport): { key: stri
   if (f.queueFull >= 3) return { key: D.helper ? 'lesson.queuefull' : 'lesson.queueHelper', params: { n: f.queueFull, wage: CONFIG.HELPER_WAGE } };
   if (D.helper && f.queueFull === 0 && f.impatient === 0 && f.sold < 35)
     return { key: 'lesson.helperIdle', params: { wage: r.wages, n: f.sold } };
-  const worn = ownedEquipment(S).filter((id: EquipId) => !S.broken[id] && (S.condition[id] ?? 100) < 45);
+  const worn = inUseEquipment(S).filter((id: EquipId) => !S.broken[id] && (S.condition[id] ?? 100) < 45);
   if (worn.length) {
     const id = worn[0];
     return { key: 'lesson.wear', params: { item: `@equip.${id}`, cond: Math.round(S.condition[id] ?? 0), cost: maintenanceCost(S, id) } };

@@ -7,7 +7,7 @@ import type { Game } from '../sim/game';
 import { FOX_LOOK } from '../sim/looks';
 import type { Critter } from '../sim/critters';
 import type { Ped } from '../sim/street';
-import { drawSprite, onAssetsChanged } from './assets';
+import { drawSprite, onAssetsChanged, spriteShadow } from './assets';
 import { ENV } from './env';
 import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
@@ -17,13 +17,17 @@ import { drawCharacter, drawCup, pedSpriteId, pedUmbrellaSpriteId } from './proc
 import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawCritter } from './proc/critters';
-import { drawStand, drawStandPart, standSideParts, type StandPart } from './proc/stand';
+import { drawStand, drawStandPart, drawStandShadows, standSideParts, type StandPart } from './proc/stand';
 import './proc/truck';
 import './proc/buildings';
 
 /** World-pixel area the camera keeps in view (the compact one crops building tops on phones). */
 const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
 const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
+/** On phones the field is drawn this much bigger than "everything fits". */
+const PHONE_ZOOM = 1.4;
+/** The stand in world pixels (the phone camera leans towards it). */
+const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
 
 type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6; // decor, ped, car, stand, thief, critter, a side part of the stand
 interface Item {
@@ -115,12 +119,20 @@ export class Renderer {
     const availH = Math.max(100, this.h - i.top - i.bottom - 8);
     const vw = VIEW.maxX - VIEW.minX;
     const vh = VIEW.maxY - VIEW.minY;
-    const s = Math.min(availW / vw, availH / vh);
-    return {
-      s,
-      ox: i.left + 6 + availW / 2 - ((VIEW.minX + VIEW.maxX) / 2) * s,
-      oy: i.top + 4 + (availH - vh * s) / 2 - VIEW.minY * s,
-    };
+    const fit = Math.min(availW / vw, availH / vh);
+    if (!this.compact) {
+      return {
+        s: fit,
+        ox: i.left + 6 + availW / 2 - ((VIEW.minX + VIEW.maxX) / 2) * fit,
+        oy: i.top + 4 + (availH - vh * fit) / 2 - VIEW.minY * fit,
+      };
+    }
+    // phones: the playing field is shown 40 % bigger, centred between the middle of the island and the stand
+    // (the far corners of the island, where people appear and leave, are cut off)
+    const s = fit * PHONE_ZOOM;
+    const cx = ((VIEW.minX + VIEW.maxX) / 2 + STAND_PX[0]) / 2;
+    const cy = ((VIEW.minY + VIEW.maxY) / 2 + STAND_PX[1]) / 2;
+    return { s, ox: i.left + 6 + availW / 2 - cx * s, oy: i.top + 4 + availH / 2 - cy * s };
   }
 
   /** Tile coordinates → CSS pixels. */
@@ -210,6 +222,12 @@ export class Renderer {
     }
 
     const decor = LOCATIONS[loc].decor;
+    // shadows lie on the ground, under everything that stands on it
+    for (const d of decor) {
+      const [sx, sy] = P(d.w ? d.x + d.w / 2 : d.x, d.d ? d.y + d.d / 2 : d.y);
+      spriteShadow(ctx, d.id, sx, sy, d.s ?? 1);
+    }
+    drawStandShadows(ctx, g);
     for (const d of decor) if (d.back) this.drawDecor(ctx, d);
 
     const items = this.items;

@@ -88,19 +88,18 @@ Row 5: 21) a thumbs-up, 22) an exclamation mark in a red circle, 23) a green che
 
 Імена: `ui_gd_lemon, ui_gd_water, ui_gd_sugar, ui_gd_cups, ui_gd_ice, ui_gd_cookie, ui_gd_pitcher, ui_gd_cup, ui_gd_crate, ui_act_market, ui_em_happy, ui_em_love, ui_em_sour, ui_em_angry, ui_em_money, ui_em_wait, ui_em_look, ui_em_music, ui_em_think, ui_em_sad, ui_thumbs_up, ui_alert, ui_ok, ui_cancel, ui_help`
 
-## Лист 11. Іконки апгрейдів (5×5, FLAT)
+## Лист 11. Іконки апгрейдів, яких ще немає (5×1, ISO)
 
-СІТКА 25 / 5×5 / 78% + FLAT + `Each item is a single ICON object.`
+Більшість іконок магазину (17) уже зроблені з картинок гри скриптом `tools/make_icons.py` (табличка, колонка, фірмові стаканчики, костюм, парасолька, диспенсер, велосипед, тент, скутер, телевізор, обидві соковижималки, сумка, міксер, скринька з замком, інструменти, великий прилавок). Згенерувати треба лише ці п'ять (великий прилавок — гарніший за складений зі столів).
+
+СІТКА 5 / 5×1 / 75% + ISO +
 
 ```
-Row 1: 1) a small chalkboard sign on a stand (blank), 2) a loyalty card with a star stamp (blank), 3) a yellow banner on two poles (blank), 4) a loudspeaker with sound waves, 5) a stack of yellow paper cups with a lemon drawing.
-Row 2: 6) a person in a funny lemon costume (mascot), 7) a striped sun umbrella (yellow-white), 8) a small delivery van, white with a yellow stripe, 9) a drink dispenser with a tap (opaque), 10) an orange bicycle with a basket.
-Row 3: 11) a pop-up canopy tent, striped, 12) an orange kick scooter, 13) a retro television with a cartoon star on the screen, 14) two market tables side by side (big stand), 15) a cute yellow food truck with a window and an awning.
-Row 4: 16) a hand citrus squeezer with a lemon half, 17) a blue cooler bag, 18) a modern white hand mixer, 19) a lever juicer machine, 20) a padlock with a coin.
-Row 5: 21) a red toolbox with tools, 22) a stack of flyers, 23) a friendly helper worker with a green apron, waist-up, 24) a small market kiosk with a striped awning, 25) a brown wooden storeroom door with a lock.
+Each item is one object of the game shop, a cute toy-like 3D object seen from the same isometric camera as the other game objects.
+1) a loyalty card: a cream paper card with ten small circles for stamps, six of them filled with little yellow lemon stamps, a tiny gift box drawn in the last circle, no letters; 2) a long yellow cloth banner with an orange border, hanging between two short wooden poles, a big friendly lemon drawn in the middle, no letters; 3) a delivery order: a cardboard box full of lemons with two water bottles and a small paper sugar bag sticking out, and a small blue clipboard with a green check mark leaning against it, no letters; 4) a cute lemon-yellow food truck with orange trim, an orange awning over a wide serving window, a red glowing neon tube shaped like a lemon on the roof, two round bar stools in front, no letters; 5) a big market stand: two tables side by side, the left one with a blue-and-white striped cloth, the right one with a yellow-and-white striped cloth, a pitcher of lemonade and paper cups on each table, no people.
 ```
 
-Імена: `ui_up_sign, ui_up_loyalty, ui_up_banner, ui_up_speaker, ui_up_branded_cups, ui_up_mascot, ui_up_umbrella, ui_up_delivery, ui_up_dispenser, ui_up_bike, ui_up_tent, ui_up_scooter, ui_up_tv, ui_up_big_stand, ui_up_truck, ui_up_juicer_hand, ui_up_cooler, ui_up_mixer, ui_up_juicer_lever, ui_up_cash_lock, ui_up_toolkit, ui_up_flyers, ui_up_helper, ui_up_kiosk, ui_up_storeroom`
+Імена: `ui_up_loyalty, ui_up_banner, ui_up_delivery, ui_up_truck, ui_up_big_stand` (кладуться в `assets/ui/`).
 
 ## Лист 12. Іконки локацій і кнопок (5×4, FLAT)
 
