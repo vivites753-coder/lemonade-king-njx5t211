@@ -115,18 +115,17 @@ Row 4: 16) a megaphone, 17) a calculator (blank keys), 18) a coin bag with a gol
 
 Імена: `ui_loc_yard, ui_loc_park, ui_loc_school, ui_loc_beach, ui_loc_station, ui_loc_mall, ui_act_market2, ui_act_kitchen, ui_act_shop, ui_act_sleep, ui_btn_settings, ui_btn_glossary, ui_btn_roadmap, ui_btn_news, ui_btn_points, ui_btn_megaphone, ui_btn_calc, ui_btn_coinbag, ui_btn_map, ui_btn_gift`
 
-## Лист 13. Машини в обидва боки (4×2, ISO)
+## Лист 13. Машини в обидва боки (5×2, ISO)
 
-СІТКА 8 / 4×2 / 75% + ISO +
+СІТКА 10 / 5×2 / 75% + ISO + список нижче. Дорога в грі йде по діагоналі 2:1: машина, що їде вниз-праворуч, повернута до нас передом і ПРАВИМ боком; машина, що їде вгору-ліворуч, повернута задом і ЛІВИМ боком. Обидва рядки потрібні, бо дзеркало переставило б кермо й написи.
 
 ```
-Each vehicle is a cute toy-like small car with chunky rounded shapes. Row 1: cars driving toward the LOWER-RIGHT (we see the front and the left side). Row 2: the same cars driving toward the UPPER-LEFT (we see the back and the right side), identical colors and shapes to the car above.
-
-Row 1: 1) a small yellow car, 2) a small red car, 3) a small green car, 4) a white delivery van with a yellow stripe.
-Row 2 (exactly the same vehicles from behind): 5) the yellow car, 6) the red car, 7) the green car, 8) the white delivery van.
+Each vehicle is a cute toy-like small car with chunky rounded shapes, big round wheels, simple windows with a soft sky reflection, no people inside, no text or numbers on plates. All vehicles are drawn at the same scale, their long axis along the same 2:1 isometric diagonal.
+Row 1: vehicles driving toward the LOWER-RIGHT corner of the image (we see the FRONT with both headlights and the RIGHT side): 1) a small yellow hatchback, 2) a small red round car, 3) a small mint-green car, 4) a small sky-blue car, 5) a white delivery van with a yellow stripe.
+Row 2: exactly the same five vehicles, same colors and shapes, in the same order, driving toward the UPPER-LEFT corner (we see the BACK with both tail lights and the LEFT side): 6) the yellow hatchback, 7) the red car, 8) the green car, 9) the blue car, 10) the white van.
 ```
 
-Імена: `prop_car_a_front, prop_car_b_front, prop_car_c_front, prop_van_front, prop_car_a_back, prop_car_b_back, prop_car_c_back, prop_van_back`
+Імена: `prop_car_a_front, prop_car_b_front, prop_car_c_front, prop_car_d_front, prop_van_front, prop_car_a_back, prop_car_b_back, prop_car_c_back, prop_car_d_back, prop_van_back`
 
 ## Лист 14. Тварини й знахідки (4×3, ISO)
 
