@@ -129,9 +129,10 @@ function decals(ctx: Ctx, loc: LocationId): void {
   }
   if (loc === 'yard') {
     // zebra crossing
-    for (let i = 0; i < 4; i++) {
-      const x = 9.05 + i * 0.22;
-      poly(ctx, [P(x, 6.05), P(x + 0.12, 6.05), P(x + 0.12, 7.95), P(x, 7.95)], 'rgba(255,255,255,0.85)');
+    // bars run along the road (x) and are stacked across it (y)
+    for (let i = 0; i < 6; i++) {
+      const y = 6.1 + i * 0.3;
+      poly(ctx, [P(9.1, y), P(9.85, y), P(9.85, y + 0.17), P(9.1, y + 0.17)], 'rgba(255,255,255,0.88)');
     }
   }
 }

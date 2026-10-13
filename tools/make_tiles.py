@@ -70,9 +70,9 @@ def wrap_blur(im, radius):
     return big.filter(ImageFilter.GaussianBlur(radius)).crop((w, h, 2 * w, 2 * h))
 
 
-def flatten(im):
+def flatten(im, radius=S / 12):
     arr = np.asarray(im).astype(np.float32)
-    low = np.asarray(wrap_blur(im, S / 5)).astype(np.float32)
+    low = np.asarray(wrap_blur(im, radius)).astype(np.float32)
     res = arr - low + arr.reshape(-1, 3).mean(axis=0)
     return Image.fromarray(np.clip(res, 0, 255).astype(np.uint8))
 
@@ -194,7 +194,7 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     img = Image.open(sheet).convert('RGB')
     cols, rows = find_grid(img)
-    tiles = {}
+    tex = {}
     for i, (name, mode) in enumerate(SHEET):
         r, c = divmod(i, 5)
         (x0, x1), (y0, y1) = cols[c], rows[r]
@@ -208,13 +208,22 @@ def main():
             sq = seamless(flatten(sq))
         if name.startswith('pavement'):
             sq = pavement({'pavement_1': 'grid2', 'pavement_2': 'brick', 'pavement_3': 'grid2'}[name], i)
-        if name == 'road_dash':
-            # the dash is drawn here, so use the plain asphalt (same crop as 'road', flipped to differ a little)
-            plain = tiles['road_tex']
-            sq = road_dash(plain.transpose(Image.FLIP_LEFT_RIGHT))
-        if name == 'road':
-            tiles['road_tex'] = sq
-        tiles[name] = to_diamond(sq)
+        tex[name] = sq
+
+    # the variants of one surface must have exactly the same average colour, or the tiles show up as a patchwork
+    families = [['grass_1', 'grass_2', 'grass_3'], ['sand_1', 'sand_2', 'sand_3'], ['water_1', 'water_2'], ['road']]
+    for fam in families:
+        means = {n: np.asarray(tex[n]).reshape(-1, 3).mean(axis=0) for n in fam}
+        target = np.mean(list(means.values()), axis=0)
+        for n in fam:
+            arr = np.asarray(tex[n]).astype(np.float32) + (target - means[n])
+            tex[n] = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+    # the dashed road is the same asphalt (mirrored, so the grain differs) plus the drawn dash
+    tex['road_dash'] = road_dash(tex['road'].transpose(Image.FLIP_LEFT_RIGHT))
+
+    tiles = {}
+    for name, _mode in SHEET:
+        tiles[name] = to_diamond(tex[name])
         tiles[name].save(os.path.join(out_dir, OUT_NAME[name] + '.png'))
         print(OUT_NAME[name])
 
