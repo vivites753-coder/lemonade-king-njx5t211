@@ -25,6 +25,17 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_bike_rack: { h: 46, anchor: [0.5, 0.85] },
   prop_duck: { h: 16, anchor: [0.5, 0.8] },
   prop_car_a: { h: 44, anchor: [0.5, 0.75] },
+  // drawn cars: one scale for all, the front picture drives to the lower right, the back one to the upper left
+  prop_car_a_front: { h: 52.8, anchor: [0.5, 0.9] },
+  prop_car_b_front: { h: 50.6, anchor: [0.5, 0.9] },
+  prop_car_c_front: { h: 49.9, anchor: [0.5, 0.9] },
+  prop_car_d_front: { h: 51.2, anchor: [0.5, 0.9] },
+  prop_van_front: { h: 56.0, anchor: [0.5, 0.9] },
+  prop_car_a_back: { h: 50.9, anchor: [0.5, 0.9] },
+  prop_car_b_back: { h: 49.3, anchor: [0.5, 0.9] },
+  prop_car_c_back: { h: 48.0, anchor: [0.5, 0.9] },
+  prop_car_d_back: { h: 49.9, anchor: [0.5, 0.9] },
+  prop_van_back: { h: 52.8, anchor: [0.5, 0.9] },
   // the anchor is the centre of the footprint, not the front corner: the front corner is about 40 px lower
   // the stand people: the same size for every pose of one person (their pictures differ in height)
   char_player_boy_front: { h: 42.9, anchor: [0.5, 0.975] },

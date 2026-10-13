@@ -48,6 +48,8 @@ export interface Car {
   dir: 1 | -1;
   speed: number;
   color: string;
+  /** Which drawn car: 0-3 small cars, 4 the van. */
+  variant: number;
 }
 
 export interface Thief {
@@ -326,6 +328,7 @@ export class Street {
           dir,
           speed: 2.4 + Math.random() * 1.2,
           color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)],
+          variant: Math.random() < 0.14 ? 4 : Math.floor(Math.random() * 4),
         });
       }
     }

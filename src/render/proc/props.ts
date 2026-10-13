@@ -1,5 +1,5 @@
 // Procedural props: trees, benches, lamps, fences, beach things, cars.
-import { registerProcs, type SpriteCall } from '../assets';
+import { drawSprite, getImage, hasImage, metaFor, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceY, line, P, poly, rrect, shadow, type Ctx } from '../iso';
 
@@ -209,6 +209,36 @@ export function drawCar(ctx: Ctx, x: number, y: number, color: string, dir: numb
   }
   const [hx, hy] = P(x + dir * 0.55, y + 0.1, 10);
   circle(ctx, hx, hy, 2, '#fff3bf');
+}
+
+const CAR_SPRITES = ['car_a', 'car_b', 'car_c', 'car_d', 'van'];
+
+/**
+ * A drawn car (or van) on the road: the front picture drives to the lower right, the back one to the upper left,
+ * and from behind a little smoke puffs out of the exhaust pipe. Falls back to the code-drawn car.
+ */
+export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; dir: number; variant: number }): void {
+  const id = `prop_${CAR_SPRITES[c.variant % CAR_SPRITES.length]}_${c.dir > 0 ? 'front' : 'back'}`;
+  const img = getImage(id);
+  if (!img) {
+    drawCar(ctx, c.x, c.y, c.color, c.dir);
+    return;
+  }
+  const [sx, sy] = P(c.x, c.y);
+  shadow(ctx, sx, sy, 24, 0.2);
+  drawSprite(ctx, id, { x: c.x, y: c.y, sx, sy, s: 1 });
+  if (c.dir > 0 || ENV.reduceMotion || !hasImage(id)) return;
+  // the exhaust is at the lower right of the rear picture; the puffs rise and drift backwards, getting bigger and fainter
+  const m = metaFor(id);
+  const H = m.h;
+  const W = (H * img.naturalWidth) / img.naturalHeight;
+  const ex = sx - W * m.anchor[0] + W * 0.86;
+  const ey = sy - H * m.anchor[1] + H * 0.9;
+  const phase = c.x * 1.7;
+  for (let i = 0; i < 4; i++) {
+    const k = (((ENV.t / 1.3 + i / 4 + phase) % 1) + 1) % 1;
+    circle(ctx, ex + k * 13, ey - k * 12, 1.6 + k * 4, `rgba(240,240,240,${(0.85 * (1 - k)).toFixed(3)})`);
+  }
 }
 
 registerProcs({

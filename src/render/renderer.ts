@@ -14,7 +14,7 @@ import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
 import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
 import { pedFacing } from './facing';
 import { drawCharacter, drawCup, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
-import { drawCar } from './proc/props';
+import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawCritter } from './proc/critters';
 import { drawStand, drawStandPart, standSideParts, type StandPart } from './proc/stand';
@@ -236,11 +236,11 @@ export class Renderer {
           this.drawPed(ctx, it.o as Ped);
           break;
         case 2: {
-          const c = it.o as { x: number; y: number; color: string; dir: number };
+          const c = it.o as { x: number; y: number; color: string; dir: number; variant: number };
           const a = edgeAlpha(c.x, 0.5);
           if (a <= 0) break;
           ctx.globalAlpha = a;
-          drawCar(ctx, c.x, c.y, c.color, c.dir);
+          drawCarArt(ctx, c);
           ctx.globalAlpha = 1;
           break;
         }
