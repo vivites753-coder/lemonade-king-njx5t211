@@ -349,7 +349,7 @@ function shifted(ctx: Ctx, on: boolean, dx: number, dy: number, draw: () => void
 
 /** Where people stand at a stand with two counters (0: right counter, 1: left counter, back: the player when two helpers work). */
 const SPOTS = {
-  single: { player: [SX - 0.1, SY - 0.85], helper: [SX + 0.62, SY - 0.8] },
+  single: { player: [SX - 0.1, SY - 0.85], playerWithHelper: [SX + 0.28, SY - 0.85], helper: [SX - 0.48, SY - 0.85] },
   wide: { c0: [SX - 0.1, SY - 0.85], c1: [SX - 1.35, SY - 0.85], back: [SX - 0.75, SY - 1.5] },
 };
 
@@ -407,10 +407,9 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   // under a roof the umbrella and the tent stay folded; the truck has its own awning
   const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
   // the fastest vehicle is parked at the stand; boxes and vehicles make room for a wide stand
-  shifted(ctx, wide, -2.0, -0.3, () => {
-    if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
-    else if (up.bike) drawSprite(ctx, 'stand_bike', call());
-  });
+  // the scooter is parked on the right of the table, the bike behind it on the left
+  if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
+  else if (up.bike) shifted(ctx, wide, -2.0, -0.3, () => drawSprite(ctx, 'stand_bike', call()));
   shifted(ctx, wide, -0.35, -1.0, () => {
     if (up.toolkit) drawSprite(ctx, 'stand_toolkit', call());
     if (up.cooler) drawSprite(ctx, 'stand_cooler', call());
@@ -436,7 +435,6 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     const label = S.truck.text.trim() || t('world.truckDefault');
     drawSprite(ctx, 'stand_truck', call({ skin: S.truck.skin, logo: S.truck.logo, label, level: Math.min(1, level), workers }));
   } else {
-    drawSprite(ctx, 'stand_chair', call());
     if (!up.tent && up.umbrella && outdoor) {
       ctx.save();
       if (br.umbrella) ctx.globalAlpha = 0.5;
@@ -446,7 +444,7 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     const people: { id: string; kind: 'player' | 'helper'; x: number; y: number; serving: boolean; juicing: boolean }[] = [];
     if (!wide) {
       if (helpers > 0) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
-      people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: SPOTS.single.player[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });
+      people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: (helpers > 0 ? SPOTS.single.playerWithHelper : SPOTS.single.player)[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });
     } else if (helpers >= 2) {
       people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: SPOTS.wide.back[0], y: SPOTS.wide.back[1], serving: false, juicing: making });
       people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
@@ -520,5 +518,5 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const vx = wide ? -2.0 : 0;
   const vy = wide ? -0.3 : 0;
   if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75 + vx, SY - 0.9 + vy, 40);
-  if (br.scooter) brokenMark(ctx, SX - 1.6 + vx, SY - 0.7 + vy, 44);
+  if (br.scooter) brokenMark(ctx, SX + 1.4, SY - 1.0, 44);
 }

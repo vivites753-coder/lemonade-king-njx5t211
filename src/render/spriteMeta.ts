@@ -46,7 +46,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   // behind the table
   stand_cooler: { h: 26, anchor: [0.5, 0.9], dx: -24, dy: -18 },
   stand_bike: { h: 44, anchor: [0.5, 0.9], dx: -18, dy: -39 },
-  stand_scooter: { h: 36, anchor: [0.5, 0.9], dx: -30, dy: -38 },
+  stand_scooter: { h: 38, anchor: [0.5, 0.9], dx: 80, dy: 8 },
   stand_toolkit: { h: 17, anchor: [0.5, 0.85], dx: -1, dy: -27 },
   stand_chair: { h: 34, anchor: [0.5, 0.83], dx: 58, dy: -5 },
   stand_umbrella: { h: 136, anchor: [0.5, 0.96], dx: 27, dy: 9 },
