@@ -59,3 +59,9 @@ def matte(img, bg, alpha0, core=0.995, erode=3, grow=4, min_sep=45.0):
     alpha = np.where(inner, 1.0, np.where(ring, a_est, 0.0))
     col = np.where(inner[..., None], img, F)
     return col, alpha
+
+
+def crisp(alpha, width=0.14):
+    """Sharpen the soft transparency ramp of a cut-out into about one pixel: the edge stays where it was (alpha 0.5),
+    but there is no blur left. width is the alpha range of the transition (smaller = harder)."""
+    return np.clip((alpha - 0.5) / width + 0.5, 0, 1)

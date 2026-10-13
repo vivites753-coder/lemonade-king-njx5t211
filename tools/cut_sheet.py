@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from edgefix import bleed, matte  # noqa: E402
+from edgefix import bleed, crisp, matte  # noqa: E402
 
 PAIRS = '--pairs' in sys.argv  # every cell holds two views of one character: left = front, right = back
 sys.argv = [a for a in sys.argv if a != '--pairs']
@@ -32,7 +32,7 @@ lo, hi = m_bg * 0.30, m_bg * 0.80
 alpha = np.clip((hi - m) / (hi - lo), 0, 1)
 
 col, alpha = matte(im, bg, alpha)
-alpha = np.clip((alpha - 0.08) / 0.92, 0, 1)
+alpha = crisp(alpha)
 rgba = np.dstack([col, alpha * 255]).astype(np.uint8)
 
 
