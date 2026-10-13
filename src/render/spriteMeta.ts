@@ -39,7 +39,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   char_fox_back: { h: 54, anchor: [0.5, 0.975] },
   char_fox_dizzy: { h: 64, anchor: [0.5, 0.975] },
   bld_house_yard: { h: 180, anchor: [0.5, 0.69] },
-  bld_school: { h: 380, anchor: [0.5, 0.7] },
+  bld_school: { h: 288, anchor: [0.5, 0.66] },
   bld_fountain: { h: 112, anchor: [0.5, 0.71] },
   bld_lifeguard: { h: 135, anchor: [0.5, 0.84] },
   // stand layers: every picture sits at its own spot around the table (dx, dy from the stand centre)
