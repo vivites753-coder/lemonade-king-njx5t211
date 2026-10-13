@@ -85,7 +85,8 @@ function drawLoop(ctx: Ctx, id: string, loop: LoopInfo, wx: number, sx: number, 
   shadow(ctx, sx, sy, 10 * o.scale, 0.2);
   ctx.save();
   ctx.translate(sx, sy);
-  if (dir > 0 && fox) ctx.scale(-1, 1); // the fox pictures look to the lower LEFT
+  // the fox pictures look to the lower LEFT, the people to the lower RIGHT
+  if (fox ? dir > 0 : dir < 0) ctx.scale(-1, 1);
   ctx.drawImage(loop.img, frame * loop.fw, 0, loop.fw, loop.fh, -loop.cx * scale, -loop.feetY * scale, loop.fw * scale, loop.fh * scale);
   ctx.restore();
   const top = sy - loop.h * o.scale;

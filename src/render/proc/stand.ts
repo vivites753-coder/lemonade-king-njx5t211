@@ -382,7 +382,7 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
         moving: false,
         anim: 0,
         facingCam: true,
-        dirX: 1,
+        dirX: -1, // the seller looks at the customers, who stand in front of the table (toward the lower left)
         serving: p.serving,
         juicing: p.juicing && !ENV.reduceMotion,
         apron: p.kind === 'helper' ? '#69db7c' : undefined,
