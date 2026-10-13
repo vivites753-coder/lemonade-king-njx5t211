@@ -42,13 +42,64 @@ col = col - spill * np.array([1, 0, 1], dtype=np.float32)
 col = np.clip(col, 0, 255)
 rgba = np.dstack([col, alpha * 255]).astype(np.uint8)
 
+
+def keep_big_parts(cell, min_ratio=0.03, f=3):
+    """Drops tiny stray specks (JPEG noise, bits of neighbours): keeps connected parts >= min_ratio of the largest one."""
+    h, w = cell.shape[:2]
+    hh, ww = (h + f - 1) // f, (w + f - 1) // f
+    a = np.zeros((hh * f, ww * f), dtype=bool)
+    a[:h, :w] = cell[..., 3] > 40
+    small = a.reshape(hh, f, ww, f).any(axis=(1, 3))
+    lab = np.zeros(small.shape, dtype=np.int32)
+    sizes = {}
+    n = 0
+    for y0 in range(hh):
+        for x0 in range(ww):
+            if small[y0, x0] and lab[y0, x0] == 0:
+                n += 1
+                stack = [(y0, x0)]
+                lab[y0, x0] = n
+                cnt = 0
+                while stack:
+                    y, x = stack.pop()
+                    cnt += 1
+                    for dy in (-2, -1, 0, 1, 2):  # a 5x5 neighbourhood bridges thin gaps
+                        for dx in (-2, -1, 0, 1, 2):
+                            yy, xx = y + dy, x + dx
+                            if 0 <= yy < hh and 0 <= xx < ww and small[yy, xx] and lab[yy, xx] == 0:
+                                lab[yy, xx] = n
+                                stack.append((yy, xx))
+                sizes[n] = cnt
+    if not sizes:
+        return cell
+    big = max(sizes.values())
+    keep = np.zeros(small.shape, dtype=bool)
+    for k, v in sizes.items():
+        if v >= big * min_ratio:
+            keep |= lab == k
+    # grow the kept area a little so soft edges survive
+    g = keep.copy()
+    for _ in range(2):
+        p = np.pad(g, 1)
+        g = p[1:-1, 1:-1] | p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
+    full = np.kron(g, np.ones((f, f), dtype=bool))[:h, :w]
+    out = cell.copy()
+    out[..., 3] = np.where(full, out[..., 3], 0)
+    return out
+
 cw, ch = W / cols, H / rows
 pad = 6
 for i, name in enumerate(names):
     r, c = divmod(i, cols)
     x0, x1 = int(c * cw), int((c + 1) * cw)
     y0, y1 = int(r * ch), int((r + 1) * ch)
-    cell = rgba[y0:y1, x0:x1]
+    cell = rgba[y0:y1, x0:x1].copy()
+    m_ = 12  # items never touch the cell edge: anything there belongs to a neighbour
+    cell[:m_, :, 3] = 0
+    cell[-m_:, :, 3] = 0
+    cell[:, :m_, 3] = 0
+    cell[:, -m_:, 3] = 0
+    cell = keep_big_parts(cell)
     ys, xs = np.where(cell[..., 3] > 12)
     if len(xs) == 0:
         print('EMPTY', name)
