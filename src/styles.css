@@ -1736,25 +1736,44 @@ body.reduce-motion * {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: linear-gradient(#e9c891, #d6ad6c);
-  border-radius: 16px;
-  padding: 8px;
-  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.08);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px),
+    linear-gradient(#f4e6c8, #e6cf9d);
+  border: 5px solid #a8743a;
+  border-radius: 14px;
+  padding: 6px 6px 0;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35), inset 0 -4px 0 rgba(0, 0, 0, 0.08), 0 4px 0 rgba(0, 0, 0, 0.14);
 }
+/* one shelf level: the goods stand on a wooden plank (the bottom border) */
 .k-item {
   display: flex;
   align-items: center;
   gap: 6px;
   border: 0;
-  border-radius: 14px;
-  background: #fffaf0;
-  padding: 6px 8px;
+  border-bottom: 9px solid #b7813f;
+  border-radius: 10px 10px 2px 2px;
+  background: transparent;
+  padding: 4px 6px 2px;
   cursor: grab;
   touch-action: none;
   font-family: inherit;
   text-align: left;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.16);
   min-height: 52px;
+  flex: 1;
+}
+.k-item .k-meta {
+  background: #fffaf0;
+  border: 1.5px solid #c9a56b;
+  border-radius: 9px;
+  padding: 2px 7px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+}
+.k-item:hover:not(:disabled) .k-art {
+  transform: translateY(-3px) scale(1.04);
+}
+.k-art {
+  transition: transform 0.12s;
 }
 .k-item:active {
   cursor: grabbing;
@@ -3041,4 +3060,189 @@ body.reduce-motion * {
   .k-d-towel { left: 46px; height: 28px !important; }
   .k-d-apron { right: 38px; height: 30px !important; }
   .k-d-clock { height: 24px !important; }
+}
+
+/* ---------- kitchen on a big screen: the scene grows to fill the panel ---------- */
+@media (min-width: 701px) and (min-height: 640px) {
+  .kitchen .k-stage {
+    grid-template-columns: minmax(190px, 0.75fr) minmax(400px, 1.9fr) minmax(200px, 0.9fr);
+    align-items: stretch;
+    gap: 16px 18px;
+  }
+  .k-hint {
+    font-size: 15px;
+    margin: 6px 0 10px;
+  }
+  .k-label {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .k-shelf {
+    gap: 14px;
+    padding: 12px 12px 0;
+    border-radius: 20px;
+  }
+  .k-item {
+    flex-direction: column;
+    justify-content: flex-end;
+    text-align: center;
+    min-height: 118px;
+    gap: 6px;
+    padding: 8px 10px 4px;
+    border-bottom-width: 14px;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.16);
+  }
+  .k-item b {
+    font-size: 19px;
+  }
+  .k-item small {
+    font-size: 15px;
+  }
+  .k-art {
+    width: 96px;
+    height: 84px;
+  }
+  .k-room {
+    min-height: 480px;
+    padding: 18px 18px 0;
+    border-radius: 24px;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.55) 1.5px, transparent 1.5px) 0 0 / 44px 44px,
+      linear-gradient(90deg, rgba(255, 255, 255, 0.55) 1.5px, transparent 1.5px) 0 0 / 44px 44px,
+      linear-gradient(#e9f6f3, #cfe9e3);
+  }
+  .k-room::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 64px;
+    background: linear-gradient(#e6c795, #cfa56b);
+    box-shadow: inset 0 4px 0 rgba(0, 0, 0, 0.08);
+    z-index: 0;
+  }
+  .k-table {
+    position: relative;
+    z-index: 1;
+  }
+  .k-top {
+    gap: 14px;
+    padding: 0 6px;
+  }
+  .k-top > * {
+    flex-shrink: 0;
+  }
+  .k-juicer {
+    width: 124px;
+    font-size: 14px;
+    border-radius: 22px;
+  }
+  .k-tool-art {
+    width: 120px;
+    height: 132px;
+  }
+  .k-jug {
+    width: 130px;
+    height: 220px;
+    border-radius: 16px 16px 34px 34px;
+    border-width: 5px;
+  }
+  .k-grains {
+    font-size: 18px;
+  }
+  .k-mixer-art {
+    width: 92px;
+    height: 118px;
+  }
+  .k-cups-art {
+    width: 100px;
+    font-size: 14px;
+  }
+  .k-cups-art .k-img {
+    height: 66px;
+  }
+  .k-cups-art svg {
+    height: 56px;
+  }
+  .k-board {
+    height: 28px;
+    border-radius: 9px;
+    box-shadow: 0 6px 0 #7a4a20;
+  }
+  .k-under {
+    min-height: 92px;
+    padding: 10px 56px 0;
+    background:
+      linear-gradient(#8a5a2b, #8a5a2b) 18px 0 / 16px 100% no-repeat,
+      linear-gradient(#8a5a2b, #8a5a2b) calc(100% - 18px) 0 / 16px 100% no-repeat;
+  }
+  .k-cooler {
+    width: 112px;
+    height: 84px;
+  }
+  .k-cooler b {
+    font-size: 14px;
+    padding: 1px 6px;
+  }
+  .k-toolkit {
+    width: 100px;
+    height: 62px;
+  }
+  .k-decor .k-img.k-d-window {
+    left: 18px;
+    top: 14px;
+    height: 100px !important;
+  }
+  .k-decor .k-img.k-d-towel {
+    left: 142px;
+    top: 10px;
+    height: 84px !important;
+  }
+  .k-decor .k-img.k-d-apron {
+    right: 120px;
+    top: 10px;
+    height: 94px !important;
+  }
+  .k-decor .k-img.k-d-clock {
+    right: 20px;
+    top: 16px;
+    height: 74px !important;
+  }
+  .k-splash {
+    font-size: 40px;
+  }
+  .k-splash .k-img {
+    width: 44px;
+    height: 44px;
+    margin: 0 -6px;
+  }
+  .k-counts {
+    font-size: 17px;
+    gap: 6px 22px;
+    padding-top: 4px;
+  }
+  .k-mix {
+    gap: 10px;
+    justify-content: flex-start;
+  }
+  .k-meter {
+    height: 26px;
+  }
+  .k-mixer-btn {
+    flex: 1;
+    min-height: 132px;
+    font-size: 28px;
+    border-radius: 26px;
+  }
+  .k-mixer-btn small {
+    font-size: 14px;
+  }
+  .k-mix-status {
+    font-size: 18px;
+  }
+  .k-tools {
+    gap: 10px;
+    margin-top: 14px;
+  }
 }
