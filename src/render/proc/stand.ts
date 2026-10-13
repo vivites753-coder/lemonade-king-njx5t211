@@ -5,7 +5,7 @@ import { t } from '../../i18n';
 import type { Game } from '../../sim/game';
 import { playerLook } from '../../sim/looks';
 import { lemonsTotal } from '../../sim/state';
-import { drawSprite, hasImage, metaFor, registerProcs, type SpriteCall } from '../assets';
+import { drawSprite, getImage, hasImage, metaFor, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter, standSpriteId } from './people';
@@ -17,6 +17,8 @@ const SY = CONFIG.STAND.y;
 const TABLE_H = 22;
 /** Where the price is written on the picture of the sign, from the picture's anchor point. */
 const SIGN_TEXT = { x: 0, y: -24 };
+/** Height of the truck roof (the speaker stands on it). */
+const TRUCK_SPEAKER_Z = 70;
 
 interface StandCall extends SpriteCall {
   price?: number;
@@ -276,20 +278,53 @@ registerProcs({
   item_lemon_pile: (ctx, c) => lemonPile(ctx, (c as StandCall).lemons ?? 0),
 });
 
+/** The pitcher picture: the empty one, with the full one shown up to the lemonade level. */
+function pitcherPicture(ctx: Ctx, sx: number, sy: number, level: number): void {
+  const call = { x: SX, y: SY, sx, sy, s: 1 };
+  drawSprite(ctx, 'item_pitcher_empty', call);
+  const img = getImage('item_pitcher_full');
+  if (!img || level <= 0.02) return;
+  const m = metaFor('item_pitcher_full');
+  const h = m.h;
+  const w = (h * img.naturalWidth) / img.naturalHeight;
+  const left = sx + (m.dx ?? 0) - w * m.anchor[0];
+  const top = sy + (m.dy ?? 0) - h * m.anchor[1];
+  // the liquid fills the lower 80 % of the picture
+  const cut = top + h * (0.18 + 0.8 * (1 - level));
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(left - 2, cut, w + 4, top + h - cut + 2);
+  ctx.clip();
+  ctx.drawImage(img, left, top, w, h);
+  ctx.restore();
+}
+
 /** The second counter of the big stand: a table section to the left with its own pitcher and cups. */
 function table2(ctx: Ctx, level: number): void {
   const x0 = SX - 2.0;
   const y0 = SY - 0.45;
-  box(ctx, x0, y0, 1.2, 0.9, TABLE_H, 0, '#fffaf0', { top: '#fff4cc' });
-  faceY(ctx, x0, y0 + 0.9, 0, () => {
-    for (let i = 0; i < 6; i++) if (i % 2 === 0) {
-      ctx.fillStyle = '#74c0fc';
-      ctx.fillRect(i * 6.4, -TABLE_H, 6.4, TABLE_H);
-    }
-    ctx.fillStyle = 'rgba(0,0,0,0.06)';
-    ctx.fillRect(0, -3, 38.4, 3);
-  });
+  if (hasImage('stand_table_blue')) {
+    const [sx, sy] = P(SX, SY);
+    drawSprite(ctx, 'stand_table_blue', { x: SX, y: SY, sx, sy, s: 1 });
+  } else {
+    box(ctx, x0, y0, 1.2, 0.9, TABLE_H, 0, '#fffaf0', { top: '#fff4cc' });
+    faceY(ctx, x0, y0 + 0.9, 0, () => {
+      for (let i = 0; i < 6; i++) if (i % 2 === 0) {
+        ctx.fillStyle = '#74c0fc';
+        ctx.fillRect(i * 6.4, -TABLE_H, 6.4, TABLE_H);
+      }
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      ctx.fillRect(0, -3, 38.4, 3);
+    });
+  }
   // a pitcher and cups for the second queue
+  if (hasImage('item_pitcher_full') && hasImage('item_cups_pack')) {
+    // the same pictures as on the main table, moved onto the blue one
+    const [sx, sy] = P(SX, SY);
+    pitcherPicture(ctx, sx - 40, sy - 21.6, Math.max(0, Math.min(1, level)));
+    drawSprite(ctx, 'item_cups_pack', { x: SX, y: SY, sx: sx - 42.2, sy: sy - 22.1, s: 1 });
+    return;
+  }
   const px = SX - 1.6;
   const py = SY - 0.15;
   const liquid = Math.max(0, Math.min(1, level));
@@ -318,7 +353,49 @@ const SPOTS = {
   wide: { c0: [SX - 0.1, SY - 0.85], c1: [SX - 1.35, SY - 0.85], back: [SX - 0.75, SY - 1.5] },
 };
 
-/** Draws the whole stand for the current game state, back to front. */
+/** Things of the stand that stand apart from the table: each is sorted among the people by its own depth. */
+export type StandPart = 'sign' | 'mascot' | 'tv';
+
+/** Where the side parts of the stand stand now (tiles), for depth sorting. */
+export function standSideParts(g: Game): { part: StandPart; x: number; y: number }[] {
+  const up = g.S.upgrades;
+  const wide = g.counters() >= 2;
+  const isTruck = !!g.active().truck;
+  const out: { part: StandPart; x: number; y: number }[] = [];
+  if (up.sign) out.push({ part: 'sign', x: SX - 1.37 + (wide ? (isTruck ? -2.3 : -1.9) : 0), y: SY + 0.45 + (wide ? (isTruck ? 0.5 : -0.2) : 0) });
+  if (up.mascot) out.push({ part: 'mascot', x: SX - 1.55 + (wide ? -0.3 : 0), y: SY + 1.25 + (wide ? 1.0 : 0) });
+  if (up.tv) out.push({ part: 'tv', x: SX + 2.65, y: SY - 0.75 });
+  return out;
+}
+
+/** Draws one side part of the stand (see standSideParts). */
+export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
+  const S = g.S;
+  const br = S.broken;
+  const [sx, sy] = P(SX, SY);
+  const call = (extra: Partial<StandCall> = {}): StandCall => ({ x: SX, y: SY, sx, sy, s: 1, ...extra });
+  const wide = g.counters() >= 2;
+  const isTruck = !!g.active().truck;
+  if (part === 'sign') {
+    // the price sign stands at the side when the second queue needs the space in front
+    shifted(ctx, wide, isTruck ? -2.3 : -1.9, isTruck ? 0.5 : -0.2, () => {
+      drawSprite(ctx, 'stand_sign', call({ price: S.price }));
+      if (hasImage('stand_sign')) {
+        // the picture has a blank board: the game writes the price on it
+        const m = metaFor('stand_sign');
+        text(ctx, String(S.price), sx + (m.dx ?? 0) + SIGN_TEXT.x, sy + (m.dy ?? 0) + SIGN_TEXT.y, 10, '#ffffff', 'center', 900, '#3b2a1c');
+      }
+    });
+  } else if (part === 'mascot') {
+    const hop = hasImage('stand_mascot') && !ENV.reduceMotion ? Math.abs(Math.sin(ENV.t * 4)) * 4 : 0;
+    shifted(ctx, wide, -0.3, 1.0, () => drawSprite(ctx, 'stand_mascot', call({ sy: sy - hop })));
+  } else {
+    drawSprite(ctx, 'stand_tv', call({ on: !!br.tv }));
+    if (br.tv) brokenMark(ctx, SX + 2.6, SY - 0.8, 76);
+  }
+}
+
+/** Draws the stand itself (the table or the truck, the people and everything near the table), back to front. */
 export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const S = g.S;
   const up = S.upgrades;
@@ -327,8 +404,10 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   const br = S.broken;
   const wide = g.counters() >= 2;
   const isTruck = !!g.active().truck;
+  // under a roof the umbrella and the tent stay folded; the truck has its own awning
+  const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
   // the fastest vehicle is parked at the stand; boxes and vehicles make room for a wide stand
-  shifted(ctx, wide, -0.95, 0, () => {
+  shifted(ctx, wide, -2.0, -0.3, () => {
     if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
     else if (up.bike) drawSprite(ctx, 'stand_bike', call());
   });
@@ -358,6 +437,12 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     drawSprite(ctx, 'stand_truck', call({ skin: S.truck.skin, logo: S.truck.logo, label, level: Math.min(1, level), workers }));
   } else {
     drawSprite(ctx, 'stand_chair', call());
+    if (!up.tent && up.umbrella && outdoor) {
+      ctx.save();
+      if (br.umbrella) ctx.globalAlpha = 0.5;
+      shifted(ctx, wide, -0.6, 0, () => drawSprite(ctx, 'stand_umbrella', call()));
+      ctx.restore();
+    }
     const people: { id: string; kind: 'player' | 'helper'; x: number; y: number; serving: boolean; juicing: boolean }[] = [];
     if (!wide) {
       if (helpers > 0) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
@@ -390,53 +475,50 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
       });
     }
 
+    if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
     if (wide) table2(ctx, level);
     drawSprite(ctx, 'stand_table', call());
     if (up.banner) drawSprite(ctx, 'stand_banner', call());
-    const lemons = lemonsTotal(S.stock);
-    drawSprite(ctx, 'item_lemon_pile', call({ lemons: playing ? Math.max(lemons, 3) : lemons }));
-    drawSprite(ctx, up.dispenser ? 'stand_dispenser' : 'item_pitcher', call({ level: Math.min(1, level) }));
-    drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
-    if (up.cash_lock) drawSprite(ctx, 'stand_cashbox', call());
-    else coinJar(ctx, playing ? g.D.sales : 0);
+    // on the table, from the back to the front
+    const lemons = playing ? Math.max(lemonsTotal(S.stock), 3) : lemonsTotal(S.stock);
+    if (lemons > 0 || !hasImage('item_lemon_pile')) drawSprite(ctx, 'item_lemon_pile', call({ lemons }));
+    if (up.dispenser) drawSprite(ctx, 'stand_dispenser', call({ level: Math.min(1, level) }));
+    else if (hasImage('item_pitcher_full')) pitcherPicture(ctx, sx, sy, Math.min(1, level));
+    else drawSprite(ctx, 'item_pitcher', call({ level: Math.min(1, level) }));
     if (up.juicer_lever) drawSprite(ctx, 'stand_juicer_lever', call());
     else if (up.juicer_hand) drawSprite(ctx, 'stand_juicer_hand', call());
-    if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
+    if (up.cash_lock) drawSprite(ctx, 'stand_cashbox', call());
+    else if (hasImage('item_coin_jar')) drawSprite(ctx, 'item_coin_jar', call());
+    else coinJar(ctx, playing ? g.D.sales : 0);
+    drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
     if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
+    if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
   }
-  // the price sign stands at the side when the second queue needs the space in front
-  if (up.sign)
-    shifted(ctx, wide, -1.2, -0.45, () => {
-      drawSprite(ctx, 'stand_sign', call({ price: S.price }));
-      if (hasImage('stand_sign')) {
-        // the picture has a blank board: the game writes the price on it
-        const m = metaFor('stand_sign');
-        text(ctx, String(S.price), sx + (m.dx ?? 0) + SIGN_TEXT.x, sy + (m.dy ?? 0) + SIGN_TEXT.y, 10, '#ffffff', 'center', 900, '#3b2a1c');
-      }
-    });
-  // next to the truck the speaker moves off the bar stools
-  if (up.speaker) shifted(ctx, isTruck, 0.75, 0.55, () => drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker })));
-  if (up.mascot) drawSprite(ctx, 'stand_mascot', call());
-  if (up.tv) drawSprite(ctx, 'stand_tv', call({ on: !!br.tv }));
-  if (playing && g.isSoldOut() && !isTruck) soldOutPlate(ctx);
-  // under a roof the umbrella and the tent stay folded; the truck has its own awning
-  const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
-  if (up.tent && outdoor) drawSprite(ctx, 'stand_tent', call({ on: !!br.tent }));
-  else if (up.umbrella && outdoor) {
+  // the truck carries its speaker on the roof, at the right end (the bar stools take the space in front)
+  if (up.speaker && isTruck) {
+    const [ox, oy] = P(-0.28, -0.08, TRUCK_SPEAKER_Z);
     ctx.save();
-    if (br.umbrella) ctx.globalAlpha = 0.5;
-    drawSprite(ctx, 'stand_umbrella', call());
+    ctx.translate(ox, oy);
+    drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
     ctx.restore();
+  }
+  if (playing && g.isSoldOut() && !isTruck) soldOutPlate(ctx);
+  // the tent covers the whole stand, so it is drawn last (the umbrella is drawn behind the table, above)
+  if (up.tent && outdoor) {
+    // the picture is drawn a little taller than the footprint so the seller's head shows under the roof;
+    // over a big stand it moves left and grows so it covers both tables
+    const big = hasImage('stand_tent') ? (wide ? 1.55 : 1.3) : 1;
+    shifted(ctx, wide && hasImage('stand_tent'), -0.6, 0, () => drawSprite(ctx, 'stand_tent', call({ on: !!br.tent, s: big })));
   }
 
   // broken equipment gets a wrench bubble
-  if (br.speaker) brokenMark(ctx, SX + 1.23 + (isTruck ? 0.75 : 0), SY - 0.42 + (isTruck ? 0.55 : 0), 44);
+  if (br.speaker) brokenMark(ctx, SX + 1.23 + (isTruck ? -0.28 : 0), SY - 0.42 + (isTruck ? -0.08 : 0), 44 + (isTruck ? TRUCK_SPEAKER_Z : 0));
   if (br.umbrella && !up.tent && outdoor) brokenMark(ctx, SX + 0.15, SY - 0.25, 108);
   if (br.tent && outdoor) brokenMark(ctx, SX, SY - 0.35, 128);
   if (br.dispenser && !isTruck) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
   if ((br.juicer_hand || br.juicer_lever) && !isTruck) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
-  const vx = wide ? -0.95 : 0;
-  if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75 + vx, SY - 0.9, 40);
-  if (br.scooter) brokenMark(ctx, SX - 1.6 + vx, SY - 0.7, 44);
-  if (br.tv) brokenMark(ctx, SX + 2.6, SY - 0.8, 76);
+  const vx = wide ? -2.0 : 0;
+  const vy = wide ? -0.3 : 0;
+  if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75 + vx, SY - 0.9 + vy, 40);
+  if (br.scooter) brokenMark(ctx, SX - 1.6 + vx, SY - 0.7 + vy, 44);
 }

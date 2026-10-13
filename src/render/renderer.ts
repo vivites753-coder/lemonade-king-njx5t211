@@ -17,7 +17,7 @@ import { drawCharacter, drawCup, pedSpriteId } from './proc/people';
 import { drawCar } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawCritter } from './proc/critters';
-import { drawStand } from './proc/stand';
+import { drawStand, drawStandPart, standSideParts, type StandPart } from './proc/stand';
 import './proc/truck';
 import './proc/buildings';
 
@@ -25,7 +25,7 @@ import './proc/buildings';
 const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
 const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
 
-type Kind = 0 | 1 | 2 | 3 | 4 | 5; // decor, ped, car, stand, thief, critter
+type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6; // decor, ped, car, stand, thief, critter, a side part of the stand
 interface Item {
   d: number;
   k: Kind;
@@ -218,6 +218,8 @@ export class Renderer {
     for (const p of g.street.peds) items.push({ d: p.x + p.y, k: 1, o: p });
     for (const c of g.street.cars) items.push({ d: c.x + c.y + 0.3, k: 2, o: c });
     items.push({ d: CONFIG.STAND.x + CONFIG.STAND.y + 0.05, k: 3, o: null });
+    // the sign, the mascot and the TV stand apart from the table: each one is sorted by its own depth
+    for (const s of standSideParts(g)) items.push({ d: s.x + s.y, k: 6, o: s.part });
     if (g.street.thief) items.push({ d: g.street.thief.x + g.street.thief.y, k: 4, o: g.street.thief });
     for (const c of g.critters.list) items.push({ d: c.x + c.y + (c.kind === 'splash' ? 0.3 : 0), k: 5, o: c });
     this.tapTargets = [];
@@ -244,6 +246,9 @@ export class Renderer {
         }
         case 3:
           drawStand(ctx, g, g.phase === 'sell');
+          break;
+        case 6:
+          drawStandPart(ctx, g, it.o as StandPart);
           break;
         case 4:
           this.drawThief(ctx);

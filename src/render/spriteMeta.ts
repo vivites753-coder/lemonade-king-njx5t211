@@ -43,14 +43,36 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   bld_fountain: { h: 112, anchor: [0.5, 0.71] },
   bld_lifeguard: { h: 135, anchor: [0.5, 0.84] },
   // stand layers: every picture sits at its own spot around the table (dx, dy from the stand centre)
+  // behind the table
   stand_cooler: { h: 26, anchor: [0.5, 0.9], dx: -24, dy: -18 },
-  stand_bike: { h: 44, anchor: [0.5, 0.9], dx: -30, dy: -42 },
+  stand_bike: { h: 44, anchor: [0.5, 0.9], dx: -18, dy: -39 },
+  stand_scooter: { h: 36, anchor: [0.5, 0.9], dx: -30, dy: -38 },
+  stand_toolkit: { h: 17, anchor: [0.5, 0.85], dx: -1, dy: -27 },
+  stand_chair: { h: 34, anchor: [0.5, 0.83], dx: 58, dy: -5 },
+  stand_umbrella: { h: 136, anchor: [0.5, 0.96], dx: 27, dy: 9 },
+  // the table and the second (blue) table of the big stand
+  stand_table_blue: { h: 66, anchor: [0.5, 0.66], dx: -45, dy: -22 },
+  // on the table, back to front
+  item_lemon_pile: { h: 16, anchor: [0.5, 0.8], dx: -24, dy: -30 },
+  item_pitcher_empty: { h: 30, anchor: [0.5, 0.9], dx: -6, dy: -25 },
+  item_pitcher_full: { h: 30, anchor: [0.5, 0.9], dx: -6, dy: -25 },
+  stand_dispenser: { h: 34, anchor: [0.5, 0.9], dx: -6, dy: -26 },
+  stand_juicer_hand: { h: 15, anchor: [0.5, 0.85], dx: 17, dy: -20 },
+  stand_cashbox: { h: 13, anchor: [0.5, 0.85], dx: 29, dy: -17 },
+  item_coin_jar: { h: 15, anchor: [0.5, 0.9], dx: 29, dy: -17 },
+  item_cups_pack: { h: 18, anchor: [0.5, 0.9], dx: 2, dy: -16 },
+  item_cups_branded: { h: 18, anchor: [0.5, 0.9], dx: 2, dy: -16 },
+  stand_flyers: { h: 8, anchor: [0.5, 0.8], dx: 7, dy: -9 },
+  // in front of the stand
+  stand_mascot: { h: 44, anchor: [0.5, 0.95], dx: -90, dy: -5 },
+  stand_tent: { h: 139, anchor: [0.5, 0.74], dx: 11, dy: -6 },
   stand_speaker: { h: 31, anchor: [0.5, 0.92], dx: 50, dy: 9 },
   stand_tv: { h: 42, anchor: [0.5, 0.92], dx: 108, dy: 30 },
   stand_sign: { h: 40, anchor: [0.5, 0.92], dx: -50, dy: -2 },
-  item_cookies: { h: 13, anchor: [0.5, 0.85], dx: 22, dy: -4 },
+  item_cookies: { h: 13, anchor: [0.5, 0.85], dx: 21, dy: -10 },
   stand_juicer_lever: { h: 30, anchor: [0.5, 0.9], dx: 17, dy: -19 },
-  stand_table: { h: 70, anchor: [0.5, 0.7] },
+  // measured on the picture: the long side is 1.6 tiles, the top 22 px above the floor
+  stand_table: { h: 76, anchor: [0.5, 0.66] },
   // indoor places: the wall image covers both back walls; its anchor is the back corner on the floor
   wall_mall: { h: 311, anchor: [0.5, 0.383] },
   wall_station: { h: 311, anchor: [0.5, 0.383] },
