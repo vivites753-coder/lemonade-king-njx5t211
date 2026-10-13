@@ -1,6 +1,6 @@
 """Cuts ONE large object out of a flat-coloured background (white, light gray or magenta) into a transparent PNG.
 
-Usage: python tools/cut_single.py <image> <out.png> [max_height=900]
+Usage: python tools/cut_single.py <image> <out.png> [max_height=900] [keep_ratio=0.02]
 
 The background colour is taken from the image border. Soft ground shadows that are only slightly darker than the
 background are treated as background. Edge colours are replaced by the colour of the solid pixels next to them,
@@ -13,6 +13,7 @@ from PIL import Image
 
 src, out = sys.argv[1], sys.argv[2]
 max_h = int(sys.argv[3]) if len(sys.argv) > 3 else 900
+keep_ratio = float(sys.argv[4]) if len(sys.argv) > 4 else 0.02  # parts smaller than this share of the main one are dropped
 
 im = np.asarray(Image.open(src).convert('RGB')).astype(np.float64)
 H, W, _ = im.shape
@@ -34,10 +35,16 @@ def blur(a, r):
 d = np.abs(im - bg).max(axis=2)
 lo, hi = 8.0, 28.0
 alpha = np.clip((d - lo) / (hi - lo), 0, 1)
+MAGENTA = bg[1] < 110 and bg[0] > 170 and bg[2] > 170
+if MAGENTA:
+    # magenta background: its shadows are darker magenta, so measure "how magenta" instead of the distance
+    m = np.minimum(im[..., 0], im[..., 2]) - im[..., 1]
+    m_bg = float(min(bg[0], bg[2]) - bg[1])
+    alpha = np.clip((m_bg * 0.8 - m) / (m_bg * 0.5), 0, 1)
 # A soft ground shadow is light and colourless. Only such pixels that connect to the image border are background:
 # a light gray part INSIDE the object (a chimney cap, a highlight) is not reached and stays.
 chroma = im.max(axis=2) - im.min(axis=2)
-lightlow = (im.max(axis=2) > 205) & (chroma < 14)
+lightlow = (im.max(axis=2) > 205) & (chroma < 14) & (not MAGENTA)
 f0 = 3
 h0, w0 = (H + f0 - 1) // f0, (W + f0 - 1) // f0
 pl = np.zeros((h0 * f0, w0 * f0), dtype=bool)
@@ -95,7 +102,7 @@ for y0 in range(hh):
 big = max(sizes.values())
 keep = np.zeros(small.shape, dtype=bool)
 for k, v in sizes.items():
-    if v >= big * 0.02:
+    if v >= big * keep_ratio:
         keep |= lab == k
 g = keep.copy()
 for _ in range(3):

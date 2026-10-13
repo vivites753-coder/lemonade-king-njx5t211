@@ -83,7 +83,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     ],
     decor: [
       // the door (left part of the front wall) stands at the top of the path in column 2
-      { id: 'bld_house_yard', x: 1.25, y: 0.6, w: 3, d: 2.4, back: true },
+      { id: 'bld_house_yard', x: 0.875, y: 0.975, w: 3, d: 2.4, back: true },
       { id: 'prop_tree_a', x: 9.3, y: 1.3, s: 1.1 },
       { id: 'prop_tree_b', x: 11.0, y: 3.0, s: 0.9 },
       { id: 'prop_tree_c', x: 7.4, y: 0.7, s: 0.8 },
