@@ -6,10 +6,10 @@ import type { SpriteMeta } from './assets';
  * object's position ([0.5, 1] = bottom centre). Tweak these when real art arrives.
  */
 export const SPRITE_META: Record<string, SpriteMeta> = {
-  prop_tree_a: { h: 80, anchor: [0.5, 0.918] },
-  prop_tree_b: { h: 72, anchor: [0.5, 0.919] },
-  prop_tree_c: { h: 66, anchor: [0.5, 0.918] },
-  prop_palm: { h: 82, anchor: [0.5, 0.929] },
+  prop_tree_a: { h: 82, anchor: [0.5, 0.894] },
+  prop_tree_b: { h: 77, anchor: [0.5, 0.864] },
+  prop_tree_c: { h: 67, anchor: [0.5, 0.900] },
+  prop_palm: { h: 88, anchor: [0.5, 0.868] },
   prop_bush: { h: 30, anchor: [0.5, 0.85] },
   prop_flowers: { h: 22, anchor: [0.5, 0.8] },
   prop_bench: { h: 34, anchor: [0.5, 0.8] },

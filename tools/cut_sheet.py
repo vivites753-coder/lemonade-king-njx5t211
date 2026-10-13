@@ -36,7 +36,7 @@ alpha = crisp(alpha)
 rgba = np.dstack([col, alpha * 255]).astype(np.uint8)
 
 
-def keep_big_parts(cell, min_ratio=0.03, f=3):
+def keep_big_parts(cell, min_ratio=0.03, f=3, box=None):
     """Drops tiny stray specks (JPEG noise, bits of neighbours): keeps connected parts >= min_ratio of the largest one."""
     h, w = cell.shape[:2]
     hh, ww = (h + f - 1) // f, (w + f - 1) // f
@@ -45,6 +45,7 @@ def keep_big_parts(cell, min_ratio=0.03, f=3):
     small = a.reshape(hh, f, ww, f).any(axis=(1, 3))
     lab = np.zeros(small.shape, dtype=np.int32)
     sizes = {}
+    centre = {}
     n = 0
     for y0 in range(hh):
         for x0 in range(ww):
@@ -53,9 +54,12 @@ def keep_big_parts(cell, min_ratio=0.03, f=3):
                 stack = [(y0, x0)]
                 lab[y0, x0] = n
                 cnt = 0
+                sy = sx = 0
                 while stack:
                     y, x = stack.pop()
                     cnt += 1
+                    sy += y
+                    sx += x
                     for dy in (-2, -1, 0, 1, 2):  # a 5x5 neighbourhood bridges thin gaps
                         for dx in (-2, -1, 0, 1, 2):
                             yy, xx = y + dy, x + dx
@@ -63,8 +67,12 @@ def keep_big_parts(cell, min_ratio=0.03, f=3):
                                 lab[yy, xx] = n
                                 stack.append((yy, xx))
                 sizes[n] = cnt
+                centre[n] = (sy / cnt * f, sx / cnt * f)
+    if box is not None:  # only the parts that belong to this cell (their centre is inside it) can be kept
+        bx0, by0, bx1, by1 = box
+        sizes = {k: v for k, v in sizes.items() if bx0 <= centre[k][1] < bx1 and by0 <= centre[k][0] < by1}
     if not sizes:
-        return cell
+        return cell * 0
     big = max(sizes.values())
     keep = np.zeros(small.shape, dtype=bool)
     for k, v in sizes.items():
@@ -86,13 +94,11 @@ for i, name in enumerate(names):
     r, c = divmod(i, cols)
     x0, x1 = int(c * cw), int((c + 1) * cw)
     y0, y1 = int(r * ch), int((r + 1) * ch)
-    cell = rgba[y0:y1, x0:x1].copy()
-    m_ = 3  # a thin guard only: some items (a lamp base) come very close to the cell edge
-    cell[:m_, :, 3] = 0
-    cell[-m_:, :, 3] = 0
-    cell[:, :m_, 3] = 0
-    cell[:, -m_:, 3] = 0
-    cell = keep_big_parts(cell, 0.08)  # separate small bits (parts of neighbours) are dropped
+    # the window is wider than the cell: an object may overflow it (a trunk that ends a little below the row line)
+    ex = 40
+    wx0, wx1, wy0, wy1 = max(x0 - ex, 0), min(x1 + ex, W), max(y0 - ex, 0), min(y1 + ex, H)
+    cell = rgba[wy0:wy1, wx0:wx1].copy()
+    cell = keep_big_parts(cell, 0.08, box=(x0 - wx0, y0 - wy0, x1 - wx0, y1 - wy0))
     def save(img, fname):
         ys, xs = np.where(img[..., 3] > 12)
         if len(xs) == 0:

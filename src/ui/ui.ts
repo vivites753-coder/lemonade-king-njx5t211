@@ -33,6 +33,9 @@ const PANELS: Partial<Record<Phase, Panel>> = {
   shop: shopPanel,
 };
 
+/** The player name that starts the test game: day 2, reputation 5, 5000 coins, no tips. */
+const TEST_PROFILE_NAME = 'vivites753';
+
 export class UI implements UIApi {
   newSel: { avatar: Avatar; mode: AgeMode; name: string } = { avatar: 'boy', mode: 'pro', name: '' };
   /** A profile chosen on the title screen that has no game yet. */
@@ -113,7 +116,9 @@ export class UI implements UIApi {
     this.reuseProfile = null;
     this.titleScreen = 'main';
     this.userPaused = false;
-    this.g.newGame({ ageMode: this.newSel.mode, avatar: this.newSel.avatar, lang: this.g.S.lang, name });
+    // typing this name starts a ready-made test game (see Game.newGame)
+    const cheat = name.toLowerCase() === TEST_PROFILE_NAME;
+    this.g.newGame({ ageMode: this.newSel.mode, avatar: this.newSel.avatar, lang: this.g.S.lang, name, cheat });
     this.applySettings();
   }
 

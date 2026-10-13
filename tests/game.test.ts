@@ -163,3 +163,18 @@ describe('day loop', () => {
     expect(withSpeaker).toBeGreaterThan(CONFIG.LANES[1].y - CONFIG.STAND.y - CONFIG.LANE_JITTER);
   });
 });
+
+describe('test profile', () => {
+  it('a cheat game starts on day 2 with reputation 5, 5000 coins and no tips', () => {
+    const g = new Game();
+    const tips: string[] = [];
+    g.bus.on('tip', (e) => tips.push(e.key));
+    g.newGame({ ageMode: 'pro', avatar: 'boy', lang: 'uk', seed: 7, name: 'vivites753', cheat: true });
+    expect(g.S.day).toBe(2);
+    expect(g.S.rep).toBe(5);
+    expect(g.S.coins).toBe(5000);
+    expect(tips).toEqual([]);
+    g.chooseLocation('mall');
+    expect(g.S.location).toBe('mall');
+  });
+});

@@ -210,10 +210,21 @@ export class Game {
 
   // ---------------------------------------------------------------- setup / save
 
-  newGame(o: { ageMode: AgeMode; avatar: Avatar; lang: Lang; seed?: number; name?: string }): void {
+  /**
+   * `cheat`: a ready-made profile for testing: day 2 (no guided first day, every place is open), reputation 5,
+   * 5000 coins and no tutorial tips.
+   */
+  newGame(o: { ageMode: AgeMode; avatar: Avatar; lang: Lang; seed?: number; name?: string; cheat?: boolean }): void {
     const seed = o.seed ?? (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
     this.setRng(seed);
     this.S = newGameState(seed, o);
+    if (o.cheat) {
+      this.S.day = 2;
+      this.S.rep = 5;
+      this.S.bestRep = 5;
+      this.S.coins = 5000;
+      this.S.noTips = true;
+    }
     this.speed = 1;
     this.paused = false;
     this.startMorning(0, []);
@@ -261,7 +272,7 @@ export class Game {
 
   /** Shows a Lemi tip once per game and unlocks its glossary cards. */
   tip(key: string): void {
-    if (this.S.seenTips[key]) return;
+    if (this.S.noTips || this.S.seenTips[key]) return;
     this.S.seenTips[key] = true;
     for (const g of TIP_GLOSSARY[key] ?? []) if (!this.S.glossary.includes(g)) this.S.glossary.push(g);
     this.bus.emit('tip', { key });

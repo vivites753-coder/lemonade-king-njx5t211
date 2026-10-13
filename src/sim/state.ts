@@ -75,6 +75,8 @@ export interface GameState {
   recipe: Recipe;
   speakerOn: boolean;
   seenTips: Record<string, true>;
+  /** The player asked for no tutorial tips at all (the test profile). */
+  noTips?: boolean;
   glossary: string[];
   ageMode: AgeMode;
   avatar: Avatar;

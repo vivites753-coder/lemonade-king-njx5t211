@@ -198,9 +198,11 @@ def to_diamond(tex):
     ImageDraw.Draw(mask).polygon(
         [(W / 2, H / 2 - H / 2 * k), (W / 2 + W / 2 * k, H / 2), (W / 2, H / 2 + H / 2 * k), (W / 2 - W / 2 * k, H / 2)], fill=255
     )
-    out = rgb.convert('RGBA')
-    out.putalpha(mask)
-    return out.resize((TW, TH), Image.LANCZOS)
+    # colour and transparency are shrunk separately: shrinking them together lets the Lanczos filter overshoot on the
+    # semi-transparent edge pixels, which lie exactly on the joint with the neighbour and showed as a bright line
+    out = rgb.resize((TW, TH), Image.LANCZOS).convert('RGBA')
+    out.putalpha(mask.resize((TW, TH), Image.BOX))
+    return out
 
 
 def main():
