@@ -70,7 +70,7 @@ function legShare(id: string): number {
  *  - the upper body bobs, squashes on every foot contact and stretches in the air;
  *  - the whole figure sways a little from side to side, and the shadow shrinks while the body is up;
  *  - standing still, the figure breathes.
- * Facing left is a mirror image. Cups and umbrellas are drawn on top.
+ * The other two directions are mirror images. Cups and umbrellas are drawn on top.
  */
 function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, sy: number, o: PersonOpts): number {
   const m = metaFor(id);
@@ -82,6 +82,11 @@ function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, s
   const ax = W * m.anchor[0];
   const ay = H * m.anchor[1];
   const dir = o.dirX < 0 ? -1 : 1;
+  // The pictures face lower-RIGHT (front) and upper-LEFT (back: the same figure turned around).
+  // So a back view is mirrored when walking to the right, a front view when walking to the left.
+  const back = id.endsWith('_back');
+  const mirror = back ? dir > 0 : dir < 0;
+  const fwd = back ? -1 : 1; // "forward" in picture coordinates
   const motion = !ENV.reduceMotion;
   const walking = o.moving && motion;
   const s1 = walking ? Math.sin(o.anim) : 0;
@@ -95,7 +100,7 @@ function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, s
   ctx.save();
   ctx.translate(sx, sy);
   ctx.rotate(s1 * 0.05);
-  if (dir < 0) ctx.scale(-1, 1);
+  if (mirror) ctx.scale(-1, 1);
 
   const legF = legShare(id);
   const feetSrc = ih * m.anchor[1];
@@ -113,7 +118,7 @@ function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, s
       [midSrc, iw, -s1],
     ] as const) {
       const up = Math.max(0, ph) * lift;
-      const dx = Math.max(0, ph) * stride;
+      const dx = Math.max(0, ph) * stride * fwd;
       ctx.drawImage(img, x0, cutSrc, x1 - x0, ih - cutSrc, (x0 / iw) * W - ax + dx, toDestY(cutSrc) - up, ((x1 - x0) / iw) * W, ((ih - cutSrc) / ih) * H);
     }
     // upper body over the legs (1 px of overlap), squashed and stretched around the cut line
