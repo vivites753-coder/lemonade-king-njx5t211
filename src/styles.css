@@ -3246,3 +3246,32 @@ body.reduce-motion * {
     margin-top: 14px;
   }
 }
+
+/* ---------- pictures instead of emoji in the interface ---------- */
+.ico-img {
+  display: inline-block;
+  height: 1.2em;
+  width: auto;
+  vertical-align: -0.28em;
+  pointer-events: none;
+  user-select: none;
+}
+.big-ico .ico-img,
+.ev-ico .ico-img {
+  height: 1.05em;
+  vertical-align: -0.12em;
+}
+.stars .ico-img {
+  height: 1.05em;
+  vertical-align: -0.2em;
+  margin-right: 1px;
+}
+.coin-art .coin {
+  background: var(--coin-img) center / contain no-repeat;
+  box-shadow: none;
+  border-radius: 0;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.26em;
+  margin-right: 0.15em;
+}

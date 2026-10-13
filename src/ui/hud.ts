@@ -2,10 +2,9 @@
 import { CONFIG } from '../core/config';
 import type { Phase } from '../core/types';
 import { LOCATIONS } from '../data/locations';
-import { WEATHER } from '../data/weather';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { fmtHour, round1, stars } from './dom';
+import { fmtHour, ico, round1, stars, weatherIco } from './dom';
 
 export class Hud {
   private els: Record<string, HTMLElement> = {};
@@ -37,8 +36,8 @@ export class Hud {
     this.root.innerHTML = `
       <div class="hud-top" data-el="top">
         <span class="chip coins" title="coins"><i class="coin"></i><b data-el="coins"></b></span>
-        <span class="chip">📅 <b data-el="day"></b></span>
-        <span class="chip">🕐 <b data-el="clock"></b></span>
+        <span class="chip">${ico('day', '📅')} <b data-el="day"></b></span>
+        <span class="chip">${ico('clock', '🕐')} <b data-el="clock"></b></span>
         <span class="chip" data-el="weather"></span>
         <span class="chip" data-el="loc"></span>
         <button class="chip chip-btn" data-hud="roadmap" data-el="rep" aria-label="${t('roadmap.title')}" title="${t('roadmap.title')}"></button>
@@ -117,9 +116,9 @@ export class Hud {
     this.set('day', t('hud.day', { n: S.day }));
     this.set('clock', fmtHour(D.hour));
     // .lbl parts are hidden on small screens, .sm parts are shown only there
-    this.set('weather', `${WEATHER[D.weather].icon}<span class="lbl"> ${t(`weather.${D.weather}`)}</span>`);
+    this.set('weather', `${weatherIco(D.weather)}<span class="lbl"> ${t(`weather.${D.weather}`)}</span>`);
     this.set('loc', `${LOCATIONS[S.location].icon}<span class="lbl"> ${t(`loc.${S.location}.name`)}</span>`);
-    this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">⭐</span> ${S.rep.toFixed(1)}`);
+    this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">${ico('star_full', '⭐')}</span> ${S.rep.toFixed(1)}`);
     this.set('goal', `🏁 ${t('hud.goal', { coins: S.coins, goal: CONFIG.GOAL_COINS })}`);
     const fill = `${Math.round(Math.min(1, S.coins / CONFIG.GOAL_COINS) * 100)}%`;
     if (this.els.goalfill.style.width !== fill) this.els.goalfill.style.width = fill;

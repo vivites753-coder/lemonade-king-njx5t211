@@ -1,4 +1,6 @@
 // Small HTML helpers for the DOM overlay UI.
+import type { WeatherId } from '../core/types';
+import { WEATHER } from '../data/weather';
 import { t } from '../i18n';
 export { fmtHour } from '../sim/lessons';
 
@@ -20,9 +22,45 @@ export function signedCoin(n: number): string {
 }
 
 /** Reputation as stars: a star lights up only when its level is reached (1.8 shows one star, 2.0 shows two). */
+const iconUrls = import.meta.glob('/assets/ui/ui_*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+/** True when the picture assets/ui/ui_<id>.png has been drawn. */
+export function hasIco(id: string): boolean {
+  return `/assets/ui/ui_${id}.png` in iconUrls;
+}
+
+/** An interface icon: the picture assets/ui/ui_<id>.png, or the emoji when it has not been drawn yet. */
+export function ico(id: string, fallback: string, cls = ''): string {
+  const u = iconUrls[`/assets/ui/ui_${id}.png`];
+  return u ? `<img class="ico-img ${cls}" src="${u}" alt="" draggable="false">` : fallback;
+}
+
+/** The picture of the weather (the emoji from the data when there is none). */
+export function weatherIco(id: WeatherId): string {
+  return ico(`w_${id}`, WEATHER[id].icon);
+}
+
+// the coin of the money chips is drawn by CSS unless the picture exists
+{
+  const u = iconUrls['/assets/ui/ui_coin.png'];
+  if (u && typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--coin-img', `url("${u}")`);
+    document.documentElement.classList.add('coin-art');
+  }
+}
+
+/** Five stars for a reputation; a half star when the fraction is at least a half. */
 export function stars(rep: number): string {
   let s = '<span class="stars">';
-  for (let i = 1; i <= 5; i++) s += rep >= i - 1e-9 ? '★' : '<span class="off">★</span>';
+  for (let i = 1; i <= 5; i++) {
+    const full = rep >= i - 1e-9;
+    const half = !full && rep >= i - 0.5 - 1e-9;
+    s += hasIco('star_full')
+      ? ico(full ? 'star_full' : half ? 'star_half' : 'star_empty', '')
+      : full
+        ? '★'
+        : '<span class="off">★</span>';
+  }
   return s + '</span>';
 }
 

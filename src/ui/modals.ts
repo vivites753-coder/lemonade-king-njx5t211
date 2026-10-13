@@ -4,7 +4,7 @@ import { GLOSSARY_IDS } from '../data/glossary';
 import { LANGS, asLang, t } from '../i18n';
 import type { Lang } from '../core/types';
 import type { Game } from '../sim/game';
-import { esc, toggle } from './dom';
+import { esc, ico, toggle } from './dom';
 import type { ModalSpec } from './overlays';
 
 export function confirmModal(text: string, onYes: () => void): ModalSpec {
@@ -40,7 +40,7 @@ export function gateModal(onPass: () => void): ModalSpec {
   const answer = a * b - c;
   let wrong = false;
   return {
-    render: () => `<h2>🔒 ${t('gate.title')}</h2>
+    render: () => `<h2>${ico('lock', '🔒')} ${t('gate.title')}</h2>
       <p>${t('gate.q', { q: `${a} × ${b} − ${c} = ?` })}</p>
       <input id="gate-input" class="input-num" inputmode="numeric" autocomplete="off" />
       ${wrong ? `<div class="warn-box">${t('gate.wrong')}</div>` : ''}
@@ -182,7 +182,7 @@ export function glossaryModal(g: Game): ModalSpec {
 
 export function stageModal(g: Game): ModalSpec {
   return {
-    render: () => `<div class="ev-ico">👑🍋🎉</div>
+    render: () => `<div class="ev-ico">${ico('crown', '👑')}🍋${ico('trophy', '🎉')}</div>
       <h2 class="ev-title">${t('stage.title')}</h2>
       <p>${t('stage.text', { coins: g.S.coins, stars: g.S.rep.toFixed(1) })}</p>
       <p>${EDITION === 'demo' ? t('stage.demo') : t('stage.full')}</p>

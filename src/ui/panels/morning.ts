@@ -1,11 +1,10 @@
 import type { EquipId, LocationId } from '../../core/types';
 import { LOC_EVENTS } from '../../data/events';
 import { LOCATIONS, LOCATION_IDS } from '../../data/locations';
-import { WEATHER } from '../../data/weather';
 import { t } from '../../i18n';
 import { lemonsTotal } from '../../sim/state';
 import type { Game } from '../../sim/game';
-import { coin, dots, fmtDur, fmtHour } from '../dom';
+import { coin, dots, fmtDur, fmtHour, ico, weatherIco } from '../dom';
 import type { Panel } from './types';
 
 /** Cards of all places; a tap sends `loc:<id>`. */
@@ -20,7 +19,7 @@ export function locationCards(g: Game): string {
       const travel = g.travelHours(id);
       const ev = repLock ? undefined : LOC_EVENTS.find((e) => e.loc === id && D.events[e.id]);
       return `<button class="loc${S.location === id ? ' sel' : ''}${repLock ? ' rep-lock' : ''}" data-act="loc:${id}" ${locked ? 'disabled' : ''}>
-        <span class="loc-ico">${repLock ? '🔒' : l.icon}</span>
+        <span class="loc-ico">${repLock ? ico('lock', '🔒') : l.icon}</span>
         <span class="grow">
           <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}
           ${repLock ? `<span class="loc-lock">⭐ ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}
@@ -44,7 +43,6 @@ export const morningPanel: Panel = {
   render(g) {
     const S = g.S;
     const D = g.D;
-    const w = WEATHER[D.forecast];
     const st = S.stock;
     const hasStock = lemonsTotal(st) + st.water + st.sugar + st.cups > 0;
     const locCards = locationCards(g);
@@ -53,7 +51,7 @@ export const morningPanel: Panel = {
       <div class="panel-head"><h2>☀️ ${t('morning.title', { n: S.day })}</h2></div>
       <div class="panel-body">
         <div class="card row">
-          <span class="big-ico">${w.icon}</span>
+          <span class="big-ico">${weatherIco(D.forecast)}</span>
           <span class="grow"><b>${t('morning.forecast', { w: t(`weather.${D.forecast}`) })}</b><br><small class="muted">${t('morning.forecastNote')}</small></span>
         </div>
         <div class="card row"><span class="big-ico">📰</span><span class="grow"><b>${t('news.title')}</b><br>${t(D.newsKey)}</span></div>

@@ -1,7 +1,7 @@
 import { CONFIG } from '../../core/config';
 import { LOCATIONS } from '../../data/locations';
 import { t } from '../../i18n';
-import { coin, lemiFace, signedCoin, stars } from '../dom';
+import { coin, ico, lemiFace, signedCoin, stars } from '../dom';
 import type { Panel } from './types';
 
 function fbar(label: string, n: number, max: number): string {
@@ -89,7 +89,7 @@ export const reportPanel: Panel = {
         ${r.spoilTomorrow ? `<div class="warn-box">⚠️ ${t('report.spoilTomorrow', { n: r.spoilTomorrow })}</div>` : ''}
         <div class="card row"><span class="grow"><b>⭐ ${t('report.rep')}</b><br>${stars(r.repEnd)} ${r.repEnd.toFixed(1)}
           <button class="link-btn" data-act="roadmap">🗺️ ${t('roadmap.title')}</button></span>
-          <b class="${r.repEnd >= r.repStart ? 'pos' : 'neg'}">${r.repEnd >= r.repStart ? '▲' : '▼'} ${Math.abs(r.repEnd - r.repStart).toFixed(2)}</b></div>
+          <b class="${r.repEnd >= r.repStart ? 'pos' : 'neg'}">${r.repEnd >= r.repStart ? ico('profit_up', '▲') : ico('profit_down', '▼')} ${Math.abs(r.repEnd - r.repStart).toFixed(2)}</b></div>
         ${r.stockValue ? `<div class="note">📦 ${t('report.stock', { n: r.stockValue })}</div>` : ''}
         ${goalHtml(g.S.coins, g.S.rep)}
       </div>
