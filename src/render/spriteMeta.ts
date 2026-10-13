@@ -45,7 +45,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   // stand layers: every picture sits at its own spot around the table (dx, dy from the stand centre)
   // behind the table
   stand_cooler: { h: 26, anchor: [0.5, 0.9], dx: -24, dy: -18 },
-  stand_bike: { h: 44, anchor: [0.5, 0.9], dx: -18, dy: -39 },
+  stand_bike: { h: 44, anchor: [0.5, 0.9], dx: 82, dy: 10 },
   stand_scooter: { h: 38, anchor: [0.5, 0.9], dx: 80, dy: 8 },
   stand_toolkit: { h: 17, anchor: [0.5, 0.85], dx: -1, dy: -27 },
   stand_chair: { h: 34, anchor: [0.5, 0.83], dx: 58, dy: -5 },

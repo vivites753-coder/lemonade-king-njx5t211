@@ -407,9 +407,9 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   // under a roof the umbrella and the tent stay folded; the truck has its own awning
   const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
   // the fastest vehicle is parked at the stand; boxes and vehicles make room for a wide stand
-  // the scooter is parked on the right of the table, the bike behind it on the left
+  // the fastest vehicle is parked on the right of the table (on the left it would hang over the house)
   if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
-  else if (up.bike) shifted(ctx, wide, -2.0, -0.3, () => drawSprite(ctx, 'stand_bike', call()));
+  else if (up.bike) drawSprite(ctx, 'stand_bike', call());
   shifted(ctx, wide, -0.35, -1.0, () => {
     if (up.toolkit) drawSprite(ctx, 'stand_toolkit', call());
     if (up.cooler) drawSprite(ctx, 'stand_cooler', call());
@@ -515,8 +515,6 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (br.tent && outdoor) brokenMark(ctx, SX, SY - 0.35, 128);
   if (br.dispenser && !isTruck) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
   if ((br.juicer_hand || br.juicer_lever) && !isTruck) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
-  const vx = wide ? -2.0 : 0;
-  const vy = wide ? -0.3 : 0;
-  if (br.bike && !up.scooter) brokenMark(ctx, SX - 1.75 + vx, SY - 0.9 + vy, 40);
+  if (br.bike && !up.scooter) brokenMark(ctx, SX + 1.4, SY - 1.0, 40);
   if (br.scooter) brokenMark(ctx, SX + 1.4, SY - 1.0, 44);
 }
