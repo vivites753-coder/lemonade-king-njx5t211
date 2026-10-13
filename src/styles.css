@@ -2582,6 +2582,7 @@ body.reduce-motion * {
   text-align: left;
   cursor: grab;
   touch-action: none;
+  z-index: 5;
 }
 .k-item:disabled {
   cursor: not-allowed;
@@ -2909,9 +2910,8 @@ body.reduce-motion * {
   width: 900px;
   height: 672px;
   z-index: 3;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
+  /* a layer over the whole scene: it must never catch taps or drops (the shelf and the juicer lie under it) */
+  pointer-events: none;
 }
 .k-pj {
   position: absolute;

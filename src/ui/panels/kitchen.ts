@@ -28,6 +28,9 @@ const FILL_PER_SEC = 0.65;
 
 let holdRaf = 0;
 let cleanup: (() => void) | null = null;
+/** Stops a drag or a mixer hold that is still going (the kitchen closes). */
+let abortGesture: (() => void) | null = null;
+const BUSY_KEYS = ['busylemon', 'busywater', 'busysugar'];
 
 function q<T extends HTMLElement = HTMLElement>(el: HTMLElement, sel: string): T {
   return el.querySelector(sel) as T;
@@ -164,6 +167,10 @@ function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): voi
       delete el.dataset[busyKey];
       apply();
     };
+    anim.oncancel = () => {
+      f.remove();
+      delete el.dataset[busyKey];
+    };
     return;
   }
   // bottle / sack: its centre goes above the jug mouth, a bit to the left, so that the neck points into the jug
@@ -190,6 +197,7 @@ function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): voi
     f.remove();
     delete el.dataset[busyKey];
   };
+  anim.oncancel = anim.onfinish;
 }
 
 function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
@@ -243,11 +251,24 @@ function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HT
       over?.classList.add('over');
     }
   };
-  const up = (ev: PointerEvent) => {
+  const stop = () => {
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', up);
     window.removeEventListener('pointercancel', up);
     over?.classList.remove('over');
+    if (abortGesture === stopAll) abortGesture = null;
+  };
+  const stopAll = () => {
+    stop();
+    ghost?.remove();
+    ghost = null;
+  };
+  const up = (ev: PointerEvent) => {
+    stop();
+    if (ev.type === 'pointercancel') {
+      ghost?.remove();
+      return;
+    }
     if (!ghost) {
       // a simple tap adds the ingredient where it belongs
       addItem(g, ui, el, item);
@@ -264,6 +285,8 @@ function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HT
     if (item !== 'lemon' && target.dataset.drop !== 'jug') return;
     addItem(g, ui, el, item);
   };
+  abortGesture?.();
+  abortGesture = stopAll;
   window.addEventListener('pointermove', move);
   window.addEventListener('pointerup', up);
   window.addEventListener('pointercancel', up);
@@ -314,15 +337,17 @@ function startHold(g: Game, el: HTMLElement): void {
       q(el, '.k-mixer-art').classList.add('buzz');
     }
   }, 380);
-  const finish = () => {
+  const finish = (ev?: Event | 'abort') => {
     if (done) return;
     done = true;
+    if (abortGesture === abort) abortGesture = null;
     cancelAnimationFrame(holdRaf);
     jug.classList.remove('swirl');
     q(el, '.k-mixer-art').classList.remove('buzz');
     mixerFly(el, false);
     window.removeEventListener('pointerup', finish);
     window.removeEventListener('pointercancel', finish);
+    if (ev === 'abort') return;
     const result = p < PERFECT_FROM ? 'under' : p <= PERFECT_TO ? 'perfect' : 'over';
     if (result === 'over') flash(el, '.k-splash', 'show', 1200);
     g.kitchenMix(result);
@@ -334,6 +359,9 @@ function startHold(g: Game, el: HTMLElement): void {
     if (p >= OVERFLOW) finish();
     else holdRaf = requestAnimationFrame(tick);
   };
+  const abort = () => finish('abort');
+  abortGesture?.();
+  abortGesture = abort;
   holdRaf = requestAnimationFrame(tick);
   window.addEventListener('pointerup', finish);
   window.addEventListener('pointercancel', finish);
@@ -347,6 +375,7 @@ export const kitchenPanel: Panel = {
   act: () => undefined,
 
   mount(el, g, ui) {
+    for (const k of BUSY_KEYS) delete el.dataset[k];
     const zoneL = (PERFECT_FROM / OVERFLOW) * 100;
     const zoneW = ((PERFECT_TO - PERFECT_FROM) / OVERFLOW) * 100;
     const mid = g.midKitchen;
@@ -476,7 +505,9 @@ export const kitchenPanel: Panel = {
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('click', onClick);
       cancelAnimationFrame(holdRaf);
+      abortGesture?.();
       ro?.disconnect();
+      for (const k of BUSY_KEYS) delete el.dataset[k];
     };
     kitchenPanel.update!(el, g, ui);
   },

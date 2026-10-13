@@ -1000,7 +1000,7 @@ export class Game {
     // helpers serve their counters by themselves; making more lemonade is the player's decision
     for (let c = 0; c < this.counters(); c++) {
       if (!this.autoCounter(c) || this.servings[c] || this.making) continue;
-      if (this.street.frontReady(c) && D.cupsReady > 0) {
+      if (this.street.frontReady(c) && this.freeCups() > 0) {
         this.helperIdle[c] += rdt;
         if (this.helperIdle[c] >= CONFIG.HELPER_DELAY) this.serveAt(c, true);
       } else this.helperIdle[c] = 0;
@@ -1152,6 +1152,11 @@ export class Game {
     return last;
   }
 
+  /** Cups of lemonade that no counter is pouring yet. */
+  freeCups(): number {
+    return this.D.cupsReady - this.servings.filter((s) => s).length;
+  }
+
   /** Pour a cup at one counter (by the player or by that counter's helper). */
   serveAt(c: number, byHelper: boolean): 'ok' | 'busy' | 'making' | 'noCustomer' | 'noCups' | 'no' {
     if (this.phase !== 'sell' || this.paused) return 'no';
@@ -1159,7 +1164,8 @@ export class Game {
     if (this.making) return 'making';
     const p = this.street.frontReady(c);
     if (!p) return 'noCustomer';
-    if (this.D.cupsReady <= 0) {
+    // a cup that is being poured at the other counter is already taken
+    if (this.freeCups() <= 0) {
       if (!byHelper) {
         this.toast(this.canMakePitcher() ? 'toast.needPitcher' : 'toast.soldOut', undefined, 'warn');
         this.sfx('buzz');
@@ -1179,6 +1185,8 @@ export class Game {
     if (!this.street.inQueue(p)) return;
     const S = this.S;
     const D = this.D;
+    // the lemonade was spilt meanwhile: the customer keeps waiting for the next pitcher
+    if (D.cupsReady <= 0) return;
     const up = this.active();
     D.cupsReady--;
     D.funnel.sold++;

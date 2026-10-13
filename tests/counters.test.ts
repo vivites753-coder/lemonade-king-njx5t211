@@ -81,4 +81,27 @@ describe('stands with two counters', () => {
     expect(r.maxQ1).toBeLessThanOrEqual(g.maxQueue());
     expect(g.D.report!.sold).toBeGreaterThan(5);
   });
+
+  it('the last cup cannot be poured at both counters at once', () => {
+    const g = standGame({ up: 'big_stand', rep: 3, seed: 12 });
+    g.setHelpers(1);
+    g.startSelling();
+    g.setSpeed(4);
+    // wait until a customer stands at the front of each queue and nobody pours
+    let ok = false;
+    for (let i = 0; i < 40000 && g.phase === 'sell'; i++) {
+      g.update(0.05);
+      if (g.street.frontReady(0) && g.street.frontReady(1) && !g.servings[0] && !g.servings[1] && !g.making) {
+        ok = true;
+        break;
+      }
+      if (!g.making && g.street.frontReady(0)) g.serveAt(0, false);
+    }
+    expect(ok).toBe(true);
+    g.D.cupsReady = 1;
+    expect(g.serveAt(0, false)).toBe('ok');
+    expect(g.serveAt(1, true)).toBe('noCups');
+    for (let i = 0; i < 400; i++) g.update(0.05);
+    expect(g.D.cupsReady).toBeGreaterThanOrEqual(0);
+  });
 });
