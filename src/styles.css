@@ -3000,3 +3000,21 @@ body.reduce-motion * {
 .swatch.sel {
   box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--orange);
 }
+
+/* kitchen pictures (assets/kitchen) */
+.k-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.k-img.k-empty {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+.k-cups-art .k-img {
+  width: auto;
+  height: 38px;
+  margin: 0 auto;
+}

@@ -3,10 +3,22 @@
 
 import { t } from '../i18n';
 
+const urls = import.meta.glob('/assets/kitchen/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+/** A picture from assets/kitchen (kt_<name>.png), or '' when it has not been drawn (then the SVG fallback is used). */
+function pic(name: string, cls = ''): string {
+  const u = urls[`/assets/kitchen/kt_${name}.png`];
+  return u ? `<img class="k-img ${cls}" src="${u}" alt="" draggable="false">` : '';
+}
+
 const svg = (w: number, h: number, body: string) => `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" aria-hidden="true">${body}</svg>`;
 
 /** A wooden crate; the number of lemons shown follows the stock (up to 7). */
 export function lemonCrate(n: number): string {
+  {
+    const p = pic(n <= 0 ? 'crate_0' : n <= 3 ? 'crate_1' : n <= 8 ? 'crate_2' : 'crate_3');
+    if (p) return p;
+  }
   const spots = [
     [16, 22],
     [30, 20],
@@ -31,6 +43,10 @@ export function lemonCrate(n: number): string {
 
 /** Water bottles; empty slots show how much is gone. */
 export function waterBottles(n: number): string {
+  {
+    const p = pic(`water_${Math.max(1, Math.min(3, n))}`, n <= 0 ? 'k-empty' : '');
+    if (p) return p;
+  }
   let body = '';
   for (let i = 0; i < 3; i++) {
     const x = 6 + i * 17;
@@ -44,6 +60,10 @@ export function waterBottles(n: number): string {
 }
 
 export function sugarBag(n: number): string {
+  {
+    const p = pic(n <= 0 ? 'sugar_0' : n < 6 ? 'sugar_2' : 'sugar_3');
+    if (p) return p;
+  }
   const level = Math.max(0, Math.min(1, n / 5));
   return svg(
     50,
@@ -59,6 +79,10 @@ export function sugarBag(n: number): string {
 export type JuicerKind = 'none' | 'hand' | 'lever';
 
 export function juicer(kind: JuicerKind): string {
+  {
+    const p = kind === 'none' ? '' : pic(kind === 'lever' ? 'juicer_lever' : 'juicer_hand');
+    if (p) return p;
+  }
   if (kind === 'lever') {
     return svg(
       80,
@@ -95,6 +119,10 @@ export function juicer(kind: JuicerKind): string {
 export type MixerKind = 'basic' | 'pro' | 'broken';
 
 export function mixer(kind: MixerKind): string {
+  {
+    const p = pic(`mixer_${kind === 'pro' ? 'pro' : kind === 'broken' ? 'broken' : 'basic'}`);
+    if (p) return p;
+  }
   if (kind === 'pro') {
     return svg(
       70,
@@ -122,6 +150,10 @@ export function mixer(kind: MixerKind): string {
 }
 
 export function cups(branded: boolean, n: number): string {
+  {
+    const p = n <= 0 ? '' : pic(branded ? 'cups_branded' : n <= 10 ? 'cups_2' : n <= 30 ? 'cups_3' : 'cups_5');
+    if (p) return p;
+  }
   let body = '';
   const stacks = Math.min(3, Math.ceil(n / 10));
   for (let s = 0; s < stacks; s++) {
@@ -136,6 +168,10 @@ export function cups(branded: boolean, n: number): string {
 }
 
 export function coolerBag(): string {
+  {
+    const p = pic('cooler');
+    if (p) return p;
+  }
   return svg(
     70,
     50,
@@ -147,6 +183,10 @@ export function coolerBag(): string {
 }
 
 export function toolkitBox(): string {
+  {
+    const p = pic('toolkit');
+    if (p) return p;
+  }
   return svg(
     60,
     34,
