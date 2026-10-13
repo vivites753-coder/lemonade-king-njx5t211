@@ -58,10 +58,13 @@ const BUILD_KEY = 'lemonadeKing.build';
 const KEEP = new Set(['lemonadeKing.dev']);
 
 /**
- * Every update of the game wipes all players and saves, so nobody plays with data from an older
- * version. Returns true when something was wiped. Set WIPE_ON_UPDATE to false to keep progress.
+ * When true, every update of the game wipes all players and saves, so nobody plays with data from an older
+ * version. Returns true when something was wiped.
+ * It is false while updates only bring graphics and sounds: progress stays. Old saves are completed with the
+ * missing fields on load (normalizeState). Set it to true again before an update that changes the rules or the
+ * shape of the saved data in a way normalizeState cannot repair.
  */
-export const WIPE_ON_UPDATE = true;
+export const WIPE_ON_UPDATE = false;
 export function wipeOnUpdate(buildId: string): boolean {
   const last = get(BUILD_KEY);
   if (last === buildId) return false;
