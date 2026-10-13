@@ -24,12 +24,37 @@ python tools/cut_sheet.py <лист.jpg> <папка> <id1,id2,...> [стовп�
 | 03 | вулиця: дерева, лавка, машини, пляж | 5×5 | готово, встановлено (крім машин і хмар: гра малює їх з напрямком руху) |
 | 04 | будівлі й предмети залів | 5×5 | готово, встановлено; склад, кафе, кіоск, магазин, вишка (синя) і соковижималка лежать у `art/cut` до потрібних етапів |
 | 05 | прилавок і обладнання | 5×5 | промпт готовий, чекає на лист |
-| 06 | люди (спереду) | | |
-| 07 | люди (ззаду) | | |
+| 06 | пішоходи, пари «спереду + ззаду» (12 осіб) | 3×4 | промпт готовий |
+| 07 | гравець, помічник, лис у позах | 5×3 | промпт готовий |
 | 08 | предмети, інгредієнти, іконки UI | | |
 
 Листи лежать у `art/sheets`, нарізані спрайти — у `art/cut`, встановлені — у `assets/props` і `assets/buildings`.
 Розміри на екрані підбираються у `src/render/spriteMeta.ts` (можна підлаштовувати наживо в консолі браузера через `import('/src/render/spriteMeta.ts')`).
+
+## Люди
+
+Гра шукає `char_<тип>_<a|b|c>_<front|back>`; лівий бік отримує дзеркалом.
+- `front` повернутий **вправо-вниз** (йде до глядача), `back` повернутий **вправо-вгору** (йде від глядача).
+- Чашку в руці, парасольку в дощ і мішок лиса малює гра, тож на картинках їх немає.
+- Ходьба: погойдування кодом, кадри не потрібні.
+
+### Лист 06 — пішоходи (3×4, кожна клітинка = пара: ліворуч front, праворуч back)
+
+```
+kid_a,kid_b,kid_c,
+adult_a,adult_b,adult_c,
+granny_a,granny_b,sport_a,
+sport_b,tourist_a,tourist_b
+```
+Нарізання: `char_<ім'я>_front` і `char_<ім'я>_back` (ліва й права половини клітинки).
+
+### Лист 07 — гравець, помічник, лис (5×3)
+
+```
+char_player_boy_front,char_player_boy_serving,char_player_boy_juicing,char_player_boy_splashed,char_helper_boy_front,
+char_player_girl_front,char_player_girl_serving,char_player_girl_juicing,char_player_girl_splashed,char_helper_girl_front,
+char_helper_boy_serving,char_helper_girl_serving,char_fox_front,char_fox_back,char_fox_dizzy
+```
 
 ## Будинок
 
