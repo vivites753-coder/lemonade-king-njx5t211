@@ -91,7 +91,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       { id: 'prop_flowers', x: 0.9, y: 3.3 },
       { id: 'prop_flowers', x: 3.1, y: 3.6 },
       { id: 'prop_mailbox', x: 3.9, y: 4.45 },
-      { id: 'prop_lamp', x: 10.6, y: 4.6 },
+      { id: 'prop_lamp', x: 10.6, y: 5.4 }, // on the pavement edge, in front of the fence (not inside it)
       ...fence(4.8, 0, 3.5),
       ...fence(4.8, 9.5, 12),
       { id: 'prop_tree_a', x: 1.2, y: 10.3, s: 1.2 },

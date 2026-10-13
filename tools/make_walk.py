@@ -17,6 +17,9 @@ import sys
 import numpy as np
 from PIL import Image
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from edgefix import bleed  # noqa: E402
+
 frames_dir, out_dir, gif_dir = sys.argv[1], sys.argv[2], sys.argv[3]
 LOOP = int(sys.argv[4]) if len(sys.argv) > 4 else 26
 cols = int(sys.argv[5]) if len(sys.argv) > 5 else 3
@@ -50,11 +53,7 @@ def key(img):
     """RGB (magenta background) -> RGBA float, edge colours replaced by neighbouring solid colours."""
     m = np.minimum(img[..., 0], img[..., 2]) - img[..., 1]
     alpha = np.clip((m_bg * 0.8 - m) / (m_bg * 0.5), 0, 1)
-    solid = (alpha > 0.96).astype(np.float64)
-    num = box_blur(img * solid[..., None], 2)
-    den = box_blur(solid[..., None], 2)
-    inner = np.where(den > 0.02, num / np.maximum(den, 1e-6), img)
-    col = np.where((alpha < 0.96)[..., None], inner, img)
+    col = bleed(img, alpha)
     alpha = np.clip((alpha - 0.2) / 0.8, 0, 1)
     return np.dstack([col, alpha * 255])
 

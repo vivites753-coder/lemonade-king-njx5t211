@@ -7,6 +7,9 @@ import sys
 import numpy as np
 from PIL import Image
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from edgefix import bleed  # noqa: E402
+
 PAIRS = '--pairs' in sys.argv  # every cell holds two views of one character: left = front, right = back
 sys.argv = [a for a in sys.argv if a != '--pairs']
 src, out, names = sys.argv[1], sys.argv[2], sys.argv[3].split(',')
@@ -60,12 +63,7 @@ def blur(a, r):
 
 # Edge colours still carry a magenta tint (a purple outline on green trees). Replace the colour of every
 # semi-transparent pixel with the average colour of the solid pixels around it, and thin the soft edge a little.
-solid = (alpha > 0.96).astype(np.float64)
-num = blur(col * solid[..., None], 3)
-den = blur(solid[..., None], 3)
-inner_col = np.where(den > 0.02, num / np.maximum(den, 1e-6), col)
-edge = (alpha < 0.96)[..., None]
-col = np.where(edge, inner_col, col)
+col = bleed(col, alpha)
 alpha = np.clip((alpha - 0.2) / 0.8, 0, 1)
 rgba = np.dstack([col, alpha * 255]).astype(np.uint8)
 
