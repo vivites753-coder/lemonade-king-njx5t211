@@ -75,6 +75,27 @@ export function drawCharacter(ctx: Ctx, id: string, x: number, y: number, sx: nu
  * A character that is a looping animation (the player, the helpers, the fox). People at the stand loop all the time;
  * the fox only while it moves. Facing left is a mirror image.
  */
+/** Averages of the frames of idle loops (the calm pose the idle animation moves around), per picture. */
+const meanFrames = new Map<string, HTMLCanvasElement>();
+function meanFrame(id: string, loop: LoopInfo): HTMLCanvasElement {
+  let c = meanFrames.get(id);
+  if (c) return c;
+  c = document.createElement('canvas');
+  c.width = loop.fw;
+  c.height = loop.fh;
+  const x = c.getContext('2d')!;
+  // a running average: frame i is drawn with alpha 1/(i+1)
+  for (let i = 0; i < loop.n; i++) {
+    x.globalAlpha = 1 / (i + 1);
+    x.drawImage(loop.img, i * loop.fw, 0, loop.fw, loop.fh, 0, 0, loop.fw, loop.fh);
+  }
+  meanFrames.set(id, c);
+  return c;
+}
+
+/** How strongly a standing seller moves while doing nothing: 1 = as drawn, 0 = frozen at the calm pose. */
+const IDLE_MOTION = 0.5;
+
 function drawLoop(ctx: Ctx, id: string, loop: LoopInfo, wx: number, sx: number, sy: number, o: PersonOpts): number {
   const dir = o.dirX < 0 ? -1 : 1;
   const fox = id.includes('_fox_');
@@ -87,7 +108,15 @@ function drawLoop(ctx: Ctx, id: string, loop: LoopInfo, wx: number, sx: number, 
   ctx.translate(sx, sy);
   // the fox pictures look to the lower LEFT, the people to the lower RIGHT
   if (fox ? dir > 0 : dir < 0) ctx.scale(-1, 1);
-  ctx.drawImage(loop.img, frame * loop.fw, 0, loop.fw, loop.fh, -loop.cx * scale, -loop.feetY * scale, loop.fw * scale, loop.fh * scale);
+  const idle = playing && /^char_(player|helper)_(boy|girl)_front$/.test(id);
+  const dxp = -loop.cx * scale;
+  const dyp = -loop.feetY * scale;
+  if (idle && IDLE_MOTION < 1) {
+    // halve the movement: the calm average pose with the current frame blended over it
+    ctx.drawImage(meanFrame(id, loop), dxp, dyp, loop.fw * scale, loop.fh * scale);
+    ctx.globalAlpha = IDLE_MOTION;
+  }
+  ctx.drawImage(loop.img, frame * loop.fw, 0, loop.fw, loop.fh, dxp, dyp, loop.fw * scale, loop.fh * scale);
   ctx.restore();
   const top = sy - loop.h * o.scale;
   if (o.hasCup) drawCup(ctx, sx + dir * 9 * o.scale, sy - loop.h * o.scale * 0.45, o.scale);
