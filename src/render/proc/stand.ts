@@ -362,10 +362,26 @@ export function standSideParts(g: Game): { part: StandPart; x: number; y: number
   const wide = g.counters() >= 2;
   const isTruck = !!g.active().truck;
   const out: { part: StandPart; x: number; y: number }[] = [];
-  if (up.sign) out.push({ part: 'sign', x: SX - 1.37 + (wide ? (isTruck ? -2.3 : -1.9) : 0), y: SY + 0.45 + (wide ? (isTruck ? 0.5 : -0.2) : 0) });
+  // the sign stands in front of the left end of the table: it is drawn after the table
+  if (up.sign) out.push({ part: 'sign', x: SX - 0.9 + (wide ? (isTruck ? -2.3 : -1.9) : 0), y: SY + 1.0 + (wide ? (isTruck ? 0.5 : -0.2) : 0) });
   if (up.mascot) out.push({ part: 'mascot', x: SX - 1.55 + (wide ? -0.3 : 0), y: SY + 1.25 + (wide ? 1.0 : 0) });
-  if (up.tv) out.push({ part: 'tv', x: SX + 2.65, y: SY - 0.75 });
+  if (up.tv) out.push({ part: 'tv', x: SX + 3.12, y: SY - 0.28 });
   return out;
+}
+
+/**
+ * The price on the wooden board: a cream plaque with the number and a coin, lying in the slanted plane of the board
+ * (the board of the picture falls to the right by about 20 degrees).
+ */
+function priceLabel(ctx: Ctx, cx: number, cy: number, price: number): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.transform(1, 0.36, 0, 1, 0, 0);
+  rrect(ctx, -11, -6.5, 22, 13, 3, '#fff3c4', '#7a4a22', 1.2);
+  text(ctx, String(price), -3.5, 0.5, price >= 10 ? 9 : 10.5, '#5c3310', 'center', 900);
+  circle(ctx, 6.5, 0, 3.3, '#fcc419', '#b8860b', 0.9);
+  circle(ctx, 6.5, 0, 1.2, '#fff3c4');
+  ctx.restore();
 }
 
 /** Draws one side part of the stand (see standSideParts). */
@@ -383,7 +399,7 @@ export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
       if (hasImage('stand_sign')) {
         // the picture has a blank board: the game writes the price on it
         const m = metaFor('stand_sign');
-        text(ctx, String(S.price), sx + (m.dx ?? 0) + SIGN_TEXT.x, sy + (m.dy ?? 0) + SIGN_TEXT.y, 10, '#ffffff', 'center', 900, '#3b2a1c');
+        priceLabel(ctx, sx + (m.dx ?? 0) + SIGN_TEXT.x, sy + (m.dy ?? 0) + SIGN_TEXT.y, S.price);
       }
     });
   } else if (part === 'mascot') {
@@ -391,7 +407,7 @@ export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
     shifted(ctx, wide, -0.3, 1.0, () => drawSprite(ctx, 'stand_mascot', call({ sy: sy - hop })));
   } else {
     drawSprite(ctx, 'stand_tv', call({ on: !!br.tv }));
-    if (br.tv) brokenMark(ctx, SX + 2.6, SY - 0.8, 76);
+    if (br.tv) brokenMark(ctx, SX + 3.07, SY - 0.33, 76);
   }
 }
 
@@ -515,6 +531,6 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (br.tent && outdoor) brokenMark(ctx, SX, SY - 0.35, 128);
   if (br.dispenser && !isTruck) brokenMark(ctx, SX - 0.2, SY - 0.05, 66);
   if ((br.juicer_hand || br.juicer_lever) && !isTruck) brokenMark(ctx, SX + 0.33, SY - 0.2, 56);
-  if (br.bike && !up.scooter) brokenMark(ctx, SX + 1.4, SY - 1.0, 40);
-  if (br.scooter) brokenMark(ctx, SX + 1.4, SY - 1.0, 44);
+  if (br.bike && !up.scooter) brokenMark(ctx, SX + 1.87, SY - 0.53, 40);
+  if (br.scooter) brokenMark(ctx, SX + 1.87, SY - 0.53, 44);
 }

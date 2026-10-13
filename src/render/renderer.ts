@@ -310,7 +310,8 @@ export class Renderer {
       anim: p.anim,
       facingCam,
       dirX,
-      hasCup: p.hasCup,
+      // people who have bought lemonade carry no cup for now (an own animation will come later)
+      hasCup: false,
       umbrella: this.game.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue,
     });
     if (p.emote || p.state === 'queue') {

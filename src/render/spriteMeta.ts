@@ -40,13 +40,13 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   char_fox_dizzy: { h: 64, anchor: [0.5, 0.975] },
   bld_house_yard: { h: 180, anchor: [0.5, 0.69] },
   bld_school: { h: 288, anchor: [0.5, 0.66] },
-  bld_fountain: { h: 112, anchor: [0.5, 0.71] },
+  bld_fountain: { h: 56, anchor: [0.5, 0.71] },
   bld_lifeguard: { h: 135, anchor: [0.5, 0.84] },
   // stand layers: every picture sits at its own spot around the table (dx, dy from the stand centre)
   // behind the table
   stand_cooler: { h: 26, anchor: [0.5, 0.9], dx: -24, dy: -18 },
-  stand_bike: { h: 44, anchor: [0.5, 0.9], dx: 82, dy: 10 },
-  stand_scooter: { h: 38, anchor: [0.5, 0.9], dx: 80, dy: 8 },
+  stand_bike: { h: 44, anchor: [0.5, 0.9], dx: 82, dy: 25 },
+  stand_scooter: { h: 38, anchor: [0.5, 0.9], dx: 80, dy: 23 },
   stand_toolkit: { h: 17, anchor: [0.5, 0.85], dx: -1, dy: -27 },
   stand_chair: { h: 34, anchor: [0.5, 0.83], dx: 58, dy: -5 },
   stand_umbrella: { h: 136, anchor: [0.5, 0.96], dx: 27, dy: 9 },
@@ -67,8 +67,8 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   stand_mascot: { h: 44, anchor: [0.5, 0.95], dx: -90, dy: -5 },
   stand_tent: { h: 139, anchor: [0.5, 0.74], dx: 11, dy: -6 },
   stand_speaker: { h: 31, anchor: [0.5, 0.92], dx: 50, dy: 9 },
-  stand_tv: { h: 42, anchor: [0.5, 0.92], dx: 108, dy: 30 },
-  stand_sign: { h: 40, anchor: [0.5, 0.92], dx: -50, dy: -2 },
+  stand_tv: { h: 54, anchor: [0.5, 0.93], dx: 108, dy: 47 },
+  stand_sign: { h: 42, anchor: [0.5, 0.92], dx: -68, dy: 12 },
   item_cookies: { h: 13, anchor: [0.5, 0.85], dx: 21, dy: -10 },
   stand_juicer_lever: { h: 30, anchor: [0.5, 0.9], dx: 17, dy: -19 },
   // measured on the picture: the long side is 1.6 tiles, the top 22 px above the floor
