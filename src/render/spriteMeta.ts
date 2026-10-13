@@ -42,6 +42,14 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   bld_school: { h: 380, anchor: [0.5, 0.7] },
   bld_fountain: { h: 112, anchor: [0.5, 0.71] },
   bld_lifeguard: { h: 135, anchor: [0.5, 0.84] },
+  // stand layers: every picture sits at its own spot around the table (dx, dy from the stand centre)
+  stand_cooler: { h: 26, anchor: [0.5, 0.9], dx: -24, dy: -18 },
+  stand_bike: { h: 44, anchor: [0.5, 0.9], dx: -30, dy: -42 },
+  stand_speaker: { h: 31, anchor: [0.5, 0.92], dx: 50, dy: 9 },
+  stand_tv: { h: 42, anchor: [0.5, 0.92], dx: 108, dy: 30 },
+  stand_sign: { h: 40, anchor: [0.5, 0.92], dx: -50, dy: -2 },
+  item_cookies: { h: 13, anchor: [0.5, 0.85], dx: 22, dy: -4 },
+  stand_juicer_lever: { h: 30, anchor: [0.5, 0.9], dx: 17, dy: -19 },
   stand_table: { h: 70, anchor: [0.5, 0.7] },
   // indoor places: the wall image covers both back walls; its anchor is the back corner on the floor
   wall_mall: { h: 311, anchor: [0.5, 0.383] },

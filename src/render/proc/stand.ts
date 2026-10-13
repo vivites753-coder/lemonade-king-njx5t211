@@ -5,7 +5,7 @@ import { t } from '../../i18n';
 import type { Game } from '../../sim/game';
 import { playerLook } from '../../sim/looks';
 import { lemonsTotal } from '../../sim/state';
-import { drawSprite, registerProcs, type SpriteCall } from '../assets';
+import { drawSprite, hasImage, metaFor, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter, standSpriteId } from './people';
@@ -15,6 +15,8 @@ import { type TruckWorker } from './truck';
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
 const TABLE_H = 22;
+/** Where the price is written on the picture of the sign, from the picture's anchor point. */
+const SIGN_TEXT = { x: 0, y: -24 };
 
 interface StandCall extends SpriteCall {
   price?: number;
@@ -403,7 +405,15 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
   }
   // the price sign stands at the side when the second queue needs the space in front
-  if (up.sign) shifted(ctx, wide, -1.2, -0.45, () => drawSprite(ctx, 'stand_sign', call({ price: S.price })));
+  if (up.sign)
+    shifted(ctx, wide, -1.2, -0.45, () => {
+      drawSprite(ctx, 'stand_sign', call({ price: S.price }));
+      if (hasImage('stand_sign')) {
+        // the picture has a blank board: the game writes the price on it
+        const m = metaFor('stand_sign');
+        text(ctx, String(S.price), sx + (m.dx ?? 0) + SIGN_TEXT.x, sy + (m.dy ?? 0) + SIGN_TEXT.y, 10, '#ffffff', 'center', 900, '#3b2a1c');
+      }
+    });
   // next to the truck the speaker moves off the bar stools
   if (up.speaker) shifted(ctx, isTruck, 0.75, 0.55, () => drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker })));
   if (up.mascot) drawSprite(ctx, 'stand_mascot', call());

@@ -24,6 +24,9 @@ export interface SpriteMeta {
   h: number;
   /** Anchor as a fraction of the image: [0.5, 1] = bottom centre. */
   anchor: [number, number];
+  /** Extra shift of the picture in world px (the layers of the stand all share one anchor; each sits at its own spot). */
+  dx?: number;
+  dy?: number;
 }
 
 const PREFIX_DEFAULTS: [string, SpriteMeta][] = [
@@ -112,14 +115,16 @@ export function drawSprite(ctx: Ctx, id: string, call: SpriteCall): void {
     const m = metaFor(id);
     const h = m.h * call.s;
     const w = (h * img.naturalWidth) / img.naturalHeight;
+    const sx = call.sx + (m.dx ?? 0);
+    const sy = call.sy + (m.dy ?? 0);
     if (call.flip) {
       ctx.save();
-      ctx.translate(call.sx, 0);
+      ctx.translate(sx, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(img, -w * m.anchor[0], call.sy - h * m.anchor[1], w, h);
+      ctx.drawImage(img, -w * m.anchor[0], sy - h * m.anchor[1], w, h);
       ctx.restore();
     } else {
-      ctx.drawImage(img, call.sx - w * m.anchor[0], call.sy - h * m.anchor[1], w, h);
+      ctx.drawImage(img, sx - w * m.anchor[0], sy - h * m.anchor[1], w, h);
     }
     return;
   }
