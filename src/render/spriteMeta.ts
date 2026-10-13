@@ -34,7 +34,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   // indoor places: the wall image covers both back walls; its anchor is the back corner on the floor
   wall_mall: { h: 311, anchor: [0.5, 0.383] },
   wall_station: { h: 311, anchor: [0.5, 0.383] },
-  bld_stage: { h: 130, anchor: [0.5, 0.7] },
+  bld_stage: { h: 160, anchor: [0.5, 0.69] },
   prop_vending: { h: 70, anchor: [0.5, 0.85] },
   prop_column: { h: 88, anchor: [0.5, 0.95] },
   prop_luggage: { h: 44, anchor: [0.5, 0.8] },
