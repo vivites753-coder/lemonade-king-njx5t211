@@ -8,7 +8,7 @@ import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
 import { lemonsTotal } from '../../sim/state';
 import { coin, fmtDur, fmtHour } from '../dom';
-import { coolerBag, cups, juicer, lemonCrate, mixer, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
+import { coolerBag, cups, juicer, kitchenDecor, lemonCrate, mixer, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 
 const ITEMS: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' }[] = [
@@ -184,13 +184,14 @@ export const kitchenPanel: Panel = {
             ).join('')}
           </div>
           <div class="k-room">
+            <div class="k-decor" aria-hidden="true">${kitchenDecor()}</div>
             <div class="k-table">
               <div class="k-top">
                 <div class="k-juicer" data-drop="juicer"><span class="k-tool-art">${juicer(jk)}</span><small>${juicerLabel}</small></div>
                 <div class="k-jug" data-drop="jug">
                   <div class="k-liquid" data-k="liquid"></div>
                   <div class="k-grains" data-k="grains"></div>
-                  <div class="k-splash">💦💦💦</div>
+                  <div class="k-splash">${splashArt()}</div>
                 </div>
                 <div class="k-tools-art">
                   <div class="k-mixer-art">${mixer(mixerBroken(g.S) ? 'broken' : up.mixer_pro ? 'pro' : 'basic')}</div>

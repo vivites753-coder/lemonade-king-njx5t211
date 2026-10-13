@@ -195,3 +195,15 @@ export function toolkitBox(): string {
      <rect x="26" y="17" width="8" height="5" rx="1" fill="#ffd43b"/>`,
   );
 }
+
+/** Splashes for the jug when something is poured in (falls back to emoji when the picture is missing). */
+export function splashArt(): string {
+  const p = pic('fx_splash');
+  return p ? p + p + p : '💦💦💦';
+}
+
+/** The wall of the kitchen: a window, a towel, an apron and a clock (nothing if the pictures are missing). */
+export function kitchenDecor(): string {
+  const parts = [pic('window', 'k-d-window'), pic('towel', 'k-d-towel'), pic('apron', 'k-d-apron'), pic('clock', 'k-d-clock')];
+  return parts.every((x) => x) ? parts.join('') : '';
+}

@@ -3018,3 +3018,27 @@ body.reduce-motion * {
   height: 38px;
   margin: 0 auto;
 }
+
+.k-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.k-decor .k-img {
+  position: absolute;
+  width: auto;
+  height: auto;
+  opacity: 0.95;
+}
+.k-d-window { left: 8px; top: 6px; height: 46px !important; }
+.k-d-towel { left: 64px; top: 4px; height: 40px !important; }
+.k-d-apron { right: 52px; top: 4px; height: 44px !important; }
+.k-d-clock { right: 10px; top: 8px; height: 34px !important; }
+.k-splash .k-img { width: 22px; height: 22px; margin: 0 -3px; }
+@media (max-width: 700px) {
+  .k-d-window { height: 32px !important; }
+  .k-d-towel { left: 46px; height: 28px !important; }
+  .k-d-apron { right: 38px; height: 30px !important; }
+  .k-d-clock { height: 24px !important; }
+}
