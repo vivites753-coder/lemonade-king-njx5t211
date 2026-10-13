@@ -3203,3 +3203,24 @@ body.reduce-motion * {
     display: none;
   }
 }
+
+/* the pictures in the top bar must read as pictures, not as emoji: bigger than the text */
+.hud-top .chip .ico-img {
+  height: 28px;
+  margin: -3px 0;
+  vertical-align: middle;
+}
+.hud-top .chip .stars .ico-img {
+  height: 24px;
+  margin: -3px 0;
+}
+.coin-art .hud-top .chip .coin {
+  width: 28px;
+  height: 28px;
+  margin: -3px 2px -3px 0;
+  vertical-align: middle;
+}
+.coin-art .chip.coins .coin {
+  width: 26px;
+  height: 26px;
+}
