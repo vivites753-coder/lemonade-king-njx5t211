@@ -13,7 +13,7 @@ import type { Panel, UIApi } from './types';
 
 /** Scene pixels: the scene is 900x600 and is scaled to the panel. Planks of the wall shelf are at PLANKS. */
 const SCENE_W = 900;
-const PLANKS = [124, 236, 348];
+const PLANKS = [127, 226, 326];
 const ITEMS: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' }[] = [
   { id: 'lemon', icon: '🍋', target: 'juicer' },
   { id: 'water', icon: '💧', target: 'jug' },
@@ -276,9 +276,9 @@ export const kitchenPanel: Panel = {
             <div class="k-scene${hasBg ? ' has-bg' : ''}">
               ${hasBg ? sceneBg() : '<div class="k-bg"></div><div class="k-counter"></div>'}
               <div class="k-decor" style="inset:0" aria-hidden="true">${kitchenDecor()}</div>
-              ${PLANKS.map((y) => `<div class="k-plank" style="top:${y}px"></div>`).join('')}<div class="k-plank m" style="top:250px"></div>
+              ${PLANKS.map((y) => `<div class="k-plank" style="top:${y}px"></div>`).join('')}<div class="k-plank m" style="top:306px"></div>
               ${ITEMS.map(
-                (i, n) => `<button class="k-item" data-item="${i.id}" style="left:18px;top:${PLANKS[n] - 108}px"><span class="k-art" data-k="art-${i.id}"></span>
+                (i, n) => `<button class="k-item" data-item="${i.id}" style="left:42px;top:${PLANKS[n] + 3 - 96}px"><span class="k-art" data-k="art-${i.id}"></span>
                   <span class="k-meta"><b>${t(`kitchen.${i.id}`)}</b><small data-k="left-${i.id}"></small></span></button>`,
               ).join('')}
               <div class="k-mixer${mixKind === 'pro' ? ' pro' : ''}${mixKind === 'broken' ? ' off' : ''}" data-k="mixer"><div class="k-mixer-art">${mixer(mixKind)}</div></div>

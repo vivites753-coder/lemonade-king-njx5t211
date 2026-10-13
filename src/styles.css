@@ -2502,8 +2502,8 @@ body.reduce-motion * {
 }
 .k-wrap {
   position: relative;
-  width: max(320px, min(100%, calc((100vh - 400px) * 1.5)));
-  aspect-ratio: 3 / 2;
+  width: max(320px, min(100%, calc((100vh - 400px) * 1.339)));
+  aspect-ratio: 900 / 672;
   margin: 0 auto;
   overflow: hidden;
   border-radius: 20px;
@@ -2516,7 +2516,7 @@ body.reduce-motion * {
   left: 0;
   top: 0;
   width: 900px;
-  height: 600px;
+  height: 672px;
   transform: scale(var(--ks));
   transform-origin: 0 0;
   user-select: none;
@@ -2546,15 +2546,15 @@ body.reduce-motion * {
 .k-bg-img {
   inset: 0;
   width: 900px;
-  height: 600px;
+  height: 672px;
   object-fit: cover;
   pointer-events: none;
 }
 .k-scene:not(.has-bg) .k-counter {
   left: 0;
-  top: 392px;
+  top: 445px;
   width: 900px;
-  height: 208px;
+  height: 227px;
   background: linear-gradient(#e3b97a 0 26px, #c98a4b 26px 30px, #b9763a 30px 170px, #6b4a2a 170px);
   box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.35);
 }
@@ -2569,8 +2569,8 @@ body.reduce-motion * {
   box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.1);
 }
 .k-scene:not(.has-bg) .k-plank {
-  left: 18px;
-  width: 244px;
+  left: 40px;
+  width: 239px;
   height: 18px;
   border-radius: 4px;
   background: linear-gradient(#d39a5c, #a86c34);
@@ -2582,8 +2582,8 @@ body.reduce-motion * {
   display: none;
 }
 .k-scene:not(.has-bg) .k-plank.m {
-  left: 690px;
-  width: 190px;
+  left: 614px;
+  width: 243px;
 }
 .k-decor img {
   position: absolute;
@@ -2606,10 +2606,10 @@ body.reduce-motion * {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  width: 244px;
-  height: 108px;
+  width: 238px;
+  height: 96px;
   margin: 0;
-  padding: 0 0 4px 12px;
+  padding: 0 0 4px 4px;
   border: 0;
   background: none;
   font: inherit;
@@ -2623,8 +2623,8 @@ body.reduce-motion * {
 .k-art {
   display: block;
   flex: none;
-  width: 108px;
-  height: 100px;
+  width: 92px;
+  height: 86px;
   transition: transform 0.15s;
 }
 .k-item:hover:not(:disabled) .k-art {
@@ -2665,8 +2665,8 @@ body.reduce-motion * {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  left: 262px;
-  top: 244px;
+  left: 290px;
+  top: 308px;
   width: 160px;
   height: 160px;
   border-radius: 24px;
@@ -2679,8 +2679,8 @@ body.reduce-motion * {
   height: 150px;
 }
 .k-cap {
-  left: 262px;
-  top: 410px;
+  left: 290px;
+  top: 474px;
   width: 160px;
   text-align: center;
   font-size: calc(var(--lab) * 0.85px / var(--ks));
@@ -2692,8 +2692,8 @@ body.reduce-motion * {
   pointer-events: none;
 }
 .k-jug {
-  left: 448px;
-  top: 190px;
+  left: 485px;
+  top: 254px;
   width: 150px;
   height: 214px;
   z-index: 4;
@@ -2768,8 +2768,8 @@ body.reduce-motion * {
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
 }
 .k-glass {
-  left: 448px;
-  top: 190px;
+  left: 485px;
+  top: 254px;
   width: 150px;
   height: 214px;
   z-index: 7;
@@ -2788,8 +2788,8 @@ body.reduce-motion * {
 }
 .k-splash,
 .k-drops {
-  left: 448px;
-  top: 130px;
+  left: 485px;
+  top: 194px;
   width: 150px;
   height: 140px;
   z-index: 8;
@@ -2830,9 +2830,9 @@ body.reduce-motion * {
 
 /* the mixer: it rests on its own shelf, flies into the jug while it works and goes back */
 .k-mixer {
-  left: 726px;
-  top: 150px;
-  width: 112px;
+  left: 768px;
+  top: 206px;
+  width: 100px;
   height: 100px;
   z-index: 6;
   cursor: pointer;
@@ -2840,9 +2840,10 @@ body.reduce-motion * {
   transition: transform 0.5s cubic-bezier(0.3, 1.35, 0.5, 1);
 }
 .k-mixer.pro {
-  width: 124px;
+  left: 762px;
+  width: 108px;
   height: 108px;
-  top: 142px;
+  top: 198px;
 }
 .k-mixer.in {
   z-index: 6;
@@ -2871,8 +2872,8 @@ body.reduce-motion * {
   opacity: 0.8;
 }
 .k-spoon {
-  left: 500px;
-  top: 150px;
+  left: 540px;
+  top: 214px;
   font-size: 70px;
   z-index: 6;
   opacity: 0;
@@ -2888,8 +2889,8 @@ body.reduce-motion * {
   100% { opacity: 0; transform: rotate(-10deg); }
 }
 .k-meter {
-  left: 428px;
-  top: 150px;
+  left: 465px;
+  top: 214px;
   width: 190px;
   height: 22px;
   border-radius: 99px;
@@ -2915,8 +2916,8 @@ body.reduce-motion * {
   left: 0;
 }
 .k-cups-art {
-  left: 622px;
-  top: 312px;
+  left: 662px;
+  top: 376px;
   width: 92px;
   height: 92px;
   z-index: 3;
@@ -2937,9 +2938,9 @@ body.reduce-motion * {
   font-size: calc(var(--lab) * 0.85px / var(--ks));
 }
 .k-ready {
-  left: 724px;
-  top: 322px;
-  width: 170px;
+  left: 765px;
+  top: 386px;
+  width: 115px;
   height: 84px;
   z-index: 3;
   display: flex;
@@ -2962,7 +2963,7 @@ body.reduce-motion * {
 }
 .k-cooler {
   left: 46px;
-  top: 468px;
+  top: 518px;
   width: 128px;
   height: 100px;
   z-index: 2;
@@ -2978,8 +2979,8 @@ body.reduce-motion * {
   font-size: calc(var(--lab) * 0.85px / var(--ks));
 }
 .k-toolkit {
-  left: 748px;
-  top: 494px;
+  left: 750px;
+  top: 548px;
   width: 112px;
   height: 78px;
   z-index: 2;
@@ -3138,7 +3139,7 @@ body.reduce-motion * {
   }
   .k-wrap {
     flex: none;
-    width: calc((100vh - 165px) * 1.5);
+    width: calc((100vh - 165px) * 1.339);
     max-width: 62%;
     margin: 0;
     --lab: 11;
