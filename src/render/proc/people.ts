@@ -153,9 +153,16 @@ function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, s
   ctx.restore();
 
   const headTop = sy - ay * sqY - bob;
+  if (o.bag) sack(ctx, sx + dir * W * 0.3, sy - H * 0.34 - bob, sc); // on the side of the tail
   if (o.hasCup) drawCup(ctx, sx + dir * W * 0.3, sy - H * 0.42 - bob, sc);
   if (o.umbrella) return umbrella(ctx, sx + dir * 5 * sc, sy - H * 0.5 - bob, headTop, sc, o.look.accent);
   return headTop;
+}
+
+/** The sack of stolen coins on the thief's back. */
+function sack(ctx: Ctx, x: number, y: number, s: number): void {
+  circle(ctx, x, y, 4.2 * s, '#c9a227', '#8a6d1a', 0.8);
+  line(ctx, x, y - 4 * s, x + 1.5 * s, y - 7 * s, '#8a6d1a', 1.2 * s);
 }
 
 /** A rain umbrella held above the head; returns the new top. */

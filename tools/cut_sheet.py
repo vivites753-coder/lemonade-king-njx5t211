@@ -1,5 +1,5 @@
 """Cuts a 5x5 sprite sheet on a flat magenta background into transparent PNGs.
-Usage: python cut_sheet.py <sheet.jpg> <out_dir> <name1,name2,...> [cols] [rows] [--pairs]
+Usage: python cut_sheet.py <sheet.jpg> <out_dir> <name1,name2,...> [cols] [rows] [--pairs] [--keep=0.08]
 With --pairs each cell is split at the gap between its two figures into char_<name>_front and char_<name>_back."""
 import os
 import sys
@@ -10,8 +10,9 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from edgefix import bleed, crisp, matte  # noqa: E402
 
+KEEP = next((float(a.split('=')[1]) for a in sys.argv if a.startswith('--keep=')), 0.08)  # smaller parts than this share of the biggest are dropped
 PAIRS = '--pairs' in sys.argv  # every cell holds two views of one character: left = front, right = back
-sys.argv = [a for a in sys.argv if a != '--pairs']
+sys.argv = [a for a in sys.argv if a != '--pairs' and not a.startswith('--keep=')]
 src, out, names = sys.argv[1], sys.argv[2], sys.argv[3].split(',')
 cols = int(sys.argv[4]) if len(sys.argv) > 4 else 5
 rows = int(sys.argv[5]) if len(sys.argv) > 5 else 5
@@ -98,7 +99,7 @@ for i, name in enumerate(names):
     ex = 40
     wx0, wx1, wy0, wy1 = max(x0 - ex, 0), min(x1 + ex, W), max(y0 - ex, 0), min(y1 + ex, H)
     cell = rgba[wy0:wy1, wx0:wx1].copy()
-    cell = keep_big_parts(cell, 0.08, box=(x0 - wx0, y0 - wy0, x1 - wx0, y1 - wy0))
+    cell = keep_big_parts(cell, KEEP, box=(x0 - wx0, y0 - wy0, x1 - wx0, y1 - wy0))
     def save(img, fname):
         ys, xs = np.where(img[..., 3] > 12)
         if len(xs) == 0:

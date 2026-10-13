@@ -26,6 +26,9 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_duck: { h: 16, anchor: [0.5, 0.8] },
   prop_car_a: { h: 44, anchor: [0.5, 0.75] },
   // the anchor is the centre of the footprint, not the front corner: the front corner is about 40 px lower
+  char_fox_front: { h: 54, anchor: [0.5, 0.975] },
+  char_fox_back: { h: 54, anchor: [0.5, 0.975] },
+  char_fox_dizzy: { h: 64, anchor: [0.5, 0.975] },
   bld_house_yard: { h: 180, anchor: [0.5, 0.69] },
   bld_school: { h: 220, anchor: [0.5, 0.75] },
   bld_fountain: { h: 112, anchor: [0.5, 0.71] },

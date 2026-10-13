@@ -317,7 +317,7 @@ export class Renderer {
     const th = this.game.street.thief!;
     const [sx, sy] = P(th.x, th.y);
     ctx.globalAlpha = Math.max(0.15, edgeAlpha(th.x));
-    const headY = drawCharacter(ctx, 'char_fox_front', th.x, th.y, sx, sy, {
+    const headY = drawCharacter(ctx, th.state === 'caught' ? 'char_fox_dizzy' : 'char_fox_front', th.x, th.y, sx, sy, {
       kind: 'fox',
       look: FOX_LOOK,
       scale: 1,
