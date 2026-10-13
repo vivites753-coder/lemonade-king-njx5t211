@@ -187,13 +187,35 @@ Row 4 (decor): 16) a pot with fresh green mint, 17) a kitchen towel hanging on a
 
 Імена: `kt_fx_splash, kt_fx_drops, kt_fx_sugar, kt_fx_water, kt_fx_swirl, kt_lemon_half, kt_lemon_slice, kt_peel, kt_sparkle, kt_broken, kt_table, kt_shelf, kt_window, kt_clock, kt_stool, kt_mint, kt_towel, kt_apron, kt_chalkboard, kt_fruit_bowl`
 
-## КУХНЯ. Фон (одна велика картинка, без предметів)
+## КУХНЯ. Фон (одна велика картинка, без предметів, 3:2)
+
+Кухня в грі це сцена 900×600 (3:2). Фон кладеться на всю сцену, а полиці, інструменти та інвентар ставляться поверх нього за відсотками, тому ПОЛИЦІ Й СТОЛЕШНИЦЯ ПОВИННІ БУТИ ТАМ, ДЕ ВКАЗАНО. Після генерації я підганяю координати під картинку.
 
 ```
-A single wide 3D render of an empty cozy home kitchen back wall seen straight from the front, canvas 2048x1536 (4:3), nothing on the wall except the room itself: mint-green square glossy wall tiles in the upper part, a wooden floor strip at the bottom, a wide white-framed window on the left with soft daylight (opaque pale sky-blue pane), a small empty wooden wall shelf on the right. NO furniture, NO table, NO food, NO tools, NO characters, NO text. Cute stylized soft clay / toy-like look, bright cheerful saturated colors, soft light from the top-left, FRONT VIEW, no perspective distortion, very high detail. The lower third must be a calm empty floor and wall area so objects can be placed on top.
+A single wide 3D render of an empty cozy kids' lemonade kitchen interior seen straight from the front (orthographic front view, no perspective tilt), canvas 1536x1024 (3:2). Cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors, soft studio light from the top-left, very high detail. Layout, measured from the top-left corner of the canvas:
+- Back wall: mint-green square glossy tiles from the top down to 66% of the height.
+- LEFT: a wooden wall shelf unit on the wall at 2%-29% of the width, with THREE empty horizontal wooden planks (brackets under them) whose top edges are at 21%, 39% and 58% of the height. The wall above each plank must stay completely empty for about 17% of the height so goods can stand on the planks.
+- TOP CENTER: a big white-framed window at 33%-62% of the width and 5%-40% of the height with a small red-and-white checkered curtain, opaque pale sky-blue pane with a couple of soft green treetops, lit by daylight.
+- RIGHT: one short empty wooden wall plank with brackets at 77%-98% of the width, its top edge at 42% of the height, empty wall above it for about 17% of the height. Above it, hanging on the wall: a red-and-white checked kitchen towel on a hook (at about 66%-70% of the width, 5%-18% of the height), a yellow apron on a peg (at 72%-80% of the width, 4%-20% of the height) and a round wall clock with a blank face and tick marks only (at 85%-95% of the width, 4%-20% of the height).
+- COUNTER: a long wooden work counter across the whole width, its flat top surface seen from the front as a light-wood band between 65% and 70% of the height, EMPTY on top; under it two big cabinet doors with simple round knobs down to 93% of the height, then a darker wooden floor strip at the bottom 7%.
+- The center area (28%-75% of the width, 40%-65% of the height) must stay a calm empty tiled wall so a jug and a juicer can stand there.
+NO objects on the shelves, NO items on the counter, NO furniture other than described, NO food, NO tools, NO characters, NO text, NO letters, NO numbers, NO magenta.
 ```
 
-Ім'я: `kt_bg`. Після генерації я заміню ними нинішню намальовану кодом кухню: полиця запасів, стіл, інструменти, глечик (повний глечик обрізатиметься за рівнем), бризки.
+Ім'я: `kt_bg` (кладеться в `assets/kitchen/kt_bg.png`, гра сама його підхопить і сховає намальовані кодом стіну, полиці, стіл і прикраси).
+
+## КУХНЯ. Лист 18: глечик, миска й інше, що досі малював код (FLAT)
+
+Глечик ОБОВ'ЯЗКОВО молочно-біле «скло» (майже біле, легкий блакитний відтінок, світлі відблиски), без прозорості: гра накладає на нього жовтий лимонад зі змішуванням кольору.
+
+СІТКА 10 / 5×2 / 78% + FLAT +
+
+```
+Row 1: 1) a BIG kitchen pitcher for mixing lemonade, made of milky white frosted glass-like material (opaque, almost white with a faint sky-blue tint and soft highlights), with a wide round body, a spout on the left, a handle on the right, a wide open top, measurement lines but no numbers, EMPTY; 2) a wide ceramic bowl in cream with an orange rim, empty, for squeezing lemons by hand; 3) a pink hand mixer standing vertically with its two beaters pointing DOWN, as if dipped into a pitcher, front view; 4) a modern stainless-steel mixer with a vertical whisk pointing DOWN, as if dipped into a pitcher, front view; 5) the broken pink hand mixer with the beaters pointing down, cracked casing and a loose cable.
+Row 2: 6) a wooden spoon, standing upright; 7) a measuring cup with a handle, milky white, blank marks; 8) a half lemon on a hand squeezer, juice dripping; 9) a squeezed lemon peel half, empty and wrinkled; 10) a small round wooden tray.
+```
+
+Імена: `kt_jug, kt_bowl, kt_mixer_v_basic, kt_mixer_v_pro, kt_mixer_v_broken, kt_spoon, kt_cup_measure, kt_squeeze, kt_peel_used, kt_tray`
 
 ## Анімації: як замовляти ще
 

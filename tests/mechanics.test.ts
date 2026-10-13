@@ -310,3 +310,33 @@ describe('busy and quiet days', () => {
     expect(seen.size).toBeGreaterThan(10);
   });
 });
+
+describe('bike and scooter', () => {
+  it('the bike does not wear out or break while a working scooter does the trips', async () => {
+    const { applyWear, rollBreaks, rollMiddayBreak, sparedByScooter } = await import('../src/sim/equipment');
+    const { RNG } = await import('../src/core/rng');
+    const g = freshGame(3);
+    g.S.upgrades.bike = true;
+    g.S.condition.bike = 100;
+    const rng = new RNG(1);
+    // alone, the bike wears out
+    applyWear(g.S, rng, 'sunny', false, true);
+    expect(g.S.condition.bike).toBeLessThan(100);
+    g.S.condition.bike = 100;
+    // with a scooter it stays as good as new
+    g.S.upgrades.scooter = true;
+    g.S.condition.scooter = 100;
+    expect(sparedByScooter(g.S, 'bike')).toBe(true);
+    for (let i = 0; i < 20; i++) applyWear(g.S, rng, 'sunny', false, true);
+    expect(g.S.condition.bike).toBe(100);
+    g.S.condition.bike = 5;
+    g.S.condition.scooter = 100; // the scooter itself got worn above
+    for (let i = 0; i < 50; i++) {
+      expect(rollBreaks(g.S, rng).includes('bike')).toBe(false);
+      expect(rollMiddayBreak(g.S, rng, 'sunny')).not.toBe('bike');
+    }
+    // a broken scooter puts the bike back to work
+    g.S.broken.scooter = true;
+    expect(sparedByScooter(g.S, 'bike')).toBe(false);
+  });
+});

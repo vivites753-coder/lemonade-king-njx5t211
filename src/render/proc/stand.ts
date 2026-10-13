@@ -354,7 +354,7 @@ const SPOTS = {
 };
 
 /** Things of the stand that stand apart from the table: each is sorted among the people by its own depth. */
-export type StandPart = 'sign' | 'mascot' | 'tv';
+export type StandPart = 'sign' | 'mascot' | 'tv' | 'table2';
 
 /** Where the side parts of the stand stand now (tiles), for depth sorting. */
 export function standSideParts(g: Game): { part: StandPart; x: number; y: number }[] {
@@ -367,6 +367,8 @@ export function standSideParts(g: Game): { part: StandPart; x: number; y: number
   if (up.mascot) out.push({ part: 'mascot', x: SX - 1.55 + (wide ? -0.3 : 0), y: SY + 1.25 + (wide ? 1.0 : 0) });
   // next to the table, in front of the speaker and the scooter
   if (up.tv) out.push({ part: 'tv', x: SX + 2.2, y: SY + 0.35 });
+  // the blue table of the big stand stands behind the people of the second queue, but in front of what is behind it
+  if (wide && !isTruck) out.push({ part: 'table2', x: SX - 1.0, y: SY });
   return out;
 }
 
@@ -403,6 +405,8 @@ export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
         priceLabel(ctx, sx + (m.dx ?? 0) + SIGN_TEXT.x, sy + (m.dy ?? 0) + SIGN_TEXT.y, S.price);
       }
     });
+  } else if (part === 'table2') {
+    table2(ctx, g.phase === 'sell' ? g.D.cupsReady / CONFIG.CUPS_PER_PITCHER : 0.6);
   } else if (part === 'mascot') {
     const hop = hasImage('stand_mascot') && !ENV.reduceMotion ? Math.abs(Math.sin(ENV.t * 4)) * 4 : 0;
     shifted(ctx, wide, -0.3, 1.0, () => drawSprite(ctx, 'stand_mascot', call({ sy: sy - hop })));
@@ -491,7 +495,6 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     }
 
     if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
-    if (wide) table2(ctx, level);
     drawSprite(ctx, 'stand_table', call());
     if (up.banner) drawSprite(ctx, 'stand_banner', call());
     // on the table, from the back to the front

@@ -32,7 +32,7 @@ export function hasIco(id: string): boolean {
 /** An interface icon: the picture assets/ui/ui_<id>.png, or the emoji when it has not been drawn yet. */
 export function ico(id: string, fallback: string, cls = ''): string {
   const u = iconUrls[`/assets/ui/ui_${id}.png`];
-  return u ? `<img class="ico-img ${cls}" src="${u}" alt="" draggable="false">` : fallback;
+  return u ? `<img class="ico-img i-${id} ${cls}" src="${u}" alt="" draggable="false">` : fallback;
 }
 
 /** The picture of the weather (the emoji from the data when there is none). */

@@ -80,7 +80,7 @@ export type JuicerKind = 'none' | 'hand' | 'lever';
 
 export function juicer(kind: JuicerKind): string {
   {
-    const p = kind === 'none' ? '' : pic(kind === 'lever' ? 'juicer_lever' : 'juicer_hand');
+    const p = kind === 'none' ? pic('bowl') : pic(kind === 'lever' ? 'juicer_lever' : 'juicer_hand');
     if (p) return p;
   }
   if (kind === 'lever') {
@@ -206,4 +206,29 @@ export function splashArt(): string {
 export function kitchenDecor(): string {
   const parts = [pic('window', 'k-d-window'), pic('towel', 'k-d-towel'), pic('apron', 'k-d-apron'), pic('clock', 'k-d-clock')];
   return parts.every((x) => x) ? parts.join('') : '';
+}
+
+/** The whole kitchen as one picture (assets/kitchen/kt_bg.png), or '' while it has not been drawn. */
+export function sceneBg(): string {
+  return pic('bg', 'k-bg-img');
+}
+
+/** The glass jug picture (kt_jug.png), or '' (then the jug is drawn by CSS). */
+export function jugArt(): string {
+  return pic('jug', 'k-jug-img');
+}
+
+/** Drops that fall into the jug when a lemon is squeezed. */
+export function dropsArt(): string {
+  return pic('fx_drops') || '💧';
+}
+
+/** The picture of an ingredient that is carried by the finger or flies to its place. */
+export function itemGhost(item: 'lemon' | 'water' | 'sugar'): string {
+  return pic(item === 'lemon' ? 'lemon' : item === 'water' ? 'water_1' : 'sugar_2') || (item === 'lemon' ? '🍋' : item === 'water' ? '💧' : '🍬');
+}
+
+/** A jug of ready lemonade standing on the counter. */
+export function readyJug(): string {
+  return pic('pitcher_full') || '<span class="k-mark">🥛</span>';
 }

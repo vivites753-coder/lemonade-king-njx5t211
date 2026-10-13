@@ -9,6 +9,15 @@ import { fmtHour, ico, round1, stars, weatherIco } from './dom';
 export class Hud {
   private els: Record<string, HTMLElement> = {};
   private cache = new Map<HTMLElement, string>();
+  private lastCoins: number | null = null;
+  private lastRep: number | null = null;
+
+  private hop(el: Element | null | undefined, cls: string): void {
+    if (!el) return;
+    el.classList.remove(cls);
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add(cls);
+  }
   private whyOpen = false;
   private whyKey = '';
   private phase: Phase = 'title';
@@ -113,6 +122,11 @@ export class Hud {
     const S = g.S;
     const D = g.D;
     this.set('coins', String(S.coins));
+    // the coin hops when money comes in, the star pops when the reputation grows
+    if (this.lastCoins !== null && S.coins > this.lastCoins) this.hop(this.els.coins?.parentElement, 'gain');
+    if (this.lastRep !== null && S.rep > this.lastRep + 1e-6) this.hop(this.els.rep, 'gain');
+    this.lastCoins = S.coins;
+    this.lastRep = S.rep;
     this.set('day', t('hud.day', { n: S.day }));
     this.set('clock', fmtHour(D.hour));
     // .lbl parts are hidden on small screens, .sm parts are shown only there

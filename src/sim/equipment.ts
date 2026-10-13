@@ -31,6 +31,11 @@ export function activeUpgrades(S: GameState): Owned {
   return out;
 }
 
+/** The bike stays at home while a working scooter does its job: it neither wears out nor breaks. */
+export function sparedByScooter(S: GameState, id: EquipId): boolean {
+  return id === 'bike' && !!S.upgrades.scooter && !S.broken.scooter;
+}
+
 export function mixerBroken(S: GameState): boolean {
   return !!S.broken.mixer;
 }
@@ -57,7 +62,7 @@ export function applyWear(S: GameState, rng: RNG, weather: WeatherId, usedMixer:
   const toolkit = upgradeMult(S, 'wearMult');
   for (const id of ownedEquipment(S)) {
     if (S.broken[id]) continue;
-    if (id === 'mixer' ? !usedMixer : !opened || unusedHere(S, id)) continue;
+    if (id === 'mixer' ? !usedMixer : !opened || unusedHere(S, id) || sparedByScooter(S, id)) continue;
     const def = EQUIPMENT[id];
     let wear = rng.range(def.wear[0], def.wear[1]) * (def.weather?.[weather] ?? 1) * toolkit;
     if (id === 'mixer' && S.upgrades.mixer_pro) wear *= PRO_MIXER_WEAR;
@@ -69,7 +74,7 @@ export function applyWear(S: GameState, rng: RNG, weather: WeatherId, usedMixer:
 export function rollBreaks(S: GameState, rng: RNG): EquipId[] {
   const out: EquipId[] = [];
   for (const id of ownedEquipment(S)) {
-    if (S.broken[id]) continue;
+    if (S.broken[id] || sparedByScooter(S, id)) continue;
     const cond = S.condition[id] ?? 100;
     const p = cond <= 0 ? 1 : cond < BREAK_RISK_BELOW ? (BREAK_RISK_BELOW - cond) / 80 : 0;
     if (p > 0 && rng.chance(p)) {
@@ -83,7 +88,7 @@ export function rollBreaks(S: GameState, rng: RNG): EquipId[] {
 /** During selling, roughly once per game hour: a worn item may break right now. */
 export function rollMiddayBreak(S: GameState, rng: RNG, weather: WeatherId): EquipId | null {
   for (const id of ownedEquipment(S)) {
-    if (id === 'mixer' || S.broken[id] || unusedHere(S, id)) continue;
+    if (id === 'mixer' || S.broken[id] || unusedHere(S, id) || sparedByScooter(S, id)) continue;
     const cond = S.condition[id] ?? 100;
     if (cond >= MIDDAY_RISK_BELOW) continue;
     const p = (MIDDAY_RISK_BELOW - cond) * MIDDAY_RISK_PER_POINT * (EQUIPMENT[id].weather?.[weather] ?? 1);

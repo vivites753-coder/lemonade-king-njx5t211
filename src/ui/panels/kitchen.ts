@@ -8,9 +8,12 @@ import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
 import { lemonsTotal } from '../../sim/state';
 import { coin, fmtDur, fmtHour } from '../dom';
-import { coolerBag, cups, juicer, kitchenDecor, lemonCrate, mixer, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
+import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 
+/** Scene pixels: the scene is 900x600 and is scaled to the panel. Planks of the wall shelf are at PLANKS. */
+const SCENE_W = 900;
+const PLANKS = [124, 236, 348];
 const ITEMS: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' }[] = [
   { id: 'lemon', icon: '🍋', target: 'juicer' },
   { id: 'water', icon: '💧', target: 'jug' },
@@ -57,18 +60,79 @@ function art(item: KitchenItem, n: number): string {
   return item === 'lemon' ? lemonCrate(n) : item === 'water' ? waterBottles(n) : sugarBag(n);
 }
 
+/** Position of an element inside the scene (scene pixels), from the offset chain. */
+function inScene(elm: HTMLElement, scene: HTMLElement): { x: number; y: number; w: number; h: number } {
+  let x = 0;
+  let y = 0;
+  let n: HTMLElement | null = elm;
+  while (n && n !== scene) {
+    x += n.offsetLeft;
+    y += n.offsetTop;
+    n = n.offsetParent as HTMLElement | null;
+  }
+  return { x, y, w: elm.offsetWidth, h: elm.offsetHeight };
+}
+
+/** A copy of the ingredient's picture flies from the shelf to where it is used. */
+function fly(el: HTMLElement, item: KitchenItem, done: () => void): void {
+  const scene = q(el, '.k-scene');
+  const from = q(el, `.k-item[data-item="${item}"] .k-art`);
+  const to = q(el, item === 'lemon' ? '.k-juicer' : '.k-jug');
+  if (!from || !to || !from.animate || document.body.classList.contains('reduce-motion')) {
+    done();
+    return;
+  }
+  const a = inScene(from, scene);
+  const b = inScene(to, scene);
+  const tx = b.x + b.w / 2 - (a.x + a.w / 2);
+  const ty = b.y + (item === 'lemon' ? b.h * 0.3 : 10) - (a.y + a.h / 2);
+  const f = document.createElement('div');
+  f.className = 'k-fly';
+  f.style.cssText = `left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px`;
+  f.innerHTML = from.innerHTML;
+  scene.appendChild(f);
+  const anim = f.animate(
+    [
+      { transform: 'translate(0,0) scale(1) rotate(0)' },
+      { transform: `translate(${tx * 0.5}px,${Math.min(0, ty) - 70}px) scale(0.85) rotate(-14deg)`, offset: 0.5 },
+      { transform: `translate(${tx}px,${ty}px) scale(0.45) rotate(${item === 'lemon' ? 0 : 55}deg)`, opacity: 0.85 },
+    ],
+    { duration: 430, easing: 'cubic-bezier(.4,0,.8,.6)' },
+  );
+  anim.onfinish = () => {
+    f.remove();
+    done();
+  };
+}
+
+function flash(el: HTMLElement, sel: string, cls: string, ms: number): void {
+  const n = el.querySelector<HTMLElement>(sel);
+  if (!n) return;
+  n.classList.remove(cls);
+  void n.offsetWidth;
+  n.classList.add(cls);
+  setTimeout(() => n.classList.remove(cls), ms);
+}
+
 function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
   const r = g.kitchenAdd(item);
   if (r === 'ok') {
-    bump(q(el, item === 'lemon' ? '.k-juicer' : '.k-jug'));
-    if (item === 'lemon') bump(q(el, '.k-jug'), 'drip');
+    fly(el, item, () => {
+      if (item === 'lemon') {
+        bump(q(el, '.k-juicer'), 'k-squeeze');
+        flash(el, '.k-drops', 'show', 700);
+        bump(q(el, '.k-jug'), 'drip');
+      } else {
+        bump(q(el, '.k-jug'), 'k-bump');
+        flash(el, '.k-drops', 'show', 700);
+      }
+    });
   } else if (r === 'full') ui.toast(t('kitchen.full'), 'warn');
   else if (r === 'noStock') ui.toast(t('kitchen.noStock'), 'warn');
 }
 
 function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HTMLElement): void {
   const item = src.dataset.item as KitchenItem;
-  const def = ITEMS.find((i) => i.id === item)!;
   const x0 = e.clientX;
   const y0 = e.clientY;
   let ghost: HTMLElement | null = null;
@@ -77,7 +141,7 @@ function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HT
     if (!ghost && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) {
       ghost = document.createElement('div');
       ghost.className = 'k-ghost';
-      ghost.textContent = def.icon;
+      ghost.innerHTML = itemGhost(item);
       document.body.appendChild(ghost);
     }
     if (!ghost) return;
@@ -105,7 +169,7 @@ function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HT
     if (!target) return;
     if (item === 'lemon' && target.dataset.drop !== 'juicer') {
       ui.toast(t('tip.kitchen'), 'info');
-      bump(q(el, '.k-juicer'), 'hint');
+      bump(q(el, '.k-juicer'), 'k-hintpulse');
       return;
     }
     if (item !== 'lemon' && target.dataset.drop !== 'jug') return;
@@ -116,33 +180,62 @@ function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HT
   window.addEventListener('pointercancel', up);
 }
 
+/** The mixer rises from its shelf, goes into the jug (on = true) or comes back to the shelf. */
+function mixerFly(el: HTMLElement, on: boolean): void {
+  const mx = q(el, '.k-mixer');
+  if (!on) {
+    mx.style.transform = '';
+    mx.classList.remove('in');
+    return;
+  }
+  const scene = q(el, '.k-scene');
+  const jug = q(el, '.k-jug');
+  const a = inScene(mx, scene);
+  const b = inScene(jug, scene);
+  // the beaters (lower left of the picture) go into the liquid
+  const tx = b.x + b.w * 0.5 - (a.x + a.w * 0.5) + 10;
+  const ty = b.y + b.h * 0.34 - (a.y + a.h * 0.5);
+  mx.style.transform = `translate(${tx}px,${ty}px) rotate(-8deg) scale(0.92)`;
+  mx.classList.add('in');
+}
+
 function startHold(g: Game, el: HTMLElement): void {
   if (g.D.kitchen.mix !== 'none' || !g.kitchenCanMix()) return;
+  const jug = q(el, '.k-jug');
   if (g.S.upgrades.mixer_pro) {
-    q(el, '.k-jug').classList.add('swirl');
+    mixerFly(el, true);
+    q(el, '.k-mixer-art').classList.add('buzz');
+    setTimeout(() => jug.classList.add('swirl'), 450);
     setTimeout(() => {
-      q(el, '.k-jug').classList.remove('swirl');
+      jug.classList.remove('swirl');
+      q(el, '.k-mixer-art').classList.remove('buzz');
+      mixerFly(el, false);
       g.kitchenMix('perfect');
-    }, 600);
+    }, 1250);
     return;
   }
   const needle = q(el, '.k-needle');
-  const jug = q(el, '.k-jug');
   let p = 0;
   let last = performance.now();
   let done = false;
-  jug.classList.add('swirl');
-  q(el, '.k-mixer-art').classList.add('buzz');
+  mixerFly(el, true);
+  setTimeout(() => {
+    if (!done) {
+      jug.classList.add('swirl');
+      q(el, '.k-mixer-art').classList.add('buzz');
+    }
+  }, 380);
   const finish = () => {
     if (done) return;
     done = true;
     cancelAnimationFrame(holdRaf);
     jug.classList.remove('swirl');
     q(el, '.k-mixer-art').classList.remove('buzz');
+    mixerFly(el, false);
     window.removeEventListener('pointerup', finish);
     window.removeEventListener('pointercancel', finish);
     const result = p < PERFECT_FROM ? 'under' : p <= PERFECT_TO ? 'perfect' : 'over';
-    if (result === 'over') bump(q(el, '.k-splash'), 'show');
+    if (result === 'over') flash(el, '.k-splash', 'show', 1200);
     g.kitchenMix(result);
   };
   const tick = (now: number) => {
@@ -171,59 +264,62 @@ export const kitchenPanel: Panel = {
     const up = g.S.upgrades;
     const jk = juicerKind(g);
     const juicerLabel = jk === 'lever' ? t('kitchen.juicerLever') : jk === 'hand' ? t('kitchen.juicer') : t('kitchen.juicerHands');
+    const hasBg = !!sceneBg();
+    const mixKind = mixerBroken(g.S) ? 'broken' : up.mixer_pro ? 'pro' : 'basic';
+    const jugPic = jugArt();
     el.innerHTML = `<div class="panel kitchen${mid ? ' mid' : ''}">
       <div class="panel-head"><h2 data-k="title"></h2><span class="chip coins" data-k="coins"></span></div>
       <div class="panel-body">
         <div class="k-hint">👆 ${t('kitchen.hint')}</div>
-        <div class="k-stage">
-          <div class="k-shelf">
-            <div class="k-label">${t('kitchen.shelf')}</div>
-            ${ITEMS.map(
-              (i) => `<button class="k-item" data-item="${i.id}"><span class="k-art" data-k="art-${i.id}"></span>
-                <span class="k-meta"><b>${t(`kitchen.${i.id}`)}</b><small data-k="left-${i.id}"></small></span></button>`,
-            ).join('')}
-          </div>
-          <div class="k-room">
-            <div class="k-decor" aria-hidden="true">${kitchenDecor()}</div>
-            <div class="k-table">
-              <div class="k-top">
-                <div class="k-juicer" data-drop="juicer"><span class="k-tool-art">${juicer(jk)}</span><small>${juicerLabel}</small></div>
-                <div class="k-jug" data-drop="jug">
-                  <div class="k-liquid" data-k="liquid"></div>
-                  <div class="k-grains" data-k="grains"></div>
-                  <div class="k-splash">${splashArt()}</div>
-                </div>
-                <div class="k-tools-art">
-                  <div class="k-mixer-art">${mixer(mixerBroken(g.S) ? 'broken' : up.mixer_pro ? 'pro' : 'basic')}</div>
-                  <div class="k-cups-art" data-k="cupsart"></div>
-                </div>
+        <div class="k-main">
+          <div class="k-wrap" data-k="wrap">
+            <div class="k-scene${hasBg ? ' has-bg' : ''}">
+              ${hasBg ? sceneBg() : '<div class="k-bg"></div><div class="k-counter"></div>'}
+              <div class="k-decor" style="inset:0" aria-hidden="true">${kitchenDecor()}</div>
+              ${PLANKS.map((y) => `<div class="k-plank" style="top:${y}px"></div>`).join('')}<div class="k-plank m" style="top:250px"></div>
+              ${ITEMS.map(
+                (i, n) => `<button class="k-item" data-item="${i.id}" style="left:18px;top:${PLANKS[n] - 108}px"><span class="k-art" data-k="art-${i.id}"></span>
+                  <span class="k-meta"><b>${t(`kitchen.${i.id}`)}</b><small data-k="left-${i.id}"></small></span></button>`,
+              ).join('')}
+              <div class="k-mixer${mixKind === 'pro' ? ' pro' : ''}${mixKind === 'broken' ? ' off' : ''}" data-k="mixer"><div class="k-mixer-art">${mixer(mixKind)}</div></div>
+              <div class="k-juicer" data-drop="juicer"><span class="k-tool-art">${juicer(jk)}</span></div>
+              <div class="k-cap">${juicerLabel}</div>
+              <div class="k-meter"><i class="k-zone" style="left:${zoneL}%;width:${zoneW}%"></i><i class="k-needle"></i></div>
+              <div class="k-jug${jugPic ? ' has-art' : ''}" data-drop="jug">
+                ${jugPic}
+                <div class="k-liq-clip"><div class="k-liquid" data-k="liquid"></div><div class="k-grains" data-k="grains"></div></div>
               </div>
-              <div class="k-board"></div>
-              <div class="k-under">
-                ${up.cooler ? `<span class="k-cooler" title="${t('up.cooler.name')}">${coolerBag()}<b data-k="cooler"></b></span>` : ''}
-                ${up.toolkit ? `<span class="k-toolkit" title="${t('up.toolkit.name')}">${toolkitBox()}</span>` : ''}
+              <div class="k-glass${jugPic ? ' has-art' : ''}">${jugPic}</div>
+              <div class="k-drops">${dropsArt()}</div>
+              <div class="k-splash">${splashArt()}</div>
+              <div class="k-spoon" data-k="spoon">🥄</div>
+              <div class="k-cups-art" data-k="cupsart"></div>
+              <div class="k-ready" data-k="ready"></div>
+              ${up.cooler ? `<span class="k-cooler" title="${t('up.cooler.name')}">${coolerBag()}<b data-k="cooler"></b></span>` : ''}
+              ${up.toolkit ? `<span class="k-toolkit" title="${t('up.toolkit.name')}">${toolkitBox()}</span>` : ''}
+            </div>
+          </div>
+          <div class="k-side">
+            <div class="k-counts" data-k="counts"></div>
+            <div class="k-mixrow">
+              <button class="k-mixer-btn" data-k="mixbtn"></button>
+              <div class="k-mix-status" data-k="mixstatus"></div>
+              <div>
+                <div class="taste"><i data-k="taste"></i></div>
+                <div class="taste-labels"><span>🍋</span><b data-k="tastelabel"></b><span>🍬</span></div>
               </div>
             </div>
-            <div class="k-counts" data-k="counts"></div>
+            <div class="k-tools">
+              <button class="btn btn-sm btn-b" data-kact="repeat">🔁 ${t('kitchen.repeat')}</button>
+              <button class="btn btn-sm" data-kact="reset">↺ ${t('kitchen.reset')}</button>
+              ${
+                mid
+                  ? ''
+                  : `<button class="btn btn-sm" data-kact="market">🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
+              <button class="btn btn-sm" data-kact="rest">😴 ${t('morning.rest')}</button>`
+              }
+            </div>
           </div>
-          <div class="k-mix">
-            <div class="k-label">${t('kitchen.mixer')}</div>
-            <div class="k-meter"><i class="k-zone" style="left:${zoneL}%;width:${zoneW}%"></i><i class="k-needle"></i></div>
-            <button class="k-mixer-btn" data-k="mixbtn"></button>
-            <div class="k-mix-status" data-k="mixstatus"></div>
-            <div class="taste"><i data-k="taste"></i></div>
-            <div class="taste-labels"><span>🍋</span><b data-k="tastelabel"></b><span>🍬</span></div>
-          </div>
-        </div>
-        <div class="k-tools">
-          <button class="btn btn-sm btn-b" data-kact="repeat">🔁 ${t('kitchen.repeat')}</button>
-          <button class="btn btn-sm" data-kact="reset">↺ ${t('kitchen.reset')}</button>
-          ${
-            mid
-              ? ''
-              : `<button class="btn btn-sm" data-kact="market">🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
-          <button class="btn btn-sm" data-kact="rest">😴 ${t('morning.rest')}</button>`
-          }
         </div>
       </div>
       <div class="panel-foot k-foot">
@@ -233,6 +329,16 @@ export const kitchenPanel: Panel = {
       </div>
     </div>`;
 
+    // the scene has a fixed size and is scaled to the space it gets
+    const wrap = q(el, '.k-wrap');
+    const fit = () => {
+      const w = wrap.clientWidth;
+      if (w > 0) wrap.style.setProperty('--ks', String(w / SCENE_W));
+    };
+    fit();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    ro?.observe(wrap);
+
     const onDown = (e: PointerEvent) => {
       const item = (e.target as HTMLElement).closest<HTMLElement>('.k-item');
       if (item && !(item as HTMLButtonElement).disabled) {
@@ -240,22 +346,35 @@ export const kitchenPanel: Panel = {
         startDrag(e, g, ui, el, item);
         return;
       }
-      const mix = (e.target as HTMLElement).closest<HTMLElement>('.k-mixer-btn');
+      const mix = (e.target as HTMLElement).closest<HTMLElement>('.k-mixer-btn, .k-mixer');
       if (mix && !(mix as HTMLButtonElement).disabled) {
         e.preventDefault();
         if (mixerBroken(g.S)) {
-          g.kitchenStir();
-          bump(q(el, '.k-jug'), 'swirl-once');
+          if (g.D.kitchen.mix === 'none' && g.kitchenCanMix()) {
+            g.kitchenStir();
+            bump(q(el, '.k-jug'), 'swirl-once');
+            flash(el, '.k-spoon', 'go', 520);
+          }
         } else startHold(g, el);
       }
     };
     const onClick = (e: MouseEvent) => {
+      const d = (e.target as HTMLElement).closest<HTMLElement>('.k-decor img');
+      if (d) {
+        d.classList.remove('wiggle');
+        void d.offsetWidth;
+        d.classList.add('wiggle');
+        return;
+      }
       const b = (e.target as HTMLElement).closest<HTMLElement>('[data-kact]');
       if (!b || (b as HTMLButtonElement).disabled) return;
       const act = b.dataset.kact;
       if (act === 'repeat') g.kitchenRepeat();
       if (act === 'reset') g.kitchenReset();
-      if (act === 'pour' && g.kitchenPour()) bump(q(el, '[data-k="jugs"]'));
+      if (act === 'pour' && g.kitchenPour()) {
+        bump(q(el, '[data-k="jugs"]'));
+        flash(el, '.k-jug', 'pour', 950);
+      }
       if (act === 'stand') g.leaveKitchen();
       if (act === 'market') g.goMarket();
       if (act === 'rest') ui.confirm(t('morning.restConfirm'), () => g.restDay());
@@ -266,6 +385,7 @@ export const kitchenPanel: Panel = {
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('click', onClick);
       cancelAnimationFrame(holdRaf);
+      ro?.disconnect();
     };
     kitchenPanel.update!(el, g, ui);
   },
@@ -295,6 +415,8 @@ export const kitchenPanel: Panel = {
       btn.title = can === 'full' ? t('kitchen.full') : can === 'noStock' ? t('kitchen.noStock') : '';
     }
     set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>🥤 ${st.cups}</small>`);
+    const readyN = Math.min(4, g.D.kitchenJugs);
+    set('ready', readyN > 0 ? readyJug().repeat(readyN) : '');
     set('cooler', g.D.cupsReady && g.S.upgrades.cooler ? `🥛 ${g.D.cupsReady}` : '');
     // jug contents
     const fill = Math.min(95, k.water * 32 + k.juice * 5);
@@ -320,8 +442,8 @@ export const kitchenPanel: Panel = {
     const mixBtn = q<HTMLButtonElement>(el, '[data-k="mixbtn"]');
     mixBtn.disabled = !canMix || k.mix !== 'none';
     mixBtn.classList.toggle('stir', broken);
-    mixBtn.classList.toggle('nudge', canMix && k.mix === 'none');
-    set('mixbtn', broken ? `🥄 ${t('kitchen.stir')}<small>${k.stir}/${CONFIG.STIR_TAPS}</small>` : `🌀 ${t('kitchen.mixer')}<small>${g.S.upgrades.mixer_pro ? '✨' : t('kitchen.hold')}</small>`);
+    q(el, '.k-mixer').classList.toggle('nudge', canMix && k.mix === 'none' && !broken);
+    set('mixbtn', broken ? `<span>🥄</span><span>${t('kitchen.stir')}<small>${k.stir}/${CONFIG.STIR_TAPS}</small></span>` : `<span>🌀</span><span>${t('kitchen.mixer')}<small>${g.S.upgrades.mixer_pro ? '✨' : t('kitchen.hold')}</small></span>`);
     q(el, '.k-meter').classList.toggle('hidden', broken || !!g.S.upgrades.mixer_pro);
     if (k.mix === 'none') q(el, '.k-needle').style.left = '0%';
     const status = !canMix
