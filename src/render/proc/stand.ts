@@ -636,7 +636,7 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
   }
   // the truck carries its speaker on the roof, at the right end (the bar stools take the space in front)
   if (up.speaker && isTruck) {
-    const [ox, oy] = P(-0.12, -0.22, TRUCK_SPEAKER_Z);
+    const [ox, oy] = P(-0.42, -0.3, TRUCK_SPEAKER_Z + 2);
     ctx.save();
     ctx.translate(ox, oy);
     drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));

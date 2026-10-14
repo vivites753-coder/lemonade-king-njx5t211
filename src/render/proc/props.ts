@@ -218,9 +218,10 @@ const CAR_SPRITES = ['car_a', 'car_b', 'car_c', 'car_d', 'van'];
  * and from behind a little smoke puffs out of the exhaust pipe. Falls back to the code-drawn car.
  */
 /** The shadow of a car: long along the road and right under the wheels (the wheels stand on its lower edge). */
-function carShadow(ctx: Ctx, sx: number, sy: number): void {
+function carShadow(ctx: Ctx, sx: number, sy: number, k: number): void {
   ctx.save();
-  ctx.translate(sx, sy - 5);
+  ctx.translate(sx, sy);
+  ctx.scale(k, k);
   // the road runs along the x tiles: on screen that is 2 px right for 1 px down
   ctx.rotate(Math.atan2(16, 32));
   ctx.scale(1, 0.4);
@@ -243,7 +244,8 @@ export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; d
     return;
   }
   const [sx, sy] = P(c.x, c.y);
-  carShadow(ctx, sx, sy);
+  // the shadow grows with the picture (it was made for a car 52 px high)
+  carShadow(ctx, sx, sy, metaFor(id).h / 52);
   drawSprite(ctx, id, { x: c.x, y: c.y, sx, sy, s: 1 });
   if (c.dir > 0 || ENV.reduceMotion || !hasImage(id)) return;
   // the exhaust is at the lower right of the rear picture; the puffs rise and drift backwards, getting bigger and fainter
@@ -253,10 +255,11 @@ export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; d
   const ex = sx - W * m.anchor[0] + W * 0.86;
   const ey = sy - H * m.anchor[1] + H * 0.9;
   const phase = c.x * 1.7;
+  const z = H / 52;
   for (let i = 0; i < 4; i++) {
     // one puff takes 2.6 s to rise and fade
     const k = (((ENV.t / 2.6 + i / 4 + phase) % 1) + 1) % 1;
-    circle(ctx, ex + k * 13, ey - k * 12, 1.6 + k * 4, `rgba(240,240,240,${(0.85 * (1 - k)).toFixed(3)})`);
+    circle(ctx, ex + k * 13 * z, ey - k * 12 * z, (1.6 + k * 4) * z, `rgba(240,240,240,${(0.85 * (1 - k)).toFixed(3)})`);
   }
 }
 

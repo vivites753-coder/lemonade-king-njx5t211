@@ -829,6 +829,7 @@ export const en: Record<I18nKey, string> = {
   'truck.skin.berry': 'Berry',
   'truck.skin.sky': 'Sky',
   'truck.skin.retro': 'Retro',
+  'truck.skin.lilac': 'Lilac',
   'world.truckDefault': 'LEMONADE',
   // v0.5: accidents and lucky finds
   'card.acc.runner.title': 'Oops! A boy ran into the table 🏃',

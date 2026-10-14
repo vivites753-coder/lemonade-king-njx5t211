@@ -87,6 +87,11 @@ export interface StreetHost {
 }
 
 const CAR_COLORS = ['#e03131', '#1971c2', '#f59f00', '#2f9e44', '#f8f9fa', '#7048e8'];
+/** The two lanes of the road (tile y): the road takes rows 6 and 7, the dashed line is at y = 7. */
+const CAR_LANES = { toRight: 7.5, toLeft: 6.5 };
+/** Cars appear and leave a little beyond the island (they are long), and keep this distance (tiles) to the car ahead. */
+const CAR_ENTER = [-1.4, 13.4] as const;
+const CAR_GAP = 2.2;
 
 export class Street {
   readonly peds: Ped[] = [];
@@ -320,22 +325,38 @@ export class Street {
     if (LOCATIONS[this.host.location()].cars) {
       this.carTimer -= dt;
       if (this.carTimer <= 0) {
-        this.carTimer = 2.5 + Math.random() * 5;
         const dir: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
-        this.cars.push({
-          x: dir > 0 ? -0.6 : 12.6,
-          y: dir > 0 ? 6.5 : 7.5,
-          dir,
-          speed: 2.4 + Math.random() * 1.2,
-          color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)],
-          variant: Math.random() < 0.14 ? 4 : Math.floor(Math.random() * 4),
-        });
+        const x = dir > 0 ? CAR_ENTER[0] : CAR_ENTER[1];
+        // right-hand traffic: driving to the lower right (+x) the right side of the road is the near lane (bigger y)
+        const y = dir > 0 ? CAR_LANES.toRight : CAR_LANES.toLeft;
+        // a new car comes only when the start of its lane is free
+        if (this.cars.some((c) => c.dir === dir && Math.abs(c.x - x) < CAR_GAP)) this.carTimer = 0.6;
+        else {
+          this.carTimer = 2.5 + Math.random() * 5;
+          this.cars.push({
+            x,
+            y,
+            dir,
+            speed: 2.4 + Math.random() * 1.2,
+            color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)],
+            variant: Math.random() < 0.14 ? 4 : Math.floor(Math.random() * 4),
+          });
+        }
       }
     }
     for (let i = this.cars.length - 1; i >= 0; i--) {
       const c = this.cars[i];
       c.x += c.dir * c.speed * dt;
-      if (c.x < -0.8 || c.x > 12.8) this.cars.splice(i, 1);
+      // a faster car slows down behind a slower one instead of driving through it
+      for (const o of this.cars) {
+        if (o === c || o.dir !== c.dir) continue;
+        const gap = (o.x - c.x) * c.dir;
+        if (gap > 0 && gap < CAR_GAP) {
+          c.x = o.x - c.dir * CAR_GAP;
+          c.speed = Math.min(c.speed, o.speed);
+        }
+      }
+      if (c.x < CAR_ENTER[0] - 0.3 || c.x > CAR_ENTER[1] + 0.3) this.cars.splice(i, 1);
     }
   }
 

@@ -828,6 +828,7 @@ export const uk = {
   'truck.skin.berry': 'Ягідний',
   'truck.skin.sky': 'Небесний',
   'truck.skin.retro': 'Ретро',
+  'truck.skin.lilac': 'Бузковий',
   'world.truckDefault': 'ЛИМОНАД',
   // v0.5: accidents and lucky finds
   'card.acc.runner.title': 'Ой! Хлопчик врізався в стіл 🏃',

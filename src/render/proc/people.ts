@@ -48,9 +48,19 @@ export function pedSpriteId(type: string, variant: number, front: boolean): stri
 
 /** Sprite id of a pedestrian holding an umbrella (drawn pictures), or undefined when there is none for this look. */
 export function pedUmbrellaSpriteId(type: string, variant: number, front: boolean): string | undefined {
+  return pedWithSpriteId('umb', type, variant, front);
+}
+
+/** Sprite id of a pedestrian walking away with a cup of lemonade in the hand, or undefined when there is none. */
+export function pedCupSpriteId(type: string, variant: number, front: boolean): string | undefined {
+  return pedWithSpriteId('cup', type, variant, front);
+}
+
+/** A pedestrian picture with something in the hands (`umb`, `cup`), when one is drawn for this look. */
+function pedWithSpriteId(what: string, type: string, variant: number, front: boolean): string | undefined {
   const side = front ? 'front' : 'back';
   for (let i = 0; i < VARIANTS.length; i++) {
-    const id = `char_${type}_${VARIANTS[(variant + i) % VARIANTS.length]}_umb_${side}`;
+    const id = `char_${type}_${VARIANTS[(variant + i) % VARIANTS.length]}_${what}_${side}`;
     if (hasImage(id)) return id;
   }
   return undefined;

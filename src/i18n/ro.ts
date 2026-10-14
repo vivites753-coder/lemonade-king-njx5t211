@@ -830,6 +830,7 @@ export const ro: Record<I18nKey, string> = {
   'truck.skin.berry': 'Fructe de pădure',
   'truck.skin.sky': 'Cer',
   'truck.skin.retro': 'Retro',
+  'truck.skin.lilac': 'Liliachiu',
   'world.truckDefault': 'LIMONADĂ',
   // v0.5: accidents and lucky finds
   'card.acc.runner.title': 'Hopa! Un băiat s-a izbit de masă 🏃',

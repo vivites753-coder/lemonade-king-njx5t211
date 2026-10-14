@@ -14,6 +14,7 @@ export const TRUCK_SKINS: TruckSkin[] = [
   { id: 'berry', body: '#fcc2d7', trim: '#d6336c', awning: '#f06595', neon: '#74c0fc' },
   { id: 'sky', body: '#a5d8ff', trim: '#1971c2', awning: '#339af0', neon: '#ffe066' },
   { id: 'retro', body: '#ffa8a8', trim: '#c92a2a', awning: '#fa5252', neon: '#69db7c' },
+  { id: 'lilac', body: '#d0bfff', trim: '#7048e8', awning: '#9775fa', neon: '#63e6be' },
 ];
 
 /** Logos without zero-width joiners (they break on Windows 10). */

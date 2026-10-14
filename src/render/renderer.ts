@@ -14,7 +14,7 @@ import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
 import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
 import { pedFacing } from './facing';
-import { drawCharacter, drawCup, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
+import { drawCharacter, drawCup, pedCupSpriteId, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
 import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawCritter } from './proc/critters';
@@ -305,14 +305,17 @@ export class Renderer {
     items.length = 0;
     for (const d of decor) if (!d.back) items.push({ d: d.x + d.y, k: 0, o: d });
     for (const p of g.street.peds) items.push({ d: p.x + p.y, k: 1, o: p });
-    for (const c of g.street.cars) items.push({ d: c.x + c.y + 0.3, k: 2, o: c });
+    // a car is long: it is sorted so that people on the near pavement stay in front of it and people on the far one
+    // behind it (the near lane a little earlier, the far lane a little later than its middle point)
+    for (const c of g.street.cars) items.push({ d: c.x + c.y + (c.y > 7 ? -0.9 : 0.5), k: 2, o: c });
     items.push({ d: CONFIG.STAND.x + CONFIG.STAND.y + 0.05, k: 3, o: null });
     // the sign, the mascot and the TV stand apart from the table: each one is sorted by its own depth
     for (const s of standSideParts(g)) items.push({ d: s.x + s.y, k: 6, o: s.part });
     if (g.street.thief) items.push({ d: g.street.thief.x + g.street.thief.y, k: 4, o: g.street.thief });
     for (const c of g.critters.list) items.push({ d: c.x + c.y + (c.kind === 'splash' ? 0.3 : 0), k: 5, o: c });
     this.tapTargets = [];
-    items.sort((a, b) => a.d - b.d);
+    // of two cars the one in the near lane is in front
+    items.sort((a, b) => (a.k === 2 && b.k === 2 ? (a.o as { y: number }).y - (b.o as { y: number }).y : 0) || a.d - b.d);
 
     this.bubbles.length = 0;
     this.thiefScreen = null;
@@ -326,7 +329,7 @@ export class Renderer {
           break;
         case 2: {
           const c = it.o as { x: number; y: number; color: string; dir: number; variant: number };
-          const a = edgeAlpha(c.x, 0.5);
+          const a = edgeAlpha(c.x, 0.9);
           if (a <= 0) break;
           ctx.globalAlpha = a;
           drawCarArt(ctx, c);
@@ -393,7 +396,9 @@ export class Renderer {
     const wantUmbrella = this.src.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue;
     // a drawn picture of the person with an umbrella, if there is one; otherwise the umbrella is drawn over the plain picture
     const umbId = wantUmbrella ? pedUmbrellaSpriteId(p.type, p.look.variant, facingCam) : undefined;
-    const id = umbId ?? pedSpriteId(p.type, p.look.variant, facingCam);
+    // someone who has bought lemonade walks away with the cup in the hand
+    const cupId = !umbId && p.hasCup ? pedCupSpriteId(p.type, p.look.variant, facingCam) : undefined;
+    const id = umbId ?? cupId ?? pedSpriteId(p.type, p.look.variant, facingCam);
     const headY = drawCharacter(ctx, id, p.x, p.y, sx, sy, {
       kind: p.type,
       look: p.look,
@@ -402,7 +407,7 @@ export class Renderer {
       anim: p.anim,
       facingCam,
       dirX,
-      // people who have bought lemonade carry no cup for now (an own animation will come later)
+      // the cup is in the picture (people without such a picture carry none)
       hasCup: false,
       umbrella: wantUmbrella && !umbId,
     });

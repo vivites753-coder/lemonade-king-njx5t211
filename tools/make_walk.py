@@ -2,9 +2,10 @@
 
 Usage: python tools/make_walk.py <frames_dir> <out_assets_dir> <gif_dir> [loop=26] [cols=3] [rows=4] [step=2] [suffix]
 
-With a suffix (e.g. umb) the strips are named char_<name>_<suffix>_<front|back>, walk.json is MERGED (not replaced), the
-first frame is written as the still picture next to the assets folder, and every strip gets `u` (world px per video px):
-the figure holds an umbrella, so its body is smaller in the video than the plain one by RATIO and is scaled to match it.
+With a suffix (e.g. umb, cup) the strips are named char_<name>_<suffix>_<front|back>, walk.json is MERGED (not replaced),
+the first frame is written as the still picture next to the assets folder, and every strip gets `u` (world px per video
+px). With an umbrella the figure's body is smaller in the video than the plain one by RATIO; with a cup (nothing over the
+head) the figure is simply scaled to the height of the plain one.
 
 For every figure:
   * the magenta background is keyed out (edges re-coloured from the solid pixels, no purple halo);
@@ -175,7 +176,8 @@ for i, name in enumerate(NAMES):
             old = json.load(open(os.path.join(out_dir, 'walk.json'), encoding='utf-8'))[base]
             ih = Image.open(os.path.join(STILL_DIR, base + '.png')).height
             u_base = BASE_H * (ih - 12) / ih / old['figH']
-            manifest[sid]['u'] = round(u_base / RATIO[name.split('_')[0]], 5)
+            ratio = RATIO[name.split('_')[0]] if SUFFIX == 'umb' else manifest[sid]['figH'] / old['figH']
+            manifest[sid]['u'] = round(u_base / ratio, 5)
             Image.fromarray(strip[:, :fw], 'RGBA').save(os.path.join(STILL_DIR, sid + '.png'), optimize=True)
         print(f'{sid:22s} start {t0:3d} seam {best[0]:.1f}  frame {fw}x{fh}  figure {manifest[sid]["figH"]}px')
 

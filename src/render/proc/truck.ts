@@ -103,6 +103,9 @@ function neonSign(ctx: Ctx, w: number, label: string, neon: string): void {
   ctx.restore();
 }
 
+/** Height of a seller picture at scale 1 (world px). */
+const SELLER_H = 45;
+
 /** For every colour of the truck picture: the open window and the sign board as corners (fractions of the picture). */
 const TRUCK_ART = artJson as unknown as Record<string, { window: number[][]; sign: number[][]; aspect: number }>;
 
@@ -165,10 +168,16 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
     const t = (x - win[0][0]) / Math.max(1, win[1][0] - win[0][0]);
     return win[0][1] + (win[1][1] - win[0][1]) * Math.max(0, Math.min(1, t));
   };
+  const bottomAt = (x: number) => {
+    const t = (x - win[3][0]) / Math.max(1, win[2][0] - win[3][0]);
+    return win[3][1] + (win[2][1] - win[3][1]) * Math.max(0, Math.min(1, t));
+  };
   const n = c.workers.length;
-  const spots = n >= 3 ? [0.18, 0.5, 0.82] : n === 2 ? [0.3, 0.74] : [0.62];
-  // the window of the picture is low: smaller sellers show their shoulders over the shelf, not only the head
-  const sc = n >= 3 ? 0.5 : n === 2 ? 0.56 : 0.6;
+  const spots = n >= 3 ? [0.18, 0.5, 0.82] : n === 2 ? [0.3, 0.72] : [0.58];
+  // the sellers are sized to the window: the head, the shoulders and the chest show over the shelf
+  const mid = x0 + (x1 - x0) * 0.5;
+  const winH = (bottomAt(mid) - topAt(mid)) / c.s;
+  const sc = Math.max(0.45, Math.min(0.9, winH / (SELLER_H * 0.55))) * (n >= 3 ? 0.86 : n === 2 ? 0.94 : 1);
   const girlId = (w: TruckWorker) => (w.girl ? 'girl' : 'boy');
   ctx.save();
   ctx.beginPath();
@@ -259,7 +268,7 @@ export const TRUCK_BISTRO = { x: TRUCK.x0 - 0.75, y: TRUCK.y0 + TRUCK.d + 0.4 };
 export const TRUCK_STOOLS = { x: TRUCK.x0 + TRUCK.w + 0.3, y: TRUCK.y0 + 0.47 };
 
 /** Warm trucks get orange stools, cool ones mint green. */
-const STOOL_OF: Record<string, string> = { lemon: 'a', retro: 'a', berry: 'a', mint: 'b', sky: 'b' };
+const STOOL_OF: Record<string, string> = { lemon: 'a', retro: 'a', berry: 'a', mint: 'b', sky: 'b', lilac: 'b' };
 
 export function drawTruckBistro(ctx: Ctx, skin: number): void {
   const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];

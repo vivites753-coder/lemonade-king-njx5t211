@@ -5,6 +5,12 @@ import type { SpriteMeta } from './assets';
  * h = height on screen in world px (a tile is 64×32), anchor = the point of the image that sits on the
  * object's position ([0.5, 1] = bottom centre). Tweak these when real art arrives.
  */
+/** All the food truck pictures have the same shape (the big serving window, mirrored to face the customers). */
+const TRUCK_META: SpriteMeta = { h: 150, anchor: [0.5, 0.82], dx: 6, dy: -4 };
+
+/** Height of the ground point of a car picture (share of the picture, from the top). */
+const CAR_AY = 0.8;
+
 export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_tree_a: { h: 82, anchor: [0.5, 0.894] },
   prop_tree_b: { h: 77, anchor: [0.5, 0.864] },
@@ -26,25 +32,27 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_duck: { h: 16, anchor: [0.5, 0.8] },
   prop_car_a: { h: 44, anchor: [0.5, 0.75] },
   // the food truck pictures (one per colour; the same shape, so the same size) and its bistro table and bar stools
-  stand_truck_lemon: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
-  stand_truck_mint: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
-  stand_truck_berry: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
-  stand_truck_sky: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
-  stand_truck_retro: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
+  stand_truck_lemon: TRUCK_META,
+  stand_truck_mint: TRUCK_META,
+  stand_truck_berry: TRUCK_META,
+  stand_truck_sky: TRUCK_META,
+  stand_truck_retro: TRUCK_META,
+  stand_truck_lilac: TRUCK_META,
   stand_truck_bistro: { h: 26, anchor: [0.5, 0.94] },
   stand_truck_stool_a: { h: 24, anchor: [0.5, 0.94] },
   stand_truck_stool_b: { h: 24, anchor: [0.5, 0.94] },
   // drawn cars: one scale for all, the front picture drives to the lower right, the back one to the upper left
-  prop_car_a_front: { h: 52.8, anchor: [0.5, 0.9] },
-  prop_car_b_front: { h: 50.6, anchor: [0.5, 0.9] },
-  prop_car_c_front: { h: 49.9, anchor: [0.5, 0.9] },
-  prop_car_d_front: { h: 51.2, anchor: [0.5, 0.9] },
-  prop_van_front: { h: 56.0, anchor: [0.5, 0.9] },
-  prop_car_a_back: { h: 50.9, anchor: [0.5, 0.9] },
-  prop_car_b_back: { h: 49.3, anchor: [0.5, 0.9] },
-  prop_car_c_back: { h: 48.0, anchor: [0.5, 0.9] },
-  prop_car_d_back: { h: 49.9, anchor: [0.5, 0.9] },
-  prop_van_back: { h: 52.8, anchor: [0.5, 0.9] },
+  // one and a half times the first size; the anchor is the middle of the four wheels (the car stands in the middle of its lane)
+  prop_car_a_front: { h: 79.2, anchor: [0.5, CAR_AY] },
+  prop_car_b_front: { h: 75.9, anchor: [0.5, CAR_AY] },
+  prop_car_c_front: { h: 74.8, anchor: [0.5, CAR_AY] },
+  prop_car_d_front: { h: 76.8, anchor: [0.5, CAR_AY] },
+  prop_van_front: { h: 84.0, anchor: [0.5, CAR_AY] },
+  prop_car_a_back: { h: 76.3, anchor: [0.5, CAR_AY] },
+  prop_car_b_back: { h: 73.9, anchor: [0.5, CAR_AY] },
+  prop_car_c_back: { h: 72.0, anchor: [0.5, CAR_AY] },
+  prop_car_d_back: { h: 74.8, anchor: [0.5, CAR_AY] },
+  prop_van_back: { h: 79.2, anchor: [0.5, CAR_AY] },
   // the anchor is the centre of the footprint, not the front corner: the front corner is about 40 px lower
   // the stand people: the same size for every pose of one person (their pictures differ in height)
   char_player_boy_front: { h: 42.9, anchor: [0.5, 0.975] },

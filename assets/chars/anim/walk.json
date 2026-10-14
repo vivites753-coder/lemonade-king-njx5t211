@@ -7,6 +7,24 @@
   "fw": 99,
   "n": 13
  },
+ "char_adult_a_cup_back": {
+  "cx": 52.2,
+  "feetY": 175,
+  "fh": 180,
+  "figH": 170,
+  "fw": 102,
+  "n": 13,
+  "u": 0.32869
+ },
+ "char_adult_a_cup_front": {
+  "cx": 52.2,
+  "feetY": 173,
+  "fh": 178,
+  "figH": 168,
+  "fw": 110,
+  "n": 13,
+  "u": 0.33233
+ },
  "char_adult_a_front": {
   "cx": 52.2,
   "feetY": 170,
@@ -40,6 +58,24 @@
   "figH": 167,
   "fw": 98,
   "n": 13
+ },
+ "char_adult_b_cup_back": {
+  "cx": 53.0,
+  "feetY": 173,
+  "fh": 178,
+  "figH": 168,
+  "fw": 105,
+  "n": 13,
+  "u": 0.33241
+ },
+ "char_adult_b_cup_front": {
+  "cx": 52.0,
+  "feetY": 177,
+  "fh": 182,
+  "figH": 172,
+  "fw": 110,
+  "n": 13,
+  "u": 0.32487
  },
  "char_adult_b_front": {
   "cx": 50.0,
@@ -75,6 +111,24 @@
   "fw": 105,
   "n": 13
  },
+ "char_adult_c_cup_back": {
+  "cx": 55.3,
+  "feetY": 176,
+  "fh": 181,
+  "figH": 171,
+  "fw": 116,
+  "n": 13,
+  "u": 0.32677
+ },
+ "char_adult_c_cup_front": {
+  "cx": 58.7,
+  "feetY": 175,
+  "fh": 180,
+  "figH": 170,
+  "fw": 120,
+  "n": 13,
+  "u": 0.32862
+ },
  "char_adult_c_front": {
   "cx": 58.7,
   "feetY": 177,
@@ -108,6 +162,24 @@
   "figH": 166,
   "fw": 104,
   "n": 13
+ },
+ "char_granny_a_cup_back": {
+  "cx": 52.7,
+  "feetY": 173,
+  "fh": 178,
+  "figH": 168,
+  "fw": 108,
+  "n": 13,
+  "u": 0.33225
+ },
+ "char_granny_a_cup_front": {
+  "cx": 50.2,
+  "feetY": 181,
+  "fh": 186,
+  "figH": 176,
+  "fw": 106,
+  "n": 13,
+  "u": 0.31767
  },
  "char_granny_a_front": {
   "cx": 54.6,
@@ -143,6 +215,24 @@
   "fw": 111,
   "n": 13
  },
+ "char_granny_b_cup_back": {
+  "cx": 55.1,
+  "feetY": 174,
+  "fh": 179,
+  "figH": 169,
+  "fw": 113,
+  "n": 13,
+  "u": 0.33048
+ },
+ "char_granny_b_cup_front": {
+  "cx": 52.1,
+  "feetY": 175,
+  "fh": 180,
+  "figH": 170,
+  "fw": 111,
+  "n": 13,
+  "u": 0.32854
+ },
  "char_granny_b_front": {
   "cx": 57.5,
   "feetY": 175,
@@ -176,6 +266,24 @@
   "figH": 149,
   "fw": 88,
   "n": 13
+ },
+ "char_kid_a_cup_back": {
+  "cx": 42.8,
+  "feetY": 155,
+  "fh": 160,
+  "figH": 150,
+  "fw": 86,
+  "n": 13,
+  "u": 0.37078
+ },
+ "char_kid_a_cup_front": {
+  "cx": 46.0,
+  "feetY": 153,
+  "fh": 158,
+  "figH": 148,
+  "fw": 98,
+  "n": 13,
+  "u": 0.37568
  },
  "char_kid_a_front": {
   "cx": 44.1,
@@ -211,6 +319,24 @@
   "fw": 95,
   "n": 13
  },
+ "char_kid_b_cup_back": {
+  "cx": 48.8,
+  "feetY": 147,
+  "fh": 152,
+  "figH": 142,
+  "fw": 104,
+  "n": 13,
+  "u": 0.39088
+ },
+ "char_kid_b_cup_front": {
+  "cx": 55.1,
+  "feetY": 152,
+  "fh": 157,
+  "figH": 147,
+  "fw": 107,
+  "n": 13,
+  "u": 0.37812
+ },
  "char_kid_b_front": {
   "cx": 50.7,
   "feetY": 151,
@@ -244,6 +370,24 @@
   "figH": 142,
   "fw": 96,
   "n": 13
+ },
+ "char_kid_c_cup_back": {
+  "cx": 50.2,
+  "feetY": 151,
+  "fh": 156,
+  "figH": 146,
+  "fw": 100,
+  "n": 13,
+  "u": 0.38023
+ },
+ "char_kid_c_cup_front": {
+  "cx": 54.1,
+  "feetY": 153,
+  "fh": 158,
+  "figH": 148,
+  "fw": 110,
+  "n": 13,
+  "u": 0.37539
  },
  "char_kid_c_front": {
   "cx": 48.8,
@@ -279,6 +423,24 @@
   "fw": 98,
   "n": 13
  },
+ "char_sport_a_cup_back": {
+  "cx": 46.1,
+  "feetY": 177,
+  "fh": 182,
+  "figH": 172,
+  "fw": 98,
+  "n": 13,
+  "u": 0.32502
+ },
+ "char_sport_a_cup_front": {
+  "cx": 52.2,
+  "feetY": 174,
+  "fh": 179,
+  "figH": 169,
+  "fw": 108,
+  "n": 13,
+  "u": 0.33029
+ },
  "char_sport_a_front": {
   "cx": 52.0,
   "feetY": 173,
@@ -312,6 +474,24 @@
   "figH": 166,
   "fw": 92,
   "n": 13
+ },
+ "char_sport_b_cup_back": {
+  "cx": 45.9,
+  "feetY": 173,
+  "fh": 178,
+  "figH": 168,
+  "fw": 93,
+  "n": 13,
+  "u": 0.33241
+ },
+ "char_sport_b_cup_front": {
+  "cx": 49.7,
+  "feetY": 184,
+  "fh": 189,
+  "figH": 179,
+  "fw": 107,
+  "n": 13,
+  "u": 0.31269
  },
  "char_sport_b_front": {
   "cx": 46.2,
@@ -347,6 +527,24 @@
   "fw": 102,
   "n": 13
  },
+ "char_tourist_a_cup_back": {
+  "cx": 50.5,
+  "feetY": 173,
+  "fh": 178,
+  "figH": 168,
+  "fw": 106,
+  "n": 13,
+  "u": 0.33249
+ },
+ "char_tourist_a_cup_front": {
+  "cx": 54.0,
+  "feetY": 176,
+  "fh": 181,
+  "figH": 171,
+  "fw": 106,
+  "n": 13,
+  "u": 0.32673
+ },
  "char_tourist_a_front": {
   "cx": 50.1,
   "feetY": 177,
@@ -380,6 +578,24 @@
   "figH": 168,
   "fw": 106,
   "n": 13
+ },
+ "char_tourist_b_cup_back": {
+  "cx": 55.9,
+  "feetY": 171,
+  "fh": 176,
+  "figH": 166,
+  "fw": 108,
+  "n": 13,
+  "u": 0.33634
+ },
+ "char_tourist_b_cup_front": {
+  "cx": 55.8,
+  "feetY": 177,
+  "fh": 182,
+  "figH": 172,
+  "fw": 114,
+  "n": 13,
+  "u": 0.32476
  },
  "char_tourist_b_front": {
   "cx": 54.5,
