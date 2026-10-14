@@ -130,6 +130,8 @@ export class Street {
     }
     const selling = h.selling();
     const r2 = h.radius() ** 2;
+    this.orderQueue(this.queue, 0);
+    this.orderQueue(this.queue2, 1);
     for (let i = this.peds.length - 1; i >= 0; i--) {
       const p = this.peds[i];
       this.updatePed(p, dt, selling, r2);
@@ -262,6 +264,23 @@ export class Street {
 
   queueFor(counter: number): Ped[] {
     return counter === 1 ? this.queue2 : this.queue;
+  }
+
+  /**
+   * A place in the queue is taken by arriving, not by deciding to buy: the people standing in the queue keep their
+   * order, and those still walking to it line up behind them by who is nearer to the next free place. (Otherwise
+   * someone far away kept the first place while the people behind already stood there and could not be served.)
+   */
+  private orderQueue(q: Ped[], counter: number): void {
+    // already in order: everyone standing comes first, and at most one is still on the way
+    let standing = 0;
+    while (standing < q.length && q[standing].state === 'queue') standing++;
+    if (q.length - standing < 2) return;
+    const stand = q.filter((p) => p.state === 'queue');
+    const spot = queueSpot(stand.length, counter);
+    const dist = (p: Ped) => (p.x - spot.x) ** 2 + (p.y - spot.y) ** 2;
+    const walking = q.filter((p) => p.state !== 'queue').sort((a, b) => dist(a) - dist(b));
+    q.splice(0, q.length, ...stand, ...walking);
   }
 
   /** People waiting at all counters. */
