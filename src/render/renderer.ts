@@ -26,7 +26,7 @@ import './proc/buildings';
 const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
 const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
 /** On phones the field is drawn this much bigger than "everything fits", and bigger still while selling. */
-const PHONE_ZOOM = 1.4 * 1.4;
+const PHONE_ZOOM = 1.4 * 1.4 * 0.6;
 const PHONE_SELL_ZOOM = 1.5;
 /** The stand in world pixels (the phone camera leans towards it). */
 const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
