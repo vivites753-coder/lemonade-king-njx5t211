@@ -7,7 +7,8 @@ import type { LocationId, UpgradeId, WeatherId } from '../core/types';
 import { LOCATIONS, LOCATION_IDS, locationUnlocked } from '../data/locations';
 import { POINTS, SELLER_NAMES, type WorkerIssue } from '../data/staff';
 import { UPGRADES } from '../data/upgrades';
-import { costPerCup, expectedDay, type Owned } from './economy';
+import { WHOLESALE_UNIT_COST } from '../data/goods';
+import { expectedDay, lemonsConsumed, type Owned } from './economy';
 import type { GameState } from './state';
 import type { Crowd } from './traffic';
 
@@ -163,9 +164,12 @@ export function pointCapacity(p: Point): number {
   return Math.round(cap);
 }
 
-/** Price of the ingredients of one cup at a stand: bought wholesale, so cheaper than at the market. */
+/** Price of the ingredients of one cup at a stand: the same prices as the big packs of the wholesale warehouse. */
 export function pointCupCost(p: Point): number {
-  return costPerCup(RECIPE, pointUps(p)) * POINTS.WHOLESALE;
+  const u = WHOLESALE_UNIT_COST;
+  const pitcher =
+    lemonsConsumed(RECIPE, pointUps(p)) * u.lemons + CONFIG.WATER_PER_PITCHER * u.water + RECIPE.sugar * u.sugar + CONFIG.CUPS_PER_PITCHER * u.cups;
+  return pitcher / CONFIG.CUPS_PER_PITCHER;
 }
 
 /** One day of a stand, in numbers. */

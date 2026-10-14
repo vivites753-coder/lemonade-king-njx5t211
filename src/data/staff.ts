@@ -18,8 +18,6 @@ export const POINTS = {
   WASTE_COOLER: 0.02,
   /** A wide counter (big stand, truck) lets a seller pour this much more in a day. */
   WIDE_CAPACITY: 1.25,
-  /** The stands buy their goods wholesale: this share of the market price. */
-  WHOLESALE: 0.8,
   /** More customers wait for their cup: a TV, shade outdoors; a perfect mix tastes better. */
   TV_SERVICE: 0.08,
   SHADE_SERVICE: 0.04,

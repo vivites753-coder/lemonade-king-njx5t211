@@ -57,5 +57,13 @@ export const UNIT_COST = {
   cookies: GOODS.cookies.price / GOODS.cookies.pack,
 };
 
+/** Cost of one unit in the big packs of the wholesale warehouse (what the stands of a chain pay). */
+export const WHOLESALE_UNIT_COST = {
+  lemons: GOODS.lemon_bulk.price / GOODS.lemon_bulk.pack,
+  water: GOODS.water_bulk.price / GOODS.water_bulk.pack,
+  sugar: GOODS.sugar_bulk.price / GOODS.sugar_bulk.pack,
+  cups: GOODS.cups_bulk.price / GOODS.cups_bulk.pack,
+};
+
 /** Sugar price multiplier on a "sugar got pricier" day. */
 export const SUGAR_HIKE = 1.3;

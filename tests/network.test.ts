@@ -203,3 +203,16 @@ describe('a chain of stands', () => {
     expect(p.away).toBeNull();
   });
 });
+
+describe('stand goods', () => {
+  it('a stand pays for its cups the prices of the big packs at the wholesale warehouse', async () => {
+    const { pointCupCost } = await import('../src/sim/points');
+    const { WHOLESALE_UNIT_COST: u } = await import('../src/data/goods');
+    const p: Point = { id: 1, loc: 'park', opened: 1, seller, issue: null, last: null, history: [], total: 0, upgrades: { sign: true } };
+    // 4 lemons, 2 bottles of water, 2 spoons of sugar and 10 cups make 10 cups of lemonade
+    expect(pointCupCost(p)).toBeCloseTo((4 * u.lemons + 2 * u.water + 2 * u.sugar + 10 * u.cups) / 10, 9);
+    // a hand juicer saves a lemon there too
+    p.upgrades = { sign: true, juicer_hand: true };
+    expect(pointCupCost(p)).toBeCloseTo((3 * u.lemons + 2 * u.water + 2 * u.sugar + 10 * u.cups) / 10, 9);
+  });
+});
