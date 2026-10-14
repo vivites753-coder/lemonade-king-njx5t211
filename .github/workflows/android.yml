@@ -1,0 +1,76 @@
+name: Android app
+
+# Builds the Android app from the game (Capacitor, see docs/ANDROID.md): the APK to install on a phone and the AAB
+# for Google Play, both signed with the upload key from the repository secrets, and puts them into the
+# "Android (latest)" release. The version code is the run number, so every new APK installs over the old one.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'public/**'
+      - 'index.html'
+      - 'android/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LK_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.p12"
+          echo "LK_KEYSTORE=$RUNNER_TEMP/upload.p12" >> "$GITHUB_ENV"
+      - name: Build the APK and the AAB
+        working-directory: android
+        env:
+          LK_KEYSTORE_PASSWORD: ${{ secrets.LK_KEYSTORE_PASSWORD }}
+          LK_KEY_ALIAS: ${{ secrets.LK_KEY_ALIAS }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease bundleRelease -PlkVersionCode=${{ github.run_number }} -PlkVersionName=1.0.${{ github.run_number }}
+      - name: Name the files
+        run: |
+          mkdir out
+          cp android/app/build/outputs/apk/release/app-release.apk out/lemonade-king.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab out/lemonade-king.aab
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lemonade-king-android-${{ github.run_number }}
+          path: out/*
+      - name: Release "Android (latest)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Version 1.0.${{ github.run_number }} (commit $(git rev-parse --short HEAD)). lemonade-king.apk: install on an Android phone. lemonade-king.aab: for Google Play."
+          gh release view android-latest >/dev/null 2>&1 || gh release create android-latest --prerelease --title "Android (latest)" --notes "$notes" --target "$GITHUB_SHA"
+          gh release edit android-latest --notes "$notes"
+          gh release upload android-latest out/lemonade-king.apk out/lemonade-king.aab --clobber

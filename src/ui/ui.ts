@@ -17,6 +17,7 @@ import { shopPanel } from './panels/shop';
 import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
 import { esc, isPhone } from './dom';
+import { isNativeApp, shareTextFile } from '../native';
 import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointShopModal, pointsModal, type PointsHooks } from './points';
 import { TipArrow, type WorldTarget } from './tipArrow';
@@ -263,11 +264,17 @@ export class UI implements UIApi {
       this.toast(t('toast.noSave'), 'warn');
       return;
     }
+    const name = `lemonade-king-save-day${snap.S.day}.json`;
+    // in the app a download goes nowhere: the phone's share sheet saves the file (Files, Drive, a messenger…)
+    if (isNativeApp()) {
+      void shareTextFile(name, serializeSave(snap)).then((ok) => ok && this.toast(t('toast.exported', { day: snap.S.day, coins: snap.S.coins }), 'good'));
+      return;
+    }
     const blob = new Blob([serializeSave(snap)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `lemonade-king-save-day${snap.S.day}.json`;
+    a.download = name;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -562,6 +569,22 @@ export class UI implements UIApi {
       this.userPaused = false;
       this.g.setSpeed(Number(e.key));
     } else if (e.key === 'n' || e.key === 'N') this.g.makePitcher();
+  }
+
+  /** The phone's Back button: closes the tip or window on top; a card that waits for a choice stays (true too). */
+  closeTop(): boolean {
+    return this.overlays.key('Escape') || this.overlays.active;
+  }
+
+  /** Back with nothing open: asks before leaving; selling waits meanwhile. */
+  confirmExit(onYes: () => void): void {
+    if (this.g.phase === 'sell') this.userPaused = true;
+    this.confirm(t(this.g.phase === 'sell' ? 'app.exitAskSell' : 'app.exitAsk'), onYes);
+  }
+
+  /** The app went to the background. */
+  pauseForBackground(): void {
+    if (this.g.phase === 'sell') this.userPaused = true;
   }
 
   /** Used by the dev helpers to fast-forward through tips. */

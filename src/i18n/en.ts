@@ -781,6 +781,8 @@ export const en: Record<I18nKey, string> = {
   'dev.panel': 'Numbers panel',
   'dev.disable': 'Turn off developer mode',
   'update.available': 'A new version of the game is out!',
+  'app.exitAsk': 'Leave the game? Everything is saved.',
+  'app.exitAskSell': 'Leave the game? Today’s selling will start over: the game saves at the start of each part of the day.',
   'update.reload': 'Update',
   // v0.5
   'tip.thief_hit': 'Hit! The fox got scared and runs faster. Almost there — catch him!',

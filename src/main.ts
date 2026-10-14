@@ -6,12 +6,14 @@ import { loadAssets } from './render/assets';
 import { Renderer } from './render/renderer';
 import { Game } from './sim/game';
 import { DebugPanel } from './ui/debug';
+import { initNativeApp, isNativeApp } from './native';
 import { initFullscreen } from './ui/fullscreen';
 import { UI } from './ui/ui';
 
 // a published update starts with clean saves (the dev server keeps them)
 const wiped = import.meta.env.PROD && wipeOnUpdate(__BUILD_ID__);
-initFullscreen();
+// the app is always full screen (MainActivity); on the website the first tap asks for it
+initFullscreen(!isNativeApp());
 
 const game = new Game(1);
 // remember the language of the last session for the title screen
@@ -81,13 +83,20 @@ async function checkForUpdate(): Promise<void> {
     // offline: try again later
   }
 }
-if (import.meta.env.PROD) {
+// (the app carries its game inside: it is updated with a new APK, not from the website)
+if (import.meta.env.PROD && !isNativeApp()) {
   setTimeout(() => void checkForUpdate(), 1500);
   setInterval(() => void checkForUpdate(), 10 * 60 * 1000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void checkForUpdate();
   });
 }
+
+void initNativeApp({
+  closeTop: () => ui.closeTop(),
+  confirmExit: (yes) => ui.confirmExit(yes),
+  pause: () => ui.pauseForBackground(),
+});
 
 // handy in the browser console while developing
 (window as unknown as { LK: unknown }).LK = { game, renderer, ui };

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the sky of the game (body background in styles.css) -->
+    <color name="splash_background">#BFE6FF</color>
+</resources>

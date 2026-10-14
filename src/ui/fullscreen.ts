@@ -50,15 +50,18 @@ export function toggleFullscreen(): void {
   }
 }
 
-/** Tracks the real height of the screen (phone browsers have bars that come and go) and asks for full screen on a tap. */
-export function initFullscreen(): void {
+/** Tracks the real height of the screen (phone browsers have bars that come and go) and, when askFull, asks for full
+ * screen on the first tap. */
+export function initFullscreen(askFull = true): void {
   const setH = () => document.documentElement.style.setProperty('--app-h', `${window.innerHeight}px`);
   setH();
   window.addEventListener('resize', setH);
   window.addEventListener('orientationchange', () => setTimeout(setH, 250));
   document.addEventListener('fullscreenchange', () => setTimeout(setH, 100));
-  const coarse = window.matchMedia('(pointer: coarse)').matches;
-  if (!coarse) return;
+  // a phone or a tablet; Samsung devices report their touch screen as a touchpad ("fine" pointer), so the screen
+  // size of a touch device counts too
+  const touch = window.matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 700);
+  if (!askFull || !touch) return;
   // one try on the first tap only: a refused request must never be repeated on every tap
   let tried = false;
   const ask = () => {

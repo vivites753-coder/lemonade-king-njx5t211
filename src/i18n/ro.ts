@@ -782,6 +782,8 @@ export const ro: Record<I18nKey, string> = {
   'dev.panel': 'Panoul cu cifre',
   'dev.disable': 'Oprește modul dezvoltatorului',
   'update.available': 'A apărut o versiune nouă a jocului!',
+  'app.exitAsk': 'Ieși din joc? Totul este salvat.',
+  'app.exitAskSell': 'Ieși din joc? Vânzarea de azi va începe de la capăt: jocul se salvează la începutul fiecărei părți a zilei.',
   'update.reload': 'Actualizează',
   // v0.5
   'tip.thief_hit': 'Lovit! Vulpea s-a speriat și fuge mai repede. Încă puțin — prinde-o!',
