@@ -28,6 +28,7 @@ SOURCES = {
     'juicer_lever': 'assets/kitchen/kt_juicer_lever.png',
     'cash_lock': 'assets/stand/stand_cashbox.png',
     'toolkit': 'assets/kitchen/kt_toolkit.png',
+    'truck': 'assets/stand/stand_truck_lemon.png',
     # equipment that is not an upgrade (the list of things in the shop)
     'mixer': 'assets/kitchen/kt_mixer_basic.png',
 }

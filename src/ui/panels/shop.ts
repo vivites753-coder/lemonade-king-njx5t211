@@ -42,7 +42,7 @@ export const shopPanel: Panel = {
       <div class="panel-head"><h2>🏪 ${t('shop.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
         ${S.upgrades.truck ? `<button class="btn btn-b" data-act="truck" style="width:100%">🎨 ${t('truck.customize')}</button>` : ''}
-        ${S.points.length ? `<button class="btn btn-y" data-act="points" style="width:100%;margin-top:6px">🏪 ${t('shop.points')}</button>` : ''}
+        ${S.points.length ? `<button class="btn btn-y" data-act="points" style="width:100%;margin-top:6px">${ico('pt_stand', '🏪')} ${t('shop.points')}</button>` : ''}
         <h3>🔧 ${t('shop.equipment')}</h3>
         <div class="card">${equipmentRows(g, 'shop')}</div>
         <div class="note">💡 ${t('shop.invest')}</div>

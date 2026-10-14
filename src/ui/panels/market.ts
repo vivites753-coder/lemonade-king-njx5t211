@@ -20,7 +20,7 @@ const UNIT: Record<GoodId, string> = {
   cups_bulk: 'unit.box',
 };
 
-/** Pictures of the goods (the wholesale packs keep their emoji until they have their own). */
+/** Pictures of the goods. */
 const GOOD_IMG: Partial<Record<GoodId, string>> = {
   lemon: 'gd_lemon',
   lemon_cheap: 'gd_lemon_half',
@@ -29,6 +29,10 @@ const GOOD_IMG: Partial<Record<GoodId, string>> = {
   cups: 'gd_cups',
   cups_super: 'gd_cups',
   cookies: 'gd_cookie',
+  lemon_bulk: 'gd_lemon_bulk',
+  water_bulk: 'gd_water_bulk',
+  sugar_bulk: 'gd_sugar_bulk',
+  cups_bulk: 'gd_cups_bulk',
 };
 
 /** Price of one piece (a lemon, a bottle, a spoon, a cup) when bought in this pack. */
@@ -68,7 +72,7 @@ export const marketPanel: Panel = {
       .join('');
     const bulk = GOOD_IDS.filter((id) => GOODS[id].wholesale && g.goodAvailable(id));
     const wholesale = bulk.length
-      ? `<h3 class="wholesale-h">📦 ${t('market.wholesale')}</h3><div class="note">${t('market.wholesaleNote')}</div>${bulk.map(row).join('')}`
+      ? `<h3 class="wholesale-h">${ico('pt_wholesale', '📦')} ${t('market.wholesale')}</h3><div class="note">${t('market.wholesaleNote')}</div>${bulk.map(row).join('')}`
       : '';
     const total = g.cartTotal();
     const tooMuch = total > S.coins;

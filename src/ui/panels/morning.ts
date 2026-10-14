@@ -24,7 +24,7 @@ export function locationCards(g: Game): string {
           <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}
           ${repLock ? `<span class="loc-lock">⭐ ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}
           ${ev ? `<span class="loc-ev">${t(`loc.ev.${ev.id}`)}</span>` : ''}
-          ${own ? `<span class="loc-own">🏪 ${t('loc.ownPoint')}</span>` : ''}
+          ${own ? `<span class="loc-own">${ico('pt_stand', '🏪')} ${t('loc.ownPoint')}</span>` : ''}
           <small>${t(`loc.${id}.desc`)}</small>
           <span class="loc-meta">
             <span>👥 ${dots(l.trafficStars)}</span>

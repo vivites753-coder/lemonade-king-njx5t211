@@ -3723,3 +3723,22 @@ body.reduce-motion * {
     font-size: 21px;
   }
 }
+
+/* pictures in the round buttons of the top bar and in the stands switch */
+.hud-btn .ico-img {
+  height: 30px;
+  vertical-align: middle;
+}
+.hv-eye .ico-img {
+  height: 26px;
+  vertical-align: middle;
+}
+.hp-btns .ico-img,
+.pt-btns .ico-img {
+  height: 1.4em;
+}
+@media (max-height: 460px) {
+  .hud-top .hud-btn .ico-img {
+    height: 34px;
+  }
+}

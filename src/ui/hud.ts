@@ -60,7 +60,7 @@ export class Hud {
           <button data-hud="speed:2" aria-label="x2">⏩</button>
           <button data-hud="speed:3" aria-label="x3">⏭</button>
         </div>
-        <button class="hud-btn hidden" data-hud="points" data-el="points" aria-label="${t('points.title')}">🏪</button>
+        <button class="hud-btn hidden" data-hud="points" data-el="points" aria-label="${t('points.title')}">${ico('pt_stand', '🏪')}</button>
         <button class="hud-btn" data-hud="tip" aria-label="${t('hud.tip')}">🍋</button>
         <button class="hud-btn" data-hud="glossary" aria-label="${t('hud.glossary')}">📖</button>
         <button class="hud-btn" data-hud="sound" data-el="sound" aria-label="${t('hud.sound')}">🔊</button>
@@ -196,7 +196,7 @@ export class Hud {
     const g = this.g;
     const btn = (id: string, icon: string, label: string, on: boolean) =>
       `<button class="hv-btn${on ? ' on' : ''}" data-hud="view:${id}" title="${label}" aria-label="${label}">${icon}<span class="lbl"> ${label}</span></button>`;
-    return `<span class="hv-eye">👀</span>${btn('own', '🍋', t('points.home'), g.viewPoint === null)}${g.S.points
+    return `<span class="hv-eye">${ico('pt_look', '👀')}</span>${btn('own', '🍋', t('points.home'), g.viewPoint === null)}${g.S.points
       .map((p) => btn(String(p.id), LOCATIONS[p.loc].icon, t(`loc.${p.loc}.name`), g.viewPoint === p.id))
       .join('')}`;
   }
@@ -208,9 +208,9 @@ export class Hud {
     const workers = pointWorkers(p);
     const person = (w: (typeof workers)[number]) => `<b>${t(`staff.name${w.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(w.skill))}</span>`;
     let who: string;
-    if (!workers.length) who = `🤒 ${t(p.away || p.issue === 'sick' ? 'points.closedIll' : 'points.noSeller')}`;
+    if (!workers.length) who = `${ico('pt_closed', '🤒')} ${t(p.away || p.issue === 'sick' ? 'points.closedIll' : 'points.noSeller')}`;
     else if (p.today?.status === 'nomoney') who = `💸 ${t('points.status.nomoney')}`;
-    else who = `${workers.length > 1 ? '👥' : '👤'} ${workers.map(person).join(' · ')}${!p.seller || p.issue === 'sick' ? `<br><small class="muted">${t('points.aloneToday')}</small>` : ''}`;
+    else who = `${workers.length > 1 ? ico('pt_team', '👥') : ico('pt_seller', '👤')} ${workers.map(person).join(' · ')}${!p.seller || p.issue === 'sick' ? `<br><small class="muted">${t('points.aloneToday')}</small>` : ''}`;
     let today = '';
     if (sell && p.today && workers.length && p.today.status !== 'nomoney') {
       const k = pointProgress(p, g.D.hour);
@@ -223,9 +223,9 @@ export class Hud {
     return `<div class="hp-title">${LOCATIONS[p.loc].icon} <b>${t(`loc.${p.loc}.name`)}</b></div>
       <div>${who}</div>
       ${today ? `<div>${today}</div>` : ''}
-      <div class="hp-pb"><span>💹 ${t('points.payback')}: <b>${pct}%</b></span><div class="bar pb-bar"><i style="width:${pct}%"></i></div></div>
+      <div class="hp-pb"><span>${ico('pt_payback', '💹')} ${t('points.payback')}: <b>${pct}%</b></span><div class="bar pb-bar"><i style="width:${pct}%"></i></div></div>
       ${sell ? `<small class="muted">🍋 ${t('points.ownQueue', { n: g.street.queued })}</small>` : ''}
-      <div class="hp-btns"><button class="btn btn-sm btn-y" data-hud="pshop:${p.id}">🛠️ ${t('points.upgrades')}</button>
+      <div class="hp-btns"><button class="btn btn-sm btn-y" data-hud="pshop:${p.id}">${ico('pt_upgrades', '🛠️')} ${t('points.upgrades')}</button>
         <button class="btn btn-sm btn-g" data-hud="view:own">↩ ${t('points.backHome')}</button></div>`;
   }
 

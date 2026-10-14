@@ -91,7 +91,7 @@ Row 5: 21) a red exclamation mark, 22) a speech bubble with three dots, 23) a si
 
 Імена: `ui_gd_lemon, ui_gd_water, ui_gd_sugar, ui_gd_cups, ui_gd_cookie, ui_gd_ready, ui_gd_ice, ui_gd_pitcher, ui_gd_market, ui_gd_lemon_half, ui_em_love, ui_em_happy, ui_em_meh, ui_em_sour, ui_em_dizzy, ui_em_angry, ui_em_sad, ui_em_money, ui_em_wait, ui_em_gift, ui_em_alert, ui_em_chat, ui_em_sick, ui_em_clock, ui_em_want`
 
-## Лист 16. Мережа точок і опт (4×3, FLAT)
+## Лист 16. Мережа точок і опт (4×3, FLAT) — ГОТОВО
 
 Іконки для «Моїх точок», картки точки, перемикача точок і оптового складу на ринку (зараз там емодзі 📦 🏪 👀 🛠️ 💹 👥).
 
@@ -106,18 +106,18 @@ Row 3: 9) two cheerful little workers side by side, a girl and a boy in yellow a
 
 Імена: `ui_gd_lemon_bulk, ui_gd_water_bulk, ui_gd_sugar_bulk, ui_gd_cups_bulk, ui_pt_stand, ui_pt_look, ui_pt_upgrades, ui_pt_payback, ui_pt_team, ui_pt_hire, ui_pt_wholesale, ui_pt_closed`
 
-## Лист 11. Іконки апгрейдів, яких ще немає (5×1, ISO)
+## Лист 11. Іконки апгрейдів, яких ще немає (4×1, ISO)
 
-Більшість іконок магазину (17) уже зроблені з картинок гри скриптом `tools/make_icons.py` (табличка, колонка, фірмові стаканчики, костюм, парасолька, диспенсер, велосипед, тент, скутер, телевізор, обидві соковижималки, сумка, міксер, скринька з замком, інструменти, великий прилавок). Згенерувати треба лише ці п'ять (великий прилавок — гарніший за складений зі столів).
+Іконку вагончика тепер зроблено з картинки гри (`tools/make_icons.py`), лишилися ці чотири (великий прилавок — гарніший за складений зі столів).
 
-СІТКА 5 / 5×1 / 75% + ISO +
+СІТКА 4 / 4×1 / 75% + ISO +
 
 ```
 Each item is one object of the game shop, a cute toy-like 3D object seen from the same isometric camera as the other game objects.
-1) a loyalty card: a cream paper card with ten small circles for stamps, six of them filled with little yellow lemon stamps, a tiny gift box drawn in the last circle, no letters; 2) a long yellow cloth banner with an orange border, hanging between two short wooden poles, a big friendly lemon drawn in the middle, no letters; 3) a delivery order: a cardboard box full of lemons with two water bottles and a small paper sugar bag sticking out, and a small blue clipboard with a green check mark leaning against it, no letters; 4) a cute lemon-yellow food truck with orange trim, an orange awning over a wide serving window, a red glowing neon tube shaped like a lemon on the roof, two round bar stools in front, no letters; 5) a big market stand: two tables side by side, the left one with a blue-and-white striped cloth, the right one with a yellow-and-white striped cloth, a pitcher of lemonade and paper cups on each table, no people.
+1) a loyalty card: a cream paper card with ten small circles for stamps, six of them filled with little yellow lemon stamps, a tiny gift box drawn in the last circle, no letters; 2) a long yellow cloth banner with an orange border, hanging between two short wooden poles, a big friendly lemon drawn in the middle, no letters; 3) a delivery order: a cardboard box full of lemons with two water bottles and a small paper sugar bag sticking out, and a small blue clipboard with a green check mark leaning against it, no letters; 4) a big market stand: two tables side by side, the left one with a blue-and-white striped cloth, the right one with a yellow-and-white striped cloth, a pitcher of lemonade and paper cups on each table, no people.
 ```
 
-Імена: `ui_up_loyalty, ui_up_banner, ui_up_delivery, ui_up_truck, ui_up_big_stand` (кладуться в `assets/ui/`).
+Імена: `ui_up_loyalty, ui_up_banner, ui_up_delivery, ui_up_big_stand` (кладуться в `assets/ui/`).
 
 ## Лист 12. Іконки локацій і кнопок (5×4, FLAT)
 

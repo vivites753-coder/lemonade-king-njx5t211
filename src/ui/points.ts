@@ -47,7 +47,7 @@ export function paybackBox(p: Point): string {
           ? t('points.paybackNever')
           : t('points.paybackWait');
   return `<div class="pt-payback" title="${t('gl.payback.text')}">
-    <div class="kv"><span>💹 ${t('points.payback')}: <b>${pct}%</b></span><small>${coin(Math.max(0, pb.earned))} / ${coin(pb.invested)}</small></div>
+    <div class="kv"><span>${ico('pt_payback', '💹')} ${t('points.payback')}: <b>${pct}%</b></span><small>${coin(Math.max(0, pb.earned))} / ${coin(pb.invested)}</small></div>
     <div class="bar pb-bar"><i style="width:${pct}%"></i></div>
     <small class="muted">${note}</small>
   </div>`;
@@ -69,7 +69,7 @@ function pointCard(g: Game, p: Point): string {
         <button class="btn btn-sm btn-r" data-act="fire:${p.id}" ${manage ? '' : 'disabled'}>${t('staff.act.fire')}</button>
       </div>`
     : `<div class="warn-box">${t(p.away ? 'points.closedIll' : 'points.noSeller')}</div>
-      <button class="btn btn-g btn-sm" data-act="hire:${p.id}" ${manage ? '' : 'disabled'}>👤 ${t(p.away ? 'staff.act.standin' : 'points.hire')}</button>`;
+      <button class="btn btn-g btn-sm" data-act="hire:${p.id}" ${manage ? '' : 'disabled'}>${ico('pt_hire', '👤')} ${t(p.away ? 'staff.act.standin' : 'points.hire')}</button>`;
   const d = p.last;
   const lastDay = d
     ? `<div class="pt-last">
@@ -92,15 +92,15 @@ function pointCard(g: Game, p: Point): string {
     ? `<div class="pt-seller pt-helper">
         <span class="pt-face">${face(h)}</span>
         <span class="grow"><b>${t(`staff.name${h.nameId}`)}</b> ${skill(h)}
-          <small>👥 ${t('points.helper2')} · ${t('points.wage', { n: h.wage })} · ${h.refs ? `✅ ${t('points.refs')}` : `❓ ${t('points.noRefs')}`}</small></span>
+          <small>${ico('pt_team', '👥')} ${t('points.helper2')} · ${t('points.wage', { n: h.wage })} · ${h.refs ? `✅ ${t('points.refs')}` : `❓ ${t('points.noRefs')}`}</small></span>
         <button class="btn btn-sm btn-r" data-act="fire2:${p.id}" ${manage ? '' : 'disabled'}>${t('staff.act.fire')}</button>
       </div>`
     : !(s || p.away)
       ? ''
       : pointHasRoomFor2(p)
-        ? `<div class="pt-hire2"><button class="btn btn-sm" data-act="hire2:${p.id}" ${manage ? '' : 'disabled'}>👥 ${t('points.hire2')}</button>
+        ? `<div class="pt-hire2"><button class="btn btn-sm" data-act="hire2:${p.id}" ${manage ? '' : 'disabled'}>${ico('pt_hire', '👥')} ${t('points.hire2')}</button>
         <small class="muted">${t('points.hire2Note')}</small></div>`
-        : `<div class="pt-hire2"><small class="muted">👥 ${t('points.hire2Wide')}</small></div>`;
+        : `<div class="pt-hire2"><small class="muted">${ico('pt_team', '👥')} ${t('points.hire2Wide')}</small></div>`;
   const ups = POINT_UPGRADE_IDS.filter((id) => pointUps(p)[id]);
   return `<div class="pt-card">
     <div class="pt-head"><span class="pt-ico">${LOCATIONS[p.loc].icon}</span><b class="grow">${t(`loc.${p.loc}.name`)}</b>${today}</div>
@@ -109,8 +109,8 @@ function pointCard(g: Game, p: Point): string {
     ${helper}
     <div class="pt-ups" title="${t('points.equipment')}">${ups.map((id) => `<span class="pt-up">${ico(`up_${id}`, UPGRADES[id].icon)}</span>`).join('')}</div>
     <div class="row pt-btns">
-      <button class="btn btn-sm btn-b" data-act="view:${p.id}">👀 ${t('points.look')}</button>
-      <button class="btn btn-sm btn-y" data-act="shop:${p.id}">🛠️ ${t('points.upgrades')}</button>
+      <button class="btn btn-sm btn-b" data-act="view:${p.id}">${ico('pt_look', '👀')} ${t('points.look')}</button>
+      <button class="btn btn-sm btn-y" data-act="shop:${p.id}">${ico('pt_upgrades', '🛠️')} ${t('points.upgrades')}</button>
     </div>
     ${lastDay}
     ${bars(p.history)}
@@ -126,7 +126,7 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
     render: () => {
       const S = g.S;
       if (!g.pointsOpen() && !S.points.length) {
-        return `<h2>🏪 ${t('points.title')}</h2>
+        return `<h2>${ico('pt_stand', '🏪')} ${t('points.title')}</h2>
           <div class="ev-ico">🔒</div>
           <p>${t('points.locked', { n: POINTS.MIN_REP })}</p>
           <div class="modal-actions"><button class="btn btn-y" data-act="close">${t('btn.close')}</button></div>`;
@@ -150,7 +150,7 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
                 })
                 .join('')
             : `<p class="note">${t('points.noPlaces')}</p>`;
-      return `<h2>🏪 ${t('points.title')}</h2>
+      return `<h2>${ico('pt_stand', '🏪')} ${t('points.title')}</h2>
         <p class="note">${t('points.intro')}</p>
         ${
           S.points.length
@@ -160,7 +160,7 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
         }
         ${S.points.map((p) => pointCard(g, p)).join('')}
         <h3>➕ ${t('points.new')}</h3>
-        <p class="note">📦 ${t('points.kit')}</p>
+        <p class="note">${ico('pt_wholesale', '📦')} ${t('points.kit')}</p>
         ${!evening && S.points.length < POINTS.MAX ? `<div class="note">🌙 ${t('points.eveningOnly')}</div>` : ''}
         ${newOnes}
         <div class="modal-actions"><button class="btn btn-y" data-act="close">${t('btn.close')}</button></div>`;
@@ -234,7 +234,7 @@ export function pointShopModal(g: Game, pointId: number, hooks: PointsHooks): Mo
           <div>${btn}</div>
         </div>`;
       };
-      return `<h2>🛠️ ${t('points.shopTitle', { place: t(`loc.${p.loc}.name`) })}</h2>
+      return `<h2>${ico('pt_upgrades', '🛠️')} ${t('points.shopTitle', { place: t(`loc.${p.loc}.name`) })}</h2>
         <div class="row pt-shop-head"><span class="chip coins">${coin(g.S.coins)}</span>
           <small class="muted">🥤 ${t('points.capacity', { n: pointCapacity(p) })}</small></div>
         ${paybackBox(p)}
@@ -243,7 +243,7 @@ export function pointShopModal(g: Game, pointId: number, hooks: PointsHooks): Mo
         <div class="ups">${POINT_UPGRADE_IDS.map(card).join('')}</div>
         <p class="note">${t('points.shopMissing')}</p>
         <div class="modal-actions">
-          <button class="btn btn-b" data-act="view">👀 ${t('points.look')}</button>
+          <button class="btn btn-b" data-act="view">${ico('pt_look', '👀')} ${t('points.look')}</button>
           <button class="btn btn-y" data-act="back">${t('points.back')}</button>
         </div>`;
     },
@@ -276,7 +276,7 @@ export function hireModal(g: Game, pointId: number, hooks: PointsHooks, role: 's
       const place = p ? t(`loc.${p.loc}.name`) : '';
       const title = second ? t('points.hire2Title', { place }) : t(standin ? 'points.standinTitle' : 'points.hireTitle', { place });
       const tip = second ? t('points.hire2Tip') : t(standin ? 'points.standinTip' : 'points.hireTip', { name: p?.away ? t(`staff.name${p.away.seller.nameId}`) : '' });
-      return `<h2>${second ? '👥' : '👤'} ${title}</h2>
+      return `<h2>${second ? ico('pt_team', '👥') : ico('pt_hire', '👤')} ${title}</h2>
         <p class="note">💡 ${tip}</p>
         ${list
           .map(
