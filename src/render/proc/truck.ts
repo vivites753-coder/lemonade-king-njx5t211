@@ -167,7 +167,8 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
   };
   const n = c.workers.length;
   const spots = n >= 3 ? [0.18, 0.5, 0.82] : n === 2 ? [0.3, 0.74] : [0.62];
-  const sc = n >= 3 ? 0.5 : n === 2 ? 0.6 : 0.72;
+  // the window of the picture is low: smaller sellers show their shoulders over the shelf, not only the head
+  const sc = n >= 3 ? 0.5 : n === 2 ? 0.56 : 0.6;
   const girlId = (w: TruckWorker) => (w.girl ? 'girl' : 'boy');
   ctx.save();
   ctx.beginPath();
@@ -178,9 +179,11 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
   const order = [...c.workers].sort((a, b) => Number(b.slot === 2) - Number(a.slot === 2));
   order.forEach((wk, i) => {
     const x = x0 + (x1 - x0) * spots[Math.min(i, spots.length - 1)];
-    const feet = topAt(x) + 43 * sc + 2.5;
     const base = `char_${wk.kind}_${girlId(wk)}`;
     const pick = standSpriteId(base, wk.serving, false);
+    // the top of the head 1.5 px under the top edge of the window
+    const m = metaFor(pick.id);
+    const feet = topAt(x) + 1.5 + m.h * m.anchor[1] * sc;
     drawCharacter(ctx, pick.id, 0, 0, x, feet, {
       kind: 'player',
       hasCup: pick.cup,

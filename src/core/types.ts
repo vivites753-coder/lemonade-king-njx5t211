@@ -25,7 +25,7 @@ export type UpgradeId =
   | 'truck';
 /** Equipment that wears out and can break. The mixer is owned from the start. */
 export type EquipId = 'mixer' | 'umbrella' | 'tent' | 'juicer_hand' | 'juicer_lever' | 'speaker' | 'bike' | 'scooter' | 'dispenser' | 'tv';
-export type GoodId = 'lemon' | 'lemon_cheap' | 'water' | 'sugar' | 'cups' | 'cups_super' | 'cookies';
+export type GoodId = 'lemon' | 'lemon_cheap' | 'water' | 'sugar' | 'cups' | 'cups_super' | 'cookies' | 'lemon_bulk' | 'water_bulk' | 'sugar_bulk' | 'cups_bulk';
 export type StockKind = 'lemons' | 'water' | 'sugar' | 'cups' | 'cookies';
 export type Phase = 'title' | 'morning' | 'market' | 'kitchen' | 'prepare' | 'sell' | 'report' | 'shop';
 export type MixResult = 'none' | 'under' | 'perfect' | 'over';

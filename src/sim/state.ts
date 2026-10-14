@@ -348,6 +348,12 @@ export function normalizeState(S: GameState, D: DayState): void {
   D.events = { ...emptyEvents(), ...D.events };
   S.truck = Object.assign({ skin: 0, logo: 0, text: '' }, S.truck);
   if (D.helpers === undefined || (D.helper && !D.helpers)) D.helpers = D.helper ? 1 : 0;
+  // stands from before they had their own equipment: a sign, and what they cost then
+  for (const p of S.points) {
+    p.upgrades ??= { sign: true };
+    p.invested ??= 400;
+    p.away ??= null;
+  }
 }
 
 export function lemonsTotal(stock: Stock): number {

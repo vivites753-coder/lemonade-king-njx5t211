@@ -2,7 +2,7 @@
 import { CONFIG } from '../../core/config';
 import { LOCATIONS } from '../../data/locations';
 import { t } from '../../i18n';
-import type { Game } from '../../sim/game';
+import type { SceneSource } from '../../sim/pointScene';
 import { playerLook } from '../../sim/looks';
 import { lemonsTotal } from '../../sim/state';
 import { drawSprite, getImage, hasImage, metaFor, registerProcs, spriteShadow, type SpriteCall } from '../assets';
@@ -405,7 +405,7 @@ const SPOTS = {
 export type StandPart = 'sign' | 'mascot' | 'tv' | 'table2' | 'tentleg0' | 'tentleg1' | 'tentleg2' | 'bistro' | 'stools';
 
 /** Where the side parts of the stand stand now (tiles), for depth sorting. */
-export function standSideParts(g: Game): { part: StandPart; x: number; y: number }[] {
+export function standSideParts(g: SceneSource): { part: StandPart; x: number; y: number }[] {
   const up = g.S.upgrades;
   const wide = g.counters() >= 2;
   const isTruck = !!g.active().truck;
@@ -453,7 +453,7 @@ function priceLabel(ctx: Ctx, cx: number, cy: number, price: number): void {
 const TRUCK_SKIN_IDS = TRUCK_SKINS.map((s) => s.id);
 
 /** The shadows of the stand on the ground (drawn before the stand and the people). */
-export function drawStandShadows(ctx: Ctx, g: Game): void {
+export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
   const S = g.S;
   const up = S.upgrades;
   const [sx, sy] = P(SX, SY);
@@ -485,7 +485,7 @@ export function drawStandShadows(ctx: Ctx, g: Game): void {
 }
 
 /** Draws one side part of the stand (see standSideParts). */
-export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
+export function drawStandPart(ctx: Ctx, g: SceneSource, part: StandPart): void {
   const S = g.S;
   const br = S.broken;
   const [sx, sy] = P(SX, SY);
@@ -529,7 +529,7 @@ export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
 }
 
 /** Draws the stand itself (the table or the truck, the people and everything near the table), back to front. */
-export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
+export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
   const S = g.S;
   const up = S.upgrades;
   const [sx, sy] = P(SX, SY);
@@ -557,7 +557,10 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     // who stands at which window: helpers take their counters, the player the rest
     const girl = S.avatar === 'girl';
     const workers: TruckWorker[] = [];
-    if (helpers >= 2) {
+    // another stand of the player's: its hired seller works alone (or nobody, when it is closed)
+    if (g.seller !== undefined) {
+      if (g.seller) workers.push({ kind: 'helper', slot: 0, serving: pouring(0), girl: g.seller.girl });
+    } else if (helpers >= 2) {
       workers.push({ kind: 'helper', slot: 0, serving: pouring(0), girl: !girl });
       workers.push({ kind: 'helper', slot: 1, serving: pouring(1), girl });
       workers.push({ kind: 'player', slot: 2, serving: false, girl });
@@ -575,7 +578,11 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
       ctx.restore();
     }
     const people: { id: string; kind: 'player' | 'helper'; x: number; y: number; serving: boolean; juicing: boolean }[] = [];
-    if (!wide) {
+    if (g.seller !== undefined) {
+      // another stand of the player's: its hired seller stands where the player would (nobody when it is closed)
+      const spot = wide ? SPOTS.wide.c0 : SPOTS.single.player;
+      if (g.seller) people.push({ id: `char_helper_${g.seller.girl ? 'girl' : 'boy'}`, kind: 'helper', x: spot[0], y: spot[1], serving: pouring(0), juicing: false });
+    } else if (!wide) {
       if (helpers > 0) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
       people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: (helpers > 0 ? SPOTS.single.playerWithHelper : SPOTS.single.player)[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });
     } else if (helpers >= 2) {
@@ -588,7 +595,8 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
     }
     for (const p of people) {
       const [px, py] = P(p.x, p.y);
-      const helperLook = { ...playerLook(S.avatar === 'boy' ? 'girl' : 'boy'), shirt: '#51cf66', hair: '#3b2a20' };
+      const helperGirl = g.seller ? g.seller.girl : S.avatar === 'boy';
+      const helperLook = { ...playerLook(helperGirl ? 'girl' : 'boy'), shirt: '#51cf66', hair: '#3b2a20' };
       const pick = standSpriteId(p.id, p.serving, p.juicing);
       drawCharacter(ctx, pick.id, p.x, p.y, px, py, {
         kind: 'player',

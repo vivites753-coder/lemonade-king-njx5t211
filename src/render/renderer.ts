@@ -4,6 +4,7 @@ import type { LocationId } from '../core/types';
 import { LOCATIONS, type DecorDef } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
 import type { Game } from '../sim/game';
+import { PointScene, type SceneSource } from '../sim/pointScene';
 import { FOX_LOOK } from '../sim/looks';
 import type { Critter } from '../sim/critters';
 import type { Ped } from '../sim/street';
@@ -81,6 +82,10 @@ export class Renderer {
   private items: Item[] = [];
   private bubbles: Bubble[] = [];
   private t = 0;
+  /** A copy of the frame for the heat haze. */
+  private haze: HTMLCanvasElement | null = null;
+  /** Another stand of the player's that the scene shows now (null: the player's own). */
+  private view: PointScene | null = null;
   /** Lucky finds on screen this frame (CSS px) for tapping. */
   tapTargets: { id: number; x: number; y: number; r: number }[] = [];
   /** The fox on screen: centre of his body and the tap radius (only a tap on him counts). */
@@ -92,9 +97,10 @@ export class Renderer {
   ) {
     this.ctx = canvas.getContext('2d')!;
     onAssetsChanged(() => (this.ground = null));
-    game.bus.on('found', (e) => this.floats.push({ x: e.x, y: e.y, text: `+${e.amount} ${e.icon}`, color: '#2b8a3e', t: 0 }));
-    game.bus.on('sale', (e) => this.floats.push({ x: e.x, y: e.y - (e.cookie ? 0.35 : 0), text: `+${e.amount}${e.cookie ? ' 🍪' : ''}`, color: e.cookie ? '#a0612b' : '#2b8a3e', t: 0 }));
+    game.bus.on('found', (e) => !this.view && this.floats.push({ x: e.x, y: e.y, text: `+${e.amount} ${e.icon}`, color: '#2b8a3e', t: 0 }));
+    game.bus.on('sale', (e) => !this.view && this.floats.push({ x: e.x, y: e.y - (e.cookie ? 0.35 : 0), text: `+${e.amount}${e.cookie ? ' 🍪' : ''}`, color: e.cookie ? '#a0612b' : '#2b8a3e', t: 0 }));
     game.bus.on('thief', (e) => {
+      if (this.view) return;
       if (e.state === 'caught') this.floats.push({ x: CONFIG.STAND.x - 1, y: CONFIG.STAND.y + 0.8, text: `+${e.amount}`, color: '#2b8a3e', t: 0 });
       if (e.state === 'stole' && e.amount) this.floats.push({ x: CONFIG.STAND.x, y: CONFIG.STAND.y, text: `−${e.amount}`, color: '#e03131', t: 0 });
       const th = game.street.thief;
@@ -148,8 +154,34 @@ export class Renderer {
     return { x: px / 64 + py / 32, y: py / 32 - px / 64 };
   }
 
+  /** What the scene shows: the game, or the stand the player looks at. */
+  private get src(): SceneSource {
+    return this.view ?? this.game;
+  }
+
+  /** Follows the stand the player wants to see (a new view when the stand, the game or the day changes). */
+  private syncView(dt: number): void {
+    const game = this.game;
+    const p = game.viewPoint !== null ? game.pointById(game.viewPoint) : undefined;
+    if (!p) {
+      this.view = null;
+      return;
+    }
+    if (!this.view || this.view.point !== p || Object.getPrototypeOf(this.view.S) !== game.S || Object.getPrototypeOf(this.view.D) !== game.D) {
+      this.view = new PointScene(game, p);
+      this.view.onSale = (x, y, n) => this.floats.push({ x, y, text: `+${n}`, color: '#2b8a3e', t: 0 });
+      this.floats.length = 0;
+    }
+    this.view.refresh();
+    // the stand's day runs with the game clock (and stops while the game waits)
+    const selling = game.phase === 'sell';
+    const run = game.paused || (selling && game.midKitchen) ? 0 : selling ? dt * game.speed : dt;
+    this.view.update(Math.min(run, 0.3));
+  }
+
   render(dt: number): void {
-    const g = this.game;
+    this.syncView(dt);
+    const g = this.src;
     const ctx = this.ctx;
     this.t += dt;
     const reduce = g.S.settings.reduceMotion;
@@ -190,12 +222,51 @@ export class Renderer {
     ctx.scale(this.cam.s, this.cam.s);
     this.drawWorld(ctx, dt);
     ctx.restore();
+    // a hot day: the picture trembles in the rising hot air (more near the ground, most at midday)
+    if (g.D.weather === 'hot' && !reduce && !ENV.indoor && g.phase !== 'title') this.heatHaze(hour);
 
     this.fx.drawOverlay(ctx, this.w, this.h, g.D.weather, hour, this.t, reduce, ENV.indoor);
   }
 
+  /**
+   * Heat haze: the finished picture is copied and drawn back in thin horizontal strips, each moved sideways a little
+   * by waves that run upwards, like air rising from hot asphalt.
+   */
+  private heatHaze(hour: number): void {
+    const c = this.canvas;
+    const W = c.width;
+    const H = c.height;
+    if (!this.haze || this.haze.width !== W || this.haze.height !== H) {
+      this.haze = document.createElement('canvas');
+      this.haze.width = W;
+      this.haze.height = H;
+    }
+    const b = this.haze.getContext('2d')!;
+    b.clearRect(0, 0, W, H);
+    b.drawImage(c, 0, 0);
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const d = this.dpr;
+    // strongest in the hottest hours
+    const noon = Math.max(0, Math.sin((Math.PI * (hour - 8)) / 12));
+    const strength = (0.55 + 0.45 * noon) * d;
+    const strip = Math.max(2, Math.round(2 * d));
+    const y0 = Math.round(H * 0.18);
+    const t = this.t;
+    for (let y = y0; y < H; y += strip) {
+      const k = (y - y0) / (H - y0);
+      const amp = (0.45 + 1.45 * k) * strength;
+      const yy = y / d;
+      const dx = (Math.sin(yy * 0.13 + t * 4.6) + 0.6 * Math.sin(yy * 0.047 + t * 2.1 + Math.sin(yy * 0.011 + t * 0.7) * 2)) * amp;
+      if (Math.abs(dx) < 0.15) continue;
+      ctx.drawImage(this.haze, 0, y, W, strip, dx, y, W, strip);
+    }
+    ctx.restore();
+  }
+
   private drawWorld(ctx: Ctx, dt: number): void {
-    const g = this.game;
+    const g = this.src;
     const loc = g.S.location;
     const selling = g.phase === 'sell';
     if (!this.ground || this.ground.loc !== loc) {
@@ -319,7 +390,7 @@ export class Renderer {
     const inQueue = p.state === 'queue' || p.state === 'toQueue';
     const { facingCam, dirX } = pedFacing(p);
     const type = PED_TYPES[p.type];
-    const wantUmbrella = this.game.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue;
+    const wantUmbrella = this.src.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue;
     // a drawn picture of the person with an umbrella, if there is one; otherwise the umbrella is drawn over the plain picture
     const umbId = wantUmbrella ? pedUmbrellaSpriteId(p.type, p.look.variant, facingCam) : undefined;
     const id = umbId ?? pedSpriteId(p.type, p.look.variant, facingCam);
@@ -341,7 +412,7 @@ export class Renderer {
   }
 
   private drawThief(ctx: Ctx): void {
-    const th = this.game.street.thief!;
+    const th = this.src.street.thief!;
     const [sx, sy] = P(th.x, th.y);
     ctx.globalAlpha = Math.max(0.15, edgeAlpha(th.x));
     const headY = drawCharacter(ctx, th.state === 'caught' ? 'char_fox_dizzy' : 'char_fox_front', th.x, th.y, sx, sy, {
@@ -357,7 +428,7 @@ export class Renderer {
       t: this.t,
     });
     ctx.globalAlpha = 1;
-    if (this.game.street.thiefCatchable()) {
+    if (this.src.street.thiefCatchable()) {
       const pulse = 1 + Math.sin(this.t * 10) * 0.15;
       ctx.beginPath();
       ctx.ellipse(sx, sy - 22, 28 * pulse, 34 * pulse, 0, 0, Math.PI * 2);
@@ -396,7 +467,7 @@ export class Renderer {
 
   /** Progress of pouring a cup / making a pitcher. */
   private drawWorkIndicators(ctx: Ctx): void {
-    const g = this.game;
+    const g = this.src;
     for (let c = 0; c < g.servings.length; c++) {
       const s = g.servings[c];
       if (!s) continue;
@@ -425,13 +496,13 @@ export class Renderer {
   }
 
   private drawWater(ctx: Ctx): void {
-    if (!this.water.length || this.game.S.settings.reduceMotion) return;
+    if (!this.water.length || this.src.S.settings.reduceMotion) return;
     for (const [x, y] of this.water) {
       const ph = this.t * 1.2 + x * 0.9 + y * 1.7;
       const [sx, sy] = P(x + 0.5 + Math.sin(ph) * 0.15, y + 0.5);
       ellipse(ctx, sx, sy, 9 + Math.sin(ph * 1.3) * 3, 2, 'rgba(255,255,255,0.28)');
     }
-    if (this.game.S.location === 'beach') {
+    if (this.src.S.location === 'beach') {
       ctx.beginPath();
       for (let x = 0; x <= 12; x += 0.25) {
         const [sx, sy] = P(x, 2 + Math.sin(this.t * 1.5 + x * 1.3) * 0.06);

@@ -232,6 +232,21 @@ Row 2, cells 6-8: 6) a small round white bistro table on one metal leg, 7) a tal
 
 Імена: `stand_truck_lemon, stand_truck_mint, stand_truck_berry, stand_truck_sky, stand_truck_retro, stand_truck_bistro, stand_truck_stool_a, stand_truck_stool_b` (кольори збігаються з TRUCK_SKINS у грі).
 
+## Лист 20б. Вагончик з ВЕЛИКИМ вікном (3×2, ISO)
+
+У першому вагончику вікно вийшло низьким (11–18 px при висоті вагончика 131 px), тому з продавця видно лише голову. Тут вікно — головне: половина висоти кузова, підвіконня посередині, щоб продавця було видно до пояса. Столик і стільці вже є, вони не потрібні. Шостий колір (бузковий) — новий.
+
+СІТКА 6 / 3×2 / 80% + ISO +
+
+```
+Six food trucks for selling lemonade, EXACTLY the same shape, size, camera and position in their cells, only the colours differ. Each truck: a cute toy-like boxy rounded food truck like an ice cream van, a bit taller than a car, seen from the isometric camera; its long side with the serving window faces the LOWER-LEFT, its short back end faces the lower-right, four chunky wheels.
+THE MOST IMPORTANT PART: the serving window is HUGE. It is a wide open hatch that covers about 70% of the length of the long side and about half of the height of the body: its top edge is right under the roof, its bottom edge (a flat wooden counter shelf) is at the middle height of the body. A person standing inside would be seen from the waist up. The window is completely EMPTY and OPEN: through it we see only the plain light cream interior back wall, NO people, NO objects inside. A short striped awning sits on the roof edge above the window and does NOT cover the opening.
+On the roof a flat dark navy rectangular sign board, empty, NO letters. No stools, no table, no text anywhere.
+Colours: 1) lemon yellow body, orange trim, orange-white striped awning; 2) mint green body, dark green trim, green-white striped awning; 3) soft pink body, raspberry trim, pink-white striped awning; 4) sky blue body, deep blue trim, blue-white striped awning; 5) coral red body, dark red trim, red-white striped awning; 6) lilac purple body, deep violet trim, violet-white striped awning.
+```
+
+Імена: `stand_truck_lemon, stand_truck_mint, stand_truck_berry, stand_truck_sky, stand_truck_retro, stand_truck_lilac` (встановлює `tools/make_trucks.py`).
+
 ## Анімації: як замовляти ще
 
 Для кожного листа з людьми/тваринами, пари «спереду + ззаду», можна замовити відео ходьби тим самим способом, що й для пішоходів (сітка з клітинок, фігури крокують на місці, лист на магентовому фоні, цикл мінімум 1 с). Далі `tools/walk_analyze.py` та `tools/make_walk.py`.

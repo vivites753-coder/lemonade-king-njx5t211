@@ -1,4 +1,5 @@
 import { LOCATIONS } from '../../data/locations';
+import { payback } from '../../sim/points';
 import { t } from '../../i18n';
 import { coin, ico, lemiFace, signedCoin, stars } from '../dom';
 import type { Panel } from './types';
@@ -6,6 +7,20 @@ import type { Panel } from './types';
 function fbar(label: string, n: number, max: number): string {
   const w = max > 0 ? Math.max(2, Math.round((n / max) * 100)) : 0;
   return `<div class="fbar"><span>${label}</span><b>${n}</b><div class="bar"><i style="width:${w}%"></i></div></div>`;
+}
+
+/** Payback of every stand: how much of what it cost has come back. */
+function paybackRows(g: Parameters<Panel['render']>[0]): string {
+  if (!g.S.points.length) return '';
+  return `<div class="pt-payback-list"><b>💹 ${t('points.payback')}</b>${g.S.points
+    .map((p) => {
+      const pb = payback(p);
+      const pct = Math.max(0, Math.min(100, Math.round(pb.share * 100)));
+      return `<div class="kv"><span>${LOCATIONS[p.loc].icon} ${t(`loc.${p.loc}.name`)}</span><span>${pct}%${
+        pb.days === 0 ? ' ✅' : pb.days ? ` · ${t('points.paybackDays', { n: pb.days })}` : ''
+      }</span></div><div class="bar pb-bar"><i style="width:${pct}%"></i></div>`;
+    })
+    .join('')}</div>`;
 }
 
 export const reportPanel: Panel = {
@@ -60,7 +75,7 @@ export const reportPanel: Panel = {
           .map(
             (p) => `<div class="kv"><span>${LOCATIONS[p.loc].icon} ${t(`loc.${p.loc}.name`)} <small class="muted">${t(`points.status.${p.status}`)}${p.stolen ? ` · 💸 −${p.stolen}` : ''}</small></span><b>${signedCoin(p.profit)}</b></div>`,
           )
-          .join('')}</div>`
+          .join('')}${paybackRows(g)}</div>`
           : ''}
         ${r.pointsUnlocked ? `<div class="good-box">🏪 ${t('report.pointsUnlocked')}</div>` : ''}
         ${f.passed > 0 ? `<h3>🚶 ${t('report.funnel')} · ${t('report.sold', { n: r.sold })}</h3>

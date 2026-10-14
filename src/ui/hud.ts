@@ -3,7 +3,12 @@ import type { Phase } from '../core/types';
 import { LOCATIONS } from '../data/locations';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { fmtHour, ico, round1, stars, weatherIco } from './dom';
+import { payback, pointProgress, skillStars, type Point } from '../sim/points';
+import { POINTS } from '../data/staff';
+import { fmtHour, ico, round1, signedCoin, stars, weatherIco } from './dom';
+
+/** Phases in which the scene is in view and the player may look at their other stands. */
+const VIEW_PHASES: Phase[] = ['morning', 'prepare', 'sell', 'report', 'shop'];
 
 export class Hud {
   private els: Record<string, HTMLElement> = {};
@@ -62,6 +67,8 @@ export class Hud {
         <button class="hud-btn" data-hud="sound" data-el="sound" aria-label="${t('hud.sound')}">🔊</button>
         <button class="hud-btn" data-hud="settings" aria-label="${t('btn.settings')}">⚙️</button>
       </div>
+      <div class="hud-views hidden" data-el="views"></div>
+      <div class="hud-point hidden" data-el="pointinfo"></div>
       <div class="hud-funnel" data-el="funnel">
         <div class="chance"><small>${t('hud.chance')}</small><b data-el="chance"></b></div>
         <div class="frows">
@@ -133,6 +140,15 @@ export class Hud {
     this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">${ico('star_full', '⭐')}</span> ${S.rep.toFixed(1)}`);
     this.set('sound', S.settings.sound ? '🔊' : '🔇');
     this.show('points', g.pointsOpen() || S.points.length > 0);
+    // the other stands: a switch, and a card about the one shown (the controls of the own stand step aside)
+    const views = S.points.length > 0 && VIEW_PHASES.includes(this.phase);
+    this.show('views', views);
+    if (views) this.set('views', this.viewButtons());
+    const vp = g.viewPoint !== null ? g.pointById(g.viewPoint) : undefined;
+    this.show('pointinfo', !!vp);
+    if (vp) this.set('pointinfo', this.pointInfo(vp));
+    this.els.funnel.classList.toggle('hidden', this.phase !== 'sell' || !!vp);
+    this.els.bottom.classList.toggle('hidden', this.phase !== 'sell' || !!vp);
     if (this.phase !== 'sell') return;
 
     // speed
@@ -174,6 +190,42 @@ export class Hud {
     makeBtn.disabled = !!g.making;
     this.set('make', g.making ? `🍋 ${Math.round(Math.min(1, g.making.t / g.making.dur) * 100)}%<span class="lbl"> ${t('hud.making')}</span>` : `🍳<span class="lbl"> ${t('hud.make')}</span><span class="sm">+</span>`);
     makeBtn.classList.toggle('btn-y', D.cupsReady === 0);
+  }
+
+  private viewButtons(): string {
+    const g = this.g;
+    const btn = (id: string, icon: string, label: string, on: boolean) =>
+      `<button class="hv-btn${on ? ' on' : ''}" data-hud="view:${id}" title="${label}" aria-label="${label}">${icon}<span class="lbl"> ${label}</span></button>`;
+    return `<span class="hv-eye">👀</span>${btn('own', '🍋', t('points.home'), g.viewPoint === null)}${g.S.points
+      .map((p) => btn(String(p.id), LOCATIONS[p.loc].icon, t(`loc.${p.loc}.name`), g.viewPoint === p.id))
+      .join('')}`;
+  }
+
+  /** The stand shown now: its seller, what it has sold so far today, its payback, and the way back. */
+  private pointInfo(p: Point): string {
+    const g = this.g;
+    const s = p.seller;
+    const sell = this.phase === 'sell';
+    let who: string;
+    if (!s) who = `🤒 ${t(p.away ? 'points.closedIll' : 'points.noSeller')}`;
+    else if (p.issue === 'sick') who = `🤒 ${t('points.closed')}`;
+    else who = `👤 <b>${t(`staff.name${s.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(s.skill))}</span>`;
+    let today = '';
+    if (sell && p.today && s && p.issue !== 'sick') {
+      const k = pointProgress(p, g.D.hour);
+      today =
+        k <= 0
+          ? `🕐 ${t('points.notOpenYet', { h: fmtHour(p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H) })}`
+          : `🥤 ${t('points.soFar', { n: Math.round(p.today.sold * k), m: Math.round(p.today.revenue * k) })}`;
+    } else if (p.last) today = t('points.lastProfit', { n: signedCoin(p.last.profit) });
+    const pct = Math.max(0, Math.min(100, Math.round(payback(p).share * 100)));
+    return `<div class="hp-title">${LOCATIONS[p.loc].icon} <b>${t(`loc.${p.loc}.name`)}</b></div>
+      <div>${who}</div>
+      ${today ? `<div>${today}</div>` : ''}
+      <div class="hp-pb"><span>💹 ${t('points.payback')}: <b>${pct}%</b></span><div class="bar pb-bar"><i style="width:${pct}%"></i></div></div>
+      ${sell ? `<small class="muted">🍋 ${t('points.ownQueue', { n: g.street.queued })}</small>` : ''}
+      <div class="hp-btns"><button class="btn btn-sm btn-y" data-hud="pshop:${p.id}">🛠️ ${t('points.upgrades')}</button>
+        <button class="btn btn-sm btn-g" data-hud="view:own">↩ ${t('points.backHome')}</button></div>`;
   }
 
   private renderWhy(): void {

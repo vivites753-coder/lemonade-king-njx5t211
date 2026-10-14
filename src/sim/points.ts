@@ -1,10 +1,12 @@
-// "My stands": extra stands at other places, run by hired sellers. The player does not see them working:
-// each one is simulated in a single step at the end of the day, and only the numbers come back.
+// "My stands": extra stands at other places, run by hired sellers. Each day of a stand is worked out in one step
+// (when the selling starts, or in the evening): only the numbers count. The player can look at a stand while it
+// works (see pointScene.ts), but what they see there is only the show.
 import { CONFIG } from '../core/config';
 import { RNG } from '../core/rng';
-import type { LocationId, WeatherId } from '../core/types';
+import type { LocationId, UpgradeId, WeatherId } from '../core/types';
 import { LOCATIONS, LOCATION_IDS, locationUnlocked } from '../data/locations';
 import { POINTS, SELLER_NAMES, type WorkerIssue } from '../data/staff';
+import { UPGRADES } from '../data/upgrades';
 import { costPerCup, expectedDay, type Owned } from './economy';
 import type { GameState } from './state';
 import type { Crowd } from './traffic';
@@ -47,10 +49,42 @@ export interface Point {
   /** Profit of the last 7 days. */
   history: number[];
   total: number;
+  /** The equipment of this stand: what came with it and what was bought for it later. */
+  upgrades?: Owned;
+  /** Coins put into this stand (the stand and its upgrades): the payback is counted against this. */
+  invested?: number;
+  /** The own seller is ill at home for this many more mornings; a stand-in may work meanwhile. */
+  away?: { seller: Seller; days: number } | null;
+  /** Today's day of the stand, worked out when the selling starts (it is shown bit by bit while you watch). */
+  today?: PointDay | null;
 }
 
-/** A stand of your own at another place: the basics and a sign. */
-export const POINT_UPGRADES: Owned = { sign: true };
+/** A new stand comes fully set up: the table, the pitcher, a sign, an umbrella and a hand juicer. */
+export const POINT_START: Owned = { sign: true, umbrella: true, juicer_hand: true };
+
+/**
+ * Upgrades a stand of yours can get. Not here: delivery, the bike and the scooter (the wholesaler brings the goods
+ * to the stands), the toolkit (the stands do not wear out) and branded cups (the reputation is the owner's).
+ */
+export const POINT_UPGRADE_IDS: UpgradeId[] = [
+  'sign',
+  'loyalty',
+  'banner',
+  'speaker',
+  'mascot',
+  'umbrella',
+  'tent',
+  'dispenser',
+  'tv',
+  'big_stand',
+  'truck',
+  'juicer_hand',
+  'juicer_lever',
+  'cooler',
+  'mixer_pro',
+  'cash_lock',
+];
+
 const RECIPE = { lemons: CONFIG.IDEAL_LEMONS, sugar: CONFIG.IDEAL_SUGAR };
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -61,6 +95,11 @@ export function pointsOpen(S: GameState): boolean {
 
 export function pointAt(S: GameState, loc: LocationId): Point | undefined {
   return S.points.find((p) => p.loc === loc);
+}
+
+/** The equipment of a stand (older saves: only the sign). */
+export function pointUps(p: Point): Owned {
+  return p.upgrades ?? { sign: true };
 }
 
 /** Places where a new stand can go: open for the player, not home (home is always yours), not taken. */
@@ -81,6 +120,9 @@ export function candidates(S: GameState, pointId: number): Seller[] {
   const rng = new RNG((S.seed ^ Math.imul(S.day, 7919) ^ Math.imul(pointId, 104729)) >>> 0);
   const out: Seller[] = [];
   const used = new Set<number>();
+  // the seller who is ill at home is not among them
+  const away = S.points.find((p) => p.id === pointId)?.away?.seller.nameId;
+  if (away) used.add(away);
   for (let i = 0; i < 3; i++) {
     let nameId = rng.int(1, SELLER_NAMES);
     while (used.has(nameId)) nameId = (nameId % SELLER_NAMES) + 1;
@@ -99,37 +141,63 @@ export function candidates(S: GameState, pointId: number): Seller[] {
 export function rollMorningIssue(S: GameState, p: Point, rng: RNG): WorkerIssue | null {
   const s = p.seller;
   if (!s) return null;
-  if (rng.chance(0.04)) return 'sick';
+  if (rng.chance(POINTS.SICK_CHANCE)) return 'sick';
   if (rng.chance((1.15 - s.skill) * 0.1)) return 'late';
   if (rng.chance((1.15 - s.skill) * 0.08)) return 'rude';
   if (S.day - s.hiredDay >= 7 && s.wage < 45 && rng.chance(0.05)) return 'raise';
   return null;
 }
 
+/** Cups a seller can pour in a day: a wide counter and a dispenser let them pour more. */
+export function pointCapacity(p: Point): number {
+  const s = p.seller;
+  if (!s) return 0;
+  const up = pointUps(p);
+  let cap = POINTS.CAPACITY * s.skill;
+  if (up.big_stand || up.truck) cap *= POINTS.WIDE_CAPACITY;
+  if (up.dispenser) cap /= UPGRADES.dispenser.serveMult ?? 1;
+  return Math.round(cap);
+}
+
+/** Price of the ingredients of one cup at a stand: bought wholesale, so cheaper than at the market. */
+export function pointCupCost(p: Point): number {
+  return costPerCup(RECIPE, pointUps(p)) * POINTS.WHOLESALE;
+}
+
 /** One day of a stand, in numbers. */
 export function simulatePoint(S: GameState, p: Point, weather: WeatherId, ev: Crowd, rng: RNG): PointDay {
   const day: PointDay = { day: S.day, status: 'empty', sold: 0, revenue: 0, ingredients: 0, rent: 0, wage: 0, stolen: 0, profit: 0 };
   const s = p.seller;
-  if (!s) return day;
+  // the own seller is ill and nobody stands in: the stand stays closed
+  if (!s) return { ...day, status: p.away ? 'sick' : 'empty' };
   // a closed stand pays nothing (the seller is paid for working days only)
   if (p.issue === 'sick') return { ...day, status: 'sick' };
   const loc = LOCATIONS[p.loc];
+  const up = pointUps(p);
   const price = loc.fairPrice;
   const from = p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H;
-  const e = expectedDay({ loc: p.loc, weather, price, upgrades: POINT_UPGRADES, rep: S.rep, from, events: ev, recipe: RECIPE });
+  const e = expectedDay({ loc: p.loc, weather, price, upgrades: up, rep: S.rep, from, events: ev, recipe: RECIPE });
   const mood = p.issue === 'rude' ? 0.65 : 1;
-  const sold = Math.min(Math.round(e.buyers * (0.55 + 0.45 * s.skill) * mood * rng.range(0.85, 1.15)), Math.round(POINTS.CAPACITY * s.skill));
-  const revenue = sold * price;
-  const ingredients = Math.round(sold * (1 + POINTS.WASTE) * costPerCup(RECIPE, {}));
+  // a good seller keeps the queue; a TV and shade keep people waiting longer; a perfect mix tastes better
+  const shade = !loc.indoor && (up.umbrella || up.tent) ? POINTS.SHADE_SERVICE : 0;
+  const service = Math.min(1, 0.55 + 0.45 * s.skill + (up.tv ? POINTS.TV_SERVICE : 0) + shade);
+  const taste = up.mixer_pro ? POINTS.PRO_MIX : 1;
+  const sold = Math.min(Math.round(e.buyers * service * mood * taste * rng.range(0.85, 1.15)), pointCapacity(p));
+  // the loyalty card gives every 10th cup for free
+  const free = up.loyalty ? Math.floor(sold / 10) : 0;
+  const revenue = (sold - free) * price;
+  const waste = up.cooler ? POINTS.WASTE_COOLER : POINTS.WASTE;
+  const ingredients = Math.round(sold * (1 + waste) * pointCupCost(p));
   const status: PointStatus = p.issue === 'late' || p.issue === 'rude' ? p.issue : 'ok';
   return { ...day, status, sold, revenue, ingredients, rent: loc.rent, wage: s.wage, profit: revenue - ingredients - loc.rent - s.wage };
 }
 
-/** Evening count: a dishonest seller may take money from the till. Returns the amount. */
+/** Evening count: a dishonest seller may take money from the till (a locked cash box makes it harder). */
 export function rollTheft(p: Point, d: PointDay, rng: RNG): number {
   const s = p.seller;
   if (!s || d.revenue <= 0) return 0;
-  if (!rng.chance((1 - s.honesty) * 0.5)) return 0;
+  const lock = pointUps(p).cash_lock ? POINTS.LOCK_THEFT : 1;
+  if (!rng.chance((1 - s.honesty) * 0.5 * lock)) return 0;
   const n = Math.max(1, Math.round(d.revenue * rng.range(0.25, 0.45)));
   d.stolen = n;
   d.profit -= n;
@@ -142,4 +210,27 @@ export function recordDay(p: Point, d: PointDay): void {
   p.history.push(d.profit);
   if (p.history.length > 7) p.history.shift();
   p.total += d.profit;
+}
+
+/** How much of today is behind the stand (0 before it opens, 1 at closing time). */
+export function pointProgress(p: Point, hour: number): number {
+  const from = p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H;
+  return clamp((hour - from) / (CONFIG.DAY_END - from), 0, 1);
+}
+
+/**
+ * Payback: the coins put into the stand against the profit it has brought. `days` is how many more days it needs at
+ * the pace of the last week (null when it does not earn).
+ */
+export function payback(p: Point): { invested: number; earned: number; share: number; days: number | null } {
+  const invested = p.invested ?? POINTS.COST;
+  const earned = p.total;
+  const avg = p.history.length ? p.history.reduce((a, b) => a + b, 0) / p.history.length : 0;
+  const left = invested - earned;
+  return {
+    invested,
+    earned,
+    share: invested > 0 ? earned / invested : 1,
+    days: left <= 0 ? 0 : avg > 0 ? Math.ceil(left / avg) : null,
+  };
 }

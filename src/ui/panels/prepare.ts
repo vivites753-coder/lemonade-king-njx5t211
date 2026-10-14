@@ -50,7 +50,7 @@ export const preparePanel: Panel = {
 
         <h3>💰 ${t('prep.price')}</h3>
         <div class="card">
-          <div class="kv"><span>${t('prep.cost')}</span><b>${coin(kid ? '≈' + Math.round(cost) : round1(cost))}</b></div>
+          <div class="kv cost-line"><span>${t('prep.cost')}</span><b>${coin(kid ? '≈' + Math.round(cost) : round1(cost))}</b></div>
           <small class="muted">${t('prep.costHelp')}</small>
           ${formula}
           <div class="kv" style="margin-top:8px"><span>${t('prep.price')}</span>${stepper('price', `<i class="coin"></i>${S.price}`, S.price > CONFIG.PRICE_MIN, S.price < CONFIG.PRICE_MAX)}</div>

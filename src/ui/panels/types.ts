@@ -9,6 +9,7 @@ export interface UIApi {
   openStock(): void;
   openRoadmap(): void;
   openTruck(): void;
+  openPoints(): void;
   startNewGame(): void;
   continueGame(): void;
   hasSave(): boolean;

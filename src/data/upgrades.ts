@@ -72,7 +72,7 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   tent: { id: 'tent', icon: '⛺', price: 800, cat: 'comfort', minRep: 3, requires: 'umbrella', weatherShield: 0.5, comfort: 1.03, outdoorOnly: true },
   scooter: { id: 'scooter', icon: '🛵', price: 900, cat: 'comfort', minRep: 3, tripHours: 1 / 3, travelReduce: 1 },
   tv: { id: 'tv', icon: '📺', price: 700, cat: 'comfort', minRep: 2, patience: 1.6, queueBonus: 3 },
-  big_stand: { id: 'big_stand', icon: '👥', price: 900, cat: 'comfort', minRep: 2, counters: 2 },
+  big_stand: { id: 'big_stand', icon: '👥', price: 900, cat: 'comfort', minRep: 3, counters: 2 },
   truck: { id: 'truck', icon: '🚐', price: 2000, cat: 'comfort', minRep: 3, counters: 2, radius: 1.0, ads: 0.12, comfort: 1.05 },
   // production
   juicer_hand: { id: 'juicer_hand', icon: '🍋', price: 120, cat: 'production', lemonReduce: 1 },

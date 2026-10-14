@@ -121,16 +121,6 @@ export class WeatherFx {
       ctx.fillStyle = tint[weather]!;
       ctx.fillRect(0, 0, w, h);
     }
-    if (weather === 'hot' && !reduceMotion && !indoor) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = 6;
-      for (let i = 0; i < 5; i++) {
-        const y = h * (0.45 + i * 0.1);
-        ctx.beginPath();
-        for (let x = 0; x <= w; x += 20) ctx.lineTo(x, y + Math.sin(x * 0.02 + t * 2 + i) * 4);
-        ctx.stroke();
-      }
-    }
     if (this.drops.length) {
       ctx.strokeStyle = 'rgba(210,225,255,0.65)';
       ctx.lineWidth = 1.3;

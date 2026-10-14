@@ -2856,10 +2856,10 @@ body.reduce-motion * {
   100% { opacity: 0; transform: rotate(-10deg); }
 }
 .k-meter {
-  left: 440px;
-  top: 282px;
-  width: 120px;
-  height: 22px;
+  left: 420px;
+  top: 226px;
+  width: 160px;
+  height: 30px;
   border-radius: 99px;
   background: linear-gradient(90deg, #ffe8a3, #ffc9c9);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
@@ -2876,8 +2876,8 @@ body.reduce-motion * {
   position: absolute;
   top: -2px;
   bottom: -2px;
-  width: 6px;
-  margin-left: -3px;
+  width: 8px;
+  margin-left: -4px;
   background: var(--ink);
   border-radius: 3px;
   left: 0;
@@ -3438,4 +3438,172 @@ body.reduce-motion * {
   line-height: 1;
   text-shadow: 0 0 6px currentColor, 0 0 1px #fff;
   overflow: hidden;
+}
+
+/* ---------- the other stands: switch, card of the stand shown, payback ---------- */
+.hud-views {
+  position: absolute;
+  top: calc(60px + var(--safe-t));
+  left: calc(var(--scene-l, 74px) + 8px);
+  right: calc(var(--scene-r, 0px) + 8px);
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.hud-views > * {
+  pointer-events: auto;
+}
+.hv-eye {
+  align-self: center;
+  font-size: 18px;
+}
+.hv-btn {
+  border: 0;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  min-height: 36px;
+  padding: 4px 12px;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hv-btn.on {
+  background: var(--yellow);
+  box-shadow: 0 0 0 3px #fff, 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+.hud-point {
+  position: absolute;
+  right: calc(10px + var(--safe-r) + var(--scene-r, 0px));
+  top: calc(104px + var(--safe-t));
+  width: 250px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hp-title {
+  font-size: 16px;
+}
+.hp-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.pb-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: #e9ecef;
+  overflow: hidden;
+  margin: 3px 0;
+}
+.pb-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ffd43b, #51cf66);
+  border-radius: 99px;
+}
+.pt-payback {
+  margin: 8px 0 4px;
+}
+.pt-payback-list {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed #e0d9c2;
+}
+.pt-ups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0;
+}
+.pt-up {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #fff8db;
+  font-size: 18px;
+}
+.pt-up img,
+.pt-up .ui-ico {
+  width: 26px;
+  height: 26px;
+}
+.pt-btns {
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.pt-shop-head {
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-height: 460px) {
+  .hud-views {
+    top: calc(40px + var(--safe-t));
+  }
+  .hv-btn {
+    min-height: 30px;
+    padding: 2px 8px;
+  }
+  .hv-btn .lbl {
+    display: none;
+  }
+  .hud-point {
+    top: calc(76px + var(--safe-t));
+    width: 210px;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+}
+
+/* ---------- the arrow that shows where to look during a tip ---------- */
+.tip-arrow {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 45;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35));
+}
+.tip-arrow svg {
+  display: block;
+  animation: tipBounce 0.9s ease-in-out infinite;
+}
+.tip-arrow.up svg {
+  animation-name: tipBounceUp;
+}
+@keyframes tipBounce {
+  0%,
+  100% {
+    transform: translateY(-9px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+}
+@keyframes tipBounceUp {
+  0%,
+  100% {
+    transform: rotate(180deg) translateY(-9px);
+  }
+  50% {
+    transform: rotate(180deg) translateY(0);
+  }
+}
+.reduce-motion .tip-arrow svg {
+  animation: none;
+}
+.reduce-motion .tip-arrow.up svg {
+  transform: rotate(180deg);
 }

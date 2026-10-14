@@ -8,13 +8,15 @@ export interface GoodDef {
   /** Units per pack (sugar: spoons, cups: cups). */
   pack: number;
   stock: StockKind;
-  vendor: 'galya' | 'kiosk' | 'bogdan' | 'milana' | 'super' | 'baker';
+  vendor: 'galya' | 'kiosk' | 'bogdan' | 'milana' | 'super' | 'baker' | 'wholesale';
   /** Sold from this reputation (best ever reached). */
   minRep?: number;
   /** Share of rotten lemons in every purchase. */
   rotten?: number;
   /** Only sold when cups are sold out at Milana's. */
   onlyWhenCupsSoldOut?: boolean;
+  /** Big packs at the wholesale warehouse: cheaper per piece, sold to owners of a stand network. */
+  wholesale?: boolean;
 }
 
 export const GOODS: Record<GoodId, GoodDef> = {
@@ -25,6 +27,11 @@ export const GOODS: Record<GoodId, GoodDef> = {
   cups: { id: 'cups', icon: '🥤', price: 10, pack: 10, stock: 'cups', vendor: 'milana' },
   cups_super: { id: 'cups_super', icon: '🥤', price: 20, pack: 10, stock: 'cups', vendor: 'super', onlyWhenCupsSoldOut: true },
   cookies: { id: 'cookies', icon: '🍪', price: 20, pack: 10, stock: 'cookies', vendor: 'baker', minRep: 2 },
+  // wholesale: a quarter cheaper per piece, but only in big packs (and lemons still spoil)
+  lemon_bulk: { id: 'lemon_bulk', icon: '📦', price: 60, pack: 20, stock: 'lemons', vendor: 'wholesale', wholesale: true },
+  water_bulk: { id: 'water_bulk', icon: '📦', price: 22, pack: 10, stock: 'water', vendor: 'wholesale', wholesale: true },
+  sugar_bulk: { id: 'sugar_bulk', icon: '📦', price: 35, pack: 50, stock: 'sugar', vendor: 'wholesale', wholesale: true },
+  cups_bulk: { id: 'cups_bulk', icon: '📦', price: 70, pack: 100, stock: 'cups', vendor: 'wholesale', wholesale: true },
 };
 
 /** Cookies: a second product that customers buy together with lemonade. */

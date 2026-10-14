@@ -18,7 +18,9 @@ import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
 import { esc } from './dom';
 import { devModal, devModeOn, setDevMode } from './devModal';
-import { hireModal, pointsModal, type PointsHooks } from './points';
+import { hireModal, pointShopModal, pointsModal, type PointsHooks } from './points';
+import { TipArrow, type WorldTarget } from './tipArrow';
+import { CONFIG } from '../core/config';
 import { roadmapModal } from './roadmap';
 import { truckModal } from './truckModal';
 import { ResourceBar, stockModal } from './resources';
@@ -51,6 +53,7 @@ export class UI implements UIApi {
   /** Phones: the full-screen panel can be hidden to look at the scene. */
   private panelHidden = false;
   private toggleEl: HTMLElement;
+  private arrow: TipArrow;
 
   constructor(
     private g: Game,
@@ -88,10 +91,20 @@ export class UI implements UIApi {
     // the kitchen opens over the selling day when the lemonade runs out
     g.bus.on('kitchen', () => this.onPhase(g.phase));
     g.bus.on('changed', () => this.refresh());
-    g.bus.on('tip', ({ key }) => this.overlays.tip(key));
-    g.bus.on('card', (c) => this.overlays.card(c));
+    g.bus.on('tip', ({ key }) => {
+      // something happens at the own stand while selling: the scene goes back there
+      if (key !== 'view' && g.phase === 'sell') g.setView(null);
+      this.overlays.tip(key);
+    });
+    g.bus.on('card', (c) => {
+      if (g.phase === 'sell') g.setView(null);
+      this.overlays.card(c);
+    });
     g.bus.on('toast', (e) => this.toast(t(e.key, e.params), e.kind));
     g.bus.on('sfx', (e) => play(e.name));
+    // a card asks to hire somebody (a stand-in for an ill seller): the list opens after the card has closed
+    g.bus.on('hire', ({ point }) => queueMicrotask(() => this.pointsHooks.hire(point)));
+    this.arrow = new TipArrow(document.getElementById('app') ?? document.body);
 
     const canvas = document.getElementById('scene')!;
     canvas.addEventListener('pointerdown', (e) => this.onTap(e.clientX, e.clientY));
@@ -153,6 +166,8 @@ export class UI implements UIApi {
   private pointsHooks: PointsHooks = {
     hire: (id) => this.overlays.modal(hireModal(this.g, id, this.pointsHooks)),
     points: () => this.openPoints(),
+    shop: (id) => this.overlays.modal(pointShopModal(this.g, id, this.pointsHooks)),
+    view: (id) => this.g.setView(id),
     confirm: (text, yes) => this.confirm(text, yes),
   };
 
@@ -363,6 +378,9 @@ export class UI implements UIApi {
     const left = p === 'title' ? 0 : compact ? 52 : 74;
     this.r.compact = compact;
     this.r.insets = { top, right, bottom, left };
+    const root = document.documentElement.style;
+    root.setProperty('--scene-l', `${left}px`);
+    root.setProperty('--scene-r', `${this.current?.dock && w > 860 && !compact ? right : 0}px`);
   }
 
   update(): void {
@@ -370,6 +388,24 @@ export class UI implements UIApi {
     this.g.paused = sell && (this.userPaused || this.overlays.active);
     this.hud.update(this.userPaused);
     this.resources.update(this.g.phase);
+    this.arrow.update(this.overlays.tipKey(), (w) => this.worldSpot(w));
+  }
+
+  /** Screen position of something in the scene the tip arrow points at (the tip of the arrow is there). */
+  private worldSpot(w: WorldTarget): { x: number; y: number } | null {
+    const g = this.g;
+    if (g.viewPoint !== null) return null;
+    const at = (x: number, y: number, z: number) => this.r.worldToScreen(x, y, z);
+    if (w === 'thief') return g.street.thief ? at(g.street.thief.x, g.street.thief.y, 52) : null;
+    if (w === 'queue' || w === 'queue2') {
+      const p = g.street.queueFor(w === 'queue2' ? 1 : 0)[0];
+      return p ? at(p.x, p.y, 62) : null;
+    }
+    if (w === 'critter') {
+      const c = g.critters.list.find((x) => x.bonus) ?? null;
+      return c ? at(c.x, c.y, 30) : null;
+    }
+    return at(CONFIG.STAND.x, CONFIG.STAND.y, 100);
   }
 
   private toTitle(): void {
@@ -421,6 +457,12 @@ export class UI implements UIApi {
       case 'points':
         this.openPoints();
         break;
+      case 'view':
+        g.setView(arg === 'own' ? null : Number(arg));
+        break;
+      case 'pshop':
+        this.pointsHooks.shop(Number(arg));
+        break;
       case 'roadmap':
         this.openRoadmap();
         break;
@@ -436,7 +478,8 @@ export class UI implements UIApi {
 
   private onTap(x: number, y: number): void {
     const g = this.g;
-    if (g.phase !== 'sell' || g.paused) return;
+    // taps on another stand do not serve the own customers
+    if (g.phase !== 'sell' || g.paused || g.viewPoint !== null) return;
     // only a tap right on the fox counts
     const th = this.r.thiefScreen;
     if (th && g.street.thiefCatchable() && Math.hypot(th.x - x, th.y - y) < th.r) {

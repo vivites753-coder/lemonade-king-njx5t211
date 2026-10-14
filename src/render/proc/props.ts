@@ -217,6 +217,24 @@ const CAR_SPRITES = ['car_a', 'car_b', 'car_c', 'car_d', 'van'];
  * A drawn car (or van) on the road: the front picture drives to the lower right, the back one to the upper left,
  * and from behind a little smoke puffs out of the exhaust pipe. Falls back to the code-drawn car.
  */
+/** The shadow of a car: long along the road and right under the wheels (the wheels stand on its lower edge). */
+function carShadow(ctx: Ctx, sx: number, sy: number): void {
+  ctx.save();
+  ctx.translate(sx, sy - 5);
+  // the road runs along the x tiles: on screen that is 2 px right for 1 px down
+  ctx.rotate(Math.atan2(16, 32));
+  ctx.scale(1, 0.4);
+  const gr = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
+  gr.addColorStop(0, 'rgba(0,0,0,0.34)');
+  gr.addColorStop(0.65, 'rgba(0,0,0,0.24)');
+  gr.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gr;
+  ctx.beginPath();
+  ctx.arc(0, 0, 30, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; dir: number; variant: number }): void {
   const id = `prop_${CAR_SPRITES[c.variant % CAR_SPRITES.length]}_${c.dir > 0 ? 'front' : 'back'}`;
   const img = getImage(id);
@@ -225,7 +243,7 @@ export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; d
     return;
   }
   const [sx, sy] = P(c.x, c.y);
-  shadow(ctx, sx, sy, 24, 0.2);
+  carShadow(ctx, sx, sy);
   drawSprite(ctx, id, { x: c.x, y: c.y, sx, sy, s: 1 });
   if (c.dir > 0 || ENV.reduceMotion || !hasImage(id)) return;
   // the exhaust is at the lower right of the rear picture; the puffs rise and drift backwards, getting bigger and fainter
@@ -236,7 +254,8 @@ export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; d
   const ey = sy - H * m.anchor[1] + H * 0.9;
   const phase = c.x * 1.7;
   for (let i = 0; i < 4; i++) {
-    const k = (((ENV.t / 1.3 + i / 4 + phase) % 1) + 1) % 1;
+    // one puff takes 2.6 s to rise and fade
+    const k = (((ENV.t / 2.6 + i / 4 + phase) % 1) + 1) % 1;
     circle(ctx, ex + k * 13, ey - k * 12, 1.6 + k * 4, `rgba(240,240,240,${(0.85 * (1 - k)).toFixed(3)})`);
   }
 }

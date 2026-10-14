@@ -14,7 +14,14 @@ const UNIT: Record<GoodId, string> = {
   cups: 'unit.pack',
   cups_super: 'unit.pack',
   cookies: 'unit.pack',
+  lemon_bulk: 'unit.box',
+  water_bulk: 'unit.box',
+  sugar_bulk: 'unit.bag',
+  cups_bulk: 'unit.box',
 };
+
+/** Price of one piece (a lemon, a bottle, a spoon, a cup) when bought in this pack. */
+const perPiece = (price: number, pack: number) => (Math.round((price / pack) * 100) / 100).toString();
 
 export const marketPanel: Panel = {
   id: 'market',
@@ -23,9 +30,8 @@ export const marketPanel: Panel = {
     const S = g.S;
     const st = S.stock;
     const have: Record<string, number> = { lemons: lemonsTotal(st), water: st.water, sugar: st.sugar, cups: st.cups, cookies: st.cookies ?? 0 };
-    // goods for a higher reputation (cookies) appear once they are open
-    const rows = GOOD_IDS.filter((id) => (!GOODS[id].onlyWhenCupsSoldOut && !GOODS[id].minRep) || g.goodAvailable(id))
-      .map((id) => {
+    // goods for a higher reputation (cookies) appear once they are open; the wholesale packs have their own part
+    const row = (id: GoodId) => {
         const gd = GOODS[id];
         const avail = g.goodAvailable(id);
         const qty = g.cart[id];
@@ -36,15 +42,23 @@ export const marketPanel: Panel = {
             <small>${t(`vendor.${gd.vendor}`)} · ${avail ? t(`good.${id}.note`) : t('market.soldOut')}</small>
             ${haveKey ? `<small>${t('market.have', { n: have[haveKey] })}</small>` : ''}
           </div>
-          <div class="price">${coin(g.goodPrice(id))}<br><small>${t('market.per', { unit: t(UNIT[id]) })}</small></div>
+          <div class="price">${coin(g.goodPrice(id))}<br><small>${t('market.per', { unit: t(UNIT[id]) })}</small>${
+            gd.wholesale ? `<br><small class="pos">${t('market.perPiece', { n: perPiece(g.goodPrice(id), gd.pack) })}</small>` : ''
+          }</div>
           <div class="stepper">
             <button class="btn" data-act="dec:${id}" ${!avail || qty === 0 ? 'disabled' : ''} aria-label="−">−</button>
             <b>${qty}</b>
             <button class="btn btn-y" data-act="inc:${id}" ${avail ? '' : 'disabled'} aria-label="+">+</button>
           </div>
         </div>`;
-      })
+    };
+    const rows = GOOD_IDS.filter((id) => !GOODS[id].wholesale && ((!GOODS[id].onlyWhenCupsSoldOut && !GOODS[id].minRep) || g.goodAvailable(id)))
+      .map(row)
       .join('');
+    const bulk = GOOD_IDS.filter((id) => GOODS[id].wholesale && g.goodAvailable(id));
+    const wholesale = bulk.length
+      ? `<h3 class="wholesale-h">📦 ${t('market.wholesale')}</h3><div class="note">${t('market.wholesaleNote')}</div>${bulk.map(row).join('')}`
+      : '';
     const total = g.cartTotal();
     const tooMuch = total > S.coins;
     const lemonsPer = lemonsConsumed(S.recipe, S.upgrades);
@@ -58,6 +72,7 @@ export const marketPanel: Panel = {
           <button class="btn" data-act="clear" ${total > 0 ? '' : 'disabled'} title="${t('market.clear')}">🗑️ <span class="lbl-m">${t('market.clear')}</span></button>
         </div>
         ${rows}
+        ${wholesale}
         <div class="good-box">🍋 ${t('market.enough', { n: g.pitchersWithCart() })}</div>
       </div>
       <div class="panel-foot">

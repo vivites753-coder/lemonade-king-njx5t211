@@ -52,6 +52,9 @@ import {
   freePlaces,
   pointAt,
   pointsOpen,
+  pointUps,
+  POINT_START,
+  POINT_UPGRADE_IDS,
   recordDay,
   rollMorningIssue,
   rollTheft,
@@ -99,6 +102,10 @@ export type GameEvents = {
   kitchen: { open: boolean };
   /** A lucky find was picked up. */
   found: { x: number; y: number; amount: number; icon: string };
+  /** The player wants to hire a seller for this stand (a card button): the UI opens the list of people. */
+  hire: { point: number };
+  /** The scene shows another stand of the player's (null: the player's own). */
+  view: { point: number | null };
 };
 
 export interface Serving {
@@ -119,7 +126,19 @@ export interface Snapshot {
 }
 
 export type Cart = Record<GoodId, number>;
-export const emptyCart = (): Cart => ({ lemon: 0, lemon_cheap: 0, water: 0, sugar: 0, cups: 0, cups_super: 0, cookies: 0 });
+export const emptyCart = (): Cart => ({
+  lemon: 0,
+  lemon_cheap: 0,
+  water: 0,
+  sugar: 0,
+  cups: 0,
+  cups_super: 0,
+  cookies: 0,
+  lemon_bulk: 0,
+  water_bulk: 0,
+  sugar_bulk: 0,
+  cups_bulk: 0,
+});
 export type KitchenItem = 'lemon' | 'water' | 'sugar';
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -150,6 +169,8 @@ export class Game {
   radius: number = CONFIG.BASE_RADIUS;
   /** Real seconds each counter's helper has waited with a customer in front. */
   private helperIdle = [0, 0];
+  /** The scene shows this stand of the player's (null: the player's own). Not saved. */
+  viewPoint: number | null = null;
 
   /** The first counter's pour (the player's usual counter). */
   get serving(): Serving | null {
@@ -266,8 +287,20 @@ export class Game {
 
   private setPhase(p: Phase): void {
     this.phase = p;
+    // a new part of the day starts at the player's own stand
+    if (this.viewPoint !== null) this.setView(null);
     this.save();
     this.bus.emit('phase', { phase: p });
+  }
+
+  /** Look at another stand of the player's (null: back to the own one). */
+  setView(id: number | null): void {
+    const next = id !== null && this.pointById(id) ? id : null;
+    if (next === this.viewPoint) return;
+    this.viewPoint = next;
+    if (next !== null) this.tip('view');
+    this.bus.emit('view', { point: next });
+    this.changed();
   }
 
   /** Shows a Lemi tip once per game and unlocks its glossary cards. */
@@ -448,6 +481,7 @@ export class Game {
     this.cart = emptyCart();
     this.setPhase('market');
     this.tip(delivery ? 'delivery' : 'market');
+    if (this.goodAvailable('lemon_bulk')) this.tip('wholesale');
     if (!this.D.marketCardsShown) {
       this.D.marketCardsShown = true;
       if (this.D.events.sugarHike) this.card('sugarHike', '📈', { price: this.goodPrice('sugar') });
@@ -465,6 +499,8 @@ export class Game {
   }
 
   goodAvailable(id: GoodId): boolean {
+    // the wholesale warehouse sells to owners of a stand network
+    if (GOODS[id].wholesale) return this.S.points.length > 0;
     const minRep = GOODS[id].minRep;
     if (minRep && this.S.bestRep < minRep - 1e-9) return false;
     if (id === 'cups') return !this.D.events.cupsSoldOut;
@@ -492,14 +528,13 @@ export class Game {
 
   /** Stock plus what is in the cart (units). */
   stockWithCart(): { lemons: number; water: number; sugar: number; cups: number } {
-    const c = this.cart;
     const s = this.S.stock;
-    return {
-      lemons: lemonsTotal(s) + c.lemon + c.lemon_cheap,
-      water: s.water + c.water,
-      sugar: s.sugar + c.sugar * GOODS.sugar.pack,
-      cups: s.cups + c.cups * GOODS.cups.pack + c.cups_super * GOODS.cups_super.pack,
-    };
+    const out = { lemons: lemonsTotal(s), water: s.water, sugar: s.sugar, cups: s.cups };
+    for (const id of GOOD_IDS) {
+      const g = GOODS[id];
+      if (g.stock !== 'cookies') out[g.stock] += this.cart[id] * g.pack;
+    }
+    return out;
   }
 
   /** How many pitchers stock + cart allow with the current recipe. */
@@ -562,11 +597,13 @@ export class Game {
       if (!n) continue;
       const g = GOODS[id];
       if (g.stock === 'lemons') {
-        const bad = g.rotten ? this.rng.binomial(n, g.rotten) : this.D.events.badLemons ? this.rng.binomial(n, BAD_LEMONS_SHARE) : 0;
-        this.addLemons(n - bad);
+        // a box of the wholesaler holds many lemons
+        const units = n * g.pack;
+        const bad = g.rotten ? this.rng.binomial(units, g.rotten) : this.D.events.badLemons ? this.rng.binomial(units, BAD_LEMONS_SHARE) : 0;
+        this.addLemons(units - bad);
         if (g.rotten) {
           rottenCheap += bad;
-          boughtCheap += n;
+          boughtCheap += units;
         } else rotten += bad;
       } else {
         this.S.stock[g.stock] += n * g.pack;
@@ -808,7 +845,7 @@ export class Game {
     this.setPhase('prepare');
     this.tip('prepare_cost');
     this.tip('price');
-    if (this.S.day >= 2) this.tip('helper');
+    if (this.S.day >= 2 && this.helperOpen()) this.tip('helper');
   }
 
   maxPitchersNow(recipe: Recipe = this.S.recipe): number {
@@ -916,6 +953,7 @@ export class Game {
     this.speed = 1;
     this.refreshInterest();
     D.funnel.passed += this.street.markAllCounted();
+    for (const p of this.S.points) p.today = simulatePoint(this.S, p, D.weather, D.events, this.rng);
     this.setPhase('sell');
     this.tip('sell_start');
     if (D.weather === 'rain') this.tip('rain');
@@ -1019,6 +1057,8 @@ export class Game {
 
     if (D.events.thiefAt !== null && !D.thief.appeared && D.hour >= D.events.thiefAt && D.hour < CONFIG.DAY_END - 0.5) {
       D.thief.appeared = true;
+      // the fox is at the own stand: the scene goes back there
+      if (this.viewPoint !== null) this.setView(null);
       this.street.spawnThief();
       this.bus.emit('thief', { state: 'appear' });
       this.sfx('alarm');
@@ -1636,7 +1676,19 @@ export class Game {
       return null;
     }
     this.S.coins -= POINTS.COST;
-    const p: Point = { id: this.S.nextPointId++, loc, opened: this.S.day, seller: null, issue: null, last: null, history: [], total: 0 };
+    const p: Point = {
+      id: this.S.nextPointId++,
+      loc,
+      opened: this.S.day,
+      seller: null,
+      issue: null,
+      last: null,
+      history: [],
+      total: 0,
+      upgrades: { ...POINT_START },
+      invested: POINTS.COST,
+      away: null,
+    };
     this.S.points.push(p);
     this.sfx('buy');
     this.tip('points');
@@ -1645,14 +1697,53 @@ export class Game {
     return p;
   }
 
+  /** Coins you get back when you close a stand: half of everything put into it. */
+  pointRefund(p: Point): number {
+    return Math.round((p.invested ?? POINTS.COST) * POINTS.SELL_BACK);
+  }
+
   closePoint(id: number): boolean {
     const i = this.S.points.findIndex((p) => p.id === id);
     if (i < 0 || this.phase !== 'shop') return false;
+    const refund = this.pointRefund(this.S.points[i]);
+    if (this.viewPoint === id) this.setView(null);
     this.S.points.splice(i, 1);
-    this.S.coins += Math.round(POINTS.COST * POINTS.SELL_BACK);
+    this.S.coins += refund;
     this.sfx('coin');
     this.save();
     this.changed();
+    return true;
+  }
+
+  /** Can this stand get this upgrade now? Bought in the evening, like the player's own upgrades. */
+  canBuyPointUpgrade(pointId: number, id: UpgradeId): { ok: boolean; reason?: 'na' | 'owned' | 'rep' | 'requires' | 'money' | 'evening' } {
+    const p = this.pointById(pointId);
+    if (!p || !POINT_UPGRADE_IDS.includes(id)) return { ok: false, reason: 'na' };
+    const up = pointUps(p);
+    const u = UPGRADES[id];
+    if (up[id]) return { ok: false, reason: 'owned' };
+    if (u.minRep && this.S.bestRep < u.minRep - 1e-9) return { ok: false, reason: 'rep' };
+    if (u.requires && !up[u.requires]) return { ok: false, reason: 'requires' };
+    if (this.phase !== 'shop') return { ok: false, reason: 'evening' };
+    if (this.S.coins < u.price) return { ok: false, reason: 'money' };
+    return { ok: true };
+  }
+
+  buyPointUpgrade(pointId: number, id: UpgradeId): boolean {
+    const p = this.pointById(pointId);
+    if (!p || !this.canBuyPointUpgrade(pointId, id).ok) {
+      this.sfx('buzz');
+      return false;
+    }
+    const price = UPGRADES[id].price;
+    this.S.coins -= price;
+    p.upgrades = { ...pointUps(p), [id]: true };
+    p.invested = (p.invested ?? POINTS.COST) + price;
+    this.sfx('buy');
+    this.save();
+    this.changed();
+    // the scene of this stand shows the new thing at once
+    if (this.viewPoint === pointId) this.bus.emit('view', { point: pointId });
     return true;
   }
 
@@ -1694,16 +1785,52 @@ export class Game {
   /** Morning: sellers call with their problems. */
   private morningStaff(): void {
     for (const p of this.S.points) {
+      p.today = null;
+      if (p.away) {
+        p.away.days--;
+        if (p.away.days <= 0) this.sellerBack(p);
+      }
       p.issue = rollMorningIssue(this.S, p, this.rng);
+      // the own seller falls ill for some days: the stand needs a stand-in (a stand-in who falls ill misses one day)
+      if (p.issue === 'sick' && p.seller && !p.away) {
+        p.away = { seller: p.seller, days: this.rng.int(POINTS.SICK_DAYS[0], POINTS.SICK_DAYS[1]) };
+        p.seller = null;
+      }
       if (p.issue) this.staffCard(p);
     }
+  }
+
+  /** The ill seller is well again: back to work, or the player chooses between them and the stand-in. */
+  private sellerBack(p: Point): void {
+    const back = p.away?.seller;
+    if (!back) {
+      p.away = null;
+      return;
+    }
+    const params: Params = { name: `@staff.name${back.nameId}`, place: `@loc.${p.loc}.name` };
+    if (!p.seller) {
+      p.seller = back;
+      p.away = null;
+      this.toast('toast.sellerBack', params, 'good');
+      return;
+    }
+    params.other = `@staff.name${p.seller.nameId}`;
+    // the choice is made on the card; until then the stand-in keeps working
+    this.card('staff.back', '🙂', params, undefined, {
+      point: p.id,
+      choices: [
+        { act: 'keepOld', key: 'staff.act.keepOld', params: { name: `@staff.name${back.nameId}` }, style: 'g' },
+        { act: 'keepNew', key: 'staff.act.keepNew', params: { name: `@staff.name${p.seller.nameId}` } },
+      ],
+    });
   }
 
   /** Evening: every stand's day in numbers; a dishonest seller may take money from the till. */
   private eveningPoints(): PointReport[] {
     const out: PointReport[] = [];
     for (const p of this.S.points) {
-      const d = simulatePoint(this.S, p, this.D.weather, this.D.events, this.rng);
+      const d = p.today ?? simulatePoint(this.S, p, this.D.weather, this.D.events, this.rng);
+      p.today = null;
       p.issue = rollTheft(p, d, this.rng) > 0 ? 'stole' : null;
       recordDay(p, d);
       out.push({ ...d, id: p.id, loc: p.loc, nameId: p.seller?.nameId ?? null });
@@ -1713,7 +1840,8 @@ export class Game {
 
   /** A card about a problem with a seller, with the choices the player has. */
   private staffCard(p: Point): void {
-    const s = p.seller;
+    // an ill seller is at home (p.away) while the card is shown
+    const s = p.seller ?? (p.issue === 'sick' ? p.away?.seller : null);
     const issue = p.issue;
     if (!s || !issue) return;
     const params: Params = { name: `@staff.name${s.nameId}`, place: `@loc.${p.loc}.name` };
@@ -1744,6 +1872,16 @@ export class Game {
         choices = [{ act: 'chance', key: 'staff.act.chance' }, { ...fire, style: 'y' }];
         break;
       case 'sick':
+        // ill for some days: find a stand-in or keep the stand closed; a stand-in who is ill misses only today
+        if (p.away && !p.seller) {
+          params.n = p.away.days;
+          choices = [
+            { act: 'standin', key: 'staff.act.standin', style: 'g' },
+            { act: 'wait', key: 'staff.act.wait' },
+          ];
+          this.card('staff.ill', ISSUE_ICON.sick, params, undefined, { point: p.id, choices });
+          return;
+        }
         break;
     }
     this.card(`staff.${issue}`, ISSUE_ICON[issue], params, undefined, { point: p.id, choices });
@@ -1752,8 +1890,26 @@ export class Game {
   /** The player's answer on a seller card. Returns true when the card can close. */
   workerChoice(pointId: number, act: string): boolean {
     const p = this.pointById(pointId);
-    const s = p?.seller;
-    if (!p || !s) return true;
+    if (!p) return true;
+    if (act === 'standin') {
+      // the people who want the job: the UI shows the list
+      this.bus.emit('hire', { point: p.id });
+      return true;
+    }
+    if (act === 'wait') return true;
+    if (act === 'keepOld' || act === 'keepNew') {
+      const back = p.away?.seller;
+      if (back && act === 'keepOld') {
+        if (p.seller) this.toast('toast.standinLeft', { name: `@staff.name${p.seller.nameId}` });
+        p.seller = back;
+      }
+      p.away = null;
+      this.save();
+      this.changed();
+      return true;
+    }
+    const s = p.seller;
+    if (!s) return true;
     switch (act) {
       case 'fire':
         this.fireSeller(pointId);

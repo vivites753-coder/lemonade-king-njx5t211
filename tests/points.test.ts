@@ -18,7 +18,7 @@ function eveningWithStands(seed = 11): Game {
   g.S.day = 20;
   g.S.rep = 4.1;
   g.S.bestRep = 4.1;
-  g.S.coins = 2000;
+  g.S.coins = 6000;
   g.restDay();
   g.openShop();
   return g;

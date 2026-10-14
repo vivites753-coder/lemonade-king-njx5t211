@@ -67,6 +67,11 @@ export class Overlays {
     return this.current !== null;
   }
 
+  /** The Lemi tip on screen now, if any. */
+  tipKey(): string | null {
+    return this.current?.kind === 'tip' ? this.current.key : null;
+  }
+
   push(item: Item, front = false): void {
     if (front) {
       if (this.current) this.q.unshift(this.current);
