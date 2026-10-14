@@ -27,7 +27,7 @@ const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
 const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
 /** On phones the field is drawn this much bigger than "everything fits", and bigger still while selling. */
 const PHONE_ZOOM = 1.4;
-const PHONE_SELL_ZOOM = 1.4;
+const PHONE_SELL_ZOOM = 1.5;
 /** The stand in world pixels (the phone camera leans towards it). */
 const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
 
@@ -137,12 +137,14 @@ export class Renderer {
     // phones: the playing field is shown 40 % bigger, centred between the middle of the island and the stand
     // (the far corners of the island, where people appear and leave, are cut off)
     const selling = this.game.phase === 'sell';
-    const s = fit * PHONE_ZOOM * (selling ? PHONE_SELL_ZOOM : 1);
+    // while selling the controls at the bottom stand over the corners of the field: they do not shrink it
+    const fitH = selling ? Math.max(100, this.h - i.top - 8) : availH;
+    const s = Math.min(availW / vw, fitH / vh) * PHONE_ZOOM * (selling ? PHONE_SELL_ZOOM : 1);
     // while selling the camera leans further towards the stand (the customers and the queue)
     const k = selling ? 0.62 : 0.5;
     const cx = (VIEW.minX + VIEW.maxX) / 2 + (STAND_PX[0] - (VIEW.minX + VIEW.maxX) / 2) * k;
     const cy = (VIEW.minY + VIEW.maxY) / 2 + (STAND_PX[1] - (VIEW.minY + VIEW.maxY) / 2) * k;
-    return { s, ox: i.left + 6 + availW / 2 - cx * s, oy: i.top + 4 + availH / 2 - cy * s };
+    return { s, ox: i.left + 6 + availW / 2 - cx * s, oy: i.top + 4 + fitH / 2 - cy * s };
   }
 
   /** Tile coordinates → CSS pixels. */
