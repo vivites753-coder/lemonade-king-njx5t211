@@ -215,6 +215,20 @@ Row 2: 6) a wooden spoon, standing upright; 7) a measuring cup with a handle, mi
 
 Імена: `kt_jug, kt_bowl, kt_mixer_v_basic, kt_mixer_v_pro, kt_mixer_v_broken, kt_spoon, kt_cup_measure, kt_squeeze, kt_peel_used, kt_tray`
 
+## Лист 20. Вагончик з неоном у 5 кольорах (4×2, ISO)
+
+Як гра покаже продавців усередині: вагончик малюється картинкою, потім наші продавці (ті самі, що за столом) малюються лише в межах отвору вікна (обрізка по контуру вікна, який я виміряю на картинці), і нижче підвіконня їх не видно — ніби вони стоять у вагончику. Напис на даху («ЛИМОНАД» чи текст гравця) і логотип на боці гра малює сама на порожніх місцях. Столик і барні стільці окремими картинками, щоб їх правильно перекривали ліхтарі й люди.
+
+СІТКА 8 / 4×2 / 78% + ISO +
+
+```
+Row 1 and the first cell of row 2: five food trucks for selling lemonade, EXACTLY the same shape, size, camera and position in their cells, only the colours differ. Each truck: a cute toy-like rounded food truck seen from the isometric camera, its long side with the serving window faces the LOWER-LEFT, its short back end faces the lower-right, four chunky wheels. In the long side a big rectangular serving window, wide and tall (about two thirds of the side), completely EMPTY and OPEN: through it we see only the plain light cream interior back wall, NO people, NO objects inside. A flat wooden counter shelf runs along the bottom edge of the window. A striped awning sticks out above the window. On the roof a flat dark navy rectangular sign board, empty, NO letters. On the short back end a plain white round badge, empty, NO picture. No stools, no table, no text anywhere.
+1) lemon yellow body, orange trim and orange-white striped awning; 2) mint green body, dark green trim, green-white striped awning; 3) soft pink body, raspberry trim, pink-white striped awning; 4) sky blue body, deep blue trim, blue-white striped awning; 5) coral red body, dark red trim, red-white striped awning.
+Row 2, cells 6-8: 6) a small round white bistro table on one metal leg, 7) a tall bar stool with a round orange seat and a metal leg, 8) the same bar stool with a round mint green seat.
+```
+
+Імена: `stand_truck_lemon, stand_truck_mint, stand_truck_berry, stand_truck_sky, stand_truck_retro, stand_truck_bistro, stand_truck_stool_a, stand_truck_stool_b` (кольори збігаються з TRUCK_SKINS у грі).
+
 ## Анімації: як замовляти ще
 
 Для кожного листа з людьми/тваринами, пари «спереду + ззаду», можна замовити відео ходьби тим самим способом, що й для пішоходів (сітка з клітинок, фігури крокують на місці, лист на магентовому фоні, цикл мінімум 1 с). Далі `tools/walk_analyze.py` та `tools/make_walk.py`.
