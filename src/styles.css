@@ -3813,3 +3813,238 @@ body.reduce-motion * {
   color: var(--muted);
   text-align: center;
 }
+
+/* ======================================================================================================
+ * Comfortable buttons (game UI pass)
+ * - every tap target at least 44 px (Apple) / 48 px for the main actions, also on small phones;
+ * - small-looking controls get an invisible bigger hit area;
+ * - at least 8 px between neighbouring buttons;
+ * - a clear "pressed" answer on every control, a soft hover with a mouse, a visible keyboard focus.
+ * It comes last on purpose: it overrides the older phone blocks that made the buttons smaller.
+ * ====================================================================================================== */
+.btn,
+.hud-btn,
+.seg button,
+.link-btn,
+.toggle,
+.loc,
+.chip-btn,
+.hv-btn,
+.panel-toggle,
+.serve-btn,
+.k-mixer-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+/* everything that can be pressed moves a little when pressed */
+.hud-btn:active,
+.seg button:active,
+.link-btn:active,
+.toggle:active,
+.chip-btn:active,
+.hv-btn:active,
+.panel-toggle:active,
+.loc:active:not(:disabled) {
+  transform: translateY(2px) scale(0.98);
+}
+.hud-btn,
+.seg button,
+.link-btn,
+.toggle,
+.chip-btn,
+.hv-btn,
+.loc {
+  transition: transform 0.06s ease, filter 0.15s, background-color 0.15s;
+}
+@media (hover: hover) {
+  .btn:hover:not(:disabled),
+  .hud-btn:hover,
+  .seg button:hover,
+  .link-btn:hover,
+  .toggle:hover,
+  .hv-btn:hover,
+  .loc:hover:not(:disabled),
+  .k-mixer-btn:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
+}
+.btn:focus-visible,
+.hud-btn:focus-visible,
+.seg button:focus-visible,
+.link-btn:focus-visible,
+.toggle:focus-visible,
+.chip-btn:focus-visible,
+.hv-btn:focus-visible,
+.panel-toggle:focus-visible,
+.loc:focus-visible,
+.serve-btn:focus-visible,
+.k-mixer-btn:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+/* the steppers: + and − far enough apart not to hit the wrong one */
+.stepper {
+  gap: 8px;
+}
+.stepper .btn {
+  min-width: 48px;
+  min-height: 44px;
+}
+/* small-looking controls: the finger area is bigger than the picture */
+.link-btn {
+  position: relative;
+  min-height: 40px;
+}
+.link-btn::after,
+.panel-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
+.toggle {
+  min-height: 52px;
+}
+.toggle .sw {
+  width: 52px;
+  height: 30px;
+}
+.toggle .sw::after {
+  width: 24px;
+  height: 24px;
+}
+.toggle.on .sw::after {
+  left: 25px;
+}
+.loc {
+  min-height: 56px;
+}
+
+/* small buttons are still big enough for a finger (touch-screen computers, children) */
+.btn-sm {
+  min-height: 44px;
+}
+/* the speed buttons stand on their own over "Pour": big enough to hit while watching the queue */
+.seg button {
+  min-width: 48px;
+  min-height: 44px;
+}
+/* the reputation chip stays as high as the other chips, but takes a finger around it too */
+.chip-btn {
+  position: relative;
+}
+.chip-btn::after {
+  content: '';
+  position: absolute;
+  inset: -5px -3px;
+}
+
+/* the goods on the kitchen shelves: the finger area fills the whole shelf band (the shelves are 112 scene px
+   apart, an item is 96 high), which matters when the kitchen is drawn small on a phone */
+.k-item::after {
+  content: '';
+  position: absolute;
+  inset: -8px 0;
+}
+
+/* phones (the same rule as PHONE_MQ in src/ui/dom.ts): no button smaller than a finger */
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
+  .btn {
+    min-height: 44px;
+    padding: 6px 14px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+  .btn-sm {
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  .btn-big,
+  .panel-foot .btn,
+  .panel-foot .btn-big,
+  .modal-actions .btn {
+    min-height: 48px;
+    padding: 6px 16px;
+    font-size: 16px;
+  }
+  .btn-icon,
+  .price-box .btn-icon {
+    min-width: 46px;
+    min-height: 44px;
+  }
+  .stepper .btn {
+    min-width: 46px;
+    min-height: 44px;
+    font-size: 20px;
+  }
+  .stepper b {
+    min-width: 28px;
+  }
+  .link-btn {
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .toggle {
+    min-height: 48px;
+    padding: 6px 12px;
+  }
+  .loc {
+    min-height: 52px;
+    padding: 6px 10px;
+  }
+  .hv-btn {
+    min-height: 40px;
+    padding: 4px 10px;
+  }
+  .panel-toggle {
+    min-width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  .panel-toggle.reopen {
+    height: 48px;
+  }
+  .k-mixer-btn {
+    min-height: 48px;
+  }
+  .k-tools .btn {
+    min-height: 44px;
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+  .k-foot .btn-big {
+    min-height: 48px;
+  }
+  .panel-foot,
+  .modal-actions {
+    gap: 8px;
+  }
+  /* the end-the-day button shows only the moon on phones: still a square for a finger */
+  .btn-sm {
+    min-width: 44px;
+  }
+  /* the stats card: as wide as the speed buttons under it (its title fits on one line), and short enough
+     that "Why?" is not cut off above them */
+  .hud-funnel {
+    width: 198px;
+    padding: 4px 8px 2px;
+  }
+  .hud-funnel .link-btn {
+    min-height: 34px;
+    margin-top: 2px;
+  }
+  /* the market: price and + / − on the same line as the goods, so two or three goods fit on the screen */
+  .good {
+    grid-template-columns: 34px 1fr auto auto;
+    grid-template-areas: 'ico info price step';
+    gap: 2px 10px;
+    padding: 6px 10px;
+    margin: 5px 0;
+  }
+  .good .price {
+    font-size: 14px;
+    line-height: 1.15;
+  }
+}

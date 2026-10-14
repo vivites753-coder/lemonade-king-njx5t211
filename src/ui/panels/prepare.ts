@@ -11,6 +11,15 @@ import type { Panel } from './types';
 /** The place list is opened from the "Change place" button. */
 let pickPlace = false;
 
+/** Scrolls the stage window so that the button and the place list under it are in view. */
+function showPlaces(): void {
+  const btn = document.querySelector<HTMLElement>('#panel [data-act="place"]');
+  const body = btn?.closest<HTMLElement>('.panel-body');
+  if (!btn || !body) return;
+  const top = btn.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
+  body.scrollBy({ top, behavior: 'smooth' });
+}
+
 function stepper(act: string, value: string, canDec: boolean, canInc: boolean): string {
   return `<span class="stepper">
     <button class="btn" data-act="${act}:-1" ${canDec ? '' : 'disabled'} aria-label="−">−</button>
@@ -104,6 +113,8 @@ export const preparePanel: Panel = {
     if (act === 'place') {
       pickPlace = !pickPlace;
       g.changed();
+      // the list opens under the button, on small screens below the edge of the window: scroll it into view
+      if (pickPlace) setTimeout(showPlaces, 30);
     }
     if (act === 'loc' && g.chooseLocation(arg as LocationId)) {
       pickPlace = false;
