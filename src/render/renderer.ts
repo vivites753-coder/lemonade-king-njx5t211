@@ -8,7 +8,7 @@ import { PointScene, type SceneSource } from '../sim/pointScene';
 import { FOX_LOOK } from '../sim/looks';
 import type { Critter } from '../sim/critters';
 import type { Ped } from '../sim/street';
-import { drawSprite, getImage, onAssetsChanged, spriteShadow } from './assets';
+import { drawSprite, onAssetsChanged, spriteShadow } from './assets';
 import { ENV } from './env';
 import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
@@ -25,8 +25,9 @@ import './proc/buildings';
 /** World-pixel area the camera keeps in view (the compact one crops building tops on phones). */
 const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
 const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
-/** On phones the field is drawn this much bigger than "everything fits". */
+/** On phones the field is drawn this much bigger than "everything fits", and bigger still while selling. */
 const PHONE_ZOOM = 1.4;
+const PHONE_SELL_ZOOM = 1.4;
 /** The stand in world pixels (the phone camera leans towards it). */
 const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
 
@@ -59,27 +60,6 @@ export interface Insets {
   left: number;
 }
 
-
-/** The drawn pictures of the emotes over the customers' heads (assets/ui; the emoji is the fallback). */
-const EMOTE_IMG: Record<string, string> = {
-  '😍': 'ui_em_love',
-  '😋': 'ui_em_love',
-  '🙂': 'ui_em_happy',
-  '😐': 'ui_em_meh',
-  '😝': 'ui_em_sour',
-  '🥴': 'ui_em_dizzy',
-  '😠': 'ui_em_angry',
-  '😡': 'ui_em_angry',
-  '😢': 'ui_em_sad',
-  '💸': 'ui_em_money',
-  '⏳': 'ui_em_wait',
-  '🎁': 'ui_em_gift',
-  '❗': 'ui_em_alert',
-  '💬': 'ui_em_chat',
-  '🤒': 'ui_em_sick',
-  '⏰': 'ui_em_clock',
-  '🍋': 'ui_em_want',
-};
 
 /** People and cars fade in/out at the left and right edges of the diorama. */
 function edgeAlpha(x: number, inset = 0): number {
@@ -156,9 +136,12 @@ export class Renderer {
     }
     // phones: the playing field is shown 40 % bigger, centred between the middle of the island and the stand
     // (the far corners of the island, where people appear and leave, are cut off)
-    const s = fit * PHONE_ZOOM;
-    const cx = ((VIEW.minX + VIEW.maxX) / 2 + STAND_PX[0]) / 2;
-    const cy = ((VIEW.minY + VIEW.maxY) / 2 + STAND_PX[1]) / 2;
+    const selling = this.game.phase === 'sell';
+    const s = fit * PHONE_ZOOM * (selling ? PHONE_SELL_ZOOM : 1);
+    // while selling the camera leans further towards the stand (the customers and the queue)
+    const k = selling ? 0.62 : 0.5;
+    const cx = (VIEW.minX + VIEW.maxX) / 2 + (STAND_PX[0] - (VIEW.minX + VIEW.maxX) / 2) * k;
+    const cy = (VIEW.minY + VIEW.maxY) / 2 + (STAND_PX[1] - (VIEW.minY + VIEW.maxY) / 2) * k;
     return { s, ox: i.left + 6 + availW / 2 - cx * s, oy: i.top + 4 + availH / 2 - cy * s };
   }
 
@@ -489,13 +472,7 @@ export class Renderer {
         ctx.closePath();
         ctx.fillStyle = '#ffffff';
         ctx.fill();
-        const pic = EMOTE_IMG[b.emote] ? getImage(EMOTE_IMG[b.emote]) : undefined;
-        if (pic) {
-          const s = 19;
-          const w = (s * pic.naturalWidth) / Math.max(pic.naturalWidth, pic.naturalHeight);
-          const h = (s * pic.naturalHeight) / Math.max(pic.naturalWidth, pic.naturalHeight);
-          ctx.drawImage(pic, b.sx - w / 2, y - 12 - h / 2, w, h);
-        } else emoji(ctx, b.emote, b.sx, y - 11, 14);
+        emoji(ctx, b.emote, b.sx, y - 11, 14);
       }
     }
   }

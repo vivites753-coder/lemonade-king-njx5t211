@@ -105,6 +105,9 @@ export class UI implements UIApi {
     // a card asks to hire somebody (a stand-in for an ill seller): the list opens after the card has closed
     g.bus.on('hire', ({ point }) => queueMicrotask(() => this.pointsHooks.hire(point)));
     this.arrow = new TipArrow(document.getElementById('app') ?? document.body);
+    // the top bar changes its height with its content (and the phase): keep the scene and the windows under it
+    const bar = document.querySelector('.hud-top');
+    if (bar && typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.layout()).observe(bar);
 
     const canvas = document.getElementById('scene')!;
     canvas.addEventListener('pointerdown', (e) => this.onTap(e.clientX, e.clientY));
@@ -365,7 +368,11 @@ export class UI implements UIApi {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const compact = h < 460;
-    const top = p === 'title' ? 0 : compact ? 36 : 58;
+    // under the top bar: measured, because on phones it is big and on a narrow one it may take two rows
+    const bar = document.querySelector<HTMLElement>('.hud-top');
+    const barBottom = bar && !bar.classList.contains('hidden') ? Math.ceil(bar.getBoundingClientRect().bottom) : 0;
+    document.documentElement.style.setProperty('--hud-h', `${barBottom || (compact ? 36 : 58)}px`);
+    const top = p === 'title' ? 0 : compact ? Math.max(36, barBottom + 2) : 58;
     let right = 0;
     let bottom = 0;
     if (this.current?.dock && w > 860 && !compact) right = this.panelEl.getBoundingClientRect().width + 16;

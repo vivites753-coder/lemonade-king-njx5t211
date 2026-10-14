@@ -131,7 +131,8 @@ export class Hud {
     if (this.lastRep !== null && S.rep > this.lastRep + 1e-6) this.hop(this.els.rep, 'gain');
     this.lastCoins = S.coins;
     this.lastRep = S.rep;
-    this.set('day', t('hud.day', { n: S.day }));
+    // on small screens only the number (the word is hidden like the other labels)
+    this.set('day', `<span class="lbl">${t('hud.day', { n: '' }).trim()} </span>${S.day}`);
     this.set('clock', fmtHour(D.hour));
     // .lbl parts are hidden on small screens, .sm parts are shown only there
     this.set('weather', `${weatherIco(D.weather)}<span class="lbl"> ${t(`weather.${D.weather}`)}</span>`);
