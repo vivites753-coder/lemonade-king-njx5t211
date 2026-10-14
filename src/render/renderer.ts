@@ -271,6 +271,12 @@ export class Renderer {
     ctx.restore();
   }
 
+  /** The part of the world (world px) that the screen shows now. */
+  private worldView(): { x0: number; y0: number; x1: number; y1: number } {
+    const c = this.cam;
+    return { x0: -c.ox / c.s, y0: -c.oy / c.s, x1: (this.w - c.ox) / c.s, y1: (this.h - c.oy) / c.s };
+  }
+
   private drawWorld(ctx: Ctx, dt: number): void {
     const g = this.src;
     const loc = g.S.location;
@@ -299,9 +305,19 @@ export class Renderer {
     }
 
     const decor = LOCATIONS[loc].decor;
+    // what is far outside the screen is not drawn (on phones the field is zoomed in and much of it is off screen);
+    // the margins are wide: a picture stands up from its point (a building is about 260 px high)
+    const view = this.worldView();
+    const seen = (x: number, y: number) => {
+      const [px, py] = P(x, y);
+      return px > view.x0 - 170 && px < view.x1 + 170 && py > view.y0 - 60 && py < view.y1 + 300;
+    };
+    const decorCentre = (d: DecorDef): [number, number] => [d.w ? d.x + d.w / 2 : d.x, d.d ? d.y + d.d / 2 : d.y];
     // shadows lie on the ground, under everything that stands on it
     for (const d of decor) {
-      const [sx, sy] = P(d.w ? d.x + d.w / 2 : d.x, d.d ? d.y + d.d / 2 : d.y);
+      const [cx, cy] = decorCentre(d);
+      if (!seen(cx, cy)) continue;
+      const [sx, sy] = P(cx, cy);
       spriteShadow(ctx, d.id, sx, sy, d.s ?? 1);
     }
     drawStandShadows(ctx, g);
@@ -309,11 +325,11 @@ export class Renderer {
 
     const items = this.items;
     items.length = 0;
-    for (const d of decor) if (!d.back) items.push({ d: d.x + d.y, k: 0, o: d });
-    for (const p of g.street.peds) items.push({ d: p.x + p.y, k: 1, o: p });
+    for (const d of decor) if (!d.back && seen(...decorCentre(d))) items.push({ d: d.x + d.y, k: 0, o: d });
+    for (const p of g.street.peds) if (seen(p.x, p.y)) items.push({ d: p.x + p.y, k: 1, o: p });
     // a car is long: it is sorted so that people on the near pavement stay in front of it and people on the far one
     // behind it (the near lane a little earlier, the far lane a little later than its middle point)
-    for (const c of g.street.cars) items.push({ d: c.x + c.y + (c.y > 7 ? -0.9 : 0.5), k: 2, o: c });
+    for (const c of g.street.cars) if (seen(c.x, c.y)) items.push({ d: c.x + c.y + (c.y > 7 ? -0.9 : 0.5), k: 2, o: c });
     // a truck is long: its depth is that of its front left corner, so people walking past in front of it (and the lamp,
     // the mailbox, the bin there) are drawn over it; nothing behind it reaches into its picture
     const standD = g.active().truck ? TRUCK.x0 + TRUCK.y0 + TRUCK.d - 0.6 : CONFIG.STAND.x + CONFIG.STAND.y + 0.05;

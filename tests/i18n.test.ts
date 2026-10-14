@@ -80,3 +80,31 @@ describe('translations', () => {
     expect(used.filter((k) => !keys.has(k))).toEqual([]);
   });
 });
+
+describe('numbers in the texts', () => {
+  it('the word after a number agrees with it', async () => {
+    const { agree } = await import('../src/i18n');
+    const uk = (x: string) => agree(x, 'uk');
+    expect(uk('1 монет')).toBe('1 монета');
+    expect(uk('+21 монет!')).toBe('+21 монета!');
+    expect(uk('3 монет/день')).toBe('3 монети/день');
+    expect(uk('12 монет')).toBe('12 монет');
+    expect(uk('34 монет на вітер')).toBe('34 монети на вітер');
+    expect(uk('10 склянок')).toBe('10 склянок');
+    expect(uk('22 склянок')).toBe('22 склянки');
+    expect(uk('1 людей')).toBe('1 людина');
+    expect(uk('2,5 монет')).toBe('2,5 монети');
+    // only whole words right after a number
+    expect(uk('монет 5')).toBe('монет 5');
+    expect(uk('3 монетами')).toBe('3 монетами');
+    // the case asked by the word before the number
+    expect(uk('Лис украв 21 монет!')).toBe('Лис украв 21 монету!');
+    expect(uk('(на 1 монет)')).toBe('(на 1 монету)');
+    expect(uk('не вистачило 1 монет')).toBe('не вистачило 1 монети');
+    expect(uk('не вистачило 3 монет')).toBe('не вистачило 3 монет');
+    expect(uk('до 21 склянок')).toBe('до 21 склянки');
+    expect(uk('дякує: +1 монет')).toBe('дякує: +1 монета');
+    expect(agree('1 coins, 2 cups, 1 passers-by', 'en')).toBe('1 coin, 2 cups, 1 passer-by');
+    expect(agree('1 bani, 5 bani, 20 bani, 101 bani, 120 bani', 'ro')).toBe('1 ban, 5 bani, 20 de bani, 101 bani, 120 de bani');
+  });
+});
