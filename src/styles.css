@@ -2866,9 +2866,9 @@ html.phone .rm-items {
   50% { opacity: 1; transform: rotate(25deg); }
   100% { opacity: 0; transform: rotate(-10deg); }
 }
-/* the mixer bar sits in the bottom of the window (.k-d-window: 300 + 250 / 2 = 425 is its middle) */
+/* the mixer bar stands right over the mixing jug (.k-jug: 436 + 128 / 2 = 500 is its middle) */
 .k-meter {
-  left: 345px;
+  left: 420px;
   top: 226px;
   width: 160px;
   height: 30px;
