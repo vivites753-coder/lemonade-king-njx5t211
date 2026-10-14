@@ -3,11 +3,11 @@
 
 import { t } from '../i18n';
 
-const urls = import.meta.glob('/assets/kitchen/*.{png,jpg}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const urls = import.meta.glob('/assets/kitchen/*.{png,jpg,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 /** A picture from assets/kitchen (kt_<name>.png), or '' when it has not been drawn (then the SVG fallback is used). */
 function pic(name: string, cls = ''): string {
-  const u = urls[`/assets/kitchen/kt_${name}.png`] ?? urls[`/assets/kitchen/kt_${name}.jpg`];
+  const u = urls[`/assets/kitchen/kt_${name}.webp`] ?? urls[`/assets/kitchen/kt_${name}.png`] ?? urls[`/assets/kitchen/kt_${name}.jpg`];
   return u ? `<img class="k-img ${cls}" src="${u}" alt="" draggable="false">` : '';
 }
 

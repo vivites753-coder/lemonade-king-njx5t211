@@ -22,7 +22,13 @@ export function signedCoin(n: number): string {
 }
 
 /** Reputation as stars: a star lights up only when its level is reached (1.8 shows one star, 2.0 shows two). */
-const iconUrls = import.meta.glob('/assets/ui/ui_*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const iconFiles = import.meta.glob('/assets/ui/ui_*.{png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+/** The icons by their PNG path (a WebP stands in for the PNG of the same name). */
+const iconUrls: Record<string, string> = {};
+for (const [path, url] of Object.entries(iconFiles)) {
+  const key = path.replace(/\.webp$/i, '.png');
+  if (path.endsWith('.webp') || !iconUrls[key]) iconUrls[key] = url;
+}
 
 /** True when the picture assets/ui/ui_<id>.png has been drawn. */
 export function hasIco(id: string): boolean {

@@ -122,11 +122,14 @@ export function onAssetsChanged(cb: () => void): void {
   onLoadCb = cb;
 }
 
-/** Loads every PNG found under /assets at build time. Missing files simply keep their procedural fallback. */
+/** Loads every picture found under /assets at build time (WebP, or PNG for one not converted yet; see
+ * tools/to_webp.py). Missing files simply keep their procedural fallback. */
 export function loadAssets(): void {
-  const files = import.meta.glob('/assets/**/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+  const files = import.meta.glob('/assets/**/*.{png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
   for (const [path, url] of Object.entries(files)) {
-    const id = path.split('/').pop()!.replace(/\.png$/i, '');
+    // the WebP wins when both are there
+    if (path.endsWith('.png') && files[path.slice(0, -4) + '.webp']) continue;
+    const id = path.split('/').pop()!.replace(/\.(png|webp)$/i, '');
     const img = new Image();
     img.onload = () => {
       images.set(id, img);

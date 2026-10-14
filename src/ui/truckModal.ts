@@ -6,13 +6,13 @@ import type { Game } from '../sim/game';
 import { esc } from './dom';
 import type { ModalSpec } from './overlays';
 
-const truckUrls = import.meta.glob('/assets/stand/stand_truck_*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const truckUrls = import.meta.glob('/assets/stand/stand_truck_*.{png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const TRUCK_ART = artJson as unknown as Record<string, { sign: number[][]; aspect: number }>;
 
 /** The picture of the truck with the sign text lying on its board (when the pictures are there). */
 function picturePreview(skin: number, logo: number, label: string): string {
   const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
-  const url = truckUrls[`/assets/stand/stand_truck_${sk.id}.png`];
+  const url = truckUrls[`/assets/stand/stand_truck_${sk.id}.webp`] ?? truckUrls[`/assets/stand/stand_truck_${sk.id}.png`];
   const art = TRUCK_ART[sk.id];
   if (!url || !art) return '';
   const Wp = 260;

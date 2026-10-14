@@ -174,7 +174,8 @@ for i, name in enumerate(NAMES):
         if SUFFIX:
             base = f'char_{name}_{side}'
             old = json.load(open(os.path.join(out_dir, 'walk.json'), encoding='utf-8'))[base]
-            ih = Image.open(os.path.join(STILL_DIR, base + '.png')).height
+            still = os.path.join(STILL_DIR, base + '.png')
+            ih = Image.open(still if os.path.exists(still) else still[:-4] + '.webp').height
             u_base = BASE_H * (ih - 12) / ih / old['figH']
             ratio = RATIO[name.split('_')[0]] if SUFFIX == 'umb' else manifest[sid]['figH'] / old['figH']
             manifest[sid]['u'] = round(u_base / ratio, 5)

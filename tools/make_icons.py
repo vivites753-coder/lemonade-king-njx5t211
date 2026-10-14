@@ -34,6 +34,11 @@ SOURCES = {
 }
 
 
+def asset(path: str) -> Image.Image:
+    """An installed picture: the PNG, or the WebP that tools/to_webp.py made of it."""
+    return Image.open(path if os.path.exists(path) else path[:-4] + '.webp')
+
+
 def fit(im: Image.Image) -> Image.Image:
     im = im.convert('RGBA')
     box = im.getchannel('A').point(lambda v: 255 if v > 20 else 0).getbbox()
@@ -49,8 +54,8 @@ def fit(im: Image.Image) -> Image.Image:
 
 def big_stand() -> Image.Image:
     """The yellow table with the blue one behind it on the left, as at a stand with two counters."""
-    yellow = Image.open('assets/stand/stand_table.png').convert('RGBA')
-    blue = Image.open('assets/stand/stand_table_blue.png').convert('RGBA')
+    yellow = asset('assets/stand/stand_table.png').convert('RGBA')
+    blue = asset('assets/stand/stand_table_blue.png').convert('RGBA')
     k = 4.0  # picture px per world px
     hy, hb = 76 * k, 66 * k
     yellow = yellow.resize((round(yellow.width * hy / yellow.height), round(hy)), Image.LANCZOS)
@@ -65,7 +70,7 @@ def big_stand() -> Image.Image:
 
 os.makedirs('assets/ui', exist_ok=True)
 for key, src in SOURCES.items():
-    fit(Image.open(src)).save(f'assets/ui/ui_up_{key}.png', optimize=True)
+    fit(asset(src)).save(f'assets/ui/ui_up_{key}.png', optimize=True)
     print('ok', key)
 fit(big_stand()).save('assets/ui/ui_up_big_stand.png', optimize=True)
 print('ok big_stand')
