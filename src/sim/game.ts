@@ -558,24 +558,21 @@ export class Game {
     );
   }
 
-  /** Adds exactly what is missing for one more pitcher. */
+  /**
+   * A set for one pitcher: its lemons, water and cups (a pack of 10), whatever is at home already. Sugar comes in
+   * packs for several pitchers, so a pack is added only when the sugar at home and in the cart is not enough.
+   */
   addPitcherKit(): void {
-    const target = this.pitchersWithCart() + 1;
     const r = this.S.recipe;
+    const cupsId: GoodId = this.goodAvailable('cups') ? 'cups' : 'cups_super';
+    this.cart.lemon += lemonsConsumed(r, this.active());
+    this.cart.water += CONFIG.WATER_PER_PITCHER;
+    this.cart[cupsId] += Math.ceil(CONFIG.CUPS_PER_PITCHER / GOODS[cupsId].pack);
+    // the pitchers that lemons, water and cups allow now, and the sugar for them
     const u = this.stockWithCart();
-    const need = {
-      lemons: target * lemonsConsumed(r, this.active()) - u.lemons,
-      water: target * CONFIG.WATER_PER_PITCHER - u.water,
-      sugar: target * r.sugar - u.sugar,
-      cups: target * CONFIG.CUPS_PER_PITCHER - u.cups,
-    };
-    if (need.lemons > 0) this.cart.lemon += need.lemons;
-    if (need.water > 0) this.cart.water += need.water;
-    if (need.sugar > 0) this.cart.sugar += Math.ceil(need.sugar / GOODS.sugar.pack);
-    if (need.cups > 0) {
-      const id: GoodId = this.goodAvailable('cups') ? 'cups' : 'cups_super';
-      this.cart[id] += Math.ceil(need.cups / GOODS[id].pack);
-    }
+    const jugs = Math.min(Math.floor(u.lemons / lemonsConsumed(r, this.active())), Math.floor(u.water / CONFIG.WATER_PER_PITCHER), Math.floor(u.cups / CONFIG.CUPS_PER_PITCHER));
+    const sugar = jugs * r.sugar - u.sugar;
+    if (sugar > 0) this.cart.sugar += Math.ceil(sugar / GOODS.sugar.pack);
     this.sfx('pop');
     this.changed();
   }

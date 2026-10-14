@@ -178,3 +178,32 @@ describe('test profile', () => {
     expect(g.S.location).toBe('mall');
   });
 });
+
+describe('the set for one pitcher at the market', () => {
+  it('adds the lemons, water and cups of a whole pitcher even with some at home', () => {
+    const g = newGame(3);
+    g.S.stock = { lemons: [{ n: 3, age: 1 }], water: 6, sugar: 10, cups: 25, cookies: 0 };
+    g.S.recipe = { lemons: 4, sugar: 2 };
+    g.goMarket();
+    g.addPitcherKit();
+    expect(g.cart.lemon).toBe(4);
+    expect(g.cart.water).toBe(2);
+    expect(g.cart.cups).toBe(1);
+    // 10 spoons at home are enough
+    expect(g.cart.sugar).toBe(0);
+  });
+
+  it('from an empty home: everything, with one pack of sugar for several pitchers', () => {
+    const g = newGame(3);
+    g.S.stock = { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0 };
+    g.S.recipe = { lemons: 4, sugar: 2 };
+    g.goMarket();
+    g.addPitcherKit();
+    expect(g.cart).toMatchObject({ lemon: 4, water: 2, sugar: 1, cups: 1 });
+    expect(g.pitchersWithCart()).toBe(1);
+    g.addPitcherKit();
+    expect(g.cart.lemon).toBe(8);
+    expect(g.cart.sugar).toBe(1);
+    expect(g.pitchersWithCart()).toBe(2);
+  });
+});
