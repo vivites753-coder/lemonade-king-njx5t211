@@ -10,6 +10,7 @@ import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter, standSpriteId } from './people';
 import { brokenMark } from './standExtras';
+import { TRUCK_SKINS } from '../../data/truck';
 import { drawTruckBistro, drawTruckStools, TRUCK_BISTRO, TRUCK_STOOLS, type TruckWorker } from './truck';
 
 const SX = CONFIG.STAND.x;
@@ -18,7 +19,7 @@ const TABLE_H = 22;
 /** Where the price is written on the picture of the sign, from the picture's anchor point. */
 const SIGN_TEXT = { x: 0, y: -24 };
 /** Height of the truck roof (the speaker stands on it). */
-const TRUCK_SPEAKER_Z = 70;
+const TRUCK_SPEAKER_Z = 62;
 
 interface StandCall extends SpriteCall {
   price?: number;
@@ -413,7 +414,8 @@ export function standSideParts(g: Game): { part: StandPart; x: number; y: number
   if (up.sign) out.push({ part: 'sign', x: SX - 0.9 + (wide ? (isTruck ? -2.3 : -1.9) : 0), y: SY + 1.0 + (wide ? (isTruck ? 0.5 : -0.2) : 0) });
   if (up.mascot) out.push({ part: 'mascot', x: SX - 1.55 + (wide ? -0.3 : 0), y: SY + 1.25 + (wide ? 1.0 : 0) });
   // next to the table, in front of the speaker and the scooter
-  if (up.tv) out.push({ part: 'tv', x: SX + 2.2, y: SY + 0.35 });
+  // next to a truck the TV moves further right, behind the bar stools
+  if (up.tv) out.push({ part: 'tv', x: SX + 2.2 + (isTruck ? 0.8 : 0), y: SY + 0.35 });
   // the blue table of the big stand stands behind the people of the second queue, but in front of what is behind it
   if (wide && !isTruck) out.push({ part: 'table2', x: SX - 1.0, y: SY });
   // the legs of the tent stand where they touch the ground: people pass in front of or behind each one
@@ -448,6 +450,8 @@ function priceLabel(ctx: Ctx, cx: number, cy: number, price: number): void {
   ctx.restore();
 }
 
+const TRUCK_SKIN_IDS = TRUCK_SKINS.map((s) => s.id);
+
 /** The shadows of the stand on the ground (drawn before the stand and the people). */
 export function drawStandShadows(ctx: Ctx, g: Game): void {
   const S = g.S;
@@ -456,7 +460,17 @@ export function drawStandShadows(ctx: Ctx, g: Game): void {
   const wide = g.counters() >= 2;
   const isTruck = !!g.active().truck;
   const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
-  if (isTruck) return;
+  if (isTruck) {
+    const skinId = TRUCK_SKIN_IDS[S.truck.skin] ?? TRUCK_SKIN_IDS[0];
+    spriteShadow(ctx, `stand_truck_${skinId}`, sx, sy);
+    const [bx, by] = P(TRUCK_BISTRO.x, TRUCK_BISTRO.y);
+    spriteShadow(ctx, 'stand_truck_bistro', bx, by);
+    for (let i = 0; i < 3; i++) {
+      const [tx, ty] = P(TRUCK_STOOLS.x, TRUCK_STOOLS.y - 0.32 + i * 0.32);
+      spriteShadow(ctx, 'stand_truck_stool_a', tx, ty);
+    }
+    return;
+  }
   if (up.tent && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_tent', sx, sy, wide ? 1.22 : 1));
   else if (up.umbrella && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_umbrella', sx, sy));
   if (wide) spriteShadow(ctx, 'stand_table_blue', sx, sy);
@@ -509,8 +523,8 @@ export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
     const hop = hasImage('stand_mascot') && !ENV.reduceMotion ? Math.abs(Math.sin(ENV.t * 4)) * 4 : 0;
     shifted(ctx, wide, -0.3, 1.0, () => drawSprite(ctx, 'stand_mascot', call({ sy: sy - hop })));
   } else {
-    drawSprite(ctx, 'stand_tv', call({ on: !!br.tv }));
-    if (br.tv) brokenMark(ctx, SX + 2.2, SY + 0.35, 76);
+    shifted(ctx, isTruck, 0.8, 0, () => drawSprite(ctx, 'stand_tv', call({ on: !!br.tv })));
+    if (br.tv) brokenMark(ctx, SX + 2.2 + (isTruck ? 0.8 : 0), SY + 0.35, 76);
   }
 }
 
@@ -614,7 +628,7 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   }
   // the truck carries its speaker on the roof, at the right end (the bar stools take the space in front)
   if (up.speaker && isTruck) {
-    const [ox, oy] = P(-0.28, -0.08, TRUCK_SPEAKER_Z);
+    const [ox, oy] = P(-0.12, -0.22, TRUCK_SPEAKER_Z);
     ctx.save();
     ctx.translate(ox, oy);
     drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));

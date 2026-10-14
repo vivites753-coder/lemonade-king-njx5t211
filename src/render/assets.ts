@@ -143,6 +143,7 @@ function shadowLook(id: string): [number, number] {
   if (id.startsWith('bld_')) return [0.4, 0.16];
   if (id.startsWith('prop_tree') || id === 'prop_palm') return [0.3, 0.22];
   if (id === 'stand_tent') return [0.44, 0.12];
+  if (id.startsWith('stand_truck_') && !id.includes('bistro') && !id.includes('stool')) return [0.46, 0.2];
   if (id === 'stand_umbrella') return [0.38, 0.13];
   return [0.36, 0.2];
 }

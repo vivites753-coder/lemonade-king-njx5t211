@@ -1,13 +1,39 @@
 // Decorate the food truck: colour scheme, logo and the text of the neon sign, with a live preview.
+import artJson from '../../assets/stand/truck.json';
 import { TRUCK_LOGOS, TRUCK_SKINS, TRUCK_TEXT_MAX } from '../data/truck';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
 import { esc } from './dom';
 import type { ModalSpec } from './overlays';
 
+const truckUrls = import.meta.glob('/assets/stand/stand_truck_*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const TRUCK_ART = artJson as unknown as Record<string, { sign: number[][]; aspect: number }>;
+
+/** The picture of the truck with the sign text lying on its board (when the pictures are there). */
+function picturePreview(skin: number, logo: number, label: string): string {
+  const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
+  const url = truckUrls[`/assets/stand/stand_truck_${sk.id}.png`];
+  const art = TRUCK_ART[sk.id];
+  if (!url || !art) return '';
+  const Wp = 260;
+  const Hp = Wp / art.aspect;
+  const [tl, tr, , bl] = art.sign;
+  const BW = 100;
+  const BH = 26;
+  const m = [((tr[0] - tl[0]) * Wp) / BW, ((tr[1] - tl[1]) * Hp) / BW, ((bl[0] - tl[0]) * Wp) / BH, ((bl[1] - tl[1]) * Hp) / BH];
+  const text = `${TRUCK_LOGOS[logo] ?? TRUCK_LOGOS[0]} ${label}`;
+  const size = text.length > 12 ? 9 : 15;
+  return `<div class="truck-pic" style="width:${Wp}px;height:${Hp}px">
+    <img src="${url}" alt="" draggable="false">
+    <span class="truck-sign" style="left:${tl[0] * Wp}px;top:${tl[1] * Hp}px;width:${BW}px;height:${BH}px;font-size:${size}px;color:${sk.neon};transform:matrix(${m.map((v) => v.toFixed(3)).join(',')},0,0)">${esc(text)}</span>
+  </div>`;
+}
+
 /** A flat front view of the truck for the preview. */
 function preview(skin: number, logo: number, label: string): string {
   const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
+  const pic = picturePreview(skin, logo, label);
+  if (pic) return pic;
   const stripes = Array.from({ length: 8 }, (_, i) => `<rect x="${20 + i * 25}" y="44" width="25" height="12" fill="${i % 2 ? '#ffffff' : sk.awning}"/>`).join('');
   return `<svg viewBox="0 0 240 150" class="truck-preview" aria-hidden="true">
     <defs><filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>

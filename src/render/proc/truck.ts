@@ -3,9 +3,12 @@
 // come from the player's choice (S.truck).
 import { CONFIG } from '../../core/config';
 import { TRUCK_LOGOS, TRUCK_SKINS } from '../../data/truck';
-import { registerProcs, type SpriteCall } from '../assets';
+import artJson from '../../../assets/stand/truck.json';
+import { playerLook } from '../../sim/looks';
+import { drawSprite, getImage, metaFor, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, emoji, faceX, faceY, line, P, poly, rrect, shadow, type Ctx } from '../iso';
+import { drawCharacter, standSpriteId } from './people';
 
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
@@ -100,7 +103,107 @@ function neonSign(ctx: Ctx, w: number, label: string, neon: string): void {
   ctx.restore();
 }
 
+/** For every colour of the truck picture: the open window and the sign board as corners (fractions of the picture). */
+const TRUCK_ART = artJson as unknown as Record<string, { window: number[][]; sign: number[][]; aspect: number }>;
+
+/** Screen position of the truck picture and of the corners of its window and sign. */
+function truckPlace(c: SpriteCall, skinId: string) {
+  const id = `stand_truck_${skinId}`;
+  const img = getImage(id);
+  const art = TRUCK_ART[skinId];
+  if (!img || !art) return null;
+  const m = metaFor(id);
+  const h = m.h * c.s;
+  const w = h * art.aspect;
+  const left = c.sx + (m.dx ?? 0) - w * m.anchor[0];
+  const top = c.sy + (m.dy ?? 0) - h * m.anchor[1];
+  const pt = (f: number[]): [number, number] => [left + f[0] * w, top + f[1] * h];
+  return { id, window: art.window.map(pt), sign: art.sign.map(pt) };
+}
+
+/** The sign board of the truck: the text (and the chosen logo) glow on the dark board, lying on its surface. */
+function signText(ctx: Ctx, sign: [number, number][], text: string, neon: string): void {
+  const [tl, tr, , bl] = sign;
+  const BW = 100;
+  const BH = 26;
+  ctx.save();
+  ctx.transform((tr[0] - tl[0]) / BW, (tr[1] - tl[1]) / BW, (bl[0] - tl[0]) / BH, (bl[1] - tl[1]) / BH, tl[0], tl[1]);
+  const k = ENV.t % 4.3;
+  const flick = !ENV.reduceMotion && k > 4.0 && k < 4.12 ? 0.3 : 1;
+  ctx.shadowColor = neon;
+  ctx.shadowBlur = (6 + 8 * ENV.dusk) * flick;
+  ctx.globalAlpha = 0.4 + 0.6 * flick;
+  let size = 15;
+  ctx.font = `900 ${size}px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
+  const wide = ctx.measureText(text).width;
+  if (wide > BW - 12) {
+    size = Math.max(7, (size * (BW - 12)) / wide);
+    ctx.font = `900 ${size}px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = neon;
+  ctx.fillText(text, BW / 2, BH / 2 + 0.5);
+  ctx.fillStyle = 'rgba(255,255,255,0.78)';
+  ctx.fillText(text, BW / 2, BH / 2 + 0.5);
+  ctx.restore();
+}
+
+/** The truck as a picture: the sellers are seen only through the open window, the sign board shows the text. */
+function truckPicture(ctx: Ctx, c: TruckCall): boolean {
+  const sk = TRUCK_SKINS[c.skin] ?? TRUCK_SKINS[0];
+  const place = truckPlace(c, sk.id);
+  if (!place) return false;
+  drawSprite(ctx, place.id, c);
+  // the sellers: only what is inside the window shows (the awning and the shelf in front of it stay in front)
+  const win = place.window as [number, number][];
+  const xs = win.map((p) => p[0]);
+  const ys = win.map((p) => p[1]);
+  const x0 = Math.min(...xs);
+  const x1 = Math.max(...xs);
+  const topAt = (x: number) => {
+    const t = (x - win[0][0]) / Math.max(1, win[1][0] - win[0][0]);
+    return win[0][1] + (win[1][1] - win[0][1]) * Math.max(0, Math.min(1, t));
+  };
+  const n = c.workers.length;
+  const spots = n >= 3 ? [0.18, 0.5, 0.82] : n === 2 ? [0.3, 0.74] : [0.62];
+  const sc = n >= 3 ? 0.5 : n === 2 ? 0.6 : 0.72;
+  const girlId = (w: TruckWorker) => (w.girl ? 'girl' : 'boy');
+  ctx.save();
+  ctx.beginPath();
+  win.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+  ctx.closePath();
+  ctx.clip();
+  // the one in the middle at the back is drawn first
+  const order = [...c.workers].sort((a, b) => Number(b.slot === 2) - Number(a.slot === 2));
+  order.forEach((wk, i) => {
+    const x = x0 + (x1 - x0) * spots[Math.min(i, spots.length - 1)];
+    const feet = topAt(x) + 43 * sc + 2.5;
+    const base = `char_${wk.kind}_${girlId(wk)}`;
+    const pick = standSpriteId(base, wk.serving, false);
+    drawCharacter(ctx, pick.id, 0, 0, x, feet, {
+      kind: 'player',
+      hasCup: pick.cup,
+      look: playerLook(girlId(wk)),
+      scale: sc,
+      moving: false,
+      anim: 0,
+      facingCam: true,
+      dirX: -1,
+      serving: wk.serving,
+      t: ENV.t,
+    });
+  });
+  ctx.restore();
+  // the text of the neon sign (with the chosen logo in front of it)
+  const logo = TRUCK_LOGOS[c.logo] ?? TRUCK_LOGOS[0];
+  signText(ctx, place.sign as [number, number][], `${logo} ${c.label}`, sk.neon);
+  void ys;
+  return true;
+}
+
 function truck(ctx: Ctx, c: TruckCall): void {
+  if (truckPicture(ctx, c)) return;
   const sk = TRUCK_SKINS[c.skin] ?? TRUCK_SKINS[0];
   const { x0, y0, w, d, h, z0 } = TRUCK;
   const W = w * 32;
@@ -152,14 +255,30 @@ function truck(ctx: Ctx, c: TruckCall): void {
 export const TRUCK_BISTRO = { x: TRUCK.x0 - 0.75, y: TRUCK.y0 + TRUCK.d + 0.4 };
 export const TRUCK_STOOLS = { x: TRUCK.x0 + TRUCK.w + 0.3, y: TRUCK.y0 + 0.47 };
 
+/** Warm trucks get orange stools, cool ones mint green. */
+const STOOL_OF: Record<string, string> = { lemon: 'a', retro: 'a', berry: 'a', mint: 'b', sky: 'b' };
+
 export function drawTruckBistro(ctx: Ctx, skin: number): void {
   const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
+  const [bx, by] = P(TRUCK_BISTRO.x, TRUCK_BISTRO.y);
+  if (getImage('stand_truck_bistro')) {
+    drawSprite(ctx, 'stand_truck_bistro', { x: TRUCK_BISTRO.x, y: TRUCK_BISTRO.y, sx: bx, sy: by, s: 1 });
+    return;
+  }
   bistro(ctx, TRUCK_BISTRO.x, TRUCK_BISTRO.y, sk.trim);
 }
 
 export function drawTruckStools(ctx: Ctx, skin: number): void {
   const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
-  for (let i = 0; i < 3; i++) stool(ctx, TRUCK.x0 + TRUCK.w + 0.3, TRUCK.y0 + 0.15 + i * 0.32, sk.awning);
+  const id = `stand_truck_stool_${STOOL_OF[sk.id] ?? 'a'}`;
+  for (let i = 0; i < 3; i++) {
+    const x = TRUCK.x0 + TRUCK.w + 0.3;
+    const y = TRUCK.y0 + 0.15 + i * 0.32;
+    if (getImage(id)) {
+      const [sx, sy] = P(x, y);
+      drawSprite(ctx, id, { x, y, sx, sy, s: 1 });
+    } else stool(ctx, x, y, sk.awning);
+  }
 }
 
 registerProcs({

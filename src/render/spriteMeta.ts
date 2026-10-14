@@ -25,6 +25,15 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_bike_rack: { h: 46, anchor: [0.5, 0.85] },
   prop_duck: { h: 16, anchor: [0.5, 0.8] },
   prop_car_a: { h: 44, anchor: [0.5, 0.75] },
+  // the food truck pictures (one per colour; the same shape, so the same size) and its bistro table and bar stools
+  stand_truck_lemon: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
+  stand_truck_mint: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
+  stand_truck_berry: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
+  stand_truck_sky: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
+  stand_truck_retro: { h: 131, anchor: [0.5, 0.78], dx: 14, dy: -9 },
+  stand_truck_bistro: { h: 26, anchor: [0.5, 0.94] },
+  stand_truck_stool_a: { h: 24, anchor: [0.5, 0.94] },
+  stand_truck_stool_b: { h: 24, anchor: [0.5, 0.94] },
   // drawn cars: one scale for all, the front picture drives to the lower right, the back one to the upper left
   prop_car_a_front: { h: 52.8, anchor: [0.5, 0.9] },
   prop_car_b_front: { h: 50.6, anchor: [0.5, 0.9] },
