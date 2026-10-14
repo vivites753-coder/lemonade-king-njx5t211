@@ -64,7 +64,7 @@ export const morningPanel: Panel = {
         <div class="good-box">🕐 ${t('morning.openAt', { a: fmtHour(g.openingHour(true)), b: fmtHour(g.openingHour(false)) })}</div>
       </div>
       <div class="panel-foot">
-        <button class="btn btn-y btn-big" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>🛒 ${t('morning.toMarket', { t: fmtDur(g.tripHours()) })}</button>
+        <button class="btn btn-y btn-big" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>${ico('gd_market', '🛒')} ${t('morning.toMarket', { t: fmtDur(g.tripHours()) })}</button>
         ${g.S.upgrades.delivery ? `<button class="btn btn-b" data-act="delivery" ${g.canGoMarket(true) ? '' : 'disabled'}>🚚 ${t('morning.delivery')}</button>` : ''}
         <button class="btn" data-act="skip" ${g.maxPitchersNow() >= 1 || g.D.cupsReady > 0 ? '' : 'disabled'}>🍳 ${t('morning.skip')}</button>
         <button class="btn btn-sm" data-act="rest">😴 ${t('morning.rest')}</button>

@@ -4,7 +4,7 @@ import { UNIT_COST } from '../../data/goods';
 import { LOCATIONS } from '../../data/locations';
 import { t } from '../../i18n';
 import { costPerCup, lemonsConsumed, tasteKey } from '../../sim/economy';
-import { coin, fmtDur, fmtHour, round1, toggle } from '../dom';
+import { coin, fmtDur, fmtHour, ico, round1, toggle } from '../dom';
 import { locationCards } from './morning';
 import type { Panel } from './types';
 
@@ -42,7 +42,7 @@ export const preparePanel: Panel = {
       <div class="panel-head"><h2>📋 ${t('prep.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
         <div class="card">
-          <div class="kv"><span>🥛 ${t('prep.ready')}</span><b>${t('prep.readyN', { n: D.cupsReady })}</b></div>
+          <div class="kv"><span>${ico('gd_ready', '🥛')} ${t('prep.ready')}</span><b>${t('prep.readyN', { n: D.cupsReady })}</b></div>
           <small class="muted">🍋 ${r.lemons} · 🍬 ${r.sugar} — ${t(tasteKey(r))} · ${t('prep.mix')}: ${t(MIX_KEY[String(D.mixQuality)] ?? 'kitchen.mixPerfect')}</small>
           <div style="margin-top:6px"><button class="btn btn-sm btn-b" data-act="kitchen">🍳 ${t('prep.kitchen')}</button></div>
           <small class="muted">🕐 ${t('prep.spoils')}</small>
@@ -88,7 +88,7 @@ export const preparePanel: Panel = {
       </div>
       <div class="panel-foot">
         <button class="btn btn-g btn-big" data-act="start" ${chk.ok ? '' : 'disabled'}>▶ ${t('prep.start')}</button>
-        <button class="btn" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
+        <button class="btn" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>${ico('gd_market', '🛒')} ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
         ${!chk.ok ? `<button class="btn btn-sm" data-act="rest">😴 ${t('morning.rest')}</button>` : ''}
       </div>
     </div>`;

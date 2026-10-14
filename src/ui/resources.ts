@@ -9,15 +9,15 @@ import { lemonsTotal } from '../sim/state';
 import { coin, ico } from './dom';
 import type { ModalSpec } from './overlays';
 
-const ROWS: { key: string; icon: string; label: string }[] = [
-  { key: 'lemons', icon: '🍋', label: 'res.lemons' },
-  { key: 'water', icon: '💧', label: 'res.water' },
-  { key: 'sugar', icon: '🍬', label: 'res.sugar' },
-  { key: 'cups', icon: '🥤', label: 'res.cups' },
-  { key: 'cookies', icon: '🍪', label: 'res.cookies' },
-  { key: 'ready', icon: '🥛', label: 'res.ready' },
-  { key: 'cooler', icon: '🧊', label: 'res.cooler' },
-  { key: 'make', icon: '🏺', label: 'res.canMake' },
+const ROWS: { key: string; icon: string; img: string; label: string }[] = [
+  { key: 'lemons', icon: '🍋', img: 'gd_lemon', label: 'res.lemons' },
+  { key: 'water', icon: '💧', img: 'gd_water', label: 'res.water' },
+  { key: 'sugar', icon: '🍬', img: 'gd_sugar', label: 'res.sugar' },
+  { key: 'cups', icon: '🥤', img: 'gd_cups', label: 'res.cups' },
+  { key: 'cookies', icon: '🍪', img: 'gd_cookie', label: 'res.cookies' },
+  { key: 'ready', icon: '🥛', img: 'gd_ready', label: 'res.ready' },
+  { key: 'cooler', icon: '🧊', img: 'gd_ice', label: 'res.cooler' },
+  { key: 'make', icon: '🏺', img: 'gd_pitcher', label: 'res.canMake' },
 ];
 
 export class ResourceBar {
@@ -38,7 +38,7 @@ export class ResourceBar {
     // hover tips (data-tip) explain every row; they are filled in update()
     this.root.innerHTML =
       `<div class="res-head">${t('res.title')}</div>` +
-      ROWS.map((r) => `<div class="res-row" data-row="${r.key}"><span class="ri">${r.icon}</span><b data-r="${r.key}"></b></div>`).join('') +
+      ROWS.map((r) => `<div class="res-row" data-row="${r.key}"><span class="ri">${ico(r.img, r.icon)}</span><b data-r="${r.key}"></b></div>`).join('') +
       `<div class="res-row res-warn" data-row="broken"><span class="ri">🔧</span><b data-r="broken"></b></div>` +
       `<div class="res-row" data-row="helper"><span class="ri">🍳</span><b data-r="helper"></b></div>`;
     this.els = {};
@@ -151,12 +151,12 @@ export function stockModal(g: Game): ModalSpec {
       return `<h2>📦 ${t('stock.title')}</h2>
         <h3>${t('stock.goods')}</h3>
         <div class="card">
-          <div class="kv"><span>🍋 ${t('res.lemons')}</span><b>${lemonsTotal(st)}</b></div>
+          <div class="kv"><span>${ico('gd_lemon', '🍋')} ${t('res.lemons')}</span><b>${lemonsTotal(st)}</b></div>
           ${old ? `<small class="neg">${t('stock.oldLemons', { n: old })}</small>` : ''}
-          <div class="kv"><span>💧 ${t('res.water')}</span><b>${st.water}</b></div>
-          <div class="kv"><span>🍬 ${t('res.sugar')}</span><b>${st.sugar}</b></div>
-          <div class="kv"><span>🥤 ${t('res.cups')}</span><b>${st.cups}</b></div>
-          <div class="note">🥛 ${t('stock.lemonade', { n: g.D.cupsReady })} · 🏺 ${t('stock.canMake', { n: g.maxPitchersNow() })}</div>
+          <div class="kv"><span>${ico('gd_water', '💧')} ${t('res.water')}</span><b>${st.water}</b></div>
+          <div class="kv"><span>${ico('gd_sugar', '🍬')} ${t('res.sugar')}</span><b>${st.sugar}</b></div>
+          <div class="kv"><span>${ico('gd_cups', '🥤')} ${t('res.cups')}</span><b>${st.cups}</b></div>
+          <div class="note">${ico('gd_ready', '🥛')} ${t('stock.lemonade', { n: g.D.cupsReady })} · ${ico('gd_pitcher', '🏺')} ${t('stock.canMake', { n: g.maxPitchersNow() })}</div>
         </div>
         <h3>${t('stock.equipment')}</h3>
         ${equipmentRows(g, 'repair')}

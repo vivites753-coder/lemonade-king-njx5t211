@@ -74,7 +74,7 @@ Row 4: 16) a red arrow pointing down (loss), 17) a golden crown with colorful je
 
 Імена: `ui_w_sunny, ui_w_hot, ui_w_cloudy, ui_w_rain, ui_w_wind, ui_w_cold, ui_w_storm, ui_coin, ui_coin_stack, ui_star_full, ui_star_half, ui_star_empty, ui_clock, ui_day, ui_profit_up, ui_profit_down, ui_crown, ui_trophy, ui_heart, ui_lock`
 
-## Лист 10. Склад і емоції покупців (5×5, FLAT)
+## Лист 10. Склад і емоції покупців (5×5, FLAT) — ГОТОВО
 
 Склад ліворуч у грі показує: лимони, воду, цукор, стаканчики, печиво, готові склянки, охолоджені, «скільки глечиків можна зробити». Над головою покупця гра показує свою білу бульбашку, всередині неї картинку, тому емоції треба БЕЗ бульбашки, просто обличчя або символ.
 
@@ -90,6 +90,21 @@ Row 5: 21) a red exclamation mark, 22) a speech bubble with three dots, 23) a si
 ```
 
 Імена: `ui_gd_lemon, ui_gd_water, ui_gd_sugar, ui_gd_cups, ui_gd_cookie, ui_gd_ready, ui_gd_ice, ui_gd_pitcher, ui_gd_market, ui_gd_lemon_half, ui_em_love, ui_em_happy, ui_em_meh, ui_em_sour, ui_em_dizzy, ui_em_angry, ui_em_sad, ui_em_money, ui_em_wait, ui_em_gift, ui_em_alert, ui_em_chat, ui_em_sick, ui_em_clock, ui_em_want`
+
+## Лист 16. Мережа точок і опт (4×3, FLAT)
+
+Іконки для «Моїх точок», картки точки, перемикача точок і оптового складу на ринку (зараз там емодзі 📦 🏪 👀 🛠️ 💹 👥).
+
+СІТКА 12 / 4×3 / 78% + FLAT +
+
+```
+Each item is a single ICON object (no background, no frame), readable when shrunk to 48 pixels.
+Row 1 (wholesale packs): 1) a wooden crate full of yellow lemons with green leaves, 2) a pack of six blue water bottles wrapped together in clear film with a carrying handle, 3) a big paper sack of white sugar with the top folded open and a wooden scoop, 4) a big cardboard box with a stack of white paper cups sticking out of the top.
+Row 2 (my stands): 5) a small lemonade kiosk front with a yellow-and-white striped awning and a lemon on the counter, 6) a pair of round green binoculars, 7) a crossed wrench and screwdriver with a small yellow star, 8) a gold coin in front of a small green bar chart going up, with a green tick mark.
+Row 3: 9) two cheerful little workers side by side, a girl and a boy in yellow aprons, waving, 10) one little worker in a yellow apron with a big green plus sign beside them, 11) a small warehouse building with a big roller door and stacked boxes in front, 12) a wooden door sign on a string that hangs crooked, plain, with a small red X on it (closed).
+```
+
+Імена: `ui_gd_lemon_bulk, ui_gd_water_bulk, ui_gd_sugar_bulk, ui_gd_cups_bulk, ui_pt_stand, ui_pt_look, ui_pt_upgrades, ui_pt_payback, ui_pt_team, ui_pt_hire, ui_pt_wholesale, ui_pt_closed`
 
 ## Лист 11. Іконки апгрейдів, яких ще немає (5×1, ISO)
 

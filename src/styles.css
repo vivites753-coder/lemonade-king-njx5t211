@@ -3619,3 +3619,17 @@ body.reduce-motion * {
   gap: 4px 8px;
   margin: 4px 0;
 }
+
+/* stock pictures: a little bigger than the text in the stock column and on the serve button */
+.res-row .ri .ico-img {
+  height: 22px;
+  vertical-align: middle;
+}
+.serve-btn .ico-img {
+  height: 34px;
+  vertical-align: middle;
+}
+.good .ico .ico-img {
+  height: 30px;
+  vertical-align: middle;
+}

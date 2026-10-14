@@ -6,7 +6,7 @@ import { t } from '../../i18n';
 import { quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
-import { coin, fmtDur, fmtHour } from '../dom';
+import { coin, fmtDur, fmtHour, ico } from '../dom';
 import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 
@@ -437,7 +437,7 @@ export const kitchenPanel: Panel = {
               ${
                 mid
                   ? ''
-                  : `<button class="btn btn-sm" data-kact="market">🛒 ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
+                  : `<button class="btn btn-sm" data-kact="market">${ico('gd_market', '🛒')} ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
               <button class="btn btn-sm" data-kact="rest">😴 ${t('morning.rest')}</button>`
               }
             </div>
@@ -565,7 +565,7 @@ export const kitchenPanel: Panel = {
     const lemonsUse = g.kitchenLemons();
     set(
       'counts',
-      `<span>🍋 ${t('kitchen.juice')}: <b>${k.juice}</b></span><span>💧 ${t('kitchen.waterN')}: <b>${k.water}/${CONFIG.WATER_PER_PITCHER}</b></span><span>🍬 ${t('kitchen.sugarN')}: <b>${k.sugar}</b></span>` +
+      `<span>${ico('gd_lemon_half', '🍋')} ${t('kitchen.juice')}: <b>${k.juice}</b></span><span>${ico('gd_water', '💧')} ${t('kitchen.waterN')}: <b>${k.water}/${CONFIG.WATER_PER_PITCHER}</b></span><span>${ico('gd_sugar', '🍬')} ${t('kitchen.sugarN')}: <b>${k.sugar}</b></span>` +
         (k.juice && lemonsUse !== k.juice ? `<small>⚙️ ${t('kitchen.lemonsUse', { n: lemonsUse })}</small>` : ''),
     );
     // taste

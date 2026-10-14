@@ -8,7 +8,7 @@ import { PointScene, type SceneSource } from '../sim/pointScene';
 import { FOX_LOOK } from '../sim/looks';
 import type { Critter } from '../sim/critters';
 import type { Ped } from '../sim/street';
-import { drawSprite, onAssetsChanged, spriteShadow } from './assets';
+import { drawSprite, getImage, onAssetsChanged, spriteShadow } from './assets';
 import { ENV } from './env';
 import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
@@ -59,6 +59,27 @@ export interface Insets {
   left: number;
 }
 
+
+/** The drawn pictures of the emotes over the customers' heads (assets/ui; the emoji is the fallback). */
+const EMOTE_IMG: Record<string, string> = {
+  '😍': 'ui_em_love',
+  '😋': 'ui_em_love',
+  '🙂': 'ui_em_happy',
+  '😐': 'ui_em_meh',
+  '😝': 'ui_em_sour',
+  '🥴': 'ui_em_dizzy',
+  '😠': 'ui_em_angry',
+  '😡': 'ui_em_angry',
+  '😢': 'ui_em_sad',
+  '💸': 'ui_em_money',
+  '⏳': 'ui_em_wait',
+  '🎁': 'ui_em_gift',
+  '❗': 'ui_em_alert',
+  '💬': 'ui_em_chat',
+  '🤒': 'ui_em_sick',
+  '⏰': 'ui_em_clock',
+  '🍋': 'ui_em_want',
+};
 
 /** People and cars fade in/out at the left and right edges of the diorama. */
 function edgeAlpha(x: number, inset = 0): number {
@@ -468,7 +489,13 @@ export class Renderer {
         ctx.closePath();
         ctx.fillStyle = '#ffffff';
         ctx.fill();
-        emoji(ctx, b.emote, b.sx, y - 11, 14);
+        const pic = EMOTE_IMG[b.emote] ? getImage(EMOTE_IMG[b.emote]) : undefined;
+        if (pic) {
+          const s = 19;
+          const w = (s * pic.naturalWidth) / Math.max(pic.naturalWidth, pic.naturalHeight);
+          const h = (s * pic.naturalHeight) / Math.max(pic.naturalWidth, pic.naturalHeight);
+          ctx.drawImage(pic, b.sx - w / 2, y - 12 - h / 2, w, h);
+        } else emoji(ctx, b.emote, b.sx, y - 11, 14);
       }
     }
   }

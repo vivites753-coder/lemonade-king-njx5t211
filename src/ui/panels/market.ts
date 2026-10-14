@@ -3,7 +3,7 @@ import { GOODS, GOOD_IDS } from '../../data/goods';
 import { t } from '../../i18n';
 import { lemonsConsumed } from '../../sim/economy';
 import { lemonsTotal } from '../../sim/state';
-import { coin, fmtHour } from '../dom';
+import { coin, fmtHour, ico } from '../dom';
 import type { Panel } from './types';
 
 const UNIT: Record<GoodId, string> = {
@@ -18,6 +18,17 @@ const UNIT: Record<GoodId, string> = {
   water_bulk: 'unit.box',
   sugar_bulk: 'unit.bag',
   cups_bulk: 'unit.box',
+};
+
+/** Pictures of the goods (the wholesale packs keep their emoji until they have their own). */
+const GOOD_IMG: Partial<Record<GoodId, string>> = {
+  lemon: 'gd_lemon',
+  lemon_cheap: 'gd_lemon_half',
+  water: 'gd_water',
+  sugar: 'gd_sugar',
+  cups: 'gd_cups',
+  cups_super: 'gd_cups',
+  cookies: 'gd_cookie',
 };
 
 /** Price of one piece (a lemon, a bottle, a spoon, a cup) when bought in this pack. */
@@ -37,7 +48,7 @@ export const marketPanel: Panel = {
         const qty = g.cart[id];
         const haveKey = id === 'lemon_cheap' ? null : gd.stock;
         return `<div class="good${avail ? '' : ' off'}">
-          <div class="ico">${gd.icon}</div>
+          <div class="ico">${GOOD_IMG[id] ? ico(GOOD_IMG[id]!, gd.icon) : gd.icon}</div>
           <div class="info"><b>${t(`good.${id}`)}</b>
             <small>${t(`vendor.${gd.vendor}`)} · ${avail ? t(`good.${id}.note`) : t('market.soldOut')}</small>
             ${haveKey ? `<small>${t('market.have', { n: have[haveKey] })}</small>` : ''}
@@ -63,7 +74,7 @@ export const marketPanel: Panel = {
     const tooMuch = total > S.coins;
     const lemonsPer = lemonsConsumed(S.recipe, S.upgrades);
     return `<div class="panel">
-      <div class="panel-head"><h2>🛒 ${t('market.title', { time: fmtHour(g.D.hour) })}</h2><span class="chip coins">${coin(S.coins)}</span></div>
+      <div class="panel-head"><h2>${ico('gd_market', '🛒')} ${t('market.title', { time: fmtHour(g.D.hour) })}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
         ${g.D.delivery ? `<div class="good-box">${t('market.delivery')}</div>` : ''}
         <div class="note">${t('market.need', { l: lemonsPer, s: S.recipe.sugar })}</div>

@@ -87,7 +87,7 @@ export class Hud {
           </div>
           <button class="btn" data-hud="speaker" data-el="speaker"></button>
         </div>
-        <button class="serve-btn" data-hud="serve" data-el="serve">🥛<small>${t('hud.serve')}</small></button>
+        <button class="serve-btn" data-hud="serve" data-el="serve">${ico('gd_ready', '🥛')}<small>${t('hud.serve')}</small></button>
         <div class="hb-right">
           <span class="chip cups-chip" data-el="cups"></span>
           <button class="btn btn-y" data-hud="make" data-el="make"></button>
@@ -182,7 +182,7 @@ export class Hud {
     // the ring shows the player's own pour (helpers' pours have their own rings over the stand)
     const mine = g.servings.find((x) => x && !x.helper) ?? null;
     serveBtn.style.setProperty('--p', mine ? String(Math.min(1, mine.t / mine.dur)) : '0');
-    this.set('cups', g.isSoldOut() ? `🚫 ${t('hud.soldOut')}` : `🥛<span class="lbl"> ${t('hud.cups')}:</span> <b>${D.cupsReady}</b> · 👥 ${g.street.queued}`);
+    this.set('cups', g.isSoldOut() ? `🚫 ${t('hud.soldOut')}` : `${ico('gd_ready', '🥛')}<span class="lbl"> ${t('hud.cups')}:</span> <b>${D.cupsReady}</b> · 👥 ${g.street.queued}`);
     const canMake = g.canMakePitcher();
     this.show('make', canMake || !!g.making);
     const makeBtn = this.els.make as HTMLButtonElement;
