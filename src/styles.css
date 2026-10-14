@@ -2632,23 +2632,23 @@ body.reduce-motion * {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  left: 276px;
-  top: 308px;
-  width: 160px;
-  height: 160px;
+  left: 334px;
+  top: 376px;
+  width: 96px;
+  height: 92px;
   border-radius: 24px;
   border: 4px dashed transparent;
   z-index: 3;
 }
 .k-tool-art {
   display: block;
-  width: 150px;
-  height: 150px;
+  width: 88px;
+  height: 86px;
 }
 .k-cap {
-  left: 276px;
+  left: 312px;
   top: 474px;
-  width: 160px;
+  width: 140px;
   text-align: center;
   font-size: calc(var(--lab) * 0.85px / var(--ks));
   font-weight: 800;

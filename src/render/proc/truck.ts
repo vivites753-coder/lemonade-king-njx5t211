@@ -146,9 +146,20 @@ function truck(ctx: Ctx, c: TruckCall): void {
   wheel(ctx, x0 + w, y0 + 0.3);
   // the neon sign on the roof
   faceY(ctx, x0 + 0.12, y0 + d - 0.08, z0 + h, () => neonSign(ctx, W - 8, c.label, sk.neon));
-  // bar stools along the side and a bistro table in front
-  for (let i = 0; i < 3; i++) stool(ctx, x0 + w + 0.3, y0 + 0.15 + i * 0.32, sk.awning);
-  bistro(ctx, x0 - 0.75, y0 + d + 0.4, sk.trim);
+}
+
+/** Where the bistro table and the bar stools of the truck stand (tiles): they are sorted among the people by depth. */
+export const TRUCK_BISTRO = { x: TRUCK.x0 - 0.75, y: TRUCK.y0 + TRUCK.d + 0.4 };
+export const TRUCK_STOOLS = { x: TRUCK.x0 + TRUCK.w + 0.3, y: TRUCK.y0 + 0.47 };
+
+export function drawTruckBistro(ctx: Ctx, skin: number): void {
+  const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
+  bistro(ctx, TRUCK_BISTRO.x, TRUCK_BISTRO.y, sk.trim);
+}
+
+export function drawTruckStools(ctx: Ctx, skin: number): void {
+  const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
+  for (let i = 0; i < 3; i++) stool(ctx, TRUCK.x0 + TRUCK.w + 0.3, TRUCK.y0 + 0.15 + i * 0.32, sk.awning);
 }
 
 registerProcs({

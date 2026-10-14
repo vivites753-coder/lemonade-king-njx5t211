@@ -33,11 +33,13 @@ export function activeUpgrades(S: GameState): Owned {
 
 /** Older things that a better upgrade replaces while that one works: they are not used, so they neither wear out,
  * nor break, nor need maintenance. If the better one breaks, the old one is used again. */
-const REPLACED_BY: Partial<Record<EquipId, EquipId & UpgradeId>> = { bike: 'scooter', juicer_hand: 'juicer_lever', umbrella: 'tent' };
+const REPLACED_BY: Partial<Record<EquipId, (EquipId & UpgradeId)[]>> = { bike: ['scooter'], juicer_hand: ['juicer_lever'], umbrella: ['tent'] };
+/** The truck has its own roof: the umbrella and the tent stay at home. */
+const REPLACED_BY_TRUCK: EquipId[] = ['umbrella', 'tent'];
 
 export function retired(S: GameState, id: EquipId): boolean {
-  const better = REPLACED_BY[id];
-  return !!better && !!S.upgrades[better] && !S.broken[better];
+  if (S.upgrades.truck && REPLACED_BY_TRUCK.includes(id)) return true;
+  return (REPLACED_BY[id] ?? []).some((better) => !!S.upgrades[better] && !S.broken[better]);
 }
 
 /** Equipment the player has and really uses (what wears out and can be looked after in the shop). */

@@ -10,7 +10,7 @@ import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter, standSpriteId } from './people';
 import { brokenMark } from './standExtras';
-import { type TruckWorker } from './truck';
+import { drawTruckBistro, drawTruckStools, TRUCK_BISTRO, TRUCK_STOOLS, type TruckWorker } from './truck';
 
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
@@ -278,6 +278,32 @@ registerProcs({
   item_lemon_pile: (ctx, c) => lemonPile(ctx, (c as StandCall).lemons ?? 0),
 });
 
+/** The three visible legs of the tent picture: a strip of the picture (fractions) and the point where the leg stands. */
+const TENT_LEGS = [
+  { x0: 0.0155, x1: 0.0654, top: 0.385, fx: 0.0396, fy: 0.76 },
+  { x0: 0.4664, x1: 0.5164, top: 0.582, fx: 0.4905, fy: 0.985 },
+  { x0: 0.9225, x1: 0.9725, top: 0.385, fx: 0.9466, fy: 0.758 },
+];
+
+/** Screen box of the tent picture (over a big stand it moves left and grows so it covers both tables). */
+function tentBox(wide: boolean): { left: number; top: number; w: number; h: number } | null {
+  const img = getImage('stand_tent');
+  if (!img) return null;
+  const m = metaFor('stand_tent');
+  const h = m.h * (wide ? 1.22 : 1);
+  const w = (h * img.naturalWidth) / img.naturalHeight;
+  const [sx, sy] = P(SX, SY);
+  const [ox, oy] = wide ? P(-0.6, 0) : [0, 0];
+  const ax = sx + ox + (m.dx ?? 0);
+  const ay = sy + oy + (m.dy ?? 0);
+  return { left: ax - w * m.anchor[0], top: ay - h * m.anchor[1], w, h };
+}
+
+/** World px on the ground back to tiles (the inverse of P with z = 0). */
+function toTile(px: number, py: number): [number, number] {
+  return [(px / 32 + py / 16) / 2, (py / 16 - px / 32) / 2];
+}
+
 /** The top part of the umbrella picture (the canopy), drawn again over the people at the stand. */
 const CANOPY_SHARE = 0.54;
 function umbrellaCanopy(ctx: Ctx, sx: number, sy: number, wide: boolean, alpha: number): void {
@@ -375,7 +401,7 @@ const SPOTS = {
 };
 
 /** Things of the stand that stand apart from the table: each is sorted among the people by its own depth. */
-export type StandPart = 'sign' | 'mascot' | 'tv' | 'table2';
+export type StandPart = 'sign' | 'mascot' | 'tv' | 'table2' | 'tentleg0' | 'tentleg1' | 'tentleg2' | 'bistro' | 'stools';
 
 /** Where the side parts of the stand stand now (tiles), for depth sorting. */
 export function standSideParts(g: Game): { part: StandPart; x: number; y: number }[] {
@@ -390,6 +416,20 @@ export function standSideParts(g: Game): { part: StandPart; x: number; y: number
   if (up.tv) out.push({ part: 'tv', x: SX + 2.2, y: SY + 0.35 });
   // the blue table of the big stand stands behind the people of the second queue, but in front of what is behind it
   if (wide && !isTruck) out.push({ part: 'table2', x: SX - 1.0, y: SY });
+  // the legs of the tent stand where they touch the ground: people pass in front of or behind each one
+  const outdoor = !LOCATIONS[g.S.location].indoor && !isTruck;
+  const box = up.tent && outdoor ? tentBox(wide) : null;
+  if (box) {
+    TENT_LEGS.forEach((leg, i) => {
+      const [tx, ty] = toTile(box.left + leg.fx * box.w, box.top + leg.fy * box.h);
+      out.push({ part: `tentleg${i}` as StandPart, x: tx, y: ty });
+    });
+  }
+  // the truck's bistro table and bar stools
+  if (isTruck) {
+    out.push({ part: 'bistro', x: TRUCK_BISTRO.x, y: TRUCK_BISTRO.y });
+    out.push({ part: 'stools', x: TRUCK_STOOLS.x, y: TRUCK_STOOLS.y });
+  }
   return out;
 }
 
@@ -448,6 +488,21 @@ export function drawStandPart(ctx: Ctx, g: Game, part: StandPart): void {
         priceLabel(ctx, sx + (m.dx ?? 0) + SIGN_TEXT.x, sy + (m.dy ?? 0) + SIGN_TEXT.y, S.price);
       }
     });
+  } else if (part === 'tentleg0' || part === 'tentleg1' || part === 'tentleg2') {
+    const box = tentBox(wide);
+    const img = getImage('stand_tent');
+    if (!box || !img) return;
+    const leg = TENT_LEGS[Number(part.slice(-1))];
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(box.left + leg.x0 * box.w, box.top + leg.top * box.h, (leg.x1 - leg.x0) * box.w, (1 - leg.top) * box.h + 1);
+    ctx.clip();
+    ctx.drawImage(img, box.left, box.top, box.w, box.h);
+    ctx.restore();
+  } else if (part === 'bistro') {
+    drawTruckBistro(ctx, S.truck.skin);
+  } else if (part === 'stools') {
+    drawTruckStools(ctx, S.truck.skin);
   } else if (part === 'table2') {
     table2(ctx, g.phase === 'sell' ? g.D.cupsReady / CONFIG.CUPS_PER_PITCHER : 0.6);
   } else if (part === 'mascot') {
@@ -570,8 +625,18 @@ export function drawStand(ctx: Ctx, g: Game, playing: boolean): void {
   if (up.tent && outdoor) {
     // the picture is drawn a little taller than the footprint so the seller's head shows under the roof;
     // over a big stand it moves left and grows so it covers both tables
-    const big = hasImage('stand_tent') && wide ? 1.22 : 1;
-    shifted(ctx, wide && hasImage('stand_tent'), -0.6, 0, () => drawSprite(ctx, 'stand_tent', call({ on: !!br.tent, s: big })));
+    const box = tentBox(wide);
+    const img = getImage('stand_tent');
+    if (box && img) {
+      // the roof and everything but the three visible legs (each leg is drawn at its own depth, see standSideParts)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(box.left - 2, box.top - 2, box.w + 4, box.h + 4);
+      for (const leg of TENT_LEGS) ctx.rect(box.left + leg.x0 * box.w, box.top + leg.top * box.h, (leg.x1 - leg.x0) * box.w, (1 - leg.top) * box.h + 2);
+      ctx.clip('evenodd');
+      ctx.drawImage(img, box.left, box.top, box.w, box.h);
+      ctx.restore();
+    } else drawSprite(ctx, 'stand_tent', call({ on: !!br.tent }));
   }
 
   // broken equipment gets a wrench bubble

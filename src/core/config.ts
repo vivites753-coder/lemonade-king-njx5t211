@@ -43,7 +43,7 @@ export const CONFIG = {
   /** Attention radius in tiles. */
   BASE_RADIUS: 2.6,
 
-  START_COINS: 100,
+  START_COINS: 200,
   START_REP: 1,
   GOAL_COINS: 600,
   GOAL_REP: 1.5,

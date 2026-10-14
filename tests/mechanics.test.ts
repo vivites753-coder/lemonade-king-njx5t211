@@ -359,5 +359,9 @@ describe('replaced equipment', () => {
     // a broken tent: the umbrella is needed again
     g.S.broken.tent = true;
     expect(inUseEquipment(g.S)).toContain('umbrella');
+    // the truck has its own roof: neither the umbrella nor the tent is looked after any more
+    g.S.upgrades.truck = true;
+    expect(inUseEquipment(g.S)).not.toContain('umbrella');
+    expect(inUseEquipment(g.S)).not.toContain('tent');
   });
 });
