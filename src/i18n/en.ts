@@ -455,7 +455,7 @@ export const en: Record<I18nKey, string> = {
   'kitchen.mixOver': 'Splash! The whole kitchen is sticky 😂',
   'kitchen.needWater': 'You need 2 bottles of water',
   'kitchen.needLemon': 'Add at least one lemon',
-  'kitchen.lemonsUse': 'lemons per jug: {n}',
+  'kitchen.lemonsUse': 'lemons squeezed: {n} — the juicer gets more juice',
   'kitchen.repeat': 'Same as last time',
   'kitchen.reset': 'Start over',
   'kitchen.pour': 'Pour',

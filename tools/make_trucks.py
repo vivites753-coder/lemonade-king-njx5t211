@@ -77,15 +77,27 @@ for skin in SKINS:
     cream = solid & (R > 160) & (R < 235) & (G > 140) & (G < 215) & (B > 110) & (B < 190) & (R - B > 25) & (R - B < 80) & (G - B > 10) & (G - B < 45) & (yy > Ht * 0.2) & (yy < Ht * 0.8)
     cream = cv2.morphologyEx(cream.astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     wm = biggest(cv2.morphologyEx(cream, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8)))
-    wq = quad(wm)
+    wq = order(quad(wm))
+    # the sellers are drawn in the window and a little higher (their heads go behind the awning); then the FRONT layer
+    # is drawn over them: everything of the picture in that area that is not the inside wall (the awning, the frame,
+    # the shelf), so the awning covers the tops of the heads and the shelf the bodies
+    ext = Ht * 0.06
+    clip = [(wq[0][0], wq[0][1] - ext), (wq[1][0], wq[1][1] - ext), wq[2], wq[3]]
+    inside = np.zeros((Ht, Wd), np.uint8)
+    cv2.fillPoly(inside, [np.array(clip, np.int32)], 1)
+    wall = cv2.morphologyEx(wm.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8)) > 0
+    front = np.asarray(im).copy()
+    front[..., 3] = np.where((inside > 0) & ~wall, front[..., 3], 0)
     out[skin] = {
-        'window': [[round(x / Wd, 4), round(y / Ht, 4)] for x, y in order(wq)],
+        'window': [[round(x / Wd, 4), round(y / Ht, 4)] for x, y in wq],
+        'clip': [[round(x / Wd, 4), round(y / Ht, 4)] for x, y in clip],
         'sign': [[round(x / Wd, 4), round(y / Ht, 4)] for x, y in order(bq)],
         'aspect': round(Wd / Ht, 4),
     }
     k = H / Ht
     small = im.resize((round(Wd * k), H), Image.LANCZOS)
     small.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(f'assets/stand/stand_truck_{skin}.png', optimize=True)
+    Image.fromarray(front).resize((round(Wd * k), H), Image.LANCZOS).save(f'assets/stand/stand_truck_{skin}_front.png', optimize=True)
     dbg.append((skin, im))
     print(skin, 'window', len(wq), 'pts', out[skin]['window'], 'sign', len(bq), 'pts', im.size)
 

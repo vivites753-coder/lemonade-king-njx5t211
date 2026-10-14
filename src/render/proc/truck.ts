@@ -107,7 +107,7 @@ function neonSign(ctx: Ctx, w: number, label: string, neon: string): void {
 const SELLER_H = 45;
 
 /** For every colour of the truck picture: the open window and the sign board as corners (fractions of the picture). */
-const TRUCK_ART = artJson as unknown as Record<string, { window: number[][]; sign: number[][]; aspect: number }>;
+const TRUCK_ART = artJson as unknown as Record<string, { window: number[][]; clip?: number[][]; sign: number[][]; aspect: number }>;
 
 /** Screen position of the truck picture and of the corners of its window and sign. */
 function truckPlace(c: SpriteCall, skinId: string) {
@@ -121,7 +121,16 @@ function truckPlace(c: SpriteCall, skinId: string) {
   const left = c.sx + (m.dx ?? 0) - w * m.anchor[0];
   const top = c.sy + (m.dy ?? 0) - h * m.anchor[1];
   const pt = (f: number[]): [number, number] => [left + f[0] * w, top + f[1] * h];
-  return { id, window: art.window.map(pt), sign: art.sign.map(pt) };
+  return { id, left, top, w, h, window: art.window.map(pt), clip: (art.clip ?? art.window).map(pt), sign: art.sign.map(pt) };
+}
+
+/** Where the speaker stands on the roof of the truck: right next to the sign board (screen px), or null without art. */
+export function truckRoofSpot(skin: number, sx: number, sy: number): [number, number] | null {
+  const sk = TRUCK_SKINS[skin] ?? TRUCK_SKINS[0];
+  const place = truckPlace({ x: 0, y: 0, sx, sy, s: 1 }, sk.id);
+  if (!place) return null;
+  const br = place.sign[2];
+  return [br[0] + 13, br[1] + 3];
 }
 
 /** The sign board of the truck: the text (and the chosen logo) glow on the dark board, lying on its surface. */
@@ -158,8 +167,10 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
   const place = truckPlace(c, sk.id);
   if (!place) return false;
   drawSprite(ctx, place.id, c);
-  // the sellers: only what is inside the window shows (the awning and the shelf in front of it stay in front)
+  // the sellers: only what is inside the window shows; the awning over the window is drawn again over them (it covers
+  // the tops of their heads), and so is the shelf
   const win = place.window as [number, number][];
+  const clip = place.clip as [number, number][];
   const xs = win.map((p) => p[0]);
   const ys = win.map((p) => p[1]);
   const x0 = Math.min(...xs);
@@ -181,7 +192,7 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
   const girlId = (w: TruckWorker) => (w.girl ? 'girl' : 'boy');
   ctx.save();
   ctx.beginPath();
-  win.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+  clip.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
   ctx.closePath();
   ctx.clip();
   // the one in the middle at the back is drawn first
@@ -190,9 +201,9 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
     const x = x0 + (x1 - x0) * spots[Math.min(i, spots.length - 1)];
     const base = `char_${wk.kind}_${girlId(wk)}`;
     const pick = standSpriteId(base, wk.serving, false);
-    // the top of the head 1.5 px under the top edge of the window
+    // the top of the head is a little above the window, behind the awning
     const m = metaFor(pick.id);
-    const feet = topAt(x) + 1.5 + m.h * m.anchor[1] * sc;
+    const feet = topAt(x) - 3.5 * c.s + m.h * m.anchor[1] * sc;
     drawCharacter(ctx, pick.id, 0, 0, x, feet, {
       kind: 'player',
       hasCup: pick.cup,
@@ -207,6 +218,9 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
     });
   });
   ctx.restore();
+  const front = getImage(`${place.id}_front`);
+  if (front) ctx.drawImage(front, place.left, place.top, place.w, place.h);
+
   // the text of the neon sign (with the chosen logo in front of it)
   const logo = TRUCK_LOGOS[c.logo] ?? TRUCK_LOGOS[0];
   signText(ctx, place.sign as [number, number][], `${logo} ${c.label}`, sk.neon);

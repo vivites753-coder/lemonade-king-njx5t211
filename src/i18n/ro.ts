@@ -456,7 +456,7 @@ export const ro: Record<I18nKey, string> = {
   'kitchen.mixOver': 'Pleosc! Toată bucătăria e lipicioasă 😂',
   'kitchen.needWater': 'Ai nevoie de 2 sticle de apă',
   'kitchen.needLemon': 'Pune cel puțin o lămâie',
-  'kitchen.lemonsUse': 'lămâi pe carafă: {n}',
+  'kitchen.lemonsUse': 'lămâi stoarse: {n} — storcătorul scoate mai mult suc',
   'kitchen.repeat': 'Ca data trecută',
   'kitchen.reset': 'De la capăt',
   'kitchen.pour': 'Toarnă',

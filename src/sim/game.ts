@@ -16,6 +16,7 @@ import {
   attentionRadius,
   costPerCup,
   interestChance,
+  lemonReduction,
   lemonsConsumed,
   maxPitchers,
   pitcherCost,
@@ -681,13 +682,32 @@ export class Game {
     this.changed();
   }
 
+  /** Lemons squeezed into the jug so far (a juicer gets more juice out of them, see kitchenAdd). */
+  kitchenLemons(): number {
+    const k = this.D.kitchen;
+    return k.juice > 0 ? lemonsConsumed({ lemons: k.juice, sugar: k.sugar }, this.active()) : 0;
+  }
+
+  /** What is still on the shelves: the stock minus what is already in the jug. */
+  kitchenLeft(): Record<KitchenItem, number> {
+    const k = this.D.kitchen;
+    const st = this.S.stock;
+    return { lemon: lemonsTotal(st) - this.kitchenLemons(), water: st.water - k.water, sugar: st.sugar - k.sugar };
+  }
+
+  /** Juice of one more lemon: a juicer squeezes more out of the first one (that is how it saves lemons). */
+  private nextJuice(): number {
+    const k = this.D.kitchen;
+    return k.juice === 0 ? Math.min(CONFIG.KITCHEN_MAX_JUICE, 1 + lemonReduction(this.active())) : k.juice + 1;
+  }
+
   /** Ingredients still free in the stock for one more unit in the jug. */
   kitchenCanAdd(item: KitchenItem): 'ok' | 'full' | 'noStock' {
     const k = this.D.kitchen;
     const st = this.S.stock;
     if (item === 'lemon') {
       if (k.juice >= CONFIG.KITCHEN_MAX_JUICE) return 'full';
-      return lemonsConsumed({ lemons: k.juice + 1, sugar: k.sugar }, this.active()) <= lemonsTotal(st) ? 'ok' : 'noStock';
+      return this.kitchenLemons() + 1 <= lemonsTotal(st) ? 'ok' : 'noStock';
     }
     if (item === 'water') {
       if (k.water >= CONFIG.WATER_PER_PITCHER) return 'full';
@@ -705,7 +725,7 @@ export class Game {
       return can;
     }
     const k = this.D.kitchen;
-    if (item === 'lemon') k.juice++;
+    if (item === 'lemon') k.juice = this.nextJuice();
     else if (item === 'water') k.water++;
     else k.sugar++;
     // anything added after mixing has to be mixed again
@@ -730,7 +750,7 @@ export class Game {
     this.D.kitchen = emptyKitchen();
     const r = this.S.recipe;
     for (let i = 0; i < CONFIG.WATER_PER_PITCHER; i++) if (this.kitchenCanAdd('water') === 'ok') this.D.kitchen.water++;
-    for (let i = 0; i < r.lemons; i++) if (this.kitchenCanAdd('lemon') === 'ok') this.D.kitchen.juice++;
+    while (this.D.kitchen.juice < r.lemons && this.kitchenCanAdd('lemon') === 'ok') this.D.kitchen.juice = this.nextJuice();
     for (let i = 0; i < r.sugar; i++) if (this.kitchenCanAdd('sugar') === 'ok') this.D.kitchen.sugar++;
     this.sfx('pour');
     this.changed();

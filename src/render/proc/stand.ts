@@ -11,7 +11,7 @@ import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text,
 import { drawCharacter, standSpriteId } from './people';
 import { brokenMark } from './standExtras';
 import { TRUCK_SKINS } from '../../data/truck';
-import { drawTruckBistro, drawTruckStools, TRUCK_BISTRO, TRUCK_STOOLS, type TruckWorker } from './truck';
+import { drawTruckBistro, drawTruckStools, TRUCK_BISTRO, TRUCK_STOOLS, truckRoofSpot, type TruckWorker } from './truck';
 
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
@@ -636,7 +636,9 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
   }
   // the truck carries its speaker on the roof, at the right end (the bar stools take the space in front)
   if (up.speaker && isTruck) {
-    const [ox, oy] = P(-0.42, -0.3, TRUCK_SPEAKER_Z + 2);
+    const spot = truckRoofSpot(S.truck.skin, sx, sy);
+    const sm = metaFor('stand_speaker');
+    const [ox, oy] = spot ? [spot[0] - sx - (sm.dx ?? 0), spot[1] - sy - (sm.dy ?? 0)] : P(-0.42, -0.3, TRUCK_SPEAKER_Z + 2);
     ctx.save();
     ctx.translate(ox, oy);
     drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));

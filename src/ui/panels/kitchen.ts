@@ -3,10 +3,9 @@
 // interrupted by re-renders. Opens before selling and, when the lemonade runs out, in the middle of the day.
 import { CONFIG } from '../../core/config';
 import { t } from '../../i18n';
-import { lemonsConsumed, quality, tasteBalance, tasteKey } from '../../sim/economy';
+import { quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
-import { lemonsTotal } from '../../sim/state';
 import { coin, fmtDur, fmtHour } from '../dom';
 import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
@@ -50,13 +49,7 @@ function juicerKind(g: Game): JuicerKind {
 
 /** What is still on the shelf: the stock minus what is already in the jug. */
 function shelf(g: Game): Record<KitchenItem, number> {
-  const k = g.D.kitchen;
-  const st = g.S.stock;
-  return {
-    lemon: lemonsTotal(st) - (k.juice ? lemonsConsumed({ lemons: k.juice, sugar: k.sugar }, g.active()) : 0),
-    water: st.water - k.water,
-    sugar: st.sugar - k.sugar,
-  };
+  return g.kitchenLeft();
 }
 
 function art(item: KitchenItem, n: number): string {
@@ -558,7 +551,7 @@ export const kitchenPanel: Panel = {
     liquid.style.height = `${fill}%`;
     liquid.style.background = `linear-gradient(180deg, rgba(255,${Math.round(236 - 40 * juiceShare)},${Math.round(200 - 170 * juiceShare)},0.9), rgba(255,${Math.round(220 - 40 * juiceShare)},${Math.round(160 - 140 * juiceShare)},0.95))`;
     set('grains', k.mix === 'none' ? '•'.repeat(k.sugar * 3) : '');
-    const lemonsUse = k.juice ? lemonsConsumed({ lemons: k.juice, sugar: k.sugar }, g.active()) : 0;
+    const lemonsUse = g.kitchenLemons();
     set(
       'counts',
       `<span>🍋 ${t('kitchen.juice')}: <b>${k.juice}</b></span><span>💧 ${t('kitchen.waterN')}: <b>${k.water}/${CONFIG.WATER_PER_PITCHER}</b></span><span>🍬 ${t('kitchen.sugarN')}: <b>${k.sugar}</b></span>` +

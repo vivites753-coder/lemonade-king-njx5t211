@@ -73,7 +73,8 @@ function pedWithSpriteId(what: string, type: string, variant: number, front: boo
  */
 export function standSpriteId(base: string, serving: boolean, juicing: boolean): { id: string; cup: boolean } {
   if (juicing && hasArt(`${base}_juicing`)) return { id: `${base}_juicing`, cup: false };
-  if (serving && hasArt(`${base}_serving`)) return { id: `${base}_serving`, cup: false };
+  // serving: the same sharp front picture as when waiting, with a cup held out (the serving animation from the video
+  // is a side view leaning forward: switching to it looked like the seller bending down)
   return { id: `${base}_front`, cup: serving };
 }
 
@@ -220,7 +221,10 @@ function drawAnimated(ctx: Ctx, id: string, img: HTMLImageElement, sx: number, s
 
   const headTop = sy - ay * sqY - bob;
   if (o.bag) sack(ctx, sx + dir * W * 0.3, sy - H * 0.34 - bob, sc); // on the side of the tail
-  if (o.hasCup) drawCup(ctx, sx + dir * W * 0.3, sy - H * 0.42 - bob, sc);
+  // a seller holds the cup out to the customer and back
+  const reach = o.serving && motion ? (0.5 + 0.5 * Math.sin((o.t ?? ENV.t) * 5)) * 3 * sc : 0;
+  // (held up at the chest while serving, so it shows over the table)
+  if (o.hasCup) drawCup(ctx, sx + dir * (W * 0.3 + reach), sy - H * (o.serving ? 0.54 : 0.42) - bob, sc);
   if (o.umbrella) return umbrella(ctx, sx + dir * 5 * sc, sy - H * 0.5 - bob, headTop, sc, o.look.accent);
   return headTop;
 }

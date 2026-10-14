@@ -71,12 +71,16 @@ export class ResourceBar {
     const g = this.g;
     const st = g.S.stock;
     const market = phase === 'market';
-    const w = market ? g.stockWithCart() : { lemons: lemonsTotal(st), water: st.water, sugar: st.sugar, cups: st.cups };
+    // in the kitchen the column shows what is left on the shelves (what is already in the jug is not there any more)
+    const kitchen = phase === 'kitchen' || g.midKitchen;
+    const left = kitchen ? g.kitchenLeft() : null;
+    const have = { lemons: left ? left.lemon : lemonsTotal(st), water: left ? left.water : st.water, sugar: left ? left.sugar : st.sugar };
+    const w = market ? g.stockWithCart() : { ...have, cups: st.cups };
     const plus = (now: number, after: number) => (market && after > now ? ` <small class="pos">+${after - now}</small>` : '');
     const old = st.lemons.filter((b) => b.age + 1 >= CONFIG.LEMON_SPOIL_AGE).reduce((n, b) => n + b.n, 0);
-    this.set('lemons', `${lemonsTotal(st)}${plus(lemonsTotal(st), w.lemons)}${old ? ` <small class="neg">⚠${old}</small>` : ''}`);
-    this.set('water', `${st.water}${plus(st.water, w.water)}`);
-    this.set('sugar', `${st.sugar}${plus(st.sugar, w.sugar)}`);
+    this.set('lemons', `${have.lemons}${plus(have.lemons, w.lemons)}${old ? ` <small class="neg">⚠${old}</small>` : ''}`);
+    this.set('water', `${have.water}${plus(have.water, w.water)}`);
+    this.set('sugar', `${have.sugar}${plus(have.sugar, w.sugar)}`);
     this.set('cups', `${st.cups}${plus(st.cups, w.cups)}`);
     const cookies = st.cookies ?? 0;
     const cookiesAfter = market ? cookies + g.cart.cookies * 10 : cookies;
@@ -98,9 +102,9 @@ export class ResourceBar {
     this.show('helper', g.D.helpers > 0);
     this.set('helper', g.D.helpers > 1 ? `×${g.D.helpers}` : '✓');
 
-    this.tip('lemons', `🍋 ${t('res.lemons')}: ${lemonsTotal(st)}${old ? ` · ⚠ ${t('res.oldTip', { n: old })}` : ''}`);
-    this.tip('water', `💧 ${t('res.water')}: ${st.water}`);
-    this.tip('sugar', `🍬 ${t('res.sugar')}: ${st.sugar}`);
+    this.tip('lemons', `🍋 ${t('res.lemons')}: ${have.lemons}${old ? ` · ⚠ ${t('res.oldTip', { n: old })}` : ''}`);
+    this.tip('water', `💧 ${t('res.water')}: ${have.water}`);
+    this.tip('sugar', `🍬 ${t('res.sugar')}: ${have.sugar}`);
     this.tip('cups', `🥤 ${t('res.cups')}: ${st.cups}`);
     this.tip('cookies', `🍪 ${t('res.cookies')}: ${cookies} · ${t('res.cookiePrice', { n: g.S.cookiePrice })}`);
     this.tip('ready', `🥛 ${t('res.ready')}: ${ready}`);

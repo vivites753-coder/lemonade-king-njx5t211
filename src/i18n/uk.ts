@@ -454,7 +454,7 @@ export const uk = {
   'kitchen.mixOver': 'Бризь! Забризкало всю кухню 😂',
   'kitchen.needWater': 'Потрібно 2 пляшки води',
   'kitchen.needLemon': 'Додай хоча б один лимон',
-  'kitchen.lemonsUse': 'лимонів на глечик: {n}',
+  'kitchen.lemonsUse': 'вичавлено лимонів: {n} — соковижималка дає більше соку',
   'kitchen.repeat': 'Як минулого разу',
   'kitchen.reset': 'Почати знову',
   'kitchen.pour': 'Розлити',

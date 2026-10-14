@@ -19,7 +19,7 @@ import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawCritter } from './proc/critters';
 import { drawStand, drawStandPart, drawStandShadows, standSideParts, type StandPart } from './proc/stand';
-import './proc/truck';
+import { TRUCK } from './proc/truck';
 import './proc/buildings';
 
 /** World-pixel area the camera keeps in view (the compact one crops building tops on phones). */
@@ -308,7 +308,10 @@ export class Renderer {
     // a car is long: it is sorted so that people on the near pavement stay in front of it and people on the far one
     // behind it (the near lane a little earlier, the far lane a little later than its middle point)
     for (const c of g.street.cars) items.push({ d: c.x + c.y + (c.y > 7 ? -0.9 : 0.5), k: 2, o: c });
-    items.push({ d: CONFIG.STAND.x + CONFIG.STAND.y + 0.05, k: 3, o: null });
+    // a truck is long: its depth is that of its front left corner, so people walking past in front of it (and the lamp,
+    // the mailbox, the bin there) are drawn over it; nothing behind it reaches into its picture
+    const standD = g.active().truck ? TRUCK.x0 + TRUCK.y0 + TRUCK.d - 0.6 : CONFIG.STAND.x + CONFIG.STAND.y + 0.05;
+    items.push({ d: standD, k: 3, o: null });
     // the sign, the mascot and the TV stand apart from the table: each one is sorted by its own depth
     for (const s of standSideParts(g)) items.push({ d: s.x + s.y, k: 6, o: s.part });
     if (g.street.thief) items.push({ d: g.street.thief.x + g.street.thief.y, k: 4, o: g.street.thief });
