@@ -60,6 +60,7 @@ export class Hud {
           <button data-hud="speed:2" aria-label="x2">${ico('btn_fast', '⏩')}</button>
           <button data-hud="speed:3" aria-label="x3">${ico('btn_faster', '⏭')}</button>
         </div>
+        <button class="hud-btn hidden" data-hud="stock" data-el="stock" aria-label="${t('res.open')}" title="${t('res.title')}">${ico('btn_stock', '📦')}</button>
         <button class="hud-btn hidden" data-hud="points" data-el="points" aria-label="${t('points.title')}">${ico('pt_stand', '🏪')}</button>
         <button class="hud-btn" data-hud="tip" aria-label="${t('hud.tip')}">${ico('btn_tip', '🍋')}</button>
         <button class="hud-btn" data-hud="glossary" aria-label="${t('hud.glossary')}">${ico('btn_glossary', '📖')}</button>
@@ -114,6 +115,11 @@ export class Hud {
     if (!el || this.cache.get(el) === html) return;
     this.cache.set(el, html);
     el.innerHTML = html;
+  }
+
+  /** The Stock button: only while a window covers the stock column on the left. */
+  showStock(on: boolean): void {
+    this.show('stock', on);
   }
 
   private show(key: string, on: boolean): void {

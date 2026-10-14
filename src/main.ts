@@ -7,11 +7,13 @@ import { Renderer } from './render/renderer';
 import { Game } from './sim/game';
 import { DebugPanel } from './ui/debug';
 import { initNativeApp, isNativeApp } from './native';
+import { updatePhoneClass } from './ui/dom';
 import { initFullscreen } from './ui/fullscreen';
 import { UI } from './ui/ui';
 
 // a published update starts with clean saves (the dev server keeps them)
 const wiped = import.meta.env.PROD && wipeOnUpdate(__BUILD_ID__);
+updatePhoneClass();
 // the app is always full screen (MainActivity); on the website the first tap asks for it
 initFullscreen(!isNativeApp());
 
@@ -36,6 +38,7 @@ loadAssets();
 initAudio();
 
 window.addEventListener('resize', () => {
+  updatePhoneClass();
   renderer.resize();
   ui.layout();
 });

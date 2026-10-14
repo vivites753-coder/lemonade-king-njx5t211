@@ -17,6 +17,8 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         // the game is laid out for its own text sizes: the phone's font size setting must not break the layout
         getBridge().getWebView().getSettings().setTextZoom(100);
+        // the page draws itself at 60 % on phones (the viewport tag in index.html): let the WebView follow that tag
+        getBridge().getWebView().getSettings().setUseWideViewPort(true);
         hideSystemBars();
     }
 

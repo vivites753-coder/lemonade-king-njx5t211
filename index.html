@@ -3,6 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // Phones (a touch screen whose short side is at most 600 px): the whole game is drawn at 60 % (as if zoomed
+      // out) and uses the phone layout (the class "phone", see src/ui/dom.ts). Samsung phones report a "fine"
+      // pointer, so the touch points count too.
+      (function () {
+        var touch = navigator.maxTouchPoints > 0 || (window.matchMedia && matchMedia('(any-pointer: coarse)').matches);
+        if (!touch || Math.min(screen.width, screen.height) > 600) return;
+        var s = 0.6;
+        document.documentElement.setAttribute('data-phone', String(s));
+        document.documentElement.classList.add('phone');
+        document
+          .querySelector('meta[name=viewport]')
+          .setAttribute('content', 'width=device-width, initial-scale=' + s + ', minimum-scale=' + s + ', maximum-scale=' + s + ', user-scalable=no, viewport-fit=cover');
+      })();
+    </script>
     <meta name="theme-color" content="#ffd43b" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="description" content="Lemonade King — гра-тренажер підприємця для дітей" />

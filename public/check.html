@@ -49,13 +49,17 @@
     <table id="rows"></table>
     <p><a href="./">← До гри</a></p>
     <script>
-      // the same rule as PHONE_MQ in src/ui/dom.ts and the phone blocks in styles.css
-      var PHONE_MQ = '(max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9)';
+      // the same rule as the script in index.html: a touch screen whose short side is at most 600 px is a phone
+      // (the game is drawn at 60 % there and uses the phone layout)
+      function isPhone() {
+        var touch = navigator.maxTouchPoints > 0 || window.matchMedia('(any-pointer: coarse)').matches;
+        return touch && Math.min(screen.width, screen.height) <= 600;
+      }
       var mq = function (q) {
         return window.matchMedia(q).matches ? 'так' : 'ні';
       };
       function show(version) {
-        var phone = window.matchMedia(PHONE_MQ).matches;
+        var phone = isPhone() || window.innerHeight < 460;
         var el = document.getElementById('phone');
         el.textContent = 'Телефонний вигляд гри: ' + (phone ? 'ТАК' : 'НІ');
         el.className = 'big ' + (phone ? 'yes' : 'no');
@@ -67,6 +71,7 @@
           ['Вказівник: дотик', mq('(pointer: coarse)')],
           ['Будь-який вказівник: дотик', mq('(any-pointer: coarse)')],
           ['Наведення', mq('(hover: hover)')],
+          ['Точки дотику', String(navigator.maxTouchPoints)],
           ['Версія гри на сайті', version],
           ['Браузер', navigator.userAgent],
         ];

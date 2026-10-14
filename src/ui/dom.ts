@@ -4,13 +4,18 @@ import { WEATHER } from '../data/weather';
 import { t } from '../i18n';
 export { fmtHour } from '../sim/lessons';
 
-/** A phone held sideways (the same rule as the phone blocks in styles.css): up to 460 px high, or a screen in
- * landscape much wider than high and up to 560 px high (Galaxy S23 Ultra: about 1029x480). Not by the pointer:
- * Samsung phones report their touchscreen as a touchpad. */
-export const PHONE_MQ = '(max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9)';
+/** A phone, found in index.html before the first layout: there the whole page is drawn at 60 %. */
+export const PHONE_DEVICE = typeof document !== 'undefined' && !!document.documentElement.dataset.phone;
 
+/** The phone layout (the class "phone" on <html>, used by styles.css): on a phone, and in any window up to 460 px
+ * high. */
 export function isPhone(): boolean {
-  return typeof matchMedia === 'function' ? matchMedia(PHONE_MQ).matches : window.innerHeight < 460;
+  return typeof document !== 'undefined' && document.documentElement.classList.contains('phone');
+}
+
+/** Sets the phone layout for the window size now (call it on resize). */
+export function updatePhoneClass(): void {
+  document.documentElement.classList.toggle('phone', PHONE_DEVICE || window.innerHeight < 460);
 }
 
 export function esc(s: string): string {

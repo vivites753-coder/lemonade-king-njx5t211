@@ -16,7 +16,7 @@ import { reportPanel } from './panels/report';
 import { shopPanel } from './panels/shop';
 import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
-import { esc, isPhone } from './dom';
+import { esc, isPhone, updatePhoneClass } from './dom';
 import { isNativeApp, shareTextFile } from '../native';
 import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointShopModal, pointsModal, type PointsHooks } from './points';
@@ -53,6 +53,9 @@ export class UI implements UIApi {
   private overlays: Overlays;
   private current: Panel | null = null;
   private userPaused = false;
+  /** The window size the layout was made for. */
+  private seenW = 0;
+  private seenH = 0;
   /** Phones: the full-screen panel can be hidden to look at the scene. */
   private panelHidden = false;
   private toggleEl: HTMLElement;
@@ -400,11 +403,29 @@ export class UI implements UIApi {
   }
 
   update(): void {
+    // the window changed its size without a resize event (a WebView turning, a hidden tab): lay out again
+    if (window.innerWidth !== this.seenW || window.innerHeight !== this.seenH) {
+      this.seenW = window.innerWidth;
+      this.seenH = window.innerHeight;
+      updatePhoneClass();
+      this.layout();
+    }
     const sell = this.g.phase === 'sell';
     this.g.paused = sell && (this.userPaused || this.overlays.active);
     this.hud.update(this.userPaused);
     this.resources.update(this.g.phase);
+    this.hud.showStock(this.stockCovered());
     this.arrow.update(this.overlays.tipKey(), (w) => this.worldSpot(w));
+  }
+
+  /** A window lies over the stock column on the left (on phones the windows fill the screen). */
+  private stockCovered(): boolean {
+    const bar = document.getElementById('resources');
+    const p = this.panelEl;
+    if (!bar || bar.classList.contains('hidden') || p.classList.contains('hidden') || p.classList.contains('collapsed')) return false;
+    const a = bar.getBoundingClientRect();
+    const b = p.getBoundingClientRect();
+    return a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
   }
 
   /** Screen position of something in the scene the tip arrow points at (the tip of the arrow is there). */
@@ -469,6 +490,9 @@ export class UI implements UIApi {
         break;
       case 'glossary':
         this.openGlossary();
+        break;
+      case 'stock':
+        this.openStock();
         break;
       case 'points':
         this.openPoints();

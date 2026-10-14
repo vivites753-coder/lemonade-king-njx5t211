@@ -1360,7 +1360,7 @@ small {
 .sm {
   display: none;
 }
-@media (max-height: 460px), (max-width: 1100px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
+@media (max-width: 1100px) {
   .lbl {
     display: none;
   }
@@ -1372,117 +1372,127 @@ small {
     flex-wrap: nowrap;
   }
 }
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .hud-top {
-    top: calc(4px + var(--safe-t));
-  }
-  .hud-funnel .frow {
-    padding: 1px 0;
-  }
-  .hud-funnel .chance small {
-    font-size: 10px;
-  }
-  .link-btn {
-    min-height: 28px;
-    padding: 3px 8px;
-    font-size: 12px;
-  }
-  .price-box {
-    padding: 3px;
-    border-radius: 14px;
-  }
-  .price-box .val {
-    min-width: 46px;
-  }
-  .price-box .val b {
-    font-size: 18px;
-  }
-  .price-box .btn-icon {
-    min-width: 38px;
-    min-height: 38px;
-  }
-  .hud-bottom {
-    bottom: calc(6px + var(--safe-b));
-  }
-  .chip {
-    font-size: 13px;
-    padding: 4px 9px;
-    min-height: 32px;
-  }
-  .chip.coins {
-    font-size: 15px;
-  }
-  .hud-btn,
-  .seg button {
-    min-height: 36px;
-    min-width: 36px;
-    font-size: 16px;
-  }
-  #panel {
-    top: calc(48px + var(--safe-t));
-  }
-  .panel-head h2 {
-    font-size: 18px;
-  }
-  .hud-funnel {
-    top: calc(46px + var(--safe-t));
-    width: 168px;
-    font-size: 11px;
-    padding: 5px 8px;
-    max-height: calc(100% - 140px);
-    border-radius: 14px;
-  }
-  .frow b {
-    font-size: 13px;
-  }
-  .hud-funnel .chance b {
-    font-size: 22px;
-  }
-  .serve-btn {
-    width: 78px;
-    height: 78px;
-    font-size: 28px;
-  }
-  .lemi-bubble {
-    font-size: 14px;
-    padding: 8px 10px;
-  }
-  .lemi-face {
-    width: 60px;
-    height: 50px;
-  }
-  .lemi-face .eye {
-    top: 17px;
-  }
-  .lemi-face .eye.l {
-    left: 19px;
-  }
-  .lemi-face .eye.r {
-    right: 19px;
-  }
-  .lemi-face .mouth {
-    top: 28px;
-    left: 23px;
-  }
-  .lemi-face .leaf {
-    left: 30px;
-  }
-  .btn {
-    min-height: 44px;
-    font-size: 15px;
-  }
-  .btn-big {
-    min-height: 48px;
-    font-size: 17px;
-    padding: 8px 16px;
-  }
-  .panel-head {
-    padding: 6px 12px 4px;
-  }
-  .panel-foot {
-    padding: 6px 10px 8px;
-  }
+html.phone .lbl {
+  display: none;
 }
+html.phone .sm {
+  display: inline;
+}
+html.phone .hud-top {
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+html.phone .hud-top {
+  top: calc(4px + var(--safe-t));
+}
+html.phone .hud-funnel .frow {
+  padding: 1px 0;
+}
+html.phone .hud-funnel .chance small {
+  font-size: 10px;
+}
+html.phone .link-btn {
+  min-height: 28px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+html.phone .price-box {
+  padding: 3px;
+  border-radius: 14px;
+}
+html.phone .price-box .val {
+  min-width: 46px;
+}
+html.phone .price-box .val b {
+  font-size: 18px;
+}
+html.phone .price-box .btn-icon {
+  min-width: 38px;
+  min-height: 38px;
+}
+html.phone .hud-bottom {
+  bottom: calc(6px + var(--safe-b));
+}
+html.phone .chip {
+  font-size: 13px;
+  padding: 4px 9px;
+  min-height: 32px;
+}
+html.phone .chip.coins {
+  font-size: 15px;
+}
+html.phone .hud-btn,
+html.phone .seg button {
+  min-height: 36px;
+  min-width: 36px;
+  font-size: 16px;
+}
+html.phone #panel {
+  top: calc(48px + var(--safe-t));
+}
+html.phone .panel-head h2 {
+  font-size: 18px;
+}
+html.phone .hud-funnel {
+  top: calc(46px + var(--safe-t));
+  width: 168px;
+  font-size: 11px;
+  padding: 5px 8px;
+  max-height: calc(100% - 140px);
+  border-radius: 14px;
+}
+html.phone .frow b {
+  font-size: 13px;
+}
+html.phone .hud-funnel .chance b {
+  font-size: 22px;
+}
+html.phone .serve-btn {
+  width: 78px;
+  height: 78px;
+  font-size: 28px;
+}
+html.phone .lemi-bubble {
+  font-size: 14px;
+  padding: 8px 10px;
+}
+html.phone .lemi-face {
+  width: 60px;
+  height: 50px;
+}
+html.phone .lemi-face .eye {
+  top: 17px;
+}
+html.phone .lemi-face .eye.l {
+  left: 19px;
+}
+html.phone .lemi-face .eye.r {
+  right: 19px;
+}
+html.phone .lemi-face .mouth {
+  top: 28px;
+  left: 23px;
+}
+html.phone .lemi-face .leaf {
+  left: 30px;
+}
+html.phone .btn {
+  min-height: 44px;
+  font-size: 15px;
+}
+html.phone .btn-big {
+  min-height: 48px;
+  font-size: 17px;
+  padding: 8px 16px;
+}
+html.phone .panel-head {
+  padding: 6px 12px 4px;
+}
+html.phone .panel-foot {
+  padding: 6px 10px 8px;
+}
+
 @media (max-width: 860px) {
   #panel:not(.center) {
     left: calc(8px + var(--safe-l));
@@ -1687,130 +1697,129 @@ body.reduce-motion * {
 }
 
 /* ---------- phones: everything must fit and stay tappable ---------- */
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .res-bar {
-    top: calc(42px + var(--safe-t));
-    width: 48px;
-    padding: 4px 2px;
-    border-radius: 12px;
-    max-height: calc(100% - 50px);
-    overflow: hidden;
-  }
-  .res-head {
-    display: none;
-  }
-  .res-row {
-    font-size: 12px;
-    padding: 1px 2px;
-    gap: 1px;
-  }
-  .res-row .ri {
-    font-size: 13px;
-    width: 16px;
-  }
-  #panel,
-  #panel.wide {
-    top: calc(42px + var(--safe-t));
-    bottom: calc(4px + var(--safe-b));
-  }
-  #panel.wide {
-    left: calc(58px + var(--safe-l));
-    width: calc(100% - 64px - var(--safe-l) - var(--safe-r));
-  }
-  #panel:not(.center):not(.wide) {
-    left: calc(60px + var(--safe-l));
-  }
-  #panel.center {
-    top: calc(6px + var(--safe-t));
-    max-height: calc(100% - 12px);
-  }
-  .title-card {
-    padding: 10px 14px 12px;
-  }
-  .title-card .logo {
-    font-size: 30px;
-  }
-  .title-card h1 {
-    font-size: 26px;
-    margin: 2px 0;
-  }
-  .title-card p {
-    margin-bottom: 6px;
-  }
-  .title-card .btn {
-    margin: 3px auto;
-  }
-  .title-card h3 {
-    margin: 6px 0 4px;
-  }
-  .new-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .choice {
-    padding: 6px;
-  }
-  .choice .big {
-    font-size: 26px;
-  }
-  .choice small {
-    display: none;
-  }
-  .input-name {
-    font-size: 17px;
-    padding: 6px 10px;
-  }
-  .panel-body {
-    padding: 2px 10px 8px;
-  }
-  .panel h3 {
-    margin: 8px 2px 4px;
-  }
-  .card {
-    padding: 6px 10px;
-    margin: 5px 0;
-  }
-  .toggle {
-    padding: 6px 10px;
-  }
-  .panel-foot .btn {
-    flex: 1 1 120px;
-  }
-  .modal-card {
-    padding: 10px 12px;
-    max-height: calc(100% - 4px);
-  }
-  #modal {
-    padding: 4px;
-  }
-  .modal-card h2 {
-    font-size: 18px;
-    margin: 2px 0 6px;
-  }
-  .modal-card p {
-    font-size: 14px;
-    margin: 6px 0;
-  }
-  .modal-card .ev-ico {
-    font-size: 36px;
-  }
-  .lesson {
-    padding: 6px;
-    margin: 6px 0;
-    font-size: 13px;
-  }
-  /* Lemi sits at the top so he never hides the action buttons at the bottom */
-  #lemi {
-    top: calc(44px + var(--safe-t));
-    bottom: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: min(560px, calc(100% - 16px));
-    animation: none;
-  }
-  .lemi-bubble::before {
-    display: none;
-  }
+html.phone .res-bar {
+  top: calc(42px + var(--safe-t));
+  width: 48px;
+  padding: 4px 2px;
+  border-radius: 12px;
+  max-height: calc(100% - 50px);
+  overflow: hidden;
 }
+html.phone .res-head {
+  display: none;
+}
+html.phone .res-row {
+  font-size: 12px;
+  padding: 1px 2px;
+  gap: 1px;
+}
+html.phone .res-row .ri {
+  font-size: 13px;
+  width: 16px;
+}
+html.phone #panel,
+html.phone #panel.wide {
+  top: calc(42px + var(--safe-t));
+  bottom: calc(4px + var(--safe-b));
+}
+html.phone #panel.wide {
+  left: calc(58px + var(--safe-l));
+  width: calc(100% - 64px - var(--safe-l) - var(--safe-r));
+}
+html.phone #panel:not(.center):not(.wide) {
+  left: calc(60px + var(--safe-l));
+}
+html.phone #panel.center {
+  top: calc(6px + var(--safe-t));
+  max-height: calc(100% - 12px);
+}
+html.phone .title-card {
+  padding: 10px 14px 12px;
+}
+html.phone .title-card .logo {
+  font-size: 30px;
+}
+html.phone .title-card h1 {
+  font-size: 26px;
+  margin: 2px 0;
+}
+html.phone .title-card p {
+  margin-bottom: 6px;
+}
+html.phone .title-card .btn {
+  margin: 3px auto;
+}
+html.phone .title-card h3 {
+  margin: 6px 0 4px;
+}
+html.phone .new-grid {
+  grid-template-columns: 1fr 1fr;
+}
+html.phone .choice {
+  padding: 6px;
+}
+html.phone .choice .big {
+  font-size: 26px;
+}
+html.phone .choice small {
+  display: none;
+}
+html.phone .input-name {
+  font-size: 17px;
+  padding: 6px 10px;
+}
+html.phone .panel-body {
+  padding: 2px 10px 8px;
+}
+html.phone .panel h3 {
+  margin: 8px 2px 4px;
+}
+html.phone .card {
+  padding: 6px 10px;
+  margin: 5px 0;
+}
+html.phone .toggle {
+  padding: 6px 10px;
+}
+html.phone .panel-foot .btn {
+  flex: 1 1 120px;
+}
+html.phone .modal-card {
+  padding: 10px 12px;
+  max-height: calc(100% - 4px);
+}
+html.phone #modal {
+  padding: 4px;
+}
+html.phone .modal-card h2 {
+  font-size: 18px;
+  margin: 2px 0 6px;
+}
+html.phone .modal-card p {
+  font-size: 14px;
+  margin: 6px 0;
+}
+html.phone .modal-card .ev-ico {
+  font-size: 36px;
+}
+html.phone .lesson {
+  padding: 6px;
+  margin: 6px 0;
+  font-size: 13px;
+}
+/* Lemi sits at the top so he never hides the action buttons at the bottom */
+html.phone #lemi {
+  top: calc(44px + var(--safe-t));
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100% - 16px));
+  animation: none;
+}
+html.phone .lemi-bubble::before {
+  display: none;
+}
+
 .hud-top {
   flex-wrap: nowrap;
   overflow: hidden;
@@ -1974,186 +1983,184 @@ body.reduce-motion * {
 }
 
 /* ---------- phones: full-screen stage windows, smaller text and buttons ---------- */
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  #panel:not(.center):not(.title-mode),
-  #panel.wide {
-    left: calc(4px + var(--safe-l));
-    right: calc(4px + var(--safe-r));
-    width: auto;
-    top: calc(42px + var(--safe-t));
-    bottom: calc(4px + var(--safe-b));
-    z-index: 22;
-  }
-  .panel {
-    border-radius: 16px;
-    border-width: 2px;
-  }
-  .panel-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    position: absolute;
-    z-index: 26;
-    top: calc(46px + var(--safe-t));
-    right: calc(10px + var(--safe-r));
-    min-width: 34px;
-    height: 34px;
-    border: 0;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 2px 0 var(--line), 0 4px 10px rgba(0, 0, 0, 0.12);
-    font: inherit;
-    font-size: 16px;
-    font-weight: 900;
-    color: var(--ink);
-    cursor: pointer;
-  }
-  .panel-toggle.hidden {
-    display: none;
-  }
-  .panel-toggle.reopen {
-    top: auto;
-    bottom: calc(10px + var(--safe-b));
-    right: calc(10px + var(--safe-r));
-    height: 44px;
-    padding: 0 16px;
-    font-size: 15px;
-    background: var(--yellow);
-    box-shadow: 0 4px 0 var(--yellow-d), 0 6px 12px rgba(0, 0, 0, 0.15);
-  }
-  .panel-head,
-  .kitchen .panel-head {
-    padding-right: 52px;
-  }
-  .panel-head h2 {
-    font-size: 16px;
-  }
-  .panel h3 {
-    font-size: 14px;
-    margin: 8px 2px 4px;
-  }
-  .panel-body {
-    padding: 2px 10px 8px;
-    font-size: 13px;
-  }
-  .card {
-    padding: 6px 10px;
-    margin: 5px 0;
-    border-radius: 12px;
-  }
-  small {
-    font-size: 11px;
-  }
-  .note {
-    font-size: 12px;
-    margin: 4px 2px;
-  }
-  .warn-box,
-  .good-box {
-    padding: 6px 8px;
-    font-size: 13px;
-    margin: 5px 0;
-  }
-  .kv {
-    font-size: 13px;
-  }
-  .big-ico {
-    font-size: 28px;
-  }
-  .btn {
-    min-height: 36px;
-    font-size: 13px;
-    padding: 5px 11px;
-    border-radius: 12px;
-  }
-  .btn-sm {
-    min-height: 30px;
-    font-size: 12px;
-    padding: 3px 9px;
-  }
-  .btn-big {
-    min-height: 40px;
-    font-size: 15px;
-    padding: 5px 14px;
-    border-radius: 14px;
-  }
-  .panel-foot .btn {
-    flex: 1 1 110px;
-  }
-  .chip {
-    font-size: 12px;
-    padding: 3px 8px;
-    min-height: 28px;
-  }
-  .chip.coins {
-    font-size: 13px;
-  }
-  .hud-btn,
-  .seg button {
-    min-height: 32px;
-    min-width: 32px;
-    font-size: 14px;
-  }
-  .loc {
-    padding: 5px 8px;
-    border-radius: 14px;
-  }
-  .loc b {
-    font-size: 14px;
-  }
-  .loc-ico {
-    font-size: 26px;
-  }
-  .loc-meta {
-    font-size: 11px;
-  }
-  .loc-lock,
-  .loc-ev,
-  .loc-own {
-    font-size: 12px;
-  }
-  .toggle b {
-    font-size: 13px;
-  }
-  .modal-card p {
-    font-size: 13px;
-  }
-  .lemi-bubble {
-    font-size: 13px;
-  }
-  .lbl-m {
-    display: none;
-  }
-  .good {
-    padding: 5px 8px;
-    gap: 8px;
-  }
-  .good .ico {
-    font-size: 24px;
-  }
-  .good .info b {
-    font-size: 14px;
-  }
-  .stepper b {
-    min-width: 24px;
-    font-size: 15px;
-  }
-  .stepper .btn {
-    min-width: 34px;
-    min-height: 32px;
-    font-size: 17px;
-  }
-  .total-line {
-    font-size: 15px;
-  }
+html.phone #panel:not(.center):not(.title-mode),
+html.phone #panel.wide {
+  left: calc(4px + var(--safe-l));
+  right: calc(4px + var(--safe-r));
+  width: auto;
+  top: calc(42px + var(--safe-t));
+  bottom: calc(4px + var(--safe-b));
+  z-index: 22;
+}
+html.phone .panel {
+  border-radius: 16px;
+  border-width: 2px;
+}
+html.phone .panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: absolute;
+  z-index: 26;
+  top: calc(46px + var(--safe-t));
+  right: calc(10px + var(--safe-r));
+  min-width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 0 var(--line), 0 4px 10px rgba(0, 0, 0, 0.12);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--ink);
+  cursor: pointer;
+}
+html.phone .panel-toggle.hidden {
+  display: none;
+}
+html.phone .panel-toggle.reopen {
+  top: auto;
+  bottom: calc(10px + var(--safe-b));
+  right: calc(10px + var(--safe-r));
+  height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+  background: var(--yellow);
+  box-shadow: 0 4px 0 var(--yellow-d), 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+html.phone .panel-head,
+html.phone .kitchen .panel-head {
+  padding-right: 52px;
+}
+html.phone .panel-head h2 {
+  font-size: 16px;
+}
+html.phone .panel h3 {
+  font-size: 14px;
+  margin: 8px 2px 4px;
+}
+html.phone .panel-body {
+  padding: 2px 10px 8px;
+  font-size: 13px;
+}
+html.phone .card {
+  padding: 6px 10px;
+  margin: 5px 0;
+  border-radius: 12px;
+}
+html.phone small {
+  font-size: 11px;
+}
+html.phone .note {
+  font-size: 12px;
+  margin: 4px 2px;
+}
+html.phone .warn-box,
+html.phone .good-box {
+  padding: 6px 8px;
+  font-size: 13px;
+  margin: 5px 0;
+}
+html.phone .kv {
+  font-size: 13px;
+}
+html.phone .big-ico {
+  font-size: 28px;
+}
+html.phone .btn {
+  min-height: 36px;
+  font-size: 13px;
+  padding: 5px 11px;
+  border-radius: 12px;
+}
+html.phone .btn-sm {
+  min-height: 30px;
+  font-size: 12px;
+  padding: 3px 9px;
+}
+html.phone .btn-big {
+  min-height: 40px;
+  font-size: 15px;
+  padding: 5px 14px;
+  border-radius: 14px;
+}
+html.phone .panel-foot .btn {
+  flex: 1 1 110px;
+}
+html.phone .chip {
+  font-size: 12px;
+  padding: 3px 8px;
+  min-height: 28px;
+}
+html.phone .chip.coins {
+  font-size: 13px;
+}
+html.phone .hud-btn,
+html.phone .seg button {
+  min-height: 32px;
+  min-width: 32px;
+  font-size: 14px;
+}
+html.phone .loc {
+  padding: 5px 8px;
+  border-radius: 14px;
+}
+html.phone .loc b {
+  font-size: 14px;
+}
+html.phone .loc-ico {
+  font-size: 26px;
+}
+html.phone .loc-meta {
+  font-size: 11px;
+}
+html.phone .loc-lock,
+html.phone .loc-ev,
+html.phone .loc-own {
+  font-size: 12px;
+}
+html.phone .toggle b {
+  font-size: 13px;
+}
+html.phone .modal-card p {
+  font-size: 13px;
+}
+html.phone .lemi-bubble {
+  font-size: 13px;
+}
+html.phone .lbl-m {
+  display: none;
+}
+html.phone .good {
+  padding: 5px 8px;
+  gap: 8px;
+}
+html.phone .good .ico {
+  font-size: 24px;
+}
+html.phone .good .info b {
+  font-size: 14px;
+}
+html.phone .stepper b {
+  min-width: 24px;
+  font-size: 15px;
+}
+html.phone .stepper .btn {
+  min-width: 34px;
+  min-height: 32px;
+  font-size: 17px;
+}
+html.phone .total-line {
+  font-size: 15px;
 }
 
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .taste-labels {
-    font-size: 11px;
-  }
+
+html.phone .taste-labels {
+  font-size: 11px;
 }
+
 
 /* reputation chip opens the road map */
 .chip-btn {
@@ -2333,19 +2340,18 @@ body.reduce-motion * {
   padding: 2px 8px;
   margin-left: 6px;
 }
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .rm-node {
-    width: 46px;
-    min-height: 46px;
-    font-size: 10px;
-  }
-  .rm-road::before {
-    left: 26px;
-  }
-  .rm-items {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  }
+html.phone .rm-node {
+  width: 46px;
+  min-height: 46px;
+  font-size: 10px;
 }
+html.phone .rm-road::before {
+  left: 26px;
+}
+html.phone .rm-items {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+
 
 /* food truck editor */
 .truck-wrap {
@@ -3104,75 +3110,74 @@ body.reduce-motion * {
 }
 
 /* -- phones in landscape: the picture on the left, the controls on the right -- */
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .k-hint {
-    display: none;
-  }
-  .k-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .k-wrap {
-    flex: none;
-    width: calc((var(--app-h, 100vh) - 165px) * 1.339);
-    max-width: 62%;
-    margin: 0;
-    --lab: 11;
-  }
-  .k-side {
-    flex: 1;
-    min-width: 0;
-  }
-  .k-mixrow {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .k-mixer-btn {
-    grid-row: auto;
-    min-height: 40px;
-    padding: 0 12px;
-    font-size: 14px;
-    justify-content: center;
-  }
-  .k-mixer-btn small {
-    display: none;
-  }
-  .k-side {
-    gap: 4px;
-  }
-  .k-mixrow {
-    gap: 3px;
-  }
-  .k-tools {
-    gap: 4px;
-  }
-  .k-tools .btn {
-    padding: 4px 8px;
-    min-height: 32px;
-    font-size: 12px;
-  }
-  .taste {
-    margin: 4px 0 0;
-  }
-  .k-counts {
-    font-size: 12px;
-    gap: 2px 10px;
-  }
-  .k-mix-status {
-    font-size: 12px;
-  }
-  .k-pour {
-    font-size: 13px;
-    gap: 4px;
-  }
-  .k-pour small {
-    font-size: 11px;
-    flex-basis: 100%;
-  }
-  .k-foot .btn-big {
-    min-height: 44px;
-  }
+html.phone .k-hint {
+  display: none;
 }
+html.phone .k-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+html.phone .k-wrap {
+  flex: none;
+  width: calc((var(--app-h, 100vh) - 165px) * 1.339);
+  max-width: 62%;
+  margin: 0;
+  --lab: 11;
+}
+html.phone .k-side {
+  flex: 1;
+  min-width: 0;
+}
+html.phone .k-mixrow {
+  grid-template-columns: minmax(0, 1fr);
+}
+html.phone .k-mixer-btn {
+  grid-row: auto;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  justify-content: center;
+}
+html.phone .k-mixer-btn small {
+  display: none;
+}
+html.phone .k-side {
+  gap: 4px;
+}
+html.phone .k-mixrow {
+  gap: 3px;
+}
+html.phone .k-tools {
+  gap: 4px;
+}
+html.phone .k-tools .btn {
+  padding: 4px 8px;
+  min-height: 32px;
+  font-size: 12px;
+}
+html.phone .taste {
+  margin: 4px 0 0;
+}
+html.phone .k-counts {
+  font-size: 12px;
+  gap: 2px 10px;
+}
+html.phone .k-mix-status {
+  font-size: 12px;
+}
+html.phone .k-pour {
+  font-size: 13px;
+  gap: 4px;
+}
+html.phone .k-pour small {
+  font-size: 11px;
+  flex-basis: 100%;
+}
+html.phone .k-foot .btn-big {
+  min-height: 44px;
+}
+
 /* tall narrow screens: the controls go under the picture (that is the default), the picture fills the width */
 @media (max-height: 860px) {
   .k-hint {
@@ -3387,7 +3392,7 @@ body.reduce-motion * {
 }
 
 /* dialogs on phones held sideways (up to 520 px high): the buttons stay in view at the bottom */
-@media (max-height: 520px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 520px) {
   #modal {
     padding: 4px;
   }
@@ -3403,6 +3408,21 @@ body.reduce-motion * {
     background: var(--cream);
   }
 }
+html.phone #modal {
+  padding: 4px;
+}
+html.phone .modal-card {
+  padding: 8px 14px 0;
+}
+html.phone .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 6px;
+  padding: 6px 0 8px;
+  background: var(--cream);
+}
+
 
 /* pictures of the upgrades in the shop and of the equipment */
 .up .ico .ico-img {
@@ -3553,24 +3573,23 @@ body.reduce-motion * {
   align-items: center;
   gap: 8px;
 }
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .hud-views {
-    top: calc(40px + var(--safe-t));
-  }
-  .hv-btn {
-    min-height: 30px;
-    padding: 2px 8px;
-  }
-  .hv-btn .lbl {
-    display: none;
-  }
-  .hud-point {
-    top: calc(76px + var(--safe-t));
-    width: 210px;
-    font-size: 12px;
-    padding: 8px 10px;
-  }
+html.phone .hud-views {
+  top: calc(40px + var(--safe-t));
 }
+html.phone .hv-btn {
+  min-height: 30px;
+  padding: 2px 8px;
+}
+html.phone .hv-btn .lbl {
+  display: none;
+}
+html.phone .hud-point {
+  top: calc(76px + var(--safe-t));
+  width: 210px;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
 
 /* ---------- the arrow that shows where to look during a tip ---------- */
 .tip-arrow {
@@ -3660,89 +3679,88 @@ body.reduce-motion * {
 }
 
 /* ---------- phones: the top bar half as big again (bigger buttons for fingers) ---------- */
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .hud-top {
-    gap: 6px;
-    top: calc(4px + var(--safe-t));
-  }
-  .hud-top .chip {
-    font-size: 19px;
-    padding: 4px 12px;
-    min-height: 46px;
-    gap: 7px;
-  }
-  .hud-top .chip.coins {
-    font-size: 21px;
-  }
-  .hud-top .chip .ico-img {
-    height: 32px;
-    margin: -4px 0;
-  }
-  .hud-top .chip .stars .ico-img {
-    height: 26px;
-  }
-  .coin-art .hud-top .chip .coin {
-    width: 30px;
-    height: 30px;
-  }
-  .hud-top .hud-btn,
-  .hud-top .seg button {
-    min-height: 48px;
-    min-width: 48px;
-    font-size: 24px;
-    border-radius: 16px;
-  }
-  /* the speed buttons go down to the right, over "end the day" */
-  .hud-top .seg {
-    position: fixed;
-    right: calc(10px + var(--safe-r));
-    bottom: calc(64px + var(--safe-b));
-  }
-  /* everything under the top bar starts below it */
-  .res-bar {
-    top: calc(var(--hud-h, 42px) + 4px);
-  }
-  .hud-funnel {
-    top: calc(var(--hud-h, 46px) + 4px);
-  }
-  .hud-views {
-    top: calc(var(--hud-h, 40px) + 2px);
-  }
-  .hud-point {
-    top: calc(var(--hud-h, 40px) + 40px);
-  }
-  #panel:not(.center):not(.title-mode),
-  #panel.wide {
-    top: calc(var(--hud-h, 42px) + 4px);
-  }
-  .panel-toggle {
-    top: calc(var(--hud-h, 42px) + 8px);
-  }
+html.phone .hud-top {
+  gap: 6px;
+  top: calc(4px + var(--safe-t));
 }
+html.phone .hud-top .chip {
+  font-size: 19px;
+  padding: 4px 12px;
+  min-height: 46px;
+  gap: 7px;
+}
+html.phone .hud-top .chip.coins {
+  font-size: 21px;
+}
+html.phone .hud-top .chip .ico-img {
+  height: 32px;
+  margin: -4px 0;
+}
+html.phone .hud-top .chip .stars .ico-img {
+  height: 26px;
+}
+html.phone.coin-art .hud-top .chip .coin {
+  width: 30px;
+  height: 30px;
+}
+html.phone .hud-top .hud-btn,
+html.phone .hud-top .seg button {
+  min-height: 48px;
+  min-width: 48px;
+  font-size: 24px;
+  border-radius: 16px;
+}
+/* the speed buttons go down to the right, over "end the day" */
+html.phone .hud-top .seg {
+  position: fixed;
+  right: calc(10px + var(--safe-r));
+  bottom: calc(64px + var(--safe-b));
+}
+/* everything under the top bar starts below it */
+html.phone .res-bar {
+  top: calc(var(--hud-h, 42px) + 4px);
+}
+html.phone .hud-funnel {
+  top: calc(var(--hud-h, 46px) + 4px);
+}
+html.phone .hud-views {
+  top: calc(var(--hud-h, 40px) + 2px);
+}
+html.phone .hud-point {
+  top: calc(var(--hud-h, 40px) + 40px);
+}
+html.phone #panel:not(.center):not(.title-mode),
+html.phone #panel.wide {
+  top: calc(var(--hud-h, 42px) + 4px);
+}
+html.phone .panel-toggle {
+  top: calc(var(--hud-h, 42px) + 8px);
+}
+
 /* narrower phones: the same big buttons, tighter chips */
-@media (max-height: 460px) and (max-width: 820px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) and (max-width: 820px) {
-  .hud-top {
+@media (max-width: 820px) {
+  html.phone .hud-top {
     gap: 4px;
   }
-  .hud-top .chip {
+  html.phone .hud-top .chip {
     padding: 4px 8px;
     gap: 5px;
   }
 }
-@media (max-height: 460px) and (max-width: 720px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) and (max-width: 720px) {
-  .hud-top {
+@media (max-width: 720px) {
+  html.phone .hud-top {
     gap: 3px;
   }
-  .hud-top .chip {
+  html.phone .hud-top .chip {
     font-size: 17px;
     min-height: 44px;
     padding: 3px 6px;
     gap: 4px;
   }
-  .hud-top .chip .ico-img {
+  html.phone .hud-top .chip .ico-img {
     height: 28px;
   }
-  .hud-top .hud-btn {
+  html.phone .hud-top .hud-btn {
     min-height: 44px;
     min-width: 42px;
     font-size: 21px;
@@ -3762,35 +3780,33 @@ body.reduce-motion * {
 .pt-btns .ico-img {
   height: 1.4em;
 }
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .hud-top .hud-btn .ico-img {
-    height: 34px;
-  }
+html.phone .hud-top .hud-btn .ico-img {
+  height: 34px;
 }
 
+
 /* ---------- phones while selling: the pour button in the bottom right corner (under the thumb) ---------- */
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .hud-bottom .serve-btn {
-    position: fixed;
-    right: calc(10px + var(--safe-r));
-    bottom: calc(8px + var(--safe-b));
-    width: 88px;
-    height: 88px;
-    font-size: 32px;
-    z-index: 12;
-  }
-  .hud-bottom .hb-right {
-    margin-right: 96px;
-  }
-  /* the speed buttons stand over the pour button */
-  .hud-top .seg {
-    bottom: calc(104px + var(--safe-b));
-  }
-  /* the funnel card stays above them */
-  .hud-funnel {
-    max-height: calc(100% - var(--hud-h, 46px) - 172px);
-  }
+html.phone .hud-bottom .serve-btn {
+  position: fixed;
+  right: calc(10px + var(--safe-r));
+  bottom: calc(8px + var(--safe-b));
+  width: 88px;
+  height: 88px;
+  font-size: 32px;
+  z-index: 12;
 }
+html.phone .hud-bottom .hb-right {
+  margin-right: 96px;
+}
+/* the speed buttons stand over the pour button */
+html.phone .hud-top .seg {
+  bottom: calc(104px + var(--safe-b));
+}
+/* the funnel card stays above them */
+html.phone .hud-funnel {
+  max-height: calc(100% - var(--hud-h, 46px) - 172px);
+}
+
 
 /* pictures on the speed buttons and the small buttons of the selling controls */
 .seg button .ico-img {
@@ -3801,11 +3817,10 @@ body.reduce-motion * {
   height: 24px;
   vertical-align: middle;
 }
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .hud-top .seg button .ico-img {
-    height: 30px;
-  }
+html.phone .hud-top .seg button .ico-img {
+  height: 30px;
 }
+
 
 .version-note {
   margin: 4px 0 0;
@@ -3948,103 +3963,114 @@ body.reduce-motion * {
 }
 
 /* phones (the same rule as PHONE_MQ in src/ui/dom.ts): no button smaller than a finger */
-@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
-  .btn {
-    min-height: 44px;
-    padding: 6px 14px;
-    font-size: 15px;
-    border-radius: 14px;
+html.phone .btn {
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 15px;
+  border-radius: 14px;
+}
+html.phone .btn-sm {
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+html.phone .btn-big,
+html.phone .panel-foot .btn,
+html.phone .panel-foot .btn-big,
+html.phone .modal-actions .btn {
+  min-height: 48px;
+  padding: 6px 16px;
+  font-size: 16px;
+}
+html.phone .btn-icon,
+html.phone .price-box .btn-icon {
+  min-width: 46px;
+  min-height: 44px;
+}
+html.phone .stepper .btn {
+  min-width: 46px;
+  min-height: 44px;
+  font-size: 20px;
+}
+html.phone .stepper b {
+  min-width: 28px;
+}
+html.phone .link-btn {
+  min-height: 40px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+html.phone .toggle {
+  min-height: 48px;
+  padding: 6px 12px;
+}
+html.phone .loc {
+  min-height: 52px;
+  padding: 6px 10px;
+}
+html.phone .hv-btn {
+  min-height: 40px;
+  padding: 4px 10px;
+}
+html.phone .panel-toggle {
+  min-width: 44px;
+  height: 44px;
+  font-size: 18px;
+}
+html.phone .panel-toggle.reopen {
+  height: 48px;
+}
+html.phone .k-mixer-btn {
+  min-height: 48px;
+}
+html.phone .k-tools .btn {
+  min-height: 44px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+html.phone .k-foot .btn-big {
+  min-height: 48px;
+}
+html.phone .panel-foot,
+html.phone .modal-actions {
+  gap: 8px;
+}
+/* the end-the-day button shows only the moon on phones: still a square for a finger */
+html.phone .btn-sm {
+  min-width: 44px;
+}
+/* the stats card: as wide as the speed buttons under it (its title fits on one line), and short enough
+   that "Why?" is not cut off above them */
+html.phone .hud-funnel {
+  width: 198px;
+  padding: 4px 8px 2px;
+}
+html.phone .hud-funnel .link-btn {
+  min-height: 34px;
+  margin-top: 2px;
+}
+/* the market: price and + / − on the same line as the goods, so two or three goods fit on the screen */
+html.phone .good {
+  grid-template-columns: 34px 1fr auto auto;
+  grid-template-areas: 'ico info price step';
+  gap: 2px 10px;
+  padding: 6px 10px;
+  margin: 5px 0;
+}
+html.phone .good .price {
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+
+/* a phone held upright: the page is wider in CSS px at 60 %, so the width rule above may miss it */
+@media (orientation: portrait) {
+  html.phone #rotate {
+    display: flex;
   }
-  .btn-sm {
-    min-height: 44px;
-    padding: 6px 12px;
-    font-size: 14px;
-  }
-  .btn-big,
-  .panel-foot .btn,
-  .panel-foot .btn-big,
-  .modal-actions .btn {
-    min-height: 48px;
-    padding: 6px 16px;
-    font-size: 16px;
-  }
-  .btn-icon,
-  .price-box .btn-icon {
-    min-width: 46px;
-    min-height: 44px;
-  }
-  .stepper .btn {
-    min-width: 46px;
-    min-height: 44px;
-    font-size: 20px;
-  }
-  .stepper b {
-    min-width: 28px;
-  }
-  .link-btn {
-    min-height: 40px;
-    padding: 6px 10px;
-    font-size: 13px;
-  }
-  .toggle {
-    min-height: 48px;
-    padding: 6px 12px;
-  }
-  .loc {
-    min-height: 52px;
-    padding: 6px 10px;
-  }
-  .hv-btn {
-    min-height: 40px;
-    padding: 4px 10px;
-  }
-  .panel-toggle {
-    min-width: 44px;
-    height: 44px;
-    font-size: 18px;
-  }
-  .panel-toggle.reopen {
-    height: 48px;
-  }
-  .k-mixer-btn {
-    min-height: 48px;
-  }
-  .k-tools .btn {
-    min-height: 44px;
-    padding: 4px 10px;
-    font-size: 13px;
-  }
-  .k-foot .btn-big {
-    min-height: 48px;
-  }
-  .panel-foot,
-  .modal-actions {
-    gap: 8px;
-  }
-  /* the end-the-day button shows only the moon on phones: still a square for a finger */
-  .btn-sm {
-    min-width: 44px;
-  }
-  /* the stats card: as wide as the speed buttons under it (its title fits on one line), and short enough
-     that "Why?" is not cut off above them */
-  .hud-funnel {
-    width: 198px;
-    padding: 4px 8px 2px;
-  }
-  .hud-funnel .link-btn {
-    min-height: 34px;
-    margin-top: 2px;
-  }
-  /* the market: price and + / − on the same line as the goods, so two or three goods fit on the screen */
-  .good {
-    grid-template-columns: 34px 1fr auto auto;
-    grid-template-areas: 'ico info price step';
-    gap: 2px 10px;
-    padding: 6px 10px;
-    margin: 5px 0;
-  }
-  .good .price {
-    font-size: 14px;
-    line-height: 1.15;
-  }
+}
+/* the page is drawn at 60 % on phones: the browser must not enlarge the text by itself */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
