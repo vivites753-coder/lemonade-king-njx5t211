@@ -16,7 +16,7 @@ import { reportPanel } from './panels/report';
 import { shopPanel } from './panels/shop';
 import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
-import { esc } from './dom';
+import { esc, isPhone } from './dom';
 import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointShopModal, pointsModal, type PointsHooks } from './points';
 import { TipArrow, type WorldTarget } from './tipArrow';
@@ -367,8 +367,7 @@ export class UI implements UIApi {
   layout(): void {
     const p = this.g.phase;
     const w = window.innerWidth;
-    const h = window.innerHeight;
-    const compact = h < 460;
+    const compact = isPhone();
     // under the top bar: measured, because on phones it is big and on a narrow one it may take two rows
     const bar = document.querySelector<HTMLElement>('.hud-top');
     const barBottom = bar && !bar.classList.contains('hidden') ? Math.ceil(bar.getBoundingClientRect().bottom) : 0;

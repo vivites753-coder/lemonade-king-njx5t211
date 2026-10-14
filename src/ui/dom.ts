@@ -4,6 +4,14 @@ import { WEATHER } from '../data/weather';
 import { t } from '../i18n';
 export { fmtHour } from '../sim/lessons';
 
+/** A phone held sideways (the same rule as the phone blocks in styles.css): up to 460 px high, or a touch screen
+ * in landscape much wider than high (a browser zoom below 100 % or a small system font makes the page taller). */
+export const PHONE_MQ = '(max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9)';
+
+export function isPhone(): boolean {
+  return typeof matchMedia === 'function' ? matchMedia(PHONE_MQ).matches : window.innerHeight < 460;
+}
+
 export function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }
