@@ -699,6 +699,7 @@ export const en: Record<I18nKey, string> = {
   'points.status.rude': 'complaints',
   'points.status.sick': 'ill, closed',
   'points.status.empty': 'no seller',
+  'points.status.nomoney': 'no money for rent and wage',
   'points.issue.sick': '🤒 ill',
   'points.issue.late': '⏰ late',
   'points.issue.rude': '😠 complaints',
@@ -951,4 +952,5 @@ export const en: Record<I18nKey, string> = {
   'gl.payback.text': 'How long it takes a purchase to bring back the money put into it. A stand for 2000 coins that makes 100 coins of profit a day pays back in 20 days — after that it earns for you.',
   'gl.wholesale.term': 'Wholesale',
   'gl.wholesale.text': 'Buying in big batches. Each piece is cheaper, but you need more money at once, and goods can spoil if you do not sell them in time.',
+  'toast.standNoMoney': 'Not enough coins ({n}) for the rent and the wage: the stand at "{place}" is closed today.',
 };

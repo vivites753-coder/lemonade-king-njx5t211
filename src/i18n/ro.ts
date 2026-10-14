@@ -700,6 +700,7 @@ export const ro: Record<I18nKey, string> = {
   'points.status.rude': 'plângeri',
   'points.status.sick': 'bolnav, închis',
   'points.status.empty': 'fără vânzător',
+  'points.status.nomoney': 'nu au ajuns banii de chirie și salariu',
   'points.issue.sick': '🤒 bolnav',
   'points.issue.late': '⏰ întârziere',
   'points.issue.rude': '😠 plângeri',
@@ -952,4 +953,5 @@ export const ro: Record<I18nKey, string> = {
   'gl.payback.text': 'Cât timp îi trebuie unei cumpărături ca să aducă înapoi banii investiți. O tarabă de 2000 de bani care face 100 de bani profit pe zi se amortizează în 20 de zile — după aceea câștigă pentru tine.',
   'gl.wholesale.term': 'En-gros',
   'gl.wholesale.text': 'Cumpărare în cantități mari. Fiecare bucată e mai ieftină, dar ai nevoie de mai mulți bani deodată, iar marfa se poate strica dacă n-o vinzi la timp.',
+  'toast.standNoMoney': 'Nu ajung {n} bani pentru chirie și salariu: taraba de la „{place}” e închisă azi.',
 };

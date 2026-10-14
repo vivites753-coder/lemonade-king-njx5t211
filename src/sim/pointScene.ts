@@ -118,7 +118,7 @@ export class PointScene implements SceneSource {
   /** The stand works now: a seller is there, the stand is not closed today and the selling hours have begun. */
   open(): boolean {
     const p = this.point;
-    if (this.g.phase !== 'sell' || !p.seller || p.issue === 'sick') return false;
+    if (this.g.phase !== 'sell' || !p.seller || p.issue === 'sick' || p.today?.status === 'nomoney') return false;
     return this.g.D.hour >= (p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H);
   }
 

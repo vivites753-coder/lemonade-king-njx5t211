@@ -24,7 +24,7 @@ export interface Seller {
   hiredDay: number;
 }
 
-export type PointStatus = 'ok' | 'late' | 'rude' | 'sick' | 'empty';
+export type PointStatus = 'ok' | 'late' | 'rude' | 'sick' | 'empty' | 'nomoney';
 
 export interface PointDay {
   day: number;
@@ -57,6 +57,8 @@ export interface Point {
   away?: { seller: Seller; days: number } | null;
   /** Today's day of the stand, worked out when the selling starts (it is shown bit by bit while you watch). */
   today?: PointDay | null;
+  /** Rent and wage of today, paid in the morning when the stand opened (the evening books the rest). */
+  paid?: number;
 }
 
 /** A new stand comes fully set up: the table, the pitcher, a sign, an umbrella and a hand juicer. */
@@ -120,9 +122,11 @@ export function candidates(S: GameState, pointId: number): Seller[] {
   const rng = new RNG((S.seed ^ Math.imul(S.day, 7919) ^ Math.imul(pointId, 104729)) >>> 0);
   const out: Seller[] = [];
   const used = new Set<number>();
-  // the seller who is ill at home is not among them
-  const away = S.points.find((p) => p.id === pointId)?.away?.seller.nameId;
-  if (away) used.add(away);
+  // people who already work at a stand of the player's (or are ill at home) are not among them
+  for (const p of S.points) {
+    if (p.seller && p.id !== pointId) used.add(p.seller.nameId);
+    if (p.away) used.add(p.away.seller.nameId);
+  }
   for (let i = 0; i < 3; i++) {
     let nameId = rng.int(1, SELLER_NAMES);
     while (used.has(nameId)) nameId = (nameId % SELLER_NAMES) + 1;
@@ -195,13 +199,21 @@ export function simulatePoint(S: GameState, p: Point, weather: WeatherId, ev: Cr
 /** Evening count: a dishonest seller may take money from the till (a locked cash box makes it harder). */
 export function rollTheft(p: Point, d: PointDay, rng: RNG): number {
   const s = p.seller;
-  if (!s || d.revenue <= 0) return 0;
+  // what is in the till after the wholesaler is paid for the goods
+  const till = d.revenue - d.ingredients;
+  if (!s || till <= 0) return 0;
   const lock = pointUps(p).cash_lock ? POINTS.LOCK_THEFT : 1;
   if (!rng.chance((1 - s.honesty) * 0.5 * lock)) return 0;
-  const n = Math.max(1, Math.round(d.revenue * rng.range(0.25, 0.45)));
+  const n = Math.max(1, Math.round(till * rng.range(0.25, 0.45)));
   d.stolen = n;
   d.profit -= n;
   return n;
+}
+
+/** Rent and wage a stand needs for today (nothing when it is closed anyway). */
+export function pointFixedCosts(p: Point): number {
+  if (!p.seller || p.issue === 'sick') return 0;
+  return LOCATIONS[p.loc].rent + p.seller.wage;
 }
 
 /** Book a finished day into the stand's history. */

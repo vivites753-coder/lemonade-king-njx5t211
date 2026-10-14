@@ -6,6 +6,8 @@ import { LOCATION_IDS } from '../src/data/locations';
 import { UPGRADE_ORDER } from '../src/data/upgrades';
 import { WEATHER_IDS } from '../src/data/weather';
 import { GOOD_IDS } from '../src/data/goods';
+import { TRUCK_SKINS } from '../src/data/truck';
+import { POINT_UPGRADE_IDS } from '../src/sim/points';
 import { en } from '../src/i18n/en';
 import { ro } from '../src/i18n/ro';
 import { uk } from '../src/i18n/uk';
@@ -53,6 +55,10 @@ describe('translations', () => {
     for (const id of WEATHER_IDS) need.push(`weather.${id}`, `why.weather.${id}`);
     for (const id of GLOSSARY_IDS) need.push(`gl.${id}.term`, `gl.${id}.text`);
     for (const id of GOOD_IDS) need.push(`good.${id}`, `good.${id}.note`);
+    for (const id of POINT_UPGRADE_IDS) need.push(`ptup.${id}`);
+    for (const st of ['ok', 'late', 'rude', 'sick', 'empty', 'nomoney']) need.push(`points.status.${st}`);
+    for (const sk of TRUCK_SKINS) need.push(`truck.skin.${sk.id}`);
+    for (const id of ['ill', 'back', 'sick', 'late', 'rude', 'raise', 'stole', 'quit']) need.push(`card.staff.${id}.title`, `card.staff.${id}.text`, `card.staff.${id}.lemi`);
     for (const id of ['festival', 'sugarHike', 'cupsSoldOut', 'badLemons', 'thiefCaught', 'thiefStole', 'thiefEmpty', 'grandmaHelp'])
       need.push(`card.${id}.title`, `card.${id}.text`, `card.${id}.lemi`);
     for (const id of ['welcome', 'morning', 'location', 'market', 'cheap_lemons', 'prepare_cost', 'price', 'recipe', 'sell_start', 'first_sale', 'expensive', 'queue', 'rain', 'spoiled', 'thief', 'report', 'shop', 'school', 'taste_bad', 'reputation'])

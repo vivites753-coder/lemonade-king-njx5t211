@@ -209,9 +209,10 @@ export class Hud {
     let who: string;
     if (!s) who = `🤒 ${t(p.away ? 'points.closedIll' : 'points.noSeller')}`;
     else if (p.issue === 'sick') who = `🤒 ${t('points.closed')}`;
+    else if (p.today?.status === 'nomoney') who = `💸 ${t('points.status.nomoney')}`;
     else who = `👤 <b>${t(`staff.name${s.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(s.skill))}</span>`;
     let today = '';
-    if (sell && p.today && s && p.issue !== 'sick') {
+    if (sell && p.today && s && p.issue !== 'sick' && p.today.status !== 'nomoney') {
       const k = pointProgress(p, g.D.hour);
       today =
         k <= 0

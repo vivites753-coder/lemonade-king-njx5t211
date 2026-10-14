@@ -53,6 +53,7 @@ import {
   freePlaces,
   pointAt,
   pointsOpen,
+  pointFixedCosts,
   pointUps,
   POINT_START,
   POINT_UPGRADE_IDS,
@@ -272,6 +273,8 @@ export class Game {
     this.paused = false;
     this.speed = 1;
     this.cart = emptyCart();
+    // a loaded game starts at the player's own stand
+    this.viewPoint = null;
     this.phase = snap.phase === 'title' ? 'morning' : snap.phase;
     this.street.reset(true);
     // the new crowd used the RNG; rewind so the simulation continues exactly from the snapshot
@@ -862,6 +865,8 @@ export class Game {
   // ---------------------------------------------------------------- prepare
 
   private goPrepare(): void {
+    // a jug that was not poured goes back to the shelves
+    this.D.kitchen = emptyKitchen();
     this.setPhase('prepare');
     this.tip('prepare_cost');
     this.tip('price');
@@ -973,7 +978,7 @@ export class Game {
     this.speed = 1;
     this.refreshInterest();
     D.funnel.passed += this.street.markAllCounted();
-    for (const p of this.S.points) p.today = simulatePoint(this.S, p, D.weather, D.events, this.rng);
+    this.openStands();
     this.setPhase('sell');
     this.tip('sell_start');
     if (D.weather === 'rain') this.tip('rain');
@@ -1428,11 +1433,15 @@ export class Game {
     S.carryCups = carried;
     D.cupsReady = 0;
     applyWear(S, this.rng, D.weather, D.pitchersMade > 0, D.opened);
+    // a day without selling: the stands open now (they pay their rent and wages first)
+    if (S.points.some((p) => !p.today)) this.openStands();
+    const prepaid = S.points.reduce((n, p) => n + (p.paid ?? 0), 0);
     const points = this.eveningPoints();
     const pointsIncome = points.reduce((n, p) => n + p.revenue, 0);
     const pointsCosts = points.reduce((n, p) => n + p.ingredients + p.rent + p.wage + p.stolen, 0);
     const pointsProfit = pointsIncome - pointsCosts;
-    S.coins += pointsProfit;
+    // the rent and the wages were paid in the morning; the takings minus the goods (and a theft) come in now
+    S.coins += pointsProfit + prepaid;
     const income = D.sales + D.bonus + pointsIncome;
     const expenses = dayExpenses(D) + pointsCosts;
     const f = { ...D.funnel };
@@ -1845,12 +1854,32 @@ export class Game {
     });
   }
 
+  /**
+   * The stands open: each one pays its rent and its seller's wage from the coins first (like the player's own stand).
+   * A stand the player cannot pay for stays closed today. Then the day of every stand is known.
+   */
+  private openStands(): void {
+    for (const p of this.S.points) {
+      p.paid = 0;
+      const fixed = pointFixedCosts(p);
+      if (fixed > 0 && this.S.coins < fixed) {
+        p.today = { day: this.S.day, status: 'nomoney', sold: 0, revenue: 0, ingredients: 0, rent: 0, wage: 0, stolen: 0, profit: 0 };
+        this.toast('toast.standNoMoney', { place: `@loc.${p.loc}.name`, n: fixed }, 'warn');
+        continue;
+      }
+      this.S.coins -= fixed;
+      p.paid = fixed;
+      p.today = simulatePoint(this.S, p, this.D.weather, this.D.events, this.rng);
+    }
+  }
+
   /** Evening: every stand's day in numbers; a dishonest seller may take money from the till. */
   private eveningPoints(): PointReport[] {
     const out: PointReport[] = [];
     for (const p of this.S.points) {
       const d = p.today ?? simulatePoint(this.S, p, this.D.weather, this.D.events, this.rng);
       p.today = null;
+      p.paid = 0;
       p.issue = rollTheft(p, d, this.rng) > 0 ? 'stole' : null;
       recordDay(p, d);
       out.push({ ...d, id: p.id, loc: p.loc, nameId: p.seller?.nameId ?? null });
@@ -2030,6 +2059,7 @@ export class Game {
 
   /** Back to the main menu (the game stays saved at its last phase). */
   goTitle(): void {
+    this.viewPoint = null;
     this.phase = 'title';
     this.paused = false;
     this.servings = [null, null];

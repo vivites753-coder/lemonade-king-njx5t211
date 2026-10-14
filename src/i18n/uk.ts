@@ -698,6 +698,7 @@ export const uk = {
   'points.status.rude': 'скарги',
   'points.status.sick': 'хвороба, зачинено',
   'points.status.empty': 'без продавця',
+  'points.status.nomoney': 'не вистачило на оренду й зарплату',
   'points.issue.sick': '🤒 хворіє',
   'points.issue.late': '⏰ запізнюється',
   'points.issue.rude': '😠 скарги',
@@ -950,6 +951,7 @@ export const uk = {
   'gl.payback.text': 'За скільки часу покупка поверне вкладені в неї гроші. Точка за 2000 монет, яка приносить 100 монет прибутку на день, окупиться за 20 днів — а далі заробляє для тебе.',
   'gl.wholesale.term': 'Опт',
   'gl.wholesale.text': 'Купівля великими партіями. Кожна штука дешевша, але треба одразу більше грошей, а товар може зіпсуватися, якщо його не встигнеш продати.',
+  'toast.standNoMoney': 'Не вистачило {n} монет на оренду й зарплату: точка «{place}» сьогодні зачинена.',
 };
 
 export type I18nKey = keyof typeof uk;

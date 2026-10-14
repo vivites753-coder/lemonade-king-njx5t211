@@ -30,6 +30,12 @@ let cleanup: (() => void) | null = null;
 /** Stops a drag or a mixer hold that is still going (the kitchen closes). */
 let abortGesture: (() => void) | null = null;
 const BUSY_KEYS = ['busylemon', 'busywater', 'busysugar'];
+/**
+ * Ingredients on their way to the jug belong to the jug of the moment they were taken: "like last time", "start again",
+ * pouring or leaving the kitchen start a new jug, and what is still flying then is dropped (it must not land in the
+ * new jug).
+ */
+let jugGen = 0;
 
 function q<T extends HTMLElement = HTMLElement>(el: HTMLElement, sel: string): T {
   return el.querySelector(sel) as T;
@@ -147,23 +153,20 @@ function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): voi
   if (item === 'lemon') {
     const tx = b.x + b.w / 2 - sx;
     const ty = b.y + b.h * 0.3 - sy;
-    const anim = f.animate(
+    const LEMON_MS = 480;
+    f.animate(
       [
         { transform: 'translate(0,0) scale(1) rotate(0)' },
         { transform: `translate(${tx * 0.5}px,${Math.min(0, ty) - 70}px) scale(0.95) rotate(-90deg)`, offset: 0.5 },
         { transform: `translate(${tx}px,${ty}px) scale(0.6) rotate(-200deg)`, opacity: 0.9 },
       ],
-      { duration: 480, easing: 'cubic-bezier(.4,0,.8,.6)' },
+      { duration: LEMON_MS, easing: 'cubic-bezier(.4,0,.8,.6)', fill: 'forwards' },
     );
-    anim.onfinish = () => {
+    setTimeout(() => {
       f.remove();
       delete el.dataset[busyKey];
       apply();
-    };
-    anim.oncancel = () => {
-      f.remove();
-      delete el.dataset[busyKey];
-    };
+    }, LEMON_MS);
     return;
   }
   // bottle / sack: its centre goes above the jug mouth, a bit to the left, so that the neck points into the jug
@@ -186,11 +189,14 @@ function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): voi
   );
   setTimeout(() => pourStream(el, item as 'water' | 'sugar', DUR * 0.36), DUR * 0.5);
   setTimeout(apply, DUR * 0.62);
-  anim.onfinish = () => {
+  // the bottle goes back to its shelf (on a timer too: the animation of a hidden tab may never finish)
+  const done = () => {
     f.remove();
     delete el.dataset[busyKey];
   };
-  anim.oncancel = anim.onfinish;
+  anim.onfinish = done;
+  anim.oncancel = done;
+  setTimeout(done, DUR + 50);
 }
 
 function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
@@ -205,7 +211,10 @@ function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
   }
   // a bottle or a sack is already on its way
   if (el.dataset[`busy${item}`]) return;
+  const gen = jugGen;
   addAnimated(el, item, () => {
+    // the jug was started again meanwhile: this one does not go in
+    if (gen !== jugGen) return;
     const r = g.kitchenAdd(item);
     if (r === 'full') ui.toast(t('kitchen.full'), 'warn');
     else if (r === 'noStock') ui.toast(t('kitchen.noStock'), 'warn');
@@ -482,6 +491,7 @@ export const kitchenPanel: Panel = {
       const b = (e.target as HTMLElement).closest<HTMLElement>('[data-kact]');
       if (!b || (b as HTMLButtonElement).disabled) return;
       const act = b.dataset.kact;
+      if (act === 'repeat' || act === 'reset' || act === 'pour' || act === 'stand' || act === 'market' || act === 'rest') jugGen++;
       if (act === 'repeat') g.kitchenRepeat();
       if (act === 'reset') g.kitchenReset();
       if (act === 'pour' && g.kitchenPour()) {
@@ -495,6 +505,7 @@ export const kitchenPanel: Panel = {
     el.addEventListener('pointerdown', onDown);
     el.addEventListener('click', onClick);
     cleanup = () => {
+      jugGen++;
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('click', onClick);
       cancelAnimationFrame(holdRaf);
