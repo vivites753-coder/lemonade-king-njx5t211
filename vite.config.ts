@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => ({
   // a new id for every build: published updates start with clean saves (see wipeOnUpdate)
   define: {
     __BUILD_ID__: JSON.stringify(process.env.GITHUB_SHA ?? `local-${Date.now()}`),
+    // when this build was made (shown on the title screen, so the player can see which version runs)
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
   server: { host: '127.0.0.1', port: 5173 },
   build: {

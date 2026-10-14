@@ -58,13 +58,31 @@ async function checkForUpdate(): Promise<void> {
   try {
     const html = await (await fetch(`./index.html?v=${Date.now()}`, { cache: 'no-store' })).text();
     const latest = html.match(/assets\/index-[\w-]+\.js/)?.[0];
-    if (latest && !mine.endsWith(latest)) ui.showUpdate();
+    if (!latest || mine.endsWith(latest)) return;
+    // on the title screen nothing is lost: load the new version at once (only once per version, so a page the
+    // browser still keeps in its cache cannot make it reload again and again)
+    let tried = '';
+    try {
+      tried = sessionStorage.getItem('lk-update') ?? '';
+    } catch {
+      // no session storage: show the bar
+    }
+    if (game.phase === 'title' && tried !== latest) {
+      try {
+        sessionStorage.setItem('lk-update', latest);
+      } catch {
+        // ignore
+      }
+      location.replace(`${location.pathname}?v=${encodeURIComponent(latest)}`);
+      return;
+    }
+    ui.showUpdate();
   } catch {
     // offline: try again later
   }
 }
 if (import.meta.env.PROD) {
-  setTimeout(() => void checkForUpdate(), 4000);
+  setTimeout(() => void checkForUpdate(), 1500);
   setInterval(() => void checkForUpdate(), 10 * 60 * 1000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void checkForUpdate();

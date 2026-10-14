@@ -962,4 +962,5 @@ export const ro: Record<I18nKey, string> = {
   'points.aloneToday': 'azi lucrează doar al doilea lucrător',
   'tip.hire2': 'Acum la tarabă lucrează doi! Pot servi mai mulți oameni, iar dacă vânzătorul e bolnav sau întârzie, al doilea deschide singur taraba. Dar acum plătești două salarii — verifică dacă se amortizează.',
   'points.hire2Wide': 'Un al doilea lucrător poate fi angajat când taraba are o tejghea mare sau o rulotă.',
+  'title.version': 'Versiunea din {v}',
 };

@@ -6,6 +6,14 @@ import type { Panel } from './types';
 
 const AVATAR_ICON: Record<Avatar, string> = { boy: '👦', girl: '👧' };
 
+/** The version of the game: the day and time of the build (in the player's time zone). */
+function buildLabel(): string {
+  const d = new Date(__BUILD_TIME__);
+  if (Number.isNaN(d.getTime())) return '';
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `${two(d.getDate())}.${two(d.getMonth() + 1)} ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
+
 export const titlePanel: Panel = {
   id: 'title',
   dock: false,
@@ -63,6 +71,7 @@ export const titlePanel: Panel = {
         ${LANGS.map((l) => `<button class="btn btn-sm ${lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
       </div>
       ${profiles.length ? `<p class="note">🔒 ${t('prof.local')}</p>` : ''}
+      <p class="version-note">${t('title.version', { v: buildLabel() })}</p>
     </div>`;
   },
   act(_g, ui, act, arg) {

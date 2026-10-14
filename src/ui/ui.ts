@@ -209,7 +209,8 @@ export class UI implements UIApi {
     bar.id = 'update-bar';
     bar.className = 'update-bar';
     bar.innerHTML = `🔄 ${esc(t('update.available'))} <b>${esc(t('update.reload'))}</b>`;
-    bar.addEventListener('click', () => location.reload());
+    // a new address, so that the browser does not give back the page it keeps in its cache
+    bar.addEventListener('click', () => location.replace(`${location.pathname}?v=${Date.now()}`));
     document.getElementById('app')!.appendChild(bar);
   }
 

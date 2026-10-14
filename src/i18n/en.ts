@@ -961,4 +961,5 @@ export const en: Record<I18nKey, string> = {
   'points.aloneToday': 'only the second worker works today',
   'tip.hire2': 'Now two work at the stand! They can serve more people, and if the seller is ill or late, the second one opens the stand alone. But now you pay two wages — check that it pays off.',
   'points.hire2Wide': 'A second worker can be hired when the stand has a big stand or a truck.',
+  'title.version': 'Version of {v}',
 };

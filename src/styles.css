@@ -3781,3 +3781,10 @@ body.reduce-motion * {
     height: 30px;
   }
 }
+
+.version-note {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
