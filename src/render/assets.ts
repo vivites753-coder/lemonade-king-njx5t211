@@ -27,6 +27,9 @@ export interface SpriteMeta {
   /** Extra shift of the picture in world px (the layers of the stand all share one anchor; each sits at its own spot). */
   dx?: number;
   dy?: number;
+  /** The shadow: its middle moved up (world px; for a square foot the middle is above the lowest point of the
+   * picture) and its width as a share of the picture's width. */
+  shadow?: { dy?: number; share?: number };
 }
 
 const PREFIX_DEFAULTS: [string, SpriteMeta][] = [
@@ -161,11 +164,12 @@ export function spriteShadow(ctx: Ctx, id: string, sx: number, sy: number, s = 1
   const m = metaFor(id);
   const h = m.h * s;
   const w = (h * img.naturalWidth) / img.naturalHeight;
-  const [share, alpha] = shadowLook(id);
+  const [look, alpha] = shadowLook(id);
+  const share = m.shadow?.share ?? look;
   const rx = Math.max(7 * s, w * share);
   const ry = rx * 0.42;
   const cx = sx + (m.dx ?? 0) * s + rx * 0.22;
-  const cy = sy + (m.dy ?? 0) * s + ry * 0.18;
+  const cy = sy + ((m.dy ?? 0) + (m.shadow?.dy ?? 0)) * s + ry * 0.18;
   ctx.fillStyle = `rgba(30,40,20,${alpha})`;
   ctx.beginPath();
   ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);

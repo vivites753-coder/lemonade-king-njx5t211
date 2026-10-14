@@ -107,7 +107,7 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   wall_station: { h: 311, anchor: [0.5, 0.383] },
   bld_stage: { h: 160, anchor: [0.5, 0.69] },
   prop_vending: { h: 70, anchor: [0.5, 0.85] },
-  prop_column: { h: 88, anchor: [0.5, 0.95] },
+  prop_column: { h: 88, anchor: [0.5, 0.95], shadow: { dy: -9, share: 0.5 } },
   prop_luggage: { h: 44, anchor: [0.5, 0.8] },
   prop_sign_platform: { h: 64, anchor: [0.5, 0.95] },
   prop_bin: { h: 24, anchor: [0.5, 0.9] },

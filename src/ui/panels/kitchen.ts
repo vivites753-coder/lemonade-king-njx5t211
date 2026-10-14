@@ -329,6 +329,7 @@ function startHold(g: Game, el: HTMLElement): void {
     return;
   }
   const needle = q(el, '.k-needle');
+  needle.classList.add('on');
   let p = 0;
   let last = performance.now();
   let done = false;
@@ -344,6 +345,7 @@ function startHold(g: Game, el: HTMLElement): void {
     done = true;
     if (abortGesture === abort) abortGesture = null;
     cancelAnimationFrame(holdRaf);
+    needle.classList.remove('on');
     jug.classList.remove('swirl');
     q(el, '.k-mixer-art').classList.remove('buzz');
     mixerFly(el, false);

@@ -469,8 +469,18 @@ export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
       const [tx, ty] = P(TRUCK_STOOLS.x, TRUCK_STOOLS.y - 0.32 + i * 0.32);
       spriteShadow(ctx, 'stand_truck_stool_a', tx, ty);
     }
-    return;
+  } else {
+    drawTableShadows(ctx, g, sx, sy, wide, outdoor);
   }
+  // the parts that stand apart (next to the truck too): where drawStandPart draws them
+  if (up.tv) shifted(ctx, isTruck, 0.8, 0, () => spriteShadow(ctx, 'stand_tv', sx, sy));
+  if (up.sign) shifted(ctx, wide, isTruck ? -2.3 : -1.9, isTruck ? 0.5 : -0.2, () => spriteShadow(ctx, 'stand_sign', sx, sy));
+  if (up.mascot) shifted(ctx, wide, -0.3, 1.0, () => spriteShadow(ctx, 'stand_mascot', sx, sy));
+}
+
+/** The shadows of the table stand and what stands on and around it. */
+function drawTableShadows(ctx: Ctx, g: SceneSource, sx: number, sy: number, wide: boolean, outdoor: boolean): void {
+  const up = g.S.upgrades;
   if (up.tent && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_tent', sx, sy, wide ? 1.22 : 1));
   else if (up.umbrella && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_umbrella', sx, sy));
   if (wide) spriteShadow(ctx, 'stand_table_blue', sx, sy);
@@ -479,9 +489,6 @@ export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
   else if (up.bike) spriteShadow(ctx, 'stand_bike', sx, sy);
   if (up.speaker) spriteShadow(ctx, 'stand_speaker', sx, sy);
   if (up.cooler) spriteShadow(ctx, 'stand_cooler', sx, sy);
-  if (up.tv) spriteShadow(ctx, 'stand_tv', sx, sy);
-  if (up.sign) shifted(ctx, wide, -1.9, -0.2, () => spriteShadow(ctx, 'stand_sign', sx, sy));
-  if (up.mascot) shifted(ctx, wide, -0.3, 1.0, () => spriteShadow(ctx, 'stand_mascot', sx, sy));
 }
 
 /** Draws one side part of the stand (see standSideParts). */
