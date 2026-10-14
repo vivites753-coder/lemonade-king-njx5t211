@@ -56,6 +56,8 @@ body.dyslexia {
   width: 100%;
   height: 100%;
   display: block;
+  /* two fingers zoom the field (src/ui/ui.ts), not the page */
+  touch-action: none;
 }
 
 .hidden {
@@ -3635,6 +3637,26 @@ body.reduce-motion * {
 .good .ico .ico-img {
   height: 30px;
   vertical-align: middle;
+}
+
+/* ---------- while selling the buttons stand where they are on phones, on every screen ----------
+ * the pour button in the bottom right corner, the speed buttons over it (the phone blocks below make them bigger) */
+.hud-bottom .serve-btn {
+  position: fixed;
+  right: calc(14px + var(--safe-r));
+  bottom: calc(12px + var(--safe-b));
+  z-index: 12;
+}
+.hud-bottom .hb-right {
+  margin-right: 112px;
+}
+.hud-top .seg {
+  position: fixed;
+  right: calc(14px + var(--safe-r));
+  bottom: calc(128px + var(--safe-b));
+}
+.hud-funnel {
+  max-height: calc(100% - var(--hud-h, 58px) - 200px);
 }
 
 /* ---------- phones: the top bar half as big again (bigger buttons for fingers) ---------- */

@@ -37,6 +37,8 @@ const PANELS: Partial<Record<Phase, Panel>> = {
 
 /** The player name that starts the test game: day 2, reputation 5, 5000 coins, no tips. */
 const TEST_PROFILE_NAME = 'vivites753';
+/** A finger's tap on the field waits this long for a second finger (then it is a zoom, not a tap). */
+const TAP_WAIT_MS = 90;
 
 export class UI implements UIApi {
   newSel: { avatar: Avatar; mode: AgeMode; name: string } = { avatar: 'boy', mode: 'pro', name: '' };
@@ -110,7 +112,7 @@ export class UI implements UIApi {
     if (bar && typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.layout()).observe(bar);
 
     const canvas = document.getElementById('scene')!;
-    canvas.addEventListener('pointerdown', (e) => this.onTap(e.clientX, e.clientY));
+    this.listenCanvas(canvas);
     window.addEventListener('keydown', (e) => this.onKey(e));
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && g.phase === 'sell') this.userPaused = true;
@@ -481,6 +483,48 @@ export class UI implements UIApi {
         this.openSettings();
         break;
     }
+  }
+
+  /** One finger (or the mouse) taps the field; two fingers zoom it and move it. */
+  private listenCanvas(canvas: HTMLElement): void {
+    const fingers = new Map<number, { x: number; y: number }>();
+    const pinch = () => {
+      const [a, b] = [...fingers.values()];
+      return { mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
+    };
+    // (again) from the fingers that are down now
+    const startPinch = () => {
+      if (fingers.size < 2 || this.g.phase === 'title') return this.r.pinchEnd();
+      const p = pinch();
+      this.r.pinchStart(p.mx, p.my, p.d);
+    };
+    // a finger's tap waits a moment: when a second finger comes, it was the start of a zoom
+    let pendingTap = 0;
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse') return this.onTap(e.clientX, e.clientY);
+      fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (fingers.size > 1) {
+        clearTimeout(pendingTap);
+        return startPinch();
+      }
+      const { clientX: x, clientY: y } = e;
+      pendingTap = window.setTimeout(() => this.onTap(x, y), TAP_WAIT_MS);
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      const f = fingers.get(e.pointerId);
+      if (!f) return;
+      f.x = e.clientX;
+      f.y = e.clientY;
+      if (fingers.size >= 2) {
+        const p = pinch();
+        this.r.pinchMove(p.mx, p.my, p.d);
+      }
+    });
+    const up = (e: PointerEvent) => {
+      if (fingers.delete(e.pointerId)) startPinch();
+    };
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', up);
   }
 
   private onTap(x: number, y: number): void {

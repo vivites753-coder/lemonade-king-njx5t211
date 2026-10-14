@@ -25,9 +25,12 @@ import './proc/buildings';
 /** World-pixel area the camera keeps in view (the compact one crops building tops on phones). */
 const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
 const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
-/** On phones the field is drawn this much bigger than "everything fits", and bigger still while selling. */
-const PHONE_ZOOM = 1.4 * 1.4 * 0.6;
+/** On phones the field is drawn this much bigger than "everything fits", and bigger still while selling
+ * (the user tuned it in steps: 1.4, then 40 % bigger, then 40 % and 15 % smaller). */
+const PHONE_ZOOM = 1.4 * 1.4 * 0.6 * 0.85;
 const PHONE_SELL_ZOOM = 1.5;
+/** Two fingers zoom the field between "everything fits" and this many times that. */
+const PINCH_MAX = 4;
 /** The stand in world pixels (the phone camera leans towards it). */
 const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
 
@@ -76,6 +79,10 @@ export class Renderer {
   compact = false;
   private cam = { s: 1, ox: 0, oy: 0 };
   private camReady = false;
+  /** The player's own zoom with two fingers, on top of the camera: screen = (camera's screen) × z + (x, y). */
+  private user = { z: 1, x: 0, y: 0 };
+  /** While two fingers are down: where they started and the camera then. */
+  private pinch0: { mx: number; my: number; d: number; s: number; ox: number; oy: number } | null = null;
   private ground: { loc: LocationId; canvas: HTMLCanvasElement } | null = null;
   private water: [number, number][] = [];
   private floats: Float[] = [];
@@ -119,7 +126,47 @@ export class Renderer {
     this.canvas.height = Math.round(this.h * this.dpr);
   }
 
+  /** The camera: the game's own (baseCam) with the player's two-finger zoom on top. */
   private targetCam(): { s: number; ox: number; oy: number } {
+    const b = this.baseCam();
+    const u = this.user;
+    // the title screen keeps its own picture
+    if (this.game.phase === 'title') return b;
+    return { s: b.s * u.z, ox: b.ox * u.z + u.x, oy: b.oy * u.z + u.y };
+  }
+
+  /** Two fingers touched the field: the middle between them and the distance (CSS px). */
+  pinchStart(mx: number, my: number, d: number): void {
+    this.pinch0 = { mx, my, d: Math.max(10, d), ...this.cam };
+  }
+
+  /** The fingers moved: the spot that was under them stays under them, bigger or smaller with their distance. */
+  pinchMove(mx: number, my: number, d: number): void {
+    const p = this.pinch0;
+    if (!p) return;
+    const b = this.baseCam();
+    const s = Math.max(b.fit, Math.min(b.fit * PINCH_MAX, (p.s * Math.max(10, d)) / p.d));
+    const k = s / p.s;
+    let ox = mx - (p.mx - p.ox) * k;
+    let oy = my - (p.my - p.oy) * k;
+    // the middle of the screen stays over the island
+    const V = this.compact ? VIEW_COMPACT : VIEW_FULL;
+    const cx = Math.max(V.minX, Math.min(V.maxX, (this.w / 2 - ox) / s));
+    const cy = Math.max(V.minY, Math.min(V.maxY, (this.h / 2 - oy) / s));
+    ox = this.w / 2 - cx * s;
+    oy = this.h / 2 - cy * s;
+    const z = s / b.s;
+    this.user = { z, x: ox - b.ox * z, y: oy - b.oy * z };
+    // the picture follows the fingers at once
+    this.cam = { s, ox, oy };
+  }
+
+  pinchEnd(): void {
+    this.pinch0 = null;
+  }
+
+  /** The game's camera; fit: the scale at which the whole island fits. */
+  private baseCam(): { s: number; ox: number; oy: number; fit: number } {
     const i = this.insets;
     const VIEW = this.compact ? VIEW_COMPACT : VIEW_FULL;
     const availW = Math.max(100, this.w - i.left - i.right - 12);
@@ -132,6 +179,7 @@ export class Renderer {
         s: fit,
         ox: i.left + 6 + availW / 2 - ((VIEW.minX + VIEW.maxX) / 2) * fit,
         oy: i.top + 4 + (availH - vh * fit) / 2 - VIEW.minY * fit,
+        fit,
       };
     }
     // phones: the playing field is shown 40 % bigger, centred between the middle of the island and the stand
@@ -144,7 +192,7 @@ export class Renderer {
     const k = selling ? 0.62 : 0.5;
     const cx = (VIEW.minX + VIEW.maxX) / 2 + (STAND_PX[0] - (VIEW.minX + VIEW.maxX) / 2) * k;
     const cy = (VIEW.minY + VIEW.maxY) / 2 + (STAND_PX[1] - (VIEW.minY + VIEW.maxY) / 2) * k;
-    return { s, ox: i.left + 6 + availW / 2 - cx * s, oy: i.top + 4 + fitH / 2 - cy * s };
+    return { s, ox: i.left + 6 + availW / 2 - cx * s, oy: i.top + 4 + fitH / 2 - cy * s, fit };
   }
 
   /** Tile coordinates → CSS pixels. */
@@ -208,7 +256,9 @@ export class Renderer {
     if (cw > 0 && ch > 0 && (Math.abs(cw - this.w) > 0.5 || Math.abs(ch - this.h) > 0.5)) this.resize();
 
     const target = this.targetCam();
-    if (!this.camReady || Math.abs(target.s / this.cam.s - 1) > 0.35) {
+    if (this.pinch0) {
+      // two fingers move the picture themselves (pinchMove)
+    } else if (!this.camReady || Math.abs(target.s / this.cam.s - 1) > 0.35) {
       // first frame or a big jump: snap instead of a long zoom animation
       this.cam = target;
       this.camReady = true;
