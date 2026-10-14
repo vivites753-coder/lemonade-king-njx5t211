@@ -560,6 +560,7 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
     // another stand of the player's: its hired seller works alone (or nobody, when it is closed)
     if (g.seller !== undefined) {
       if (g.seller) workers.push({ kind: 'helper', slot: 0, serving: pouring(0), girl: g.seller.girl });
+      if (g.helper2) workers.push({ kind: 'helper', slot: 1, serving: pouring(1), girl: g.helper2.girl });
     } else if (helpers >= 2) {
       workers.push({ kind: 'helper', slot: 0, serving: pouring(0), girl: !girl });
       workers.push({ kind: 'helper', slot: 1, serving: pouring(1), girl });
@@ -579,9 +580,15 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
     }
     const people: { id: string; kind: 'player' | 'helper'; x: number; y: number; serving: boolean; juicing: boolean }[] = [];
     if (g.seller !== undefined) {
-      // another stand of the player's: its hired seller stands where the player would (nobody when it is closed)
-      const spot = wide ? SPOTS.wide.c0 : SPOTS.single.player;
+      // another stand of the player's: its hired seller stands where the player would (nobody when it is closed),
+      // a second worker beside them (at the second counter of a wide stand)
+      const two = !!g.helper2;
+      const spot = wide ? SPOTS.wide.c0 : two ? [SPOTS.single.playerWithHelper[0], SPOTS.single.player[1]] : SPOTS.single.player;
       if (g.seller) people.push({ id: `char_helper_${g.seller.girl ? 'girl' : 'boy'}`, kind: 'helper', x: spot[0], y: spot[1], serving: pouring(0), juicing: false });
+      if (g.helper2) {
+        const s2 = wide ? SPOTS.wide.c1 : SPOTS.single.helper;
+        people.push({ id: `char_helper_${g.helper2.girl ? 'girl' : 'boy'}`, kind: 'helper', x: s2[0], y: s2[1], serving: pouring(1), juicing: false });
+      }
     } else if (!wide) {
       if (helpers > 0) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
       people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: (helpers > 0 ? SPOTS.single.playerWithHelper : SPOTS.single.player)[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });

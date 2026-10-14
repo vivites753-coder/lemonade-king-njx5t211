@@ -5,12 +5,13 @@ import { POINTS } from '../data/staff';
 import { UPGRADES } from '../data/upgrades';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { freePlaces, isGirl, payback, pointCapacity, pointUps, POINT_UPGRADE_IDS, skillStars, type Point, type Seller } from '../sim/points';
+import { freePlaces, isGirl, payback, pointCapacity, pointHasRoomFor2, pointUps, POINT_UPGRADE_IDS, skillStars, type Point, type Seller } from '../sim/points';
 import { coin, ico, signedCoin } from './dom';
 import type { ModalSpec } from './overlays';
 
 export interface PointsHooks {
-  hire(pointId: number): void;
+  /** The list of people who want the job: as the seller, or as the second worker. */
+  hire(pointId: number, role?: 'seller' | 'helper'): void;
   points(): void;
   /** The upgrades of one stand. */
   shop(pointId: number): void;
@@ -85,11 +86,27 @@ function pointCard(g: Game, p: Point): string {
         <div class="kv"><span><b>${t('report.profit')}</b></span><b>${signedCoin(d.profit)}</b></div>
       </div>`
     : `<small class="muted">${t('points.noDays')}</small>`;
+  // the second worker: their row, or the offer to hire one (when the stand has a seller)
+  const h = p.helper;
+  const helper = h
+    ? `<div class="pt-seller pt-helper">
+        <span class="pt-face">${face(h)}</span>
+        <span class="grow"><b>${t(`staff.name${h.nameId}`)}</b> ${skill(h)}
+          <small>👥 ${t('points.helper2')} · ${t('points.wage', { n: h.wage })} · ${h.refs ? `✅ ${t('points.refs')}` : `❓ ${t('points.noRefs')}`}</small></span>
+        <button class="btn btn-sm btn-r" data-act="fire2:${p.id}" ${manage ? '' : 'disabled'}>${t('staff.act.fire')}</button>
+      </div>`
+    : !(s || p.away)
+      ? ''
+      : pointHasRoomFor2(p)
+        ? `<div class="pt-hire2"><button class="btn btn-sm" data-act="hire2:${p.id}" ${manage ? '' : 'disabled'}>👥 ${t('points.hire2')}</button>
+        <small class="muted">${t('points.hire2Note')}</small></div>`
+        : `<div class="pt-hire2"><small class="muted">👥 ${t('points.hire2Wide')}</small></div>`;
   const ups = POINT_UPGRADE_IDS.filter((id) => pointUps(p)[id]);
   return `<div class="pt-card">
     <div class="pt-head"><span class="pt-ico">${LOCATIONS[p.loc].icon}</span><b class="grow">${t(`loc.${p.loc}.name`)}</b>${today}</div>
     ${away}
     ${seller}
+    ${helper}
     <div class="pt-ups" title="${t('points.equipment')}">${ups.map((id) => `<span class="pt-up">${ico(`up_${id}`, UPGRADES[id].icon)}</span>`).join('')}</div>
     <div class="row pt-btns">
       <button class="btn btn-sm btn-b" data-act="view:${p.id}">👀 ${t('points.look')}</button>
@@ -162,6 +179,14 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
       if (act === 'hire') {
         queueMicrotask(() => hooks.hire(id));
         return true;
+      }
+      if (act === 'hire2') {
+        queueMicrotask(() => hooks.hire(id, 'helper'));
+        return true;
+      }
+      if (act === 'fire2') {
+        const h = g.pointById(id)?.helper;
+        if (h) hooks.confirm(t('points.fireConfirm', { name: t(`staff.name${h.nameId}`) }), () => g.fireHelper(id));
       }
       if (act === 'view') {
         hooks.view(id);
@@ -240,15 +265,19 @@ export function pointShopModal(g: Game, pointId: number, hooks: PointsHooks): Mo
   };
 }
 
-export function hireModal(g: Game, pointId: number, hooks: PointsHooks): ModalSpec {
+export function hireModal(g: Game, pointId: number, hooks: PointsHooks, role: 'seller' | 'helper' = 'seller'): ModalSpec {
   return {
     wide: true,
     render: () => {
       const p = g.pointById(pointId);
       const list = g.candidates(pointId);
-      const standin = !!p?.away;
-      return `<h2>👤 ${t(standin ? 'points.standinTitle' : 'points.hireTitle', { place: p ? t(`loc.${p.loc}.name`) : '' })}</h2>
-        <p class="note">💡 ${t(standin ? 'points.standinTip' : 'points.hireTip', { name: p?.away ? t(`staff.name${p.away.seller.nameId}`) : '' })}</p>
+      const second = role === 'helper';
+      const standin = !second && !!p?.away;
+      const place = p ? t(`loc.${p.loc}.name`) : '';
+      const title = second ? t('points.hire2Title', { place }) : t(standin ? 'points.standinTitle' : 'points.hireTitle', { place });
+      const tip = second ? t('points.hire2Tip') : t(standin ? 'points.standinTip' : 'points.hireTip', { name: p?.away ? t(`staff.name${p.away.seller.nameId}`) : '' });
+      return `<h2>${second ? '👥' : '👤'} ${title}</h2>
+        <p class="note">💡 ${tip}</p>
         ${list
           .map(
             (s, i) => `<div class="pt-seller pt-cand">
@@ -262,7 +291,7 @@ export function hireModal(g: Game, pointId: number, hooks: PointsHooks): ModalSp
         <div class="modal-actions"><button class="btn" data-act="back">${t('points.later')}</button></div>`;
     },
     act: (act, arg) => {
-      if (act === 'take' && g.hireSeller(pointId, Number(arg))) {
+      if (act === 'take' && g.hireSeller(pointId, Number(arg), role)) {
         queueMicrotask(() => hooks.points());
         return true;
       }

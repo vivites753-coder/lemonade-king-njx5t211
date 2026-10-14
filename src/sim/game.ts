@@ -54,6 +54,7 @@ import {
   pointAt,
   pointsOpen,
   pointFixedCosts,
+  pointHasRoomFor2,
   pointUps,
   POINT_START,
   POINT_UPGRADE_IDS,
@@ -1717,6 +1718,7 @@ export class Game {
       upgrades: { ...POINT_START },
       invested: POINTS.COST,
       away: null,
+      helper: null,
     };
     this.S.points.push(p);
     this.sfx('buy');
@@ -1785,15 +1787,33 @@ export class Game {
     return candidates(this.S, pointId);
   }
 
-  hireSeller(pointId: number, index: number): boolean {
+  /** Hire one of today's candidates as the seller of a stand, or as its second worker (`helper`). */
+  hireSeller(pointId: number, index: number, role: 'seller' | 'helper' = 'seller'): boolean {
     const p = this.pointById(pointId);
-    if (!p || p.seller || !this.canManageStaff()) return false;
+    if (!p || !this.canManageStaff()) return false;
+    if (role === 'seller' ? p.seller : p.helper) return false;
+    // a second worker needs a counter of their own (the big stand or the truck)
+    if (role === 'helper' && !pointHasRoomFor2(p)) return false;
     const c = candidates(this.S, pointId)[index];
     if (!c) return false;
-    p.seller = c;
-    p.issue = null;
+    if (role === 'helper') p.helper = c;
+    else {
+      p.seller = c;
+      p.issue = null;
+    }
     this.sfx('pop');
-    this.tip('hire');
+    this.tip(role === 'helper' ? 'hire2' : 'hire');
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  fireHelper(pointId: number): boolean {
+    const p = this.pointById(pointId);
+    if (!p || !p.helper || !this.canManageStaff()) return false;
+    this.toast('toast.fired', { name: `@staff.name${p.helper.nameId}` });
+    p.helper = null;
+    this.sfx('click');
     this.save();
     this.changed();
     return true;

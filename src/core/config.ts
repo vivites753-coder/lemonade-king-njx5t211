@@ -39,6 +39,10 @@ export const CONFIG = {
   /** A day's crowd at one place is this many times the usual: from half to a bit more than usual. */
   CROWD_DAY_MIN: 0.5,
   CROWD_DAY_MAX: 1.4,
+  /** A new player: more people walk past the yard on the first days, then the bonus fades a little every day. */
+  NEWBIE_YARD_BONUS: 0.2,
+  NEWBIE_DAYS: 5,
+  NEWBIE_FADE: 0.04,
 
   /** Attention radius in tiles. */
   BASE_RADIUS: 2.6,

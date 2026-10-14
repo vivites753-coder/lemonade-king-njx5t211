@@ -216,3 +216,37 @@ describe('stand goods', () => {
     expect(pointCupCost(p)).toBeCloseTo((3 * u.lemons + 2 * u.water + 2 * u.sugar + 10 * u.cups) / 10, 9);
   });
 });
+
+describe('a second worker at a stand', () => {
+  it('only with a big stand or a truck; serves a queue of their own and keeps the stand open alone', async () => {
+    const { pointCapacity, pointFixedCosts } = await import('../src/sim/points');
+    const g = evening(31);
+    const p = g.openPoint('park')!;
+    g.hireSeller(p.id, 0);
+    // a small table: no room for a second worker
+    expect(g.hireSeller(p.id, 1, 'helper')).toBe(false);
+    expect(p.helper).toBeNull();
+    g.buyPointUpgrade(p.id, 'big_stand');
+    const one = pointCapacity(p);
+    const fixedOne = pointFixedCosts(p);
+    expect(g.hireSeller(p.id, 1, 'helper')).toBe(true);
+    const h = p.helper!;
+    expect(h.nameId).not.toBe(p.seller!.nameId);
+    expect(pointCapacity(p)).toBeGreaterThan(one * 1.5);
+    expect(pointFixedCosts(p)).toBe(fixedOne + h.wage);
+    // the people who work there are not offered again
+    expect(g.candidates(p.id).some((c) => c.nameId === h.nameId || c.nameId === p.seller!.nameId)).toBe(false);
+    // the seller is ill today: the second worker runs the stand alone
+    p.issue = 'sick';
+    const d = simulatePoint(g.S, p, 'sunny', NO_EVENTS, new RNG(2));
+    expect(d.status).toBe('ok');
+    expect(d.sold).toBeGreaterThan(0);
+    expect(d.wage).toBe(h.wage);
+    // a late seller: the second worker opens on time
+    p.issue = 'late';
+    expect(simulatePoint(g.S, p, 'sunny', NO_EVENTS, new RNG(2)).status).toBe('ok');
+    p.issue = null;
+    expect(g.fireHelper(p.id)).toBe(true);
+    expect(p.helper).toBeNull();
+  });
+});

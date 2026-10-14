@@ -52,6 +52,8 @@ export interface Point {
   total: number;
   /** The equipment of this stand: what came with it and what was bought for it later. */
   upgrades?: Owned;
+  /** A second worker (helps the seller, has a queue of their own at a wide counter, keeps the stand open alone). */
+  helper?: Seller | null;
   /** Coins put into this stand (the stand and its upgrades): the payback is counted against this. */
   invested?: number;
   /** The own seller is ill at home for this many more mornings; a stand-in may work meanwhile. */
@@ -125,7 +127,8 @@ export function candidates(S: GameState, pointId: number): Seller[] {
   const used = new Set<number>();
   // people who already work at a stand of the player's (or are ill at home) are not among them
   for (const p of S.points) {
-    if (p.seller && p.id !== pointId) used.add(p.seller.nameId);
+    if (p.seller) used.add(p.seller.nameId);
+    if (p.helper) used.add(p.helper.nameId);
     if (p.away) used.add(p.away.seller.nameId);
   }
   for (let i = 0; i < 3; i++) {
@@ -153,13 +156,33 @@ export function rollMorningIssue(S: GameState, p: Point, rng: RNG): WorkerIssue 
   return null;
 }
 
-/** Cups a seller can pour in a day: a wide counter and a dispenser let them pour more. */
-export function pointCapacity(p: Point): number {
-  const s = p.seller;
-  if (!s) return 0;
+/** A second worker needs a counter of their own: the big stand or the truck. */
+export function pointHasRoomFor2(p: Point): boolean {
   const up = pointUps(p);
-  let cap = POINTS.CAPACITY * s.skill;
-  if (up.big_stand || up.truck) cap *= POINTS.WIDE_CAPACITY;
+  return !!(up.big_stand || up.truck);
+}
+
+/** Who works at the stand today: the seller (unless ill today) and the second worker. */
+export function pointWorkers(p: Point): Seller[] {
+  const out: Seller[] = [];
+  if (p.seller && p.issue !== 'sick') out.push(p.seller);
+  if (p.helper) out.push(p.helper);
+  return out;
+}
+
+/** The stand opens at 10:00; a late seller opens it at 12:00, unless a second worker is there. */
+export function pointOpensAt(p: Point): number {
+  return p.issue === 'late' && !p.helper ? POINTS.LATE_OPEN_H : POINTS.OPEN_H;
+}
+
+/** Cups the workers can pour in a day: a wide counter, a second worker and a dispenser let them pour more. */
+export function pointCapacity(p: Point): number {
+  const [first, second] = pointWorkers(p);
+  if (!first) return 0;
+  const up = pointUps(p);
+  const wide = !!(up.big_stand || up.truck);
+  let cap = POINTS.CAPACITY * first.skill * (wide ? POINTS.WIDE_CAPACITY : 1);
+  if (second && wide) cap += POINTS.CAPACITY * second.skill;
   if (up.dispenser) cap /= UPGRADES.dispenser.serveMult ?? 1;
   return Math.round(cap);
 }
@@ -175,20 +198,21 @@ export function pointCupCost(p: Point): number {
 /** One day of a stand, in numbers. */
 export function simulatePoint(S: GameState, p: Point, weather: WeatherId, ev: Crowd, rng: RNG): PointDay {
   const day: PointDay = { day: S.day, status: 'empty', sold: 0, revenue: 0, ingredients: 0, rent: 0, wage: 0, stolen: 0, profit: 0 };
-  const s = p.seller;
-  // the own seller is ill and nobody stands in: the stand stays closed
-  if (!s) return { ...day, status: p.away ? 'sick' : 'empty' };
-  // a closed stand pays nothing (the seller is paid for working days only)
-  if (p.issue === 'sick') return { ...day, status: 'sick' };
+  const workers = pointWorkers(p);
+  // nobody works today (the seller is ill and nobody stands in): the stand stays closed and pays nothing
+  if (!workers.length) return { ...day, status: p.away || p.issue === 'sick' ? 'sick' : 'empty' };
+  const lead = workers[0];
+  const sellerHere = !!p.seller && p.issue !== 'sick';
   const loc = LOCATIONS[p.loc];
   const up = pointUps(p);
   const price = loc.fairPrice;
-  const from = p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H;
+  const from = pointOpensAt(p);
   const e = expectedDay({ loc: p.loc, weather, price, upgrades: up, rep: S.rep, from, events: ev, recipe: RECIPE });
-  const mood = p.issue === 'rude' ? 0.65 : 1;
-  // a good seller keeps the queue; a TV and shade keep people waiting longer; a perfect mix tastes better
+  const mood = sellerHere && p.issue === 'rude' ? 0.65 : 1;
+  // a good seller keeps the queue; a TV, shade and a second worker keep people waiting less; a perfect mix tastes better
   const shade = !loc.indoor && (up.umbrella || up.tent) ? POINTS.SHADE_SERVICE : 0;
-  const service = Math.min(1, 0.55 + 0.45 * s.skill + (up.tv ? POINTS.TV_SERVICE : 0) + shade);
+  const two = workers.length > 1 ? POINTS.SECOND_SERVICE : 0;
+  const service = Math.min(1, 0.55 + 0.45 * lead.skill + (up.tv ? POINTS.TV_SERVICE : 0) + shade + two);
   const taste = up.mixer_pro ? POINTS.PRO_MIX : 1;
   const sold = Math.min(Math.round(e.buyers * service * mood * taste * rng.range(0.85, 1.15)), pointCapacity(p));
   // the loyalty card gives every 10th cup for free
@@ -196,13 +220,15 @@ export function simulatePoint(S: GameState, p: Point, weather: WeatherId, ev: Cr
   const revenue = (sold - free) * price;
   const waste = up.cooler ? POINTS.WASTE_COOLER : POINTS.WASTE;
   const ingredients = Math.round(sold * (1 + waste) * pointCupCost(p));
-  const status: PointStatus = p.issue === 'late' || p.issue === 'rude' ? p.issue : 'ok';
-  return { ...day, status, sold, revenue, ingredients, rent: loc.rent, wage: s.wage, profit: revenue - ingredients - loc.rent - s.wage };
+  const status: PointStatus = from > POINTS.OPEN_H ? 'late' : sellerHere && p.issue === 'rude' ? 'rude' : 'ok';
+  const wage = workers.reduce((n, w) => n + w.wage, 0);
+  return { ...day, status, sold, revenue, ingredients, rent: loc.rent, wage, profit: revenue - ingredients - loc.rent - wage };
 }
 
 /** Evening count: a dishonest seller may take money from the till (a locked cash box makes it harder). */
 export function rollTheft(p: Point, d: PointDay, rng: RNG): number {
-  const s = p.seller;
+  // the seller looks after the till (when they work today)
+  const s = p.seller && p.issue !== 'sick' && p.issue !== 'stole' ? p.seller : null;
   // what is in the till after the wholesaler is paid for the goods
   const till = d.revenue - d.ingredients;
   if (!s || till <= 0) return 0;
@@ -216,8 +242,9 @@ export function rollTheft(p: Point, d: PointDay, rng: RNG): number {
 
 /** Rent and wage a stand needs for today (nothing when it is closed anyway). */
 export function pointFixedCosts(p: Point): number {
-  if (!p.seller || p.issue === 'sick') return 0;
-  return LOCATIONS[p.loc].rent + p.seller.wage;
+  const workers = pointWorkers(p);
+  if (!workers.length) return 0;
+  return LOCATIONS[p.loc].rent + workers.reduce((n, w) => n + w.wage, 0);
 }
 
 /** Book a finished day into the stand's history. */
@@ -230,7 +257,7 @@ export function recordDay(p: Point, d: PointDay): void {
 
 /** How much of today is behind the stand (0 before it opens, 1 at closing time). */
 export function pointProgress(p: Point, hour: number): number {
-  const from = p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H;
+  const from = pointOpensAt(p);
   return clamp((hour - from) / (CONFIG.DAY_END - from), 0, 1);
 }
 

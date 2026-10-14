@@ -6,11 +6,10 @@ import { RNG } from '../core/rng';
 import type { Phase } from '../core/types';
 import { LOCATIONS } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
-import { POINTS } from '../data/staff';
 import type { Critter } from './critters';
 import { attentionRadius, interestChance, serveTime, type Owned } from './economy';
 import type { Game, Serving } from './game';
-import { isGirl, pointUps, type Point } from './points';
+import { isGirl, pointOpensAt, pointUps, pointWorkers, type Point } from './points';
 import type { DayState, GameState } from './state';
 import { Street, type Ped, type StreetHost } from './street';
 
@@ -29,6 +28,8 @@ export interface SceneSource {
   isSoldOut(): boolean;
   /** A hired seller stands at the stand instead of the player (null: nobody, the stand is closed). */
   seller?: { girl: boolean } | null;
+  /** The second worker of that stand. */
+  helper2?: { girl: boolean } | null;
 }
 
 export class PointScene implements SceneSource {
@@ -39,10 +40,11 @@ export class PointScene implements SceneSource {
   readonly S: GameState;
   readonly D: DayState;
   seller: { girl: boolean } | null;
+  helper2: { girl: boolean } | null = null;
   /** A cup was sold here (for the "+10" over the stand). */
   onSale: ((x: number, y: number, amount: number) => void) | null = null;
   private rng: RNG;
-  private wait = 0;
+  private wait = [0, 0];
 
   constructor(
     private g: Game,
@@ -64,7 +66,8 @@ export class PointScene implements SceneSource {
     const D = Object.create(g.D) as DayState;
     Object.assign(D, { helpers: 0, helper: false, cupsReady: 12, flyers: false, sales: 0, blackoutUntil: 0 });
     this.D = D;
-    this.seller = point.seller ? { girl: isGirl(point.seller.nameId) } : null;
+    this.seller = null;
+    this.refresh();
     const self = this;
     const host: StreetHost = {
       get rng() {
@@ -90,8 +93,20 @@ export class PointScene implements SceneSource {
   refresh(): void {
     const p = this.point;
     this.S.upgrades = pointUps(p);
-    const girl = p.seller ? isGirl(p.seller.nameId) : null;
-    if ((girl === null) !== (this.seller === null) || (this.seller && this.seller.girl !== girl)) this.seller = girl === null ? null : { girl };
+    // the first worker of today stands where the seller does (the second worker when the seller is ill)
+    const [a, b] = pointWorkers(p);
+    const look = (w: typeof a | undefined, cur: { girl: boolean } | null) => {
+      if (!w) return null;
+      const girl = isGirl(w.nameId);
+      return cur && cur.girl === girl ? cur : { girl };
+    };
+    this.seller = look(a, this.seller);
+    this.helper2 = look(b, this.helper2);
+  }
+
+  /** Queues: a second worker at a wide counter serves a queue of their own. */
+  private queues(): number {
+    return this.counters() >= 2 && pointWorkers(this.point).length >= 2 ? 2 : 1;
   }
 
   get phase(): Phase {
@@ -118,34 +133,38 @@ export class PointScene implements SceneSource {
   /** The stand works now: a seller is there, the stand is not closed today and the selling hours have begun. */
   open(): boolean {
     const p = this.point;
-    if (this.g.phase !== 'sell' || !p.seller || p.issue === 'sick' || p.today?.status === 'nomoney') return false;
-    return this.g.D.hour >= (p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H);
+    if (this.g.phase !== 'sell' || !pointWorkers(p).length || p.today?.status === 'nomoney') return false;
+    return this.g.D.hour >= pointOpensAt(p);
   }
 
   update(dt: number): void {
     this.street.update(dt);
-    const s = this.servings[0];
-    if (s) {
-      s.t += dt;
-      if (s.t >= s.dur) {
-        this.servings[0] = null;
-        this.street.serveDone(s.ped, this.rng.chance(0.7) ? '😋' : '🙂');
-        this.D.sales += this.S.price;
-        this.onSale?.(s.ped.x, s.ped.y, this.S.price);
+    const workers = pointWorkers(this.point);
+    const queues = this.queues();
+    for (let c = 0; c < 2; c++) {
+      const s = this.servings[c];
+      if (s) {
+        s.t += dt;
+        if (s.t >= s.dur) {
+          this.servings[c] = null;
+          this.street.serveDone(s.ped, this.rng.chance(0.7) ? '😋' : '🙂');
+          this.D.sales += this.S.price;
+          this.onSale?.(s.ped.x, s.ped.y, this.S.price);
+        }
+        continue;
       }
-      return;
+      const front = c < queues && this.open() ? this.street.frontReady(c) : null;
+      if (!front) {
+        this.wait[c] = 0;
+        continue;
+      }
+      // the worker takes the next customer after a short moment; two at a small table pour a little faster
+      this.wait[c] += dt;
+      if (this.wait[c] < 0.5) continue;
+      this.wait[c] = 0;
+      const w = workers[c] ?? workers[0];
+      this.servings[c] = { ped: front, t: 0, dur: serveTime(pointUps(this.point), true) / (w?.skill ?? 1), helper: true };
     }
-    const front = this.open() ? this.street.frontReady(0) : null;
-    if (!front) {
-      this.wait = 0;
-      return;
-    }
-    // the seller takes the next customer after a short moment
-    this.wait += dt;
-    if (this.wait < 0.5) return;
-    this.wait = 0;
-    const skill = this.point.seller?.skill ?? 1;
-    this.servings[0] = { ped: front, t: 0, dur: serveTime(pointUps(this.point), true) / skill, helper: true };
   }
 
   private onInRange(p: Ped): void {
@@ -165,10 +184,17 @@ export class PointScene implements SceneSource {
       this.street.setEmote(p, '💸', 2.4);
       return;
     }
-    if (this.street.queue.length >= CONFIG.MAX_QUEUE + (pointUps(this.point).tv ? 3 : 0)) {
+    // people take the shorter queue
+    const max = CONFIG.MAX_QUEUE + (pointUps(this.point).tv ? 3 : 0);
+    let best = -1;
+    for (let c = 0; c < this.queues(); c++) {
+      const len = this.street.queueFor(c).length;
+      if (len < max && (best < 0 || len < this.street.queueFor(best).length)) best = c;
+    }
+    if (best < 0) {
       this.street.setEmote(p, '⏳', 2);
       return;
     }
-    this.street.joinQueue(p, 0);
+    this.street.joinQueue(p, best);
   }
 }

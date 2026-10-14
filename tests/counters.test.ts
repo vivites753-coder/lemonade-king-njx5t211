@@ -87,15 +87,16 @@ describe('stands with two counters', () => {
     g.setHelpers(1);
     g.startSelling();
     g.setSpeed(4);
-    // wait until a customer stands at the front of each queue and nobody pours
+    // nobody finishes a pour for a while (every pour is called off): the customers line up at both counters
     let ok = false;
     for (let i = 0; i < 40000 && g.phase === 'sell'; i++) {
       g.update(0.05);
-      if (g.street.frontReady(0) && g.street.frontReady(1) && !g.servings[0] && !g.servings[1] && !g.making) {
+      g.servings[0] = null;
+      g.servings[1] = null;
+      if (g.street.frontReady(0) && g.street.frontReady(1) && !g.making) {
         ok = true;
         break;
       }
-      if (!g.making && g.street.frontReady(0)) g.serveAt(0, false);
     }
     expect(ok).toBe(true);
     g.D.cupsReady = 1;

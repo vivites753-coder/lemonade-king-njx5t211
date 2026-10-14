@@ -164,7 +164,7 @@ export class UI implements UIApi {
   }
 
   private pointsHooks: PointsHooks = {
-    hire: (id) => this.overlays.modal(hireModal(this.g, id, this.pointsHooks)),
+    hire: (id, role) => this.overlays.modal(hireModal(this.g, id, this.pointsHooks, role)),
     points: () => this.openPoints(),
     shop: (id) => this.overlays.modal(pointShopModal(this.g, id, this.pointsHooks)),
     view: (id) => this.g.setView(id),

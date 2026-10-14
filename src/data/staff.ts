@@ -18,6 +18,9 @@ export const POINTS = {
   WASTE_COOLER: 0.02,
   /** A wide counter (big stand, truck) lets a seller pour this much more in a day. */
   WIDE_CAPACITY: 1.25,
+  /** A second worker (only at a wide counter: the big stand or the truck) serves a queue of their own; customers
+   * wait less when two work. */
+  SECOND_SERVICE: 0.06,
   /** More customers wait for their cup: a TV, shade outdoors; a perfect mix tastes better. */
   TV_SERVICE: 0.08,
   SHADE_SERVICE: 0.04,

@@ -953,4 +953,12 @@ export const en: Record<I18nKey, string> = {
   'gl.wholesale.term': 'Wholesale',
   'gl.wholesale.text': 'Buying in big batches. Each piece is cheaper, but you need more money at once, and goods can spoil if you do not sell them in time.',
   'toast.standNoMoney': 'Not enough coins ({n}) for the rent and the wage: the stand at "{place}" is closed today.',
+  'points.helper2': 'second worker',
+  'points.hire2': 'Hire a second worker',
+  'points.hire2Note': 'Together they serve more people, and the stand works even when the seller is ill. But there are two wages.',
+  'points.hire2Title': 'Second worker: {place}',
+  'points.hire2Tip': 'The second worker takes the second counter and serves a queue of their own — the sales almost double. And if the seller is ill or late, they open the stand alone.',
+  'points.aloneToday': 'only the second worker works today',
+  'tip.hire2': 'Now two work at the stand! They can serve more people, and if the seller is ill or late, the second one opens the stand alone. But now you pay two wages — check that it pays off.',
+  'points.hire2Wide': 'A second worker can be hired when the stand has a big stand or a truck.',
 };

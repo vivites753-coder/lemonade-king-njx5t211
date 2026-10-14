@@ -43,6 +43,10 @@ function check(g: Game, where: string): void {
     expect(Number.isFinite(p.total) && Number.isFinite(p.invested ?? 0), ctx).toBe(true);
     expect(p.invested ?? 0, ctx).toBeGreaterThanOrEqual(POINTS.COST);
     expect(p.history.length, ctx).toBeLessThanOrEqual(7);
+    if (p.helper) {
+      expect(p.helper.nameId === p.seller?.nameId, `${ctx} one person twice`).toBe(false);
+      expect(!!(pointUps(p).big_stand || pointUps(p).truck), `${ctx} a second worker at a small table`).toBe(true);
+    }
     if (p.away) {
       expect(p.away.days, `${ctx} ill days`).toBeGreaterThanOrEqual(0);
       expect(p.away.seller.nameId === p.seller?.nameId, `${ctx} the ill seller also works`).toBe(false);
@@ -161,6 +165,8 @@ describe('random play with a chain of stands', () => {
         }
         for (const p of [...g.S.points]) {
           if (!p.seller && rnd() < 0.7) g.hireSeller(p.id, Math.floor(rnd() * 3));
+          if (!p.helper && rnd() < 0.3) g.hireSeller(p.id, Math.floor(rnd() * 3), 'helper');
+          if (p.helper && rnd() < 0.05) g.fireHelper(p.id);
           if (rnd() < 0.5) {
             const id = pick(POINT_UPGRADE_IDS);
             if (g.canBuyPointUpgrade(p.id, id).ok && g.buyPointUpgrade(p.id, id)) upgraded++;

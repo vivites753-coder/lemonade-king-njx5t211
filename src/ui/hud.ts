@@ -3,8 +3,7 @@ import type { Phase } from '../core/types';
 import { LOCATIONS } from '../data/locations';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { payback, pointProgress, skillStars, type Point } from '../sim/points';
-import { POINTS } from '../data/staff';
+import { payback, pointOpensAt, pointProgress, pointWorkers, skillStars, type Point } from '../sim/points';
 import { fmtHour, ico, round1, signedCoin, stars, weatherIco } from './dom';
 
 /** Phases in which the scene is in view and the player may look at their other stands. */
@@ -204,19 +203,19 @@ export class Hud {
   /** The stand shown now: its seller, what it has sold so far today, its payback, and the way back. */
   private pointInfo(p: Point): string {
     const g = this.g;
-    const s = p.seller;
     const sell = this.phase === 'sell';
+    const workers = pointWorkers(p);
+    const person = (w: (typeof workers)[number]) => `<b>${t(`staff.name${w.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(w.skill))}</span>`;
     let who: string;
-    if (!s) who = `🤒 ${t(p.away ? 'points.closedIll' : 'points.noSeller')}`;
-    else if (p.issue === 'sick') who = `🤒 ${t('points.closed')}`;
+    if (!workers.length) who = `🤒 ${t(p.away || p.issue === 'sick' ? 'points.closedIll' : 'points.noSeller')}`;
     else if (p.today?.status === 'nomoney') who = `💸 ${t('points.status.nomoney')}`;
-    else who = `👤 <b>${t(`staff.name${s.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(s.skill))}</span>`;
+    else who = `${workers.length > 1 ? '👥' : '👤'} ${workers.map(person).join(' · ')}${!p.seller || p.issue === 'sick' ? `<br><small class="muted">${t('points.aloneToday')}</small>` : ''}`;
     let today = '';
-    if (sell && p.today && s && p.issue !== 'sick' && p.today.status !== 'nomoney') {
+    if (sell && p.today && workers.length && p.today.status !== 'nomoney') {
       const k = pointProgress(p, g.D.hour);
       today =
         k <= 0
-          ? `🕐 ${t('points.notOpenYet', { h: fmtHour(p.issue === 'late' ? POINTS.LATE_OPEN_H : POINTS.OPEN_H) })}`
+          ? `🕐 ${t('points.notOpenYet', { h: fmtHour(pointOpensAt(p)) })}`
           : `🥤 ${t('points.soFar', { n: Math.round(p.today.sold * k), m: Math.round(p.today.revenue * k) })}`;
     } else if (p.last) today = t('points.lastProfit', { n: signedCoin(p.last.profit) });
     const pct = Math.max(0, Math.min(100, Math.round(payback(p).share * 100)));

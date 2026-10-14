@@ -954,4 +954,12 @@ export const ro: Record<I18nKey, string> = {
   'gl.wholesale.term': 'En-gros',
   'gl.wholesale.text': 'Cumpărare în cantități mari. Fiecare bucată e mai ieftină, dar ai nevoie de mai mulți bani deodată, iar marfa se poate strica dacă n-o vinzi la timp.',
   'toast.standNoMoney': 'Nu ajung {n} bani pentru chirie și salariu: taraba de la „{place}” e închisă azi.',
+  'points.helper2': 'al doilea lucrător',
+  'points.hire2': 'Angajează un al doilea lucrător',
+  'points.hire2Note': 'Împreună servesc mai mulți oameni, iar taraba lucrează chiar și când vânzătorul e bolnav. Dar sunt două salarii.',
+  'points.hire2Title': 'Al doilea lucrător: {place}',
+  'points.hire2Tip': 'Al doilea lucrător ia a doua tejghea și servește propria coadă — vânzările aproape se dublează. Iar dacă vânzătorul e bolnav sau întârzie, deschide singur taraba.',
+  'points.aloneToday': 'azi lucrează doar al doilea lucrător',
+  'tip.hire2': 'Acum la tarabă lucrează doi! Pot servi mai mulți oameni, iar dacă vânzătorul e bolnav sau întârzie, al doilea deschide singur taraba. Dar acum plătești două salarii — verifică dacă se amortizează.',
+  'points.hire2Wide': 'Un al doilea lucrător poate fi angajat când taraba are o tejghea mare sau o rulotă.',
 };

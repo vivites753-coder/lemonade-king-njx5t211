@@ -62,3 +62,15 @@ describe('crowd size', () => {
     expect(spawnRatePerHour('mall', 12, 'sunny', { festival: false, busy: { park: 0.5 } })).toBe(spawnRatePerHour('mall', 12, 'sunny', NO_EVENTS));
   });
 });
+
+describe('more people at home for a new player', () => {
+  it('+20 % on days 1-5, then 4 % less every day, nothing from day 10', async () => {
+    const { newbieYardFactor } = await import('../src/sim/traffic');
+    for (let d = 1; d <= 5; d++) expect(newbieYardFactor(d)).toBeCloseTo(1.2, 9);
+    expect(newbieYardFactor(6)).toBeCloseTo(1.16, 9);
+    expect(newbieYardFactor(7)).toBeCloseTo(1.12, 9);
+    expect(newbieYardFactor(9)).toBeCloseTo(1.04, 9);
+    expect(newbieYardFactor(10)).toBe(1);
+    expect(newbieYardFactor(40)).toBe(1);
+  });
+});

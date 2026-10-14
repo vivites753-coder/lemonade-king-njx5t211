@@ -3607,3 +3607,15 @@ body.reduce-motion * {
 .reduce-motion .tip-arrow.up svg {
   transform: rotate(180deg);
 }
+
+/* the second worker of a stand */
+.pt-helper {
+  background: #f3fbef;
+}
+.pt-hire2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 4px 0;
+}

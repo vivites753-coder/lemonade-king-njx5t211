@@ -353,6 +353,7 @@ export function normalizeState(S: GameState, D: DayState): void {
     p.upgrades ??= { sign: true };
     p.invested ??= 400;
     p.away ??= null;
+    p.helper ??= null;
   }
 }
 

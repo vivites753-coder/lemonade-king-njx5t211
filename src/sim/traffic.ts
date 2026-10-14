@@ -15,6 +15,11 @@ export function weatherPedFactor(loc: LocationId, weather: WeatherId): number {
   return Math.max(0.05, 1 + (w.ped - 1) * LOCATIONS[loc].weatherSensitivity);
 }
 
+/** More people at home for a new player: +20 % on days 1-5, then 4 % less every day (none from day 10). */
+export function newbieYardFactor(day: number): number {
+  return 1 + Math.max(0, CONFIG.NEWBIE_YARD_BONUS - Math.max(0, day - CONFIG.NEWBIE_DAYS) * CONFIG.NEWBIE_FADE);
+}
+
 /** Crowd multiplier from today's events at this place (the city festival is outdoors only). */
 export function eventPedFactor(loc: LocationId, hour: number, ev: Crowd): number {
   let m = (ev.festival && !LOCATIONS[loc].indoor ? FESTIVAL_PED : 1) * (ev.busy?.[loc] ?? 1);

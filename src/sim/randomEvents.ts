@@ -2,6 +2,7 @@ import { CONFIG } from '../core/config';
 import { LOCATION_IDS } from '../data/locations';
 import { DAY_EVENTS, LOC_EVENTS, NEWS_FLAVOURS, type DayEventId } from '../data/events';
 import type { Game } from './game';
+import { newbieYardFactor } from './traffic';
 
 /** Rolls the day's events in the morning. Deterministic with the game RNG. */
 export function rollDayEvents(g: Game): void {
@@ -21,6 +22,8 @@ export function rollDayEvents(g: Game): void {
     const u = (rng.next() + rng.next()) / 2;
     D.events.busy[id] = Math.round((CONFIG.CROWD_DAY_MIN + (CONFIG.CROWD_DAY_MAX - CONFIG.CROWD_DAY_MIN) * u) * 100) / 100;
   }
+  // a new player gets more people at home on the first days
+  D.events.busy.yard = Math.round((D.events.busy.yard ?? 1) * newbieYardFactor(S.day) * 100) / 100;
 }
 
 export function applyEvent(g: Game, id: DayEventId, on: boolean): void {
