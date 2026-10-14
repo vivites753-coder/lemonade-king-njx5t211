@@ -3766,3 +3766,18 @@ body.reduce-motion * {
     max-height: calc(100% - var(--hud-h, 46px) - 172px);
   }
 }
+
+/* pictures on the speed buttons and the small buttons of the selling controls */
+.seg button .ico-img {
+  height: 24px;
+  vertical-align: middle;
+}
+.hud-bottom .btn .ico-img {
+  height: 24px;
+  vertical-align: middle;
+}
+@media (max-height: 460px) {
+  .hud-top .seg button .ico-img {
+    height: 30px;
+  }
+}

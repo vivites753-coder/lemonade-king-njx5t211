@@ -132,6 +132,20 @@ Row 4: 16) a megaphone, 17) a calculator (blank keys), 18) a coin bag with a gol
 
 Імена: `ui_loc_yard, ui_loc_park, ui_loc_school, ui_loc_beach, ui_loc_station, ui_loc_mall, ui_act_market2, ui_act_kitchen, ui_act_shop, ui_act_sleep, ui_btn_settings, ui_btn_glossary, ui_btn_roadmap, ui_btn_news, ui_btn_points, ui_btn_megaphone, ui_btn_calc, ui_btn_coinbag, ui_btn_map, ui_btn_gift`
 
+## Лист 12б. Кнопки верхньої панелі й керування (5×2, FLAT)
+
+Кнопки праворуч угорі (підказка Лемі, словник, звук, налаштування), кнопки швидкості, «Закінчити день». Гра вже чекає ці файли: щойно вони з'являться в `assets/ui/`, емодзі на кнопках замінюються самі.
+
+СІТКА 10 / 5×2 / 78% + FLAT +
+
+```
+Each item is a single ICON object (no background, no frame, no button shape behind it), readable when shrunk to 40 pixels.
+Row 1: 1) a cute yellow lemon with a tiny green leaf and a small glowing yellow light bulb above it (a hint), 2) an open book with blank cream pages and a red bookmark ribbon (a dictionary), 3) a blue loudspeaker with three curved sound waves (sound on), 4) the same blue loudspeaker with a small red X instead of the waves (sound off), 5) a round grey-blue settings gear with a yellow center.
+Row 2: 6) a pause sign: two thick rounded vertical bars, deep blue, 7) a play sign: one thick rounded triangle pointing right, deep blue, 8) a fast forward sign: two thick rounded triangles pointing right, deep blue, 9) a faster sign: three thick rounded triangles pointing right, deep blue, 10) a yellow crescent moon with two small stars (end the day, go to sleep).
+```
+
+Імена: `ui_btn_tip, ui_btn_glossary, ui_btn_sound_on, ui_btn_sound_off, ui_btn_settings, ui_btn_pause, ui_btn_play, ui_btn_fast, ui_btn_faster, ui_btn_sleep`
+
 ## Лист 13. Машини в обидва боки (5×2, ISO)
 
 СІТКА 10 / 5×2 / 75% + ISO + список нижче. Дорога в грі йде по діагоналі 2:1: машина, що їде вниз-праворуч, повернута до нас передом і ПРАВИМ боком; машина, що їде вгору-ліворуч, повернута задом і ЛІВИМ боком. Обидва рядки потрібні, бо дзеркало переставило б кермо й написи.

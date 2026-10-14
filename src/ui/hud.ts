@@ -55,16 +55,16 @@ export class Hud {
         <button class="chip chip-btn" data-hud="roadmap" data-el="rep" aria-label="${t('roadmap.title')}" title="${t('roadmap.title')}"></button>
         <span class="spacer"></span>
         <div class="seg" data-el="speed">
-          <button data-hud="speed:0" aria-label="${t('hud.pause')}">⏸</button>
-          <button data-hud="speed:1" aria-label="x1">▶</button>
-          <button data-hud="speed:2" aria-label="x2">⏩</button>
-          <button data-hud="speed:3" aria-label="x3">⏭</button>
+          <button data-hud="speed:0" aria-label="${t('hud.pause')}">${ico('btn_pause', '⏸')}</button>
+          <button data-hud="speed:1" aria-label="x1">${ico('btn_play', '▶')}</button>
+          <button data-hud="speed:2" aria-label="x2">${ico('btn_fast', '⏩')}</button>
+          <button data-hud="speed:3" aria-label="x3">${ico('btn_faster', '⏭')}</button>
         </div>
         <button class="hud-btn hidden" data-hud="points" data-el="points" aria-label="${t('points.title')}">${ico('pt_stand', '🏪')}</button>
-        <button class="hud-btn" data-hud="tip" aria-label="${t('hud.tip')}">🍋</button>
-        <button class="hud-btn" data-hud="glossary" aria-label="${t('hud.glossary')}">📖</button>
+        <button class="hud-btn" data-hud="tip" aria-label="${t('hud.tip')}">${ico('btn_tip', '🍋')}</button>
+        <button class="hud-btn" data-hud="glossary" aria-label="${t('hud.glossary')}">${ico('btn_glossary', '📖')}</button>
         <button class="hud-btn" data-hud="sound" data-el="sound" aria-label="${t('hud.sound')}">🔊</button>
-        <button class="hud-btn" data-hud="settings" aria-label="${t('btn.settings')}">⚙️</button>
+        <button class="hud-btn" data-hud="settings" aria-label="${t('btn.settings')}">${ico('btn_settings', '⚙️')}</button>
       </div>
       <div class="hud-views hidden" data-el="views"></div>
       <div class="hud-point hidden" data-el="pointinfo"></div>
@@ -91,7 +91,7 @@ export class Hud {
         <div class="hb-right">
           <span class="chip cups-chip" data-el="cups"></span>
           <button class="btn btn-y" data-hud="make" data-el="make"></button>
-          <button class="btn btn-sm" data-hud="end">🌙<span class="lbl"> ${t('hud.end')}</span></button>
+          <button class="btn btn-sm" data-hud="end">${ico('btn_sleep', '🌙')}<span class="lbl"> ${t('hud.end')}</span></button>
         </div>
       </div>`;
     this.els = {};
@@ -138,7 +138,7 @@ export class Hud {
     this.set('weather', `${weatherIco(D.weather)}<span class="lbl"> ${t(`weather.${D.weather}`)}</span>`);
     this.set('loc', `${LOCATIONS[S.location].icon}<span class="lbl"> ${t(`loc.${S.location}.name`)}</span>`);
     this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">${ico('star_full', '⭐')}</span> ${S.rep.toFixed(1)}`);
-    this.set('sound', S.settings.sound ? '🔊' : '🔇');
+    this.set('sound', S.settings.sound ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇'));
     this.show('points', g.pointsOpen() || S.points.length > 0);
     // the other stands: a switch, and a card about the one shown (the controls of the own stand step aside)
     const views = S.points.length > 0 && VIEW_PHASES.includes(this.phase);
@@ -171,7 +171,7 @@ export class Hud {
     // controls
     this.set('price', String(S.price));
     this.show('speaker', !!S.upgrades.speaker);
-    this.set('speaker', `${S.speakerOn ? '🔊' : '🔇'}<span class="lbl"> ${t('hud.speaker')}: ${S.speakerOn ? t('hud.on') : t('hud.off')}</span>`);
+    this.set('speaker', `${S.speakerOn ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇')}<span class="lbl"> ${t('hud.speaker')}: ${S.speakerOn ? t('hud.on') : t('hud.off')}</span>`);
     // the player can pour at any counter with a customer in front and nobody pouring there
     const counters = [...Array(g.counters()).keys()];
     const front = counters.some((c) => !!g.street.frontReady(c));
