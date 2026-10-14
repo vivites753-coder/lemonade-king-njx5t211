@@ -74,19 +74,22 @@ Row 4: 16) a red arrow pointing down (loss), 17) a golden crown with colorful je
 
 Імена: `ui_w_sunny, ui_w_hot, ui_w_cloudy, ui_w_rain, ui_w_wind, ui_w_cold, ui_w_storm, ui_coin, ui_coin_stack, ui_star_full, ui_star_half, ui_star_empty, ui_clock, ui_day, ui_profit_up, ui_profit_down, ui_crown, ui_trophy, ui_heart, ui_lock`
 
-## Лист 10. Іконки: товари й емоції над головою (5×5, FLAT)
+## Лист 10. Склад і емоції покупців (5×5, FLAT)
 
-СІТКА 25 / 5×5 / 78% + FLAT + `Each item is a single ICON object or a round emote bubble face.`
+Склад ліворуч у грі показує: лимони, воду, цукор, стаканчики, печиво, готові склянки, охолоджені, «скільки глечиків можна зробити». Над головою покупця гра показує свою білу бульбашку, всередині неї картинку, тому емоції треба БЕЗ бульбашки, просто обличчя або символ.
+
+СІТКА 25 / 5×5 / 78% + FLAT +
 
 ```
-Row 1 (goods): 1) a fresh whole lemon with a leaf, 2) a plastic water bottle with a water drop, 3) a sugar pot with a spoon (opaque pastel), 4) a stack of white paper cups, 5) a few ice cubes.
-Row 2: 6) a chocolate chip cookie, 7) a pitcher of lemonade (opaque light-blue pitcher, yellow lemonade, lemon slice), 8) a cup of lemonade with a straw and lemon slice, 9) a wooden crate of lemons, 10) a shopping basket with a lemon.
-Row 3 (emotes, each in a round soft-white bubble with a small tail pointing down): 11) a happy smiling face, 12) a face with heart eyes (love), 13) a sour face squinting with a pursed mouth, 14) an angry red face with steam, 15) a surprised face next to a gold price tag with a tiny coin (too expensive).
-Row 4 (emotes): 16) an hourglass (waiting), 17) a pair of eyes looking sideways (noticed), 18) a musical note (music), 19) a thinking face with a hand on the chin, 20) a sad face with a tear (leaving unhappy).
-Row 5: 21) a thumbs-up, 22) an exclamation mark in a red circle, 23) a green check mark in a circle, 24) a red cross in a circle, 25) a question mark in a blue circle.
+Each item is a single ICON object (no background bubble, no frame), readable when shrunk to 48 pixels.
+Row 1 (stock): 1) a fresh whole yellow lemon with a green leaf, 2) a big glossy blue water drop, 3) a small pile of white sugar cubes with one cube on top, 4) a stack of three white paper cups, 5) a round chocolate chip cookie.
+Row 2 (stock): 6) a tall glass of yellow lemonade with a straw and a lemon slice on the rim, 7) three light-blue ice cubes, 8) a pitcher of lemonade (opaque light-blue pitcher with a handle, yellow lemonade, a lemon slice), 9) a small shopping cart with a lemon in it, 10) a lemon cut in half showing the juicy inside.
+Row 3 (customer faces, round yellow cartoon faces): 11) heart eyes and a big smile (in love with the lemonade), 12) a happy smiling face, 13) a neutral face with a flat mouth, 14) a sour face: squinting eyes, pursed mouth, a drop of sweat (too sour), 15) a dizzy face with spiral eyes and a wobbly mouth (too sweet).
+Row 4: 16) an angry red face with steam from the ears, 17) a sad face with a big blue tear, 18) a shocked face with wide eyes and a gold coin with little wings flying away (too expensive), 19) a sand hourglass (waiting, the queue is full), 20) a wrapped gift box with a bow (a free cup).
+Row 5: 21) a red exclamation mark, 22) a speech bubble with three dots, 23) a sick face with a thermometer in the mouth and a green tint, 24) a round alarm clock with two bells, 25) a glass of lemonade with a straw inside a small thought cloud (wants lemonade).
 ```
 
-Імена: `ui_gd_lemon, ui_gd_water, ui_gd_sugar, ui_gd_cups, ui_gd_ice, ui_gd_cookie, ui_gd_pitcher, ui_gd_cup, ui_gd_crate, ui_act_market, ui_em_happy, ui_em_love, ui_em_sour, ui_em_angry, ui_em_money, ui_em_wait, ui_em_look, ui_em_music, ui_em_think, ui_em_sad, ui_thumbs_up, ui_alert, ui_ok, ui_cancel, ui_help`
+Імена: `ui_gd_lemon, ui_gd_water, ui_gd_sugar, ui_gd_cups, ui_gd_cookie, ui_gd_ready, ui_gd_ice, ui_gd_pitcher, ui_gd_market, ui_gd_lemon_half, ui_em_love, ui_em_happy, ui_em_meh, ui_em_sour, ui_em_dizzy, ui_em_angry, ui_em_sad, ui_em_money, ui_em_wait, ui_em_gift, ui_em_alert, ui_em_chat, ui_em_sick, ui_em_clock, ui_em_want`
 
 ## Лист 11. Іконки апгрейдів, яких ще немає (5×1, ISO)
 
