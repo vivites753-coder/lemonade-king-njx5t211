@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Lemonade King: перевірка екрана</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font: 18px/1.5 system-ui, sans-serif;
+        background: #fff8db;
+        color: #3b2f00;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 8px;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      td {
+        padding: 2px 12px 2px 0;
+        vertical-align: top;
+      }
+      td:last-child {
+        font-weight: 700;
+      }
+      .big {
+        font-size: 26px;
+        font-weight: 800;
+        margin: 8px 0;
+      }
+      .yes {
+        color: #2b8a3e;
+      }
+      .no {
+        color: #e03131;
+      }
+      a {
+        color: #1864ab;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Перевірка екрана для Lemonade King</h1>
+    <p>Тримайте телефон боком (як у грі) і надішліть знімок цієї сторінки.</p>
+    <div id="phone" class="big"></div>
+    <table id="rows"></table>
+    <p><a href="./">← До гри</a></p>
+    <script>
+      // the same rule as PHONE_MQ in src/ui/dom.ts and the phone blocks in styles.css
+      var PHONE_MQ = '(max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9)';
+      var mq = function (q) {
+        return window.matchMedia(q).matches ? 'так' : 'ні';
+      };
+      function show(version) {
+        var phone = window.matchMedia(PHONE_MQ).matches;
+        var el = document.getElementById('phone');
+        el.textContent = 'Телефонний вигляд гри: ' + (phone ? 'ТАК' : 'НІ');
+        el.className = 'big ' + (phone ? 'yes' : 'no');
+        var rows = [
+          ['Розмір сторінки', window.innerWidth + ' × ' + window.innerHeight],
+          ['Екран', screen.width + ' × ' + screen.height],
+          ['Щільність пікселів', String(window.devicePixelRatio)],
+          ['Боком', mq('(orientation: landscape)')],
+          ['Вказівник: дотик', mq('(pointer: coarse)')],
+          ['Будь-який вказівник: дотик', mq('(any-pointer: coarse)')],
+          ['Наведення', mq('(hover: hover)')],
+          ['Версія гри на сайті', version],
+          ['Браузер', navigator.userAgent],
+        ];
+        document.getElementById('rows').innerHTML = rows
+          .map(function (r) {
+            return '<tr><td>' + r[0] + '</td><td>' + String(r[1]).replace(/</g, '&lt;') + '</td></tr>';
+          })
+          .join('');
+      }
+      var version = '…';
+      show(version);
+      window.addEventListener('resize', function () {
+        show(version);
+      });
+      fetch('./index.html?v=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) {
+          return r.text();
+        })
+        .then(function (html) {
+          var m = html.match(/assets\/index-([\w-]+)\.js/);
+          version = m ? m[1] : '?';
+          show(version);
+        })
+        .catch(function () {
+          version = 'немає зв’язку';
+          show(version);
+        });
+    </script>
+  </body>
+</html>

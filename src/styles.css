@@ -1352,13 +1352,13 @@ small {
 }
 
 /* ---------- small screens (phones in landscape) ----------
- * "Phone" in this file: up to 460 px high, or a touch screen held sideways that is much wider than high (a
- * browser zoom below 100 % or a small system font makes the page taller in CSS px). Keep PHONE_MQ in
- * src/ui/dom.ts the same. */
+ * "Phone" in this file: up to 460 px high, or a screen held sideways that is much wider than high and up to
+ * 560 px high (Galaxy S23 Ultra: about 1029x480). No pointer test: Samsung phones report their touchscreen as
+ * a touchpad. Keep PHONE_MQ in src/ui/dom.ts the same. */
 .sm {
   display: none;
 }
-@media (max-height: 460px), (max-width: 1100px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (max-width: 1100px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .lbl {
     display: none;
   }
@@ -1370,7 +1370,7 @@ small {
     flex-wrap: nowrap;
   }
 }
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .hud-top {
     top: calc(4px + var(--safe-t));
   }
@@ -1685,7 +1685,7 @@ body.reduce-motion * {
 }
 
 /* ---------- phones: everything must fit and stay tappable ---------- */
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .res-bar {
     top: calc(42px + var(--safe-t));
     width: 48px;
@@ -1972,7 +1972,7 @@ body.reduce-motion * {
 }
 
 /* ---------- phones: full-screen stage windows, smaller text and buttons ---------- */
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   #panel:not(.center):not(.title-mode),
   #panel.wide {
     left: calc(4px + var(--safe-l));
@@ -2147,7 +2147,7 @@ body.reduce-motion * {
   }
 }
 
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .taste-labels {
     font-size: 11px;
   }
@@ -2331,7 +2331,7 @@ body.reduce-motion * {
   padding: 2px 8px;
   margin-left: 6px;
 }
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .rm-node {
     width: 46px;
     min-height: 46px;
@@ -3102,7 +3102,7 @@ body.reduce-motion * {
 }
 
 /* -- phones in landscape: the picture on the left, the controls on the right -- */
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .k-hint {
     display: none;
   }
@@ -3385,7 +3385,7 @@ body.reduce-motion * {
 }
 
 /* dialogs on phones held sideways (up to 520 px high): the buttons stay in view at the bottom */
-@media (max-height: 520px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 520px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   #modal {
     padding: 4px;
   }
@@ -3551,7 +3551,7 @@ body.reduce-motion * {
   align-items: center;
   gap: 8px;
 }
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .hud-views {
     top: calc(40px + var(--safe-t));
   }
@@ -3638,7 +3638,7 @@ body.reduce-motion * {
 }
 
 /* ---------- phones: the top bar half as big again (bigger buttons for fingers) ---------- */
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .hud-top {
     gap: 6px;
     top: calc(4px + var(--safe-t));
@@ -3698,7 +3698,7 @@ body.reduce-motion * {
   }
 }
 /* narrower phones: the same big buttons, tighter chips */
-@media (max-height: 460px) and (max-width: 820px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) and (max-width: 820px) {
+@media (max-height: 460px) and (max-width: 820px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) and (max-width: 820px) {
   .hud-top {
     gap: 4px;
   }
@@ -3707,7 +3707,7 @@ body.reduce-motion * {
     gap: 5px;
   }
 }
-@media (max-height: 460px) and (max-width: 720px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) and (max-width: 720px) {
+@media (max-height: 460px) and (max-width: 720px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) and (max-width: 720px) {
   .hud-top {
     gap: 3px;
   }
@@ -3740,14 +3740,14 @@ body.reduce-motion * {
 .pt-btns .ico-img {
   height: 1.4em;
 }
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .hud-top .hud-btn .ico-img {
     height: 34px;
   }
 }
 
 /* ---------- phones while selling: the pour button in the bottom right corner (under the thumb) ---------- */
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .hud-bottom .serve-btn {
     position: fixed;
     right: calc(10px + var(--safe-r));
@@ -3779,7 +3779,7 @@ body.reduce-motion * {
   height: 24px;
   vertical-align: middle;
 }
-@media (max-height: 460px), (pointer: coarse) and (orientation: landscape) and (max-height: 620px) and (min-aspect-ratio: 16/9) {
+@media (max-height: 460px), (orientation: landscape) and (max-height: 560px) and (min-aspect-ratio: 16/9) {
   .hud-top .seg button .ico-img {
     height: 30px;
   }
