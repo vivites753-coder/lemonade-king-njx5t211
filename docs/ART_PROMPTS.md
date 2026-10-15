@@ -276,6 +276,47 @@ Colours: 1) lemon yellow body, orange trim, orange-white striped awning; 2) mint
 
 Імена: `stand_truck_lemon, stand_truck_mint, stand_truck_berry, stand_truck_sky, stand_truck_retro, stand_truck_lilac` (встановлює `tools/make_trucks.py`).
 
+## Лист 21. Стіни вокзалу (одна картинка 1536×1024, за шаблоном)
+
+Стіни малюються **рівно, як фасад** (не в ізометрії): гра сама «загне» їх на дві задні стіни залу.
+Обов'язково прикріпіть до запиту шаблон `docs/art/wall_station_layout.png`: у ньому двері стоять саме там,
+куди заходять люди, а вікна, табло, годинник і таблички — на своїх місцях. Без шаблону двері опиняться
+не там, і люди йтимуть крізь стіну. Шаблони робить `python tools/make_wall_layouts.py`.
+
+```
+Flat front view (elevation, NOT isometric, no perspective) of the two inner walls of a cozy cartoon train station hall, for a kids' mobile game. Same style as the game: soft 3D clay-like cartoon look, warm light, rounded shapes, clean simple details, no people except the cashiers.
+
+Follow the attached layout image EXACTLY: the same 1536x1024 canvas, the same positions and sizes of every shape.
+- Everything outside the two grey strips stays pure flat magenta #FF00FF.
+- Top strip = the entrance wall, bottom strip = the back wall. Paint each grey strip as a wall, filling it edge to edge.
+- Magenta shapes INSIDE the strips are see-through openings (two doorways down to the floor, arched windows). Keep them pure flat #FF00FF with crisp edges, paint nothing inside them; give them handsome frames around the edges (wooden or stone arches with a keystone).
+- Yellow rectangles: empty sign boards in a decorative frame, cream colour inside, NO letters.
+- White circle: a big station wall clock face with hour marks but NO hands.
+- Dark rectangle: an empty dark departures board in a metal frame, NO text.
+- Light blue rectangles: three ticket office windows with friendly cashiers behind the glass, a small wooden counter under each.
+The walls: warm cream plaster with tall pilasters, a decorative cornice along the top, a muted teal tiled wainscot on the lower fifth, brass wall lamps between the windows, a couple of posters with pictures only. No text or letters anywhere. Even front light, no floor, no ceiling, no perspective lines.
+```
+
+Імена: `wall_station` (встановлю сам).
+
+## Лист 22. Стіни торгового центру (одна картинка 1536×1024, за шаблоном)
+
+Так само рівно, як фасад, з шаблоном `docs/art/wall_mall_layout.png`.
+
+```
+Flat front view (elevation, NOT isometric, no perspective) of the two inner walls of a bright modern shopping mall, for a kids' mobile game. Same style as the game: soft 3D clay-like cartoon look, warm light, rounded shapes, clean simple details, no people.
+
+Follow the attached layout image EXACTLY: the same 1536x1024 canvas, the same positions and sizes of every shape.
+- Everything outside the two grey strips stays pure flat magenta #FF00FF.
+- Top strip = the entrance wall, bottom strip = the wall with the shops. Paint each grey strip as a wall, filling it edge to edge.
+- Magenta shapes INSIDE the strips are see-through openings (two glass entrance doorways down to the floor and two windows). Keep them pure flat #FF00FF with crisp edges, paint nothing inside them; give them slim light metal frames.
+- Yellow rectangles: empty sign boards (small ones over the doors, a big one for the mall logo), friendly colours, NO letters. On the big board paint a simple round orange-fruit logo without words.
+- Light blue rectangles: three shop windows full of goods behind glass: a toy shop (teddy bears, balls, a toy car), a clothes shop (colourful t-shirts and dresses on a rail), a cafe (cups, cakes, a coffee machine); each with a glass door in the middle.
+The walls: white and light wood panels, soft pastel stripes, green plants in pots, round lamps, glass railings feel. No text or letters anywhere. Even front light, no floor, no ceiling, no perspective lines.
+```
+
+Імена: `wall_mall` (встановлю сам).
+
 ## Анімації: як замовляти ще
 
 Для кожного листа з людьми/тваринами, пари «спереду + ззаду», можна замовити відео ходьби тим самим способом, що й для пішоходів (сітка з клітинок, фігури крокують на місці, лист на магентовому фоні, цикл мінімум 1 с). Далі `tools/walk_analyze.py` та `tools/make_walk.py`.

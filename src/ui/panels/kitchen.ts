@@ -9,6 +9,7 @@ import type { Game, KitchenItem } from '../../sim/game';
 import { coin, fmtDur, fmtHour, ico } from '../dom';
 import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
+import { startBuzz, stopBuzz } from '../../native';
 
 /** Scene pixels: the scene is 900x600 and is scaled to the panel. Planks of the wall shelf are at PLANKS. */
 const SCENE_W = 900;
@@ -319,8 +320,10 @@ function startHold(g: Game, el: HTMLElement): void {
   if (g.S.upgrades.mixer_pro) {
     mixerFly(el, true);
     q(el, '.k-mixer-art').classList.add('buzz');
+    startBuzz();
     setTimeout(() => jug.classList.add('swirl'), 450);
     setTimeout(() => {
+      stopBuzz();
       jug.classList.remove('swirl');
       q(el, '.k-mixer-art').classList.remove('buzz');
       mixerFly(el, false);
@@ -330,6 +333,8 @@ function startHold(g: Game, el: HTMLElement): void {
   }
   const needle = q(el, '.k-needle');
   needle.classList.add('on');
+  // the phone buzzes in fast pulses while the mixer runs
+  startBuzz();
   let p = 0;
   let last = performance.now();
   let done = false;
@@ -346,6 +351,7 @@ function startHold(g: Game, el: HTMLElement): void {
     if (abortGesture === abort) abortGesture = null;
     cancelAnimationFrame(holdRaf);
     needle.classList.remove('on');
+    stopBuzz();
     jug.classList.remove('swirl');
     q(el, '.k-mixer-art').classList.remove('buzz');
     mixerFly(el, false);

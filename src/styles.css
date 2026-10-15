@@ -4111,3 +4111,32 @@ html.phone .res-row .ri .ico-img {
 html.phone .res-row {
   gap: 3px;
 }
+
+/* phones while selling: "Make" (to the kitchen) and "End the day" are big buttons with their words */
+html.phone .hud-bottom .hb-right .btn {
+  min-height: 56px;
+  padding: 6px 18px;
+  font-size: 18px;
+  border-radius: 16px;
+}
+html.phone .hud-bottom .hb-right .btn .lbl {
+  display: inline;
+}
+html.phone .hud-bottom .hb-right .btn .sm {
+  display: none;
+}
+html.phone .hud-bottom .hb-right .btn .ico-img {
+  height: 28px;
+}
+
+/* phones: the kitchen controls stand at the bottom of the window, right over "Pour the jug" */
+html.phone .kitchen .k-main {
+  flex: 1;
+  align-items: stretch;
+}
+html.phone .kitchen .k-wrap {
+  align-self: flex-start;
+}
+html.phone .kitchen .k-side {
+  justify-content: flex-end;
+}
