@@ -89,9 +89,17 @@ export class UI implements UIApi {
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
       if (!el || (el as HTMLButtonElement).disabled || !this.current) return;
       play('click');
+      // what was pressed stays where it was on the screen, even when something above it grows or shrinks
+      // (a bought upgrade adds a line to the equipment card at the top of the shop)
+      const anchor = el.closest<HTMLElement>('[data-anchor]') ?? el;
+      const key = anchor.dataset.anchor ? `[data-anchor="${anchor.dataset.anchor}"]` : `[data-act="${el.dataset.act}"]`;
+      const before = anchor.getBoundingClientRect().top;
       const [act, arg = ''] = el.dataset.act!.split(':');
       this.current.act(g, this, act, arg);
       this.refresh();
+      const now = this.panelEl.querySelector<HTMLElement>(key);
+      const body = this.panelEl.querySelector<HTMLElement>('.panel-body');
+      if (now && body && body.contains(now)) body.scrollTop += now.getBoundingClientRect().top - before;
     });
 
     g.bus.on('phase', ({ phase }) => this.onPhase(phase));

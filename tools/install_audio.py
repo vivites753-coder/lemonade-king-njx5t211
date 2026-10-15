@@ -33,6 +33,20 @@ STAGES = {
         'sfx': ['coin_1', 'coin_2', 'coin_3', 'pour_cup_1', 'pour_cup_2', 'pour_cup_3', 'ui_tap_1', 'ui_tap_2', 'ui_tap_3', 'buy', ('ui_error', {'max': 1.0})],
         'music': {'music_title': {}, 'music_morning': {}, 'music_sell_sunny': {'end': 108.6, 'loop_from': 3.0}},
     },
+    2: {
+        'music': {
+            'music_kitchen': {},
+            'music_sell_cloudy': {},
+            'music_sell_rain': {'end': 113.0},
+            'music_evening': {'end': 98.2},
+            'music_night': {'end': 111.5},
+            'music_mall': {'end': 94.0},
+            'music_rush': {'loop_from': 2.0},
+            'music_thief': {},
+            'music_festival': {},
+            'music_concert': {},
+        },
+    },
 }
 
 

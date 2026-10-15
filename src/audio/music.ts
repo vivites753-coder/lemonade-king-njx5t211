@@ -1,6 +1,7 @@
 // Background music (WebAudio): one track at a time, looping without a seam between the loop points of
 // assets/audio/loops.json (made by tools/install_audio.py), crossfading when the track changes.
 import loops from '../../assets/audio/loops.json';
+import { LOCATIONS } from '../data/locations';
 import type { Game } from '../sim/game';
 import { onAudioReady } from './sfx';
 
@@ -26,11 +27,48 @@ let current: { name: string; src: AudioBufferSourceNode; gain: GainNode } | null
 const cache = new Map<string, AudioBuffer>();
 const loading = new Set<string>();
 
-/** The track for what the player sees now (more tracks come stage by stage, see docs/AUDIO.md). */
+/** A long queue switches on the rush music; it stays a while, so the music does not jump with every customer. */
+const RUSH_ON = 7;
+const RUSH_OFF = 3;
+const RUSH_MIN_MS = 20000;
+let rushSince = 0;
+
+/** The track for what the player sees now (docs/AUDIO.md). */
 export function musicFor(g: Game): string {
-  if (g.phase === 'title') return 'music_title';
-  if (g.phase === 'sell') return 'music_sell_sunny';
-  return 'music_morning';
+  switch (g.phase) {
+    case 'title':
+      return 'music_title';
+    case 'kitchen':
+      return 'music_kitchen';
+    case 'report':
+      return 'music_evening';
+    case 'shop':
+      return 'music_night';
+    case 'sell':
+      return sellingMusic(g);
+    default:
+      return 'music_morning';
+  }
+}
+
+/** While selling: an event first (the fox, a long queue, the concert, the festival), else the place and the weather. */
+function sellingMusic(g: Game): string {
+  if (g.midKitchen) return 'music_kitchen';
+  const th = g.street.thief;
+  if (th && (th.state === 'run' || th.state === 'grab' || th.state === 'dodge')) return 'music_thief';
+  const now = performance.now();
+  const q = g.street.queued;
+  if (q >= RUSH_ON) rushSince = rushSince || now;
+  else if (rushSince && q <= RUSH_OFF && now - rushSince > RUSH_MIN_MS) rushSince = 0;
+  if (rushSince) return 'music_rush';
+  const place = LOCATIONS[g.S.location];
+  if (g.D.events.concert && g.D.hour >= 14.5) return 'music_concert';
+  if (g.D.events.festival && !place.indoor) return 'music_festival';
+  if (g.S.location === 'mall') return 'music_mall';
+  const w = g.D.weather;
+  if (w === 'rain') return 'music_sell_rain';
+  if (w === 'cloudy' || w === 'wind' || w === 'cold') return 'music_sell_cloudy';
+  return 'music_sell_sunny';
 }
 
 /** Asks for a track (null = silence); cheap to call every frame. */

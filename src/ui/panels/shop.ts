@@ -19,7 +19,7 @@ export const shopPanel: Panel = {
       else if (can.reason === 'rep') btn = `<small class="neg">🔒 ⭐ ${u.minRep}</small>`;
       else if (can.reason === 'requires') btn = `<small>${t('shop.needs', { x: t(`up.${u.requires}.name`) })}</small>`;
       else btn = `<button class="btn ${can.ok ? 'btn-g' : ''} btn-sm" data-act="buy:${id}" ${can.ok ? '' : 'disabled'}>${coin(u.price)}</button>`;
-      return `<div class="up${owned ? ' owned' : ''}${can.reason === 'rep' ? ' locked' : ''}">
+      return `<div class="up${owned ? ' owned' : ''}${can.reason === 'rep' ? ' locked' : ''}" data-anchor="up:${id}">
         <div class="ico">${ico(`up_${id}`, u.icon)}</div>
         <div><b>${t(`up.${id}.name`)}</b><small>${t(`up.${id}.desc`)}</small>${u.outdoorOnly ? `<small class="pill-out">☀️ ${t('shop.outdoorOnly')}</small>` : ''}<span class="idea">💡 ${t(`up.${id}.idea`)}</span></div>
         <div>${btn}</div>

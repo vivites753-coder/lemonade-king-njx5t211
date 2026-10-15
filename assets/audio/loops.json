@@ -1,11 +1,51 @@
 {
+  "music_concert": {
+    "loopEnd": 30.5,
+    "loopStart": 1.5
+  },
+  "music_evening": {
+    "loopEnd": 98.2,
+    "loopStart": 1.5
+  },
+  "music_festival": {
+    "loopEnd": 29.5,
+    "loopStart": 1.5
+  },
+  "music_kitchen": {
+    "loopEnd": 28.0,
+    "loopStart": 1.5
+  },
+  "music_mall": {
+    "loopEnd": 94.0,
+    "loopStart": 1.5
+  },
   "music_morning": {
     "loopEnd": 27.5,
+    "loopStart": 1.5
+  },
+  "music_night": {
+    "loopEnd": 111.5,
+    "loopStart": 1.5
+  },
+  "music_rush": {
+    "loopEnd": 30.5,
+    "loopStart": 3.5
+  },
+  "music_sell_cloudy": {
+    "loopEnd": 100.5,
+    "loopStart": 1.5
+  },
+  "music_sell_rain": {
+    "loopEnd": 113.0,
     "loopStart": 1.5
   },
   "music_sell_sunny": {
     "loopEnd": 108.6,
     "loopStart": 4.5
+  },
+  "music_thief": {
+    "loopEnd": 30.5,
+    "loopStart": 1.5
   },
   "music_title": {
     "loopEnd": 30.0,
