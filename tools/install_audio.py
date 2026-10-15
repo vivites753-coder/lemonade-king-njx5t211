@@ -30,7 +30,7 @@ LOOP_X = 1.5  # seconds of crossfade at the loop seam
 # max = longest length (s; a long tail fades out).
 STAGES = {
     1: {
-        'sfx': ['coin_1', 'coin_2', 'coin_3', 'pour_cup_1', 'pour_cup_2', 'pour_cup_3', 'ui_tap_1', 'ui_tap_2', 'ui_tap_3', 'buy', ('ui_error', {'max': 1.0})],
+        'sfx': ['coin_1', 'coin_2', 'coin_3', 'pour_cup_1', 'pour_cup_2', 'pour_cup_3', 'ui_tap_1', 'buy', ('ui_error', {'max': 1.0})],
         'music': {'music_title': {}, 'music_morning': {}, 'music_sell_sunny': {'end': 108.6, 'loop_from': 3.0}},
     },
     2: {

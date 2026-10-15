@@ -59,7 +59,7 @@ for (const [path, url] of Object.entries(SFX_URLS)) {
 const RECORDED: Partial<Record<SfxName, { file: string; vol: number; vary?: number }>> = {
   coin: { file: 'coin', vol: 0.5, vary: 0.05 },
   serve: { file: 'pour_cup', vol: 0.55, vary: 0.04 },
-  click: { file: 'ui_tap', vol: 0.45, vary: 0.04 },
+  click: { file: 'ui_tap', vol: 0.45 },
   buy: { file: 'buy', vol: 0.55 },
   buzz: { file: 'ui_error', vol: 0.4 },
 };

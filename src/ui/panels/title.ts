@@ -1,7 +1,7 @@
 import { listProfiles } from '../../core/save';
 import type { AgeMode, Avatar } from '../../core/types';
 import { LANGS, asLang, t } from '../../i18n';
-import { coin, esc } from '../dom';
+import { coin, esc, ico } from '../dom';
 import { KID_MODE_READY } from '../modals';
 import type { Panel } from './types';
 
@@ -66,7 +66,7 @@ export const titlePanel: Panel = {
       )
       .join('');
     return `<div class="title-card">
-      <div class="logo">👑🍋</div>
+      <div class="logo">${ico('emblem', '👑🍋')}</div>
       <h1>${t('app.title')}</h1>
       <p>${t('app.subtitle')}</p>
       ${profiles.length ? `<h3>${t('prof.who')}</h3><div class="profs">${cards}</div>` : ''}

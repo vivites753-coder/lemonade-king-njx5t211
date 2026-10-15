@@ -4154,3 +4154,54 @@ html.phone .kitchen .k-side {
 .link-btn {
   font-size: calc(13px * var(--fs, 1));
 }
+
+/* the emblem of the game on the title screen */
+.logo .ico-img {
+  height: 120px;
+  display: block;
+  margin: 0 auto;
+}
+html.phone .title-card .logo .ico-img {
+  height: 96px;
+}
+
+/* phones: the morning window on the right half, the place being chosen shows on the left */
+html.phone #panel[data-panel='morning']:not(.center):not(.title-mode) {
+  left: 50%;
+}
+html.phone #panel[data-panel='morning'] .panel-foot .btn-big {
+  flex-basis: 100%;
+}
+html.phone #panel[data-panel='morning'] .panel-foot .btn:not(.btn-big) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+/* the market: narrower, on the right; the stock column on the left stays in view and shows what the cart adds */
+#panel[data-panel='market']:not(.center) {
+  width: min(470px, 44vw);
+}
+html.phone #panel[data-panel='market']:not(.center):not(.title-mode) {
+  left: auto;
+  width: min(780px, calc(100% - 80px - var(--safe-l)));
+}
+/* phones in the market: the stock column is big, so "+4" of the cart reads well (there is room next to the window) */
+html.phone #app:has(#panel[data-panel='market']:not(.hidden)) .res-bar {
+  width: auto;
+  min-width: 84px;
+  padding: 6px 8px;
+  border-radius: 16px;
+}
+html.phone #app:has(#panel[data-panel='market']:not(.hidden)) .res-row {
+  font-size: calc(19px * var(--fs, 1));
+  gap: 6px;
+  padding: 2px 4px;
+}
+html.phone #app:has(#panel[data-panel='market']:not(.hidden)) .res-row .ri {
+  width: 30px;
+}
+html.phone #app:has(#panel[data-panel='market']:not(.hidden)) .res-row .ri .ico-img {
+  height: 28px;
+}
+html.phone #app:has(#panel[data-panel='market']:not(.hidden)) .res-row small {
+  font-size: calc(16px * var(--fs, 1));
+}

@@ -362,6 +362,7 @@ export class UI implements UIApi {
       this.panelEl.classList.toggle('center', !panel.dock && !panel.wide);
       this.panelEl.classList.toggle('wide', !!panel.wide);
       this.panelEl.classList.toggle('title-mode', p === 'title');
+      this.panelEl.dataset.panel = panel.id;
       if (panel.mount) panel.mount(this.panelEl, this.g, this);
       else this.panelEl.innerHTML = panel.render(this.g, this);
     } else {
@@ -396,7 +397,9 @@ export class UI implements UIApi {
     const top = p === 'title' ? 0 : compact ? Math.max(36, barBottom + 2) : 58;
     let right = 0;
     let bottom = 0;
-    if (this.current?.dock && w > 860 && !compact) right = this.panelEl.getBoundingClientRect().width + 16;
+    const pr = this.panelEl.getBoundingClientRect();
+    const docked = !!this.current?.dock && !this.panelEl.classList.contains('hidden') && !this.panelEl.classList.contains('collapsed') && pr.width > 0;
+    if (docked && pr.left > w * 0.3) right = w - pr.left + 8;
     if (p === 'sell') {
       // on phones the controls may overlap the empty corners of the diamond-shaped diorama
       bottom = compact ? 28 : 110;
@@ -408,7 +411,7 @@ export class UI implements UIApi {
     this.r.insets = { top, right, bottom, left };
     const root = document.documentElement.style;
     root.setProperty('--scene-l', `${left}px`);
-    root.setProperty('--scene-r', `${this.current?.dock && w > 860 && !compact ? right : 0}px`);
+    root.setProperty('--scene-r', `${docked && pr.left > w * 0.3 ? right : 0}px`);
   }
 
   update(): void {
