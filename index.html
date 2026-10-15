@@ -7,10 +7,17 @@
       // Phones (a touch screen whose short side is at most 600 px): the whole game is drawn at 60 % (as if zoomed
       // out) and uses the phone layout (the class "phone", see src/ui/dom.ts). Samsung phones report a "fine"
       // pointer, so the touch points count too.
+      // Tablets (Android, and iPads, which call themselves a Mac) use the phone layout too, zoomed so that the game
+      // is about 800 px high, as on a big phone held sideways; touch-screen laptops keep the computer layout.
       (function () {
-        var touch = navigator.maxTouchPoints > 0 || (window.matchMedia && matchMedia('(any-pointer: coarse)').matches);
-        if (!touch || Math.min(screen.width, screen.height) > 600) return;
-        var s = 0.6;
+        // ?device=tablet: the tablet layout on any screen (for checking it in a desktop browser)
+        var force = /[?&]device=tablet(&|$)/.test(location.search);
+        var touch = force || navigator.maxTouchPoints > 0 || (window.matchMedia && matchMedia('(any-pointer: coarse)').matches);
+        var short = Math.min(screen.width || innerWidth, screen.height || innerHeight);
+        var ua = navigator.userAgent;
+        var tablet = force || (short > 600 && short <= 1400 && (/Android/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)));
+        if (!touch || (short > 600 && !tablet)) return;
+        var s = short > 600 ? Math.round((short / 800) * 100) / 100 : 0.6;
         document.documentElement.setAttribute('data-phone', String(s));
         document.documentElement.classList.add('phone');
         document
