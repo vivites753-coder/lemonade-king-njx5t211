@@ -27,7 +27,8 @@ LOOP_X = 1.5  # seconds of crossfade at the loop seam
 
 # What comes in which stage (most heard first). Music options: end = cut there (s), loop_from = where the loop starts
 # again (s, after an intro). Sound options: keep = 'all' keeps every part of the file (a bark twice, a bell twice),
-# max = longest length (s; a long tail fades out).
+# max = longest length (s; a long tail fades out), stereo = keep both channels (the jingles), loop = the whole file
+# made into a seamless loop (its end crossfaded into its start: the mixer motor plays over and over).
 STAGES = {
     1: {
         'sfx': ['coin_1', 'coin_2', 'coin_3', 'pour_cup_1', 'pour_cup_2', 'pour_cup_3', 'ui_tap_1', 'buy', ('ui_error', {'max': 1.0})],
@@ -46,6 +47,30 @@ STAGES = {
             'music_festival': {},
             'music_concert': {},
         },
+    },
+    3: {
+        'sfx': [
+            # the kitchen: every tap squeezes, pours or stirs, so the sounds are short
+            ('lemon_squeeze_1', {'max': 0.9}),
+            ('lemon_squeeze_2', {'max': 0.9}),
+            ('sugar_pour', {'max': 0.9}),
+            ('stir_spoon_1', {'max': 0.6}),
+            ('stir_spoon_2', {'max': 0.6}),
+            ('mixer_start', {'max': 0.7}),
+            ('mixer_loop', {'loop': True}),
+            'mixer_perfect',
+            'mixer_over',
+            'jug_ready',
+            'pick_item',
+            'drop_item',
+            # the jingles of the day (the music gets quieter under them)
+            ('jingle_day_start', {'stereo': True, 'keep': 'all'}),
+            ('jingle_profit', {'stereo': True, 'keep': 'all'}),
+            ('jingle_loss', {'stereo': True, 'keep': 'all'}),
+            ('jingle_rep_up', {'stereo': True, 'keep': 'all'}),
+            ('jingle_unlock', {'stereo': True, 'keep': 'all'}),
+            ('jingle_king', {'stereo': True, 'keep': 'all'}),
+        ],
     },
 }
 
@@ -87,7 +112,16 @@ def frames_db(x: np.ndarray, win: int) -> np.ndarray:
 
 
 def sfx(src: str, name: str, opts: dict) -> str:
-    x = decode(src, 1)
+    x = decode(src, 2 if opts.get('stereo') else 1)
+    if opts.get('loop'):
+        # the end fades into the start (equal power), and the start is cut: the file then loops without a seam
+        n = int(SR * 0.25)
+        t = np.linspace(0, np.pi / 2, n)[:, None]
+        y = np.concatenate([x[n:-n], x[-n:] * np.cos(t) + x[:n] * np.sin(t)])
+        rms = np.sqrt((y ** 2).mean())
+        gain = min(10 ** (-18 / 20) / max(rms, 1e-6), 0.89 / max(np.abs(y).max(), 1e-6))
+        encode(y * gain, f'{OUT_SFX}/{name}.ogg', 3)
+        return f'loop, {len(y) / SR:.2f} s'
     win = SR // 100  # 10 ms
     db = frames_db(x, win)
     on = db > max(db.max() - 40, -55)
@@ -107,8 +141,8 @@ def sfx(src: str, name: str, opts: dict) -> str:
         end = min(end, start + int(opts['max'] * SR))
     y = x[start:end].copy()
     fade = min(len(y) // 4, int(SR * (0.15 if 'max' in opts else 0.03)))
-    y[-fade:, 0] *= np.linspace(1, 0, fade)
-    y[: SR // 500, 0] *= np.linspace(0, 1, SR // 500)
+    y[-fade:] *= np.linspace(1, 0, fade)[:, None]
+    y[: SR // 500] *= np.linspace(0, 1, SR // 500)[:, None]
     rms = np.sqrt((y ** 2).mean())
     gain = min(10 ** (-18 / 20) / max(rms, 1e-6), 0.89 / max(np.abs(y).max(), 1e-6))
     encode(y * gain, f'{OUT_SFX}/{name}.ogg', 3)

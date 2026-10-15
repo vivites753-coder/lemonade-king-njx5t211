@@ -69,7 +69,42 @@ import { Critters } from './critters';
 import { Street, type Ped, type StreetHost } from './street';
 import { placeEventStop } from './traffic';
 
-export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'serve' | 'splash' | 'alarm' | 'fanfare' | 'buy' | 'mix' | 'break' | 'crash' | 'zap' | 'woof' | 'meow';
+export type SfxName =
+  | 'coin'
+  | 'click'
+  | 'pop'
+  | 'buzz'
+  | 'pour'
+  | 'serve'
+  | 'splash'
+  | 'alarm'
+  | 'fanfare'
+  | 'buy'
+  | 'mix'
+  | 'break'
+  | 'crash'
+  | 'zap'
+  | 'woof'
+  | 'meow'
+  // the kitchen
+  | 'squeeze'
+  | 'water'
+  | 'sugar'
+  | 'stir'
+  | 'mixStart'
+  | 'mixLoop'
+  | 'mixPerfect'
+  | 'mixOver'
+  | 'jugReady'
+  | 'pick'
+  | 'drop'
+  // the jingles of the day
+  | 'dayStart'
+  | 'profit'
+  | 'loss'
+  | 'repUp'
+  | 'unlock'
+  | 'king';
 
 export interface CardInfo {
   id: string;
@@ -379,6 +414,7 @@ export class Game {
     this.street.reset(true);
     const gift = this.grandmaHelp();
     this.setPhase('morning');
+    this.sfx('dayStart');
     // grandma and the parents take turns
     if (gift > 0) this.card(this.S.day % 2 ? 'grandmaHelp' : 'parentsHelp', this.S.day % 2 ? '👵' : '👪', { n: gift });
     if (this.S.day === 1) this.tip('welcome');
@@ -732,7 +768,7 @@ export class Game {
     // anything added after mixing has to be mixed again
     k.mix = 'none';
     k.stir = 0;
-    this.sfx(item === 'lemon' ? 'splash' : item === 'water' ? 'pour' : 'pop');
+    this.sfx(item === 'lemon' ? 'squeeze' : item === 'water' ? 'water' : 'sugar');
     // the first time the jug can be mixed, Lemi explains the mixer
     if (this.kitchenCanMix() && !this.S.upgrades.mixer_pro && !mixerBroken(this.S)) this.tip('mixer');
     this.changed();
@@ -753,7 +789,7 @@ export class Game {
     for (let i = 0; i < CONFIG.WATER_PER_PITCHER; i++) if (this.kitchenCanAdd('water') === 'ok') this.D.kitchen.water++;
     while (this.D.kitchen.juice < r.lemons && this.kitchenCanAdd('lemon') === 'ok') this.D.kitchen.juice = this.nextJuice();
     for (let i = 0; i < r.sugar; i++) if (this.kitchenCanAdd('sugar') === 'ok') this.D.kitchen.sugar++;
-    this.sfx('pour');
+    this.sfx('water');
     this.changed();
   }
 
@@ -772,7 +808,8 @@ export class Game {
     const k = this.D.kitchen;
     k.mix = this.S.upgrades.mixer_pro ? 'perfect' : result;
     k.hand = false;
-    this.sfx(k.mix === 'over' ? 'splash' : 'mix');
+    // stopped too early: the motor just stops (no sound of its own)
+    if (k.mix !== 'under') this.sfx(k.mix === 'over' ? 'mixOver' : 'mixPerfect');
     if (k.mix === 'over') this.tip('mix_over');
     this.changed();
   }
@@ -783,11 +820,11 @@ export class Game {
     const k = this.D.kitchen;
     if (k.mix !== 'none') return true;
     k.stir++;
-    this.sfx('click');
+    this.sfx('stir');
     if (k.stir >= CONFIG.STIR_TAPS) {
       k.mix = 'perfect';
       k.hand = true;
-      this.sfx('mix');
+      this.sfx('mixPerfect');
     }
     this.changed();
     return k.mix !== 'none';
@@ -847,7 +884,7 @@ export class Game {
       this.D.hour += hours;
     }
     this.D.kitchen = emptyKitchen();
-    this.sfx('pour');
+    this.sfx('jugReady');
     this.toast('toast.jugReady', { n: this.D.kitchenJugs }, 'good');
     if (this.D.kitchenJugs === 1) this.tip('kitchen_more');
     this.changed();
@@ -1493,15 +1530,15 @@ export class Game {
     D.report = report;
     this.setPhase('report');
     this.tip('report');
-    if (report.stageGoalReached) this.sfx('fanfare');
-    if (report.unlocked.length) {
-      this.card('locUnlocked', '🔓', { list: report.unlocked.map((id) => `@loc.${id}.name`).join(', ') });
-      this.sfx('fanfare');
-    }
-    if (report.pointsUnlocked) {
-      this.card('pointsUnlocked', '🏪');
-      this.sfx('fanfare');
-    }
+    // one jingle for the day, the biggest news first
+    const newStar = Math.floor(S.rep + 1e-9) > Math.floor(D.repStart + 1e-9);
+    if (report.stageGoalReached) this.sfx('king');
+    else if (report.unlocked.length || report.pointsUnlocked) this.sfx('unlock');
+    else if (newStar) this.sfx('repUp');
+    else if (report.profit > 0) this.sfx('profit');
+    else if (report.profit < 0) this.sfx('loss');
+    if (report.unlocked.length) this.card('locUnlocked', '🔓', { list: report.unlocked.map((id) => `@loc.${id}.name`).join(', ') });
+    if (report.pointsUnlocked) this.card('pointsUnlocked', '🏪');
     for (const p of S.points) if (p.issue === 'stole' && p.seller) this.staffCard(p);
   }
 

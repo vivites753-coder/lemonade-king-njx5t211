@@ -7,9 +7,10 @@ import { quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
 import { coin, fmtDur, fmtHour, ico } from '../dom';
-import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
+import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, picUrl, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 import { startBuzz, stopBuzz } from '../../native';
+import { loopSfx, play } from '../../audio/sfx';
 
 /** Scene pixels: the scene is 900x600 and is scaled to the panel. Planks of the wall shelf are at PLANKS. */
 const SCENE_W = 900;
@@ -239,6 +240,7 @@ function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HT
   let over: HTMLElement | null = null;
   const move = (ev: PointerEvent) => {
     if (!ghost && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) {
+      play('pick');
       ghost = document.createElement('div');
       ghost.className = 'k-ghost';
       ghost.innerHTML = itemGhost(item);
@@ -279,13 +281,17 @@ function startDrag(e: PointerEvent, g: Game, ui: UIApi, el: HTMLElement, src: HT
     }
     ghost.remove();
     const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest<HTMLElement>('[data-drop]');
-    if (!target) return;
+    // let go beside the jug: the product goes back to its shelf
+    if (!target || (item !== 'lemon' && target.dataset.drop !== 'jug')) {
+      play('drop');
+      return;
+    }
     if (item === 'lemon' && target.dataset.drop !== 'juicer') {
+      play('drop');
       ui.toast(t('tip.kitchen'), 'info');
       bump(q(el, '.k-juicer'), 'k-hintpulse');
       return;
     }
-    if (item !== 'lemon' && target.dataset.drop !== 'jug') return;
     addItem(g, ui, el, item);
   };
   abortGesture?.();
@@ -321,9 +327,12 @@ function startHold(g: Game, el: HTMLElement): void {
     mixerFly(el, true);
     q(el, '.k-mixer-art').classList.add('buzz');
     startBuzz();
+    play('mixStart');
+    const stopMotor = loopSfx('mixLoop', 0.3);
     setTimeout(() => jug.classList.add('swirl'), 450);
     setTimeout(() => {
       stopBuzz();
+      stopMotor();
       jug.classList.remove('swirl');
       q(el, '.k-mixer-art').classList.remove('buzz');
       mixerFly(el, false);
@@ -333,8 +342,10 @@ function startHold(g: Game, el: HTMLElement): void {
   }
   const needle = q(el, '.k-needle');
   needle.classList.add('on');
-  // the phone buzzes in fast pulses while the mixer runs
+  // the phone buzzes in fast pulses while the mixer runs, and the motor hums
   startBuzz();
+  play('mixStart');
+  const stopMotor = loopSfx('mixLoop', 0.3);
   let p = 0;
   let last = performance.now();
   let done = false;
@@ -352,6 +363,7 @@ function startHold(g: Game, el: HTMLElement): void {
     cancelAnimationFrame(holdRaf);
     needle.classList.remove('on');
     stopBuzz();
+    stopMotor();
     jug.classList.remove('swirl');
     q(el, '.k-mixer-art').classList.remove('buzz');
     mixerFly(el, false);
@@ -415,7 +427,7 @@ export const kitchenPanel: Panel = {
               <div class="k-meter"><i class="k-zone" style="left:${zoneL}%;width:${zoneW}%"></i><i class="k-needle"></i></div>
               <div class="k-jug${jugPic ? ' has-art' : ''}" data-drop="jug">
                 ${jugPic}
-                <div class="k-liq-clip"><div class="k-liquid" data-k="liquid"></div><div class="k-grains" data-k="grains"></div></div>
+                <div class="k-liq-clip"${jugPic ? ` style="--jug-mask:url('${picUrl('jug')}')"` : ''}><div class="k-liquid" data-k="liquid"></div><div class="k-grains" data-k="grains"></div></div>
               </div>
               <div class="k-glass${jugPic ? ' has-art' : ''}">${jugPic}</div>
               <div class="k-drops">${dropsArt()}</div>

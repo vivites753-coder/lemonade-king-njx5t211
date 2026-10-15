@@ -3,7 +3,7 @@
 import loops from '../../assets/audio/loops.json';
 import { LOCATIONS } from '../data/locations';
 import type { Game } from '../sim/game';
-import { onAudioReady } from './sfx';
+import { onAudioReady, setMusicDucker } from './sfx';
 
 const URLS = import.meta.glob('/assets/audio/music/*.ogg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const LOOPS = loops as Record<string, { loopStart: number; loopEnd: number }>;
@@ -143,6 +143,20 @@ function fadeOut(ac: AudioContext, t: { src: AudioBufferSourceNode; gain: GainNo
   t.gain.gain.exponentialRampToValueAtTime(0.0001, now + FADE);
   t.src.stop(now + FADE + 0.05);
 }
+
+/** A jingle plays over the music: the music goes quiet for its length and comes back softly. */
+function duck(seconds: number): void {
+  const ac = mctx;
+  if (!ac || !master) return;
+  const g = master.gain;
+  const now = ac.currentTime;
+  g.cancelScheduledValues(now);
+  g.setValueAtTime(g.value, now);
+  g.linearRampToValueAtTime(VOLUME * 0.25, now + 0.15);
+  g.setValueAtTime(VOLUME * 0.25, now + Math.max(0.15, seconds - 0.3));
+  g.linearRampToValueAtTime(VOLUME, now + seconds + 0.9);
+}
+setMusicDucker(duck);
 
 /** What plays now (for the developer console and checks). */
 export function musicState(): { wanted: string | null; playing: string | null; enabled: boolean; cached: string[] } {

@@ -2736,9 +2736,20 @@ html.phone .rm-items {
   overflow: hidden;
   border-radius: inherit;
 }
+/* the jug picture (sheet 18) stands as tall as the box, its body (without the handle) centred under the mixer bar;
+   the lemonade takes the shape of the picture (a mask), up to the opening and without the handle */
+.k-jug.has-art .k-jug-img,
+.k-glass.has-art img {
+  position: absolute;
+  inset: 0 auto auto 7px;
+  width: auto;
+  height: 100%;
+}
 .k-jug.has-art .k-liq-clip {
-  inset: 14% 17% 5% 13%;
-  border-radius: 6px 6px 22px 22px;
+  inset: 22px 6px 6px 0;
+  border-radius: 0;
+  -webkit-mask: var(--jug-mask) no-repeat 7px -22px / auto 150px;
+  mask: var(--jug-mask) no-repeat 7px -22px / auto 150px;
 }
 /* the jug picture is a milky glass: the lemonade is laid over it and tints it */
 .k-jug.has-art .k-liquid {

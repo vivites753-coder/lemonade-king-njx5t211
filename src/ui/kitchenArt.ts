@@ -213,6 +213,11 @@ export function sceneBg(): string {
   return pic('bg', 'k-bg-img');
 }
 
+/** The URL of a kitchen picture, or '' while it has not been drawn. */
+export function picUrl(name: string): string {
+  return urls[`/assets/kitchen/kt_${name}.webp`] ?? urls[`/assets/kitchen/kt_${name}.png`] ?? urls[`/assets/kitchen/kt_${name}.jpg`] ?? '';
+}
+
 /** The glass jug picture (kt_jug.png), or '' (then the jug is drawn by CSS). */
 export function jugArt(): string {
   return pic('jug', 'k-jug-img');
