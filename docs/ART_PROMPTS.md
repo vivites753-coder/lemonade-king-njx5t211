@@ -13,9 +13,10 @@
 2. ~~Лист 08а. Лемі: 5 емоцій~~ — готово (`ui_lemi_<настрій>`: підказки, картки подій, урок дня).
    Решта портретів листа 08 — пізніше, за бажанням.
 3. ~~Лист 18, скорочений: `kt_jug` і `kt_bowl`~~ — готово (лимонад набирає форму глечика).
-4. **Лист 14, оновлений: тварини й знахідки** (кіт, собаки, гаманець, кулька, монетка, м'яч) і банер
-   на прилавку `stand_banner` — зараз прості фігури кодом.
-5. **Лист 12в: іконки місць** (6 шт., зараз емодзі на картках ранку) і кнопка складу `ui_btn_stock`.
+4. **Лист 14, оновлений: тварини й знахідки** (кіт, 3 собаки, гаманець, монетка, м'яч, 4 кульки) — зараз
+   прості фігури кодом.
+5. **Лист 12в: іконки місць** (6 шт., зараз емодзі на картках ранку), кнопка складу `ui_btn_stock` і порожній
+   банер прилавка `stand_banner` (напис гра пише сама).
 6. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
 
@@ -187,19 +188,22 @@ Row 2: exactly the same five vehicles, same colors and shapes, in the same order
 
 Імена: `prop_car_a_front, prop_car_b_front, prop_car_c_front, prop_car_d_front, prop_van_front, prop_car_a_back, prop_car_b_back, prop_car_c_back, prop_car_d_back, prop_van_back`
 
-## Лист 14. Тварини й знахідки (4×3, ISO)
+## Лист 14. Тварини й знахідки (4×3, ISO), оновлений
+
+У грі вони бігають уздовж вулиці, тому досить одного вигляду: три чверті, обличчям праворуч (у другий бік гра
+дзеркалить). Собак три, бо гра пускає зграйку з трьох різних. Кульки чотирьох кольорів, як зараз у грі.
 
 СІТКА 12 / 4×3 / 75% + ISO +
 
 ```
-Animals are chibi toy-like, three-quarter isometric view.
+Animals are chibi toy-like, small and round, three-quarter isometric view, all facing to the RIGHT (toward the lower right of the image).
 
-Row 1: 1) a ginger cat with a blue collar walking toward the viewer, turned to the right (FRONT), 2) the same cat walking away (BACK), turned to the right, 3) a scruffy brown stray dog walking toward the viewer, turned to the right (FRONT), 4) the same dog from behind (BACK).
-Row 2: 5) a second stray dog, black and white, FRONT view, turned to the right, 6) the same black-and-white dog BACK view, 7) a lost brown leather wallet lying flat, 8) a single red balloon on a string floating.
-Row 3: 9) a shiny gold coin lying on the ground, 10) a boy running fast in a sports shirt, arms swinging, FRONT view turned to the right, 11) a seagull standing, 12) a street sign post with a blank paper poster (lost cat notice, no text).
+Row 1: 1) a ginger cat with a blue collar walking, three-quarter view facing right; 2) the same ginger cat sitting and looking up, three-quarter view facing right; 3) a scruffy brown stray dog running, three-quarter view facing right, tongue out; 4) a sandy golden stray dog running, three-quarter view facing right.
+Row 2: 5) a gray stray dog with a white chest running, three-quarter view facing right; 6) a brown leather wallet lying flat on the ground, slightly open, one coin peeking out; 7) a single shiny gold coin lying flat on the ground; 8) a classic black-and-white football (soccer ball).
+Row 3: 9) a red party balloon on a thin white string; 10) the same balloon in sky blue; 11) the same balloon in purple; 12) the same balloon in light green.
 ```
 
-Імена: `char_cat_front, char_cat_back, char_dog_a_front, char_dog_a_back, char_dog_b_front, char_dog_b_back, item_wallet, item_balloon, item_coin_ground, char_runner_front, char_seagull, prop_notice_post`
+Імена: `char_cat_walk, char_cat_sit, char_dog_brown, char_dog_sand, char_dog_gray, item_wallet, item_coin_ground, item_ball, item_balloon_red, item_balloon_blue, item_balloon_purple, item_balloon_green`
 
 ## Лист 15. Емблема гри (одна велика картинка) — ГОТОВО (логотип і значок додатка)
 
