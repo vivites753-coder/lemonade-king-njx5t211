@@ -31,6 +31,8 @@ export interface Settings {
   reduceMotion: boolean;
   dyslexia: boolean;
   showZone: boolean;
+  /** Where the player put the selling buttons: the centre of each as shares of the screen, per kind of screen. */
+  hudLayout: { phone?: Record<string, [number, number]>; pc?: Record<string, [number, number]> };
 }
 
 export interface DayHistory {
@@ -276,7 +278,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     ageMode: o.ageMode,
     avatar: o.avatar,
     lang: o.lang,
-    settings: { sound: true, music: true, fontScale: 1, reduceMotion: false, dyslexia: false, showZone: true },
+    settings: { sound: true, music: true, fontScale: 1, reduceMotion: false, dyslexia: false, showZone: true, hudLayout: {} },
     totals: { earned: 0, sold: 0 },
     weatherHistory: [],
     history: [],

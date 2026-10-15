@@ -57,6 +57,19 @@ export const CONFIG = {
 
   /** Simulation seconds. */
   SERVE_TIME: 1.6,
+  /** The pouring mini-game (the player holds "Pour"): real seconds to fill the gauge from empty to the top. */
+  POUR_TIME: 1.5,
+  /** How much the speed of the stream changes from cup to cup (± share); the dispenser pours steadier. */
+  POUR_VARY: 0.25,
+  POUR_VARY_DISPENSER: 0.1,
+  /** The green part of the gauge (shares of the top): let go below it and the cup is not full, above it the cup overflows. */
+  POUR_ZONE: [0.72, 0.9] as [number, number],
+  POUR_ZONE_DISPENSER: [0.66, 0.93] as [number, number],
+  /** A press shorter than this (share of the gauge) pours nothing: it was not meant. */
+  POUR_MIN: 0.12,
+  /** Satisfaction taken off for a cup that is not full, and added for a cup poured just right. */
+  UNDERFILL_PENALTY: 0.25,
+  PERFECT_POUR_BONUS: 0.05,
   PITCHER_TIME: 6,
 
   CUPS_PER_PITCHER: 10,

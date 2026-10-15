@@ -28,7 +28,8 @@ LOOP_X = 1.5  # seconds of crossfade at the loop seam
 # What comes in which stage (most heard first). Music options: end = cut there (s), loop_from = where the loop starts
 # again (s, after an intro). Sound options: keep = 'all' keeps every part of the file (a bark twice, a bell twice),
 # max = longest length (s; a long tail fades out), stereo = keep both channels (the jingles), loop = the whole file
-# made into a seamless loop (its end crossfaded into its start: the mixer motor plays over and over).
+# made into a seamless loop (its end crossfaded into its start: the mixer motor plays over and over), onset = the
+# sound starts where it comes within this many dB of its peak (a quiet rustle before the sound itself is cut).
 STAGES = {
     1: {
         'sfx': ['coin_1', 'coin_2', 'coin_3', 'pour_cup_1', 'pour_cup_2', 'pour_cup_3', 'ui_tap_1', 'buy', ('ui_error', {'max': 1.0})],
@@ -53,7 +54,7 @@ STAGES = {
             # the kitchen: every tap squeezes, pours or stirs, so the sounds are short
             ('lemon_squeeze_1', {'max': 0.9}),
             ('lemon_squeeze_2', {'max': 0.9}),
-            ('sugar_pour', {'max': 0.9}),
+            ('sugar_pour', {'max': 0.9, 'onset': 12}),
             ('stir_spoon_1', {'max': 0.6}),
             ('stir_spoon_2', {'max': 0.6}),
             ('mixer_start', {'max': 0.7}),
@@ -63,6 +64,8 @@ STAGES = {
             'jug_ready',
             'pick_item',
             'drop_item',
+            # the pouring mini-game: the cup overflows
+            ('spill', {'max': 1.0}),
             # the jingles of the day (the music gets quieter under them)
             ('jingle_day_start', {'stereo': True, 'keep': 'all'}),
             ('jingle_profit', {'stereo': True, 'keep': 'all'}),
@@ -135,6 +138,9 @@ def sfx(src: str, name: str, opts: dict) -> str:
         last = i
     parts.append((s, last + 1))
     a, b = (parts[0][0], parts[-1][1]) if opts.get('keep') == 'all' else parts[0]
+    if 'onset' in opts:
+        loud = np.where(db[a:b] > db.max() - opts['onset'])[0]
+        a = max(a, a + loud[0] - 2)
     start = max(0, a * win - SR // 200)
     end = min(len(x), b * win + int(SR * 0.06))
     if 'max' in opts:
@@ -175,7 +181,9 @@ def music(src: str, name: str, opts: dict) -> tuple[str, dict]:
 
 
 def main() -> None:
-    stages = [int(a) for a in sys.argv[1:]] or [1]
+    # --only=name1,name2 installs just these files of the stages (a change to one sound)
+    only = next((a.split('=', 1)[1].split(',') for a in sys.argv[1:] if a.startswith('--only=')), None)
+    stages = [int(a) for a in sys.argv[1:] if not a.startswith('--')] or [1]
     src = sources()
     os.makedirs(OUT_SFX, exist_ok=True)
     os.makedirs(OUT_MUSIC, exist_ok=True)
@@ -186,8 +194,12 @@ def main() -> None:
             opts = {}
             if isinstance(name, tuple):
                 name, opts = name
+            if only and name not in only:
+                continue
             print('sfx  ', name.ljust(18), sfx(f'{SRC}/{src[name]}', name, opts))
         for name, opts in spec.get('music', {}).items():
+            if only and name not in only:
+                continue
             info, loop = music(f'{SRC}/{src[name]}', name, opts)
             loops[name] = loop
             print('music', name.ljust(18), info)

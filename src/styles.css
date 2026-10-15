@@ -4193,6 +4193,8 @@ html.phone .kitchen .k-side {
   justify-content: flex-end;
   min-height: 0;
   overflow-y: auto;
+  /* the controls a little higher than the very bottom */
+  padding-bottom: 7cqh;
 }
 
 /* buttons without a text size of their own got the browser's 13.3 px, which did not follow the text size setting */
@@ -4256,4 +4258,135 @@ html.phone #app:has(#panel[data-panel='market']:not(.hidden)) .res-row .ri .ico-
 }
 html.phone #app:has(#panel[data-panel='market']:not(.hidden)) .res-row small {
   font-size: calc(16px * var(--fs, 1));
+}
+
+/* ---------- the pouring mini-game: the gauge by "Pour" (like the mixer's bar, standing up) ---------- */
+.pour-gauge {
+  position: absolute;
+  right: calc(100% + 14px);
+  bottom: 0;
+  width: 30px;
+  height: 160px;
+  border-radius: 15px;
+  overflow: hidden;
+  background: linear-gradient(0deg, #ffe8a3 0, #ffe8a3 calc(var(--hi, 0.9) * 100%), #ff8787 calc(var(--hi, 0.9) * 100%));
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92), 0 8px 18px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s 0.45s;
+}
+.pour-gauge.right {
+  right: auto;
+  left: calc(100% + 14px);
+}
+.serve-btn.pouring {
+  animation: none;
+}
+.serve-btn.pouring .pour-gauge {
+  opacity: 1;
+  transition: none;
+}
+.pg-zone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--lo, 0.72) * 100%);
+  height: calc((var(--hi, 0.9) - var(--lo, 0.72)) * 100%);
+  background: #69db7c;
+}
+.pg-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--lv, 0) * 100%);
+  background: rgba(255, 196, 0, 0.45);
+}
+.pg-needle {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: calc(var(--lv, 0) * 100%);
+  height: 8px;
+  margin-bottom: -4px;
+  background: var(--ink);
+  border-radius: 3px;
+}
+.pour-gauge[data-res='perfect'] {
+  box-shadow: 0 0 0 4px #40c057, 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+.pour-gauge[data-res='over'] {
+  box-shadow: 0 0 0 4px #fa5252, 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+.pour-gauge[data-res='under'] {
+  box-shadow: 0 0 0 4px #fab005, 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+/* while pouring, the speed buttons over "Pour" step aside: the gauge stands where they are */
+#hud:has(.serve-btn.pouring) .hud-top .seg:not(.moved) {
+  opacity: 0;
+  pointer-events: none;
+}
+html.phone .pour-gauge {
+  width: 34px;
+  height: 150px;
+}
+
+/* ---------- the selling buttons where the player put them (Settings → Arrange) ---------- */
+#hud .moved {
+  position: fixed !important;
+  left: calc(var(--mx) * 100%) !important;
+  top: calc(var(--my) * 100%) !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+  translate: -50% -50%;
+  z-index: 13;
+}
+/* arranging: every selling button shows (also outside selling), the windows step aside, the game waits */
+html.hud-editing #hud .hud-bottom.hidden {
+  display: flex !important;
+}
+html.hud-editing #hud [data-move].hidden {
+  display: inline-flex !important;
+}
+html.hud-editing #panel,
+html.hud-editing #lemi,
+html.hud-editing .hud-funnel {
+  visibility: hidden !important;
+}
+html.hud-editing #hud [data-move] {
+  outline: 3px dashed var(--orange);
+  outline-offset: 4px;
+  cursor: grab;
+  touch-action: none;
+  animation: none !important;
+}
+html.hud-editing #hud [data-move] * {
+  pointer-events: none;
+}
+html.hud-editing #hud [data-move].dragging {
+  cursor: grabbing;
+  outline-style: solid;
+  z-index: 14;
+}
+.hud-edit-bar {
+  position: fixed;
+  left: 50%;
+  top: calc(var(--hud-h, 58px) + 16px);
+  translate: -50% 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  font-size: calc(16px * var(--fs, 1));
+  text-align: center;
+}
+.hud-edit-bar .row {
+  display: flex;
+  gap: 8px;
 }

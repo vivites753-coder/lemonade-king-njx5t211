@@ -1,6 +1,6 @@
 // UI controller: picks the panel for each phase, routes clicks/taps/keys, keeps the camera clear of panels.
 import { setMusicEnabled } from '../audio/music';
-import { play, setSoundEnabled } from '../audio/sfx';
+import { play, playHeld, setSoundEnabled } from '../audio/sfx';
 import { activeProfile, clearSave, createProfile, deleteProfile, listProfiles, parseSave, readSave, serializeSave, setActiveProfile, writeSave } from '../core/save';
 import type { AgeMode, Avatar, Lang, Phase } from '../core/types';
 import { setLang, t } from '../i18n';
@@ -127,6 +127,19 @@ export class UI implements UIApi {
     const canvas = document.getElementById('scene')!;
     this.listenCanvas(canvas);
     window.addEventListener('keydown', (e) => this.onKey(e));
+    // "Pour" is held: the cup fills while it is pressed (the pouring mini-game)
+    document.getElementById('hud')!.addEventListener('pointerdown', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-hud="serve"]');
+      if (!b || b.disabled || this.editingHud) return;
+      e.preventDefault();
+      this.startPour(e.pointerId);
+    });
+    const letGo = (e: PointerEvent) => this.endPour(e.pointerId);
+    window.addEventListener('pointerup', letGo);
+    window.addEventListener('pointercancel', letGo);
+    window.addEventListener('keyup', (e) => {
+      if (e.key === ' ') this.endPour();
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && g.phase === 'sell') this.userPaused = true;
     });
@@ -265,6 +278,7 @@ export class UI implements UIApi {
           this.overlays.refresh();
         },
         openDev: () => this.openDev(),
+        editHud: () => this.editHud(),
       }),
     );
   }
@@ -468,6 +482,7 @@ export class UI implements UIApi {
     setMusicEnabled(s.sound && s.music !== false);
     document.body.classList.toggle('dyslexia', s.dyslexia);
     document.documentElement.style.setProperty('--fs', String(s.fontScale ?? 1));
+    this.hud.setLayout(s.hudLayout?.[isPhone() ? 'phone' : 'pc'] ?? {});
     document.body.classList.toggle('reduce-motion', s.reduceMotion);
   }
 
@@ -488,9 +503,6 @@ export class UI implements UIApi {
         break;
       case 'speaker':
         g.toggleSpeaker();
-        break;
-      case 'serve':
-        g.serve();
         break;
       case 'make':
         g.openKitchen();
@@ -586,7 +598,130 @@ export class UI implements UIApi {
     for (const tt of this.r.tapTargets) {
       if (Math.hypot(tt.x - x, tt.y - y) < tt.r && g.tapCritter(tt.id)) return;
     }
-    g.serve();
+    // pouring is only by holding the "Pour" button (the pouring mini-game), not by a tap on the field
+  }
+
+  // ---------------------------------------------------------------- the pouring mini-game
+  private pourLv = -1;
+  private pourPointer = -1;
+  private pourRaf = 0;
+  private pourSound: (() => void) | null = null;
+
+  /** "Pour" pressed: a cup starts filling; the gauge by the button rises at this cup's speed (a little uneven). */
+  private startPour(pointer = -1): void {
+    const g = this.g;
+    if (this.pourLv >= 0 || this.editingHud || g.pourStart() !== 'ok') return;
+    const rate = g.servings[g.pouringAt()]?.pour?.rate ?? 1 / CONFIG.POUR_TIME;
+    const [lo, hi] = g.pourZone();
+    this.pourLv = 0;
+    this.pourPointer = pointer;
+    this.pourSound = playHeld('serve');
+    this.hud.pourGauge({ level: 0, lo, hi });
+    const seed = Math.random() * 6;
+    let last = performance.now();
+    let time = 0;
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      time += dt;
+      // the customer is gone or the day is over meanwhile
+      if (g.pouringAt() < 0) return this.stopPour('');
+      this.pourLv += rate * dt * (1 + 0.18 * Math.sin(time * 5 + seed));
+      this.hud.pourGauge({ level: this.pourLv, lo, hi });
+      // held to the top: it overflows by itself
+      if (this.pourLv >= 1) return this.endPour();
+      this.pourRaf = requestAnimationFrame(tick);
+    };
+    this.pourRaf = requestAnimationFrame(tick);
+  }
+
+  /** "Pour" let go (by the finger that pressed it, or the space bar): the cup is judged by its level. */
+  private endPour(pointer = -1): void {
+    if (this.pourLv < 0) return;
+    if (pointer >= 0 && this.pourPointer >= 0 && pointer !== this.pourPointer) return;
+    this.stopPour(this.g.pourEnd(this.pourLv));
+  }
+
+  private stopPour(result: string): void {
+    cancelAnimationFrame(this.pourRaf);
+    this.pourSound?.();
+    this.pourSound = null;
+    this.pourLv = -1;
+    this.pourPointer = -1;
+    this.hud.pourGauge(null, result);
+  }
+
+  // ---------------------------------------------------------------- the selling buttons where the player wants them
+  private editingHud = false;
+
+  /**
+   * Settings → "Arrange the buttons": the selling buttons show (the game waits) and can be dragged anywhere;
+   * "Done" keeps the places in the settings (one arrangement for phones, one for computers).
+   */
+  private editHud(): void {
+    if (this.editingHud || this.g.phase === 'title') return;
+    this.editingHud = true;
+    const wasPaused = this.userPaused;
+    this.userPaused = true;
+    const html = document.documentElement;
+    html.classList.add('hud-editing');
+    const kind = isPhone() ? 'phone' : 'pc';
+    const layout: Record<string, [number, number]> = { ...(this.g.S.settings.hudLayout?.[kind] ?? {}) };
+    const bar = document.createElement('div');
+    bar.className = 'hud-edit-bar';
+    bar.innerHTML = `<b>✋ ${t('hudEdit.hint')}</b>
+      <div class="row"><button class="btn btn-sm" data-e="reset">↺ ${t('hudEdit.reset')}</button>
+      <button class="btn btn-sm btn-g" data-e="done">✓ ${t('hudEdit.done')}</button></div>`;
+    (document.getElementById('app') ?? document.body).appendChild(bar);
+    const hud = document.getElementById('hud')!;
+    const down = (e: PointerEvent) => {
+      const el = (e.target as HTMLElement).closest<HTMLElement>('[data-move]');
+      if (!el) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = el.dataset.move!;
+      const r = el.getBoundingClientRect();
+      const offX = e.clientX - (r.left + r.width / 2);
+      const offY = e.clientY - (r.top + r.height / 2);
+      el.classList.add('dragging');
+      const move = (ev: PointerEvent) => {
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+        // the whole button stays on the screen
+        const x = Math.min(W - r.width / 2, Math.max(r.width / 2, ev.clientX - offX)) / W;
+        const y = Math.min(H - r.height / 2, Math.max(r.height / 2, ev.clientY - offY)) / H;
+        layout[id] = [Math.round(x * 1e4) / 1e4, Math.round(y * 1e4) / 1e4];
+        this.hud.setLayout(layout);
+      };
+      const up = () => {
+        el.classList.remove('dragging');
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+      window.addEventListener('pointercancel', up);
+    };
+    hud.addEventListener('pointerdown', down, true);
+    bar.addEventListener('click', (e) => {
+      const act = (e.target as HTMLElement).closest<HTMLElement>('[data-e]')?.dataset.e;
+      if (!act) return;
+      play('click');
+      if (act === 'reset') {
+        for (const k of Object.keys(layout)) delete layout[k];
+        this.hud.setLayout(layout);
+        return;
+      }
+      hud.removeEventListener('pointerdown', down, true);
+      bar.remove();
+      html.classList.remove('hud-editing');
+      this.editingHud = false;
+      this.userPaused = wasPaused;
+      this.g.updateSettings({ hudLayout: { ...this.g.S.settings.hudLayout, [kind]: layout } });
+      this.applySettings();
+      this.layout();
+    });
   }
 
   private onKey(e: KeyboardEvent): void {
@@ -601,7 +736,8 @@ export class UI implements UIApi {
     if (this.g.phase !== 'sell') return;
     if (e.key === ' ') {
       e.preventDefault();
-      this.g.serve();
+      // held like the button: the cup fills until the key is let go
+      if (!e.repeat) this.startPour();
     } else if (e.key === 'p' || e.key === 'P') this.userPaused = !this.userPaused;
     else if (e.key === '1' || e.key === '2' || e.key === '3') {
       this.userPaused = false;

@@ -18,6 +18,8 @@ const TIP_MOOD: Record<string, LemiMood> = {
   thief_hit: 'sad',
   taste_bad: 'sad',
   mix_over: 'sad',
+  pour_over: 'surprised',
+  pour_under: 'think',
   thief: 'surprised',
   rain: 'surprised',
   expensive: 'surprised',

@@ -33,7 +33,11 @@ export class Hud {
     root.addEventListener('click', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-hud]');
       if (!el || (el as HTMLButtonElement).disabled) return;
+      // arranging the buttons: a press moves them, it does not press them
+      if (document.documentElement.classList.contains('hud-editing')) return;
       const [act, arg = ''] = el.dataset.hud!.split(':');
+      // "Pour" is held, not clicked (see UI.startPour)
+      if (act === 'serve') return;
       if (act === 'why') {
         this.whyOpen = !this.whyOpen;
         this.whyKey = '';
@@ -54,7 +58,7 @@ export class Hud {
         <span class="chip" data-el="loc"></span>
         <button class="chip chip-btn" data-hud="roadmap" data-el="rep" aria-label="${t('roadmap.title')}" title="${t('roadmap.title')}"></button>
         <span class="spacer"></span>
-        <div class="seg" data-el="speed">
+        <div class="seg" data-el="speed" data-move="speed">
           <button data-hud="speed:0" aria-label="${t('hud.pause')}">${ico('btn_pause', '⏸')}</button>
           <button data-hud="speed:1" aria-label="x1">${ico('btn_play', '▶')}</button>
           <button data-hud="speed:2" aria-label="x2">${ico('btn_fast', '⏩')}</button>
@@ -81,24 +85,69 @@ export class Hud {
       </div>
       <div class="hud-bottom" data-el="bottom">
         <div class="hb-left">
-          <div class="price-box">
+          <div class="price-box" data-move="price">
             <button class="btn btn-icon" data-hud="price:-1" aria-label="−">−</button>
             <div class="val"><small>${t('hud.price')}</small><b><i class="coin"></i><span data-el="price"></span></b></div>
             <button class="btn btn-icon btn-y" data-hud="price:1" aria-label="+">+</button>
           </div>
-          <button class="btn" data-hud="speaker" data-el="speaker"></button>
+          <button class="btn" data-hud="speaker" data-el="speaker" data-move="speaker"></button>
         </div>
-        <button class="serve-btn" data-hud="serve" data-el="serve">${ico('gd_ready', '🥛')}<small>${t('hud.serve')}</small></button>
+        <button class="serve-btn" data-hud="serve" data-el="serve" data-move="serve">${ico('gd_ready', '🥛')}<small>${t('hud.serve')}</small>
+          <span class="pour-gauge" data-el="gauge" aria-hidden="true"><i class="pg-zone"></i><i class="pg-fill"></i><i class="pg-needle"></i></span></button>
         <div class="hb-right">
-          <span class="chip cups-chip" data-el="cups"></span>
-          <button class="btn btn-y" data-hud="make" data-el="make"></button>
-          <button class="btn btn-sm" data-hud="end">${ico('btn_sleep', '🌙')}<span class="lbl"> ${t('hud.end')}</span></button>
+          <span class="chip cups-chip" data-el="cups" data-move="cups"></span>
+          <button class="btn btn-y" data-hud="make" data-el="make" data-move="make"></button>
+          <button class="btn btn-sm" data-hud="end" data-move="end">${ico('btn_sleep', '🌙')}<span class="lbl"> ${t('hud.end')}</span></button>
         </div>
       </div>`;
     this.els = {};
     this.cache.clear();
     for (const el of Array.from(this.root.querySelectorAll<HTMLElement>('[data-el]'))) this.els[el.dataset.el!] = el;
     this.setPhase(this.phase);
+    this.setLayout(this.layout);
+  }
+
+  private layout: Record<string, [number, number]> = {};
+
+  /** Puts the selling buttons where the player put them (centre as shares of the screen); the others stay in place. */
+  setLayout(layout: Record<string, [number, number]>): void {
+    this.layout = layout;
+    for (const el of Array.from(this.root.querySelectorAll<HTMLElement>('[data-move]'))) {
+      const at = layout[el.dataset.move!];
+      el.classList.toggle('moved', !!at);
+      if (at) {
+        el.style.setProperty('--mx', String(Math.min(0.98, Math.max(0.02, at[0]))));
+        el.style.setProperty('--my', String(Math.min(0.98, Math.max(0.02, at[1]))));
+      } else {
+        el.style.removeProperty('--mx');
+        el.style.removeProperty('--my');
+      }
+    }
+  }
+
+  /**
+   * The gauge of the pouring mini-game by the "Pour" button: the level rises while the button is held; `null` hides
+   * it, showing for a moment how the pour ended.
+   */
+  pourGauge(s: { level: number; lo: number; hi: number } | null, result = ''): void {
+    const btn = this.els.serve;
+    const gauge = this.els.gauge;
+    if (!btn || !gauge) return;
+    if (!s) {
+      btn.classList.remove('pouring');
+      gauge.dataset.res = result;
+      return;
+    }
+    if (!btn.classList.contains('pouring')) {
+      // the gauge stands on the side of the button where there is room
+      const r = btn.getBoundingClientRect();
+      gauge.classList.toggle('right', r.left + r.width / 2 < window.innerWidth / 2);
+      gauge.dataset.res = '';
+      btn.classList.add('pouring');
+    }
+    gauge.style.setProperty('--lo', String(s.lo));
+    gauge.style.setProperty('--hi', String(s.hi));
+    gauge.style.setProperty('--lv', String(Math.min(1, s.level)));
   }
 
   setPhase(p: Phase): void {

@@ -98,6 +98,7 @@ export type SfxName =
   | 'jugReady'
   | 'pick'
   | 'drop'
+  | 'spill'
   // the jingles of the day
   | 'dayStart'
   | 'profit'
@@ -152,6 +153,8 @@ export interface Serving {
   dur: number;
   /** Poured by a helper (faster), not by the player. */
   helper: boolean;
+  /** The player's pour of the pouring mini-game: it lasts while the button is held (`pourEnd`); rate = gauges a second. */
+  pour?: { rate: number };
 }
 
 export interface Snapshot {
@@ -1252,13 +1255,74 @@ export class Game {
     return last;
   }
 
+  /** The good part of the pouring gauge (shares of the top); the dispenser makes it wider. */
+  pourZone(): [number, number] {
+    return this.active().dispenser ? CONFIG.POUR_ZONE_DISPENSER : CONFIG.POUR_ZONE;
+  }
+
+  /** How fast this cup fills (gauges a second): a little different every time, steadier with the dispenser. */
+  private pourRate(): number {
+    const vary = this.active().dispenser ? CONFIG.POUR_VARY_DISPENSER : CONFIG.POUR_VARY;
+    return (1 + (Math.random() * 2 - 1) * vary) / CONFIG.POUR_TIME;
+  }
+
+  /** The counter where the player is pouring now, or -1. */
+  pouringAt(): number {
+    return this.servings.findIndex((s) => !!s?.pour);
+  }
+
+  /**
+   * The pouring mini-game: the player holds "Pour" and a cup starts filling at a counter (chosen like `serve`
+   * does); it is finished by `pourEnd` when the button is let go.
+   */
+  pourStart(): ReturnType<Game['serve']> {
+    if (this.phase !== 'sell' || this.paused) return 'no';
+    if (this.pouringAt() >= 0) return 'busy';
+    const order = [...Array(this.counters()).keys()].sort((a, b) => Number(this.autoCounter(a)) - Number(this.autoCounter(b)));
+    let last: ReturnType<Game['serve']> = 'noCustomer';
+    for (const c of order) {
+      const r = this.serveAt(c, false, true);
+      if (r === 'ok' || r === 'noCups' || r === 'making') return r;
+      if (r === 'busy') last = 'busy';
+    }
+    return last;
+  }
+
+  /**
+   * The player let go at `level` (share of the gauge). In the green zone the cup is sold; below it the cup is not
+   * full and the customer is less happy; above it the cup overflows: that lemonade is lost and the customer waits
+   * for another cup. A very short press pours nothing.
+   */
+  pourEnd(level: number): 'perfect' | 'under' | 'over' | 'cancel' | 'no' {
+    const c = this.pouringAt();
+    if (c < 0) return 'no';
+    const [lo, hi] = this.pourZone();
+    if (level < CONFIG.POUR_MIN) {
+      this.servings[c] = null;
+      return 'cancel';
+    }
+    if (level > hi) {
+      this.servings[c] = null;
+      if (this.D.cupsReady > 0) this.D.cupsReady--;
+      this.sfx('spill');
+      this.toast('toast.overPoured', undefined, 'warn');
+      this.tip('pour_over');
+      this.changed();
+      return 'over';
+    }
+    const fill = level < lo ? 'under' : 'perfect';
+    this.completeServe(c, fill);
+    if (fill === 'under') this.tip('pour_under');
+    return fill;
+  }
+
   /** Cups of lemonade that no counter is pouring yet. */
   freeCups(): number {
     return this.D.cupsReady - this.servings.filter((s) => s).length;
   }
 
   /** Pour a cup at one counter (by the player or by that counter's helper). */
-  serveAt(c: number, byHelper: boolean): 'ok' | 'busy' | 'making' | 'noCustomer' | 'noCups' | 'no' {
+  serveAt(c: number, byHelper: boolean, pour = false): 'ok' | 'busy' | 'making' | 'noCustomer' | 'noCups' | 'no' {
     if (this.phase !== 'sell' || this.paused) return 'no';
     if (this.servings[c]) return 'busy';
     if (this.making) return 'making';
@@ -1274,12 +1338,18 @@ export class Game {
     }
     this.helperIdle[c] = 0;
     // a counter that a helper looks after pours at the helper's speed
+    // the player's pour of the mini-game lasts until the button is let go (its sound is played by the button)
+    if (pour) {
+      this.servings[c] = { ped: p, t: 0, dur: Infinity, helper: false, pour: { rate: this.pourRate() } };
+      return 'ok';
+    }
     this.servings[c] = { ped: p, t: 0, dur: serveTime(this.active(), byHelper || this.autoCounter(c)), helper: byHelper };
     this.sfx('serve');
     return 'ok';
   }
 
-  private completeServe(c = 0): void {
+  /** fill: how the player's pour of the mini-game ended ('timed' = a pour by time: a helper, or `serve`). */
+  private completeServe(c = 0, fill: 'perfect' | 'under' | 'timed' = 'timed'): void {
     const p = this.servings[c]!.ped;
     this.servings[c] = null;
     if (!this.street.inQueue(p)) return;
@@ -1300,10 +1370,13 @@ export class Game {
     D.sales += paid;
     S.totals.earned += paid;
     const q = quality(D.recipeUsed) * D.mixQuality;
-    const sat = satisfaction(q, paid, p.maxPrice, p.waited, p.patienceMax);
+    let sat = satisfaction(q, paid, p.maxPrice, p.waited, p.patienceMax);
+    // a cup poured just right pleases a little more, a cup not full pleases less
+    if (fill === 'perfect') sat = Math.min(1, sat + CONFIG.PERFECT_POUR_BONUS);
+    else if (fill === 'under') sat = Math.max(0, sat - CONFIG.UNDERFILL_PENALTY);
     S.rep = clamp(S.rep + repDelta(sat, S.rep, up), 0, 5);
     const bal = tasteBalance(D.recipeUsed);
-    const emote = free ? '🎁' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
+    const emote = free ? '🎁' : fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
     this.street.serveDone(p, emote);
     this.bus.emit('sale', { x: p.x, y: p.y, amount: paid, sat, free });
     this.maybeSellCookie(p);

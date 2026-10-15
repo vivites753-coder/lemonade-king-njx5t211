@@ -23,6 +23,8 @@ const TARGETS: Record<string, string[] | WorldTarget> = {
   sell_start: ['[data-hud="serve"]'],
   first_sale: ['.hud-top .chip.coins'],
   queue: ['[data-hud="serve"]'],
+  pour_over: ['[data-hud="serve"]'],
+  pour_under: ['[data-hud="serve"]'],
   expensive: ['.price-box'],
   cookie_expensive: ['#panel [data-act="cprice:-1"]'],
   rain: ['[data-el="weather"]'],

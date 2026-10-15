@@ -88,6 +88,7 @@ export interface SettingsHooks {
   devMode(): boolean;
   enableDev(): void;
   openDev(): void;
+  editHud(): void;
 }
 
 export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
@@ -109,6 +110,9 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         <div class="row font-sizes">
           ${FONT_SCALES.map(([k, key]) => `<button class="btn btn-sm ${Math.abs((s.fontScale ?? 1) - k) < 0.01 ? 'btn-y' : ''}" data-act="font:${k}" style="font-size:${Math.round(14 * k)}px">${t(key)}</button>`).join('')}
         </div>
+        ${inGame ? `<h3>🕹️ ${t('settings.hudLayout')}</h3>
+        <div class="row"><button class="btn btn-sm" data-act="hudEdit">✋ ${t('settings.hudEdit')}</button></div>
+        <p class="note">${t('settings.hudNote')}</p>` : ''}
         ${isNativeApp() ? '' : `<div class="row" style="margin:6px 0"><button class="btn btn-sm" data-act="fullscreen">⛶ ${t('settings.fullscreen')}</button></div>`}
         <h3>🌍 ${t('settings.lang')}</h3>
         <div class="row">
@@ -141,6 +145,10 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         const key = arg as keyof typeof g.S.settings;
         g.updateSettings({ [key]: !g.S.settings[key] });
         hooks.apply();
+      }
+      if (act === 'hudEdit') {
+        queueMicrotask(() => hooks.editHud());
+        return true;
       }
       if (act === 'font') {
         g.updateSettings({ fontScale: Number(arg) || 1 });

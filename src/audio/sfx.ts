@@ -77,6 +77,7 @@ const RECORDED: Partial<Record<SfxName, { file: string; vol: number; vary?: numb
   jugReady: { file: 'jug_ready', vol: 0.5 },
   pick: { file: 'pick_item', vol: 0.4, vary: 0.05 },
   drop: { file: 'drop_item', vol: 0.45, vary: 0.05 },
+  spill: { file: 'spill', vol: 0.55, vary: 0.04 },
   // the jingles of the day
   dayStart: { file: 'jingle_day_start', vol: 0.45, jingle: true },
   profit: { file: 'jingle_profit', vol: 0.45, jingle: true },
@@ -141,6 +142,44 @@ function playRecorded(name: SfxName): boolean {
   src.start();
   if (r.jingle) duckMusic?.(buf.duration);
   return true;
+}
+
+/**
+ * Plays a recorded sound once and gives a function that cuts it short with a quick fade (the pour sound stops
+ * when the player lets go of the button). Nothing plays while the sound is off or not loaded yet.
+ */
+export function playHeld(name: SfxName): () => void {
+  const r = RECORDED[name];
+  const urls = r ? VARIANTS.get(r.file) : undefined;
+  if (!enabled || !ac || !r || !urls?.length) return () => {};
+  const url = urls[Math.floor(Math.random() * urls.length)];
+  const buf = buffers.get(url);
+  if (!buf) {
+    load(url);
+    return () => {};
+  }
+  const ctx = ac;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = (r.rate ?? 1) * (1 + (Math.random() * 2 - 1) * (r.vary ?? 0));
+  const g = ctx.createGain();
+  g.gain.value = r.vol;
+  src.connect(g).connect(ctx.destination);
+  src.start();
+  let stopped = false;
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    const now = ctx.currentTime;
+    g.gain.cancelScheduledValues(now);
+    g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    try {
+      src.stop(now + 0.1);
+    } catch {
+      // it has ended by itself already
+    }
+  };
 }
 
 /**
