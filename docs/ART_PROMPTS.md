@@ -9,8 +9,7 @@
 
 Перевірено по коду: що гра просить, але малює сама (кодом, CSS або емодзі).
 
-1. **Лист 15. Емблема гри** — логотип на титульному екрані (зараз емодзі 👑🍋) і значок додатка
-   Android та Google Play (зараз заглушка, намальована кодом).
+1. ~~Лист 15. Емблема гри~~ — готово (логотип і значок додатка).
 2. **Лист 08, лише Лемі: 5 емоцій** (`char_lemi_neutral, _happy, _think, _surprised, _sad`) — Лемі
    в кожній підказці, зараз його обличчя зроблене CSS. Решта портретів листа 08 — пізніше, за бажанням.
 3. **Лист 18, скорочений: `kt_jug` (глечик для змішування) і `kt_bowl` (миска для вичавлювання)** — на кухні
@@ -76,6 +75,21 @@ Row 3: 9) Milana: young woman seller with a high ponytail, pink apron, holding a
 ```
 
 Імена: `char_lemi_neutral, char_lemi_happy, char_lemi_think, char_lemi_surprised, char_lemi_sad, char_grandma_olya, char_vendor_galya, char_vendor_bogdan, char_vendor_milana, char_vendor_baker, char_parents, char_kid_happy`
+
+## Лист 08а. Лемі: 5 емоцій (5×1, FLAT)
+
+Прикріпіть емблему (`art/sheets/emblem.jpg`), щоб Лемі був тим самим лимоном.
+
+```
+A sprite sheet of 5 cute game assets arranged in a strict 5-column by 1-row grid on a perfectly flat solid magenta background (#FF00FF). Every item sits alone in its own grid cell, centered, filling about 78% of the cell, with a wide empty magenta margin around it (at least 12% of the cell on every side), no item touching or overlapping another or the cell edge, no grid lines, no labels, no numbers, no watermark.
+
+Use the attached image as the character and style reference: cute stylized soft clay / toy-like 3D look, rounded chunky shapes, bright cheerful saturated colors, soft studio lighting from the top-left, FRONT VIEW, straight on, slightly glossy clay material, clean readable silhouette that stays clear when shrunk to 64 pixels. NO ground shadow, NO cast shadow, NO glow, NO halo, NO text, letters or numbers.
+
+Each item is Lemi, the lemon mascot of the game: exactly the same character as in the attached image (plump yellow lemon, small green leaf on top, big round black eyes with a white shine, small mouth, tiny arms), but WITHOUT the crown, shown from the head down to the bottom of the lemon.
+1) neutral: a friendly small smile, 2) happy: laughing with closed happy eyes, arms up, 3) thinking: one eyebrow up, a tiny hand on the chin, 4) surprised: wide eyes, small round open mouth, 5) sad: droopy eyes, a small frown.
+```
+
+Імена: `char_lemi_neutral, char_lemi_happy, char_lemi_think, char_lemi_surprised, char_lemi_sad`
 
 ## Лист 09. Іконки: погода й показники (5×4, FLAT)
 
@@ -188,7 +202,7 @@ Row 3: 9) a shiny gold coin lying on the ground, 10) a boy running fast in a spo
 
 Імена: `char_cat_front, char_cat_back, char_dog_a_front, char_dog_a_back, char_dog_b_front, char_dog_b_back, item_wallet, item_balloon, item_coin_ground, char_runner_front, char_seagull, prop_notice_post`
 
-## Лист 15. Емблема гри (одна велика картинка)
+## Лист 15. Емблема гри (одна велика картинка) — ГОТОВО (логотип і значок додатка)
 
 ```
 A single large 3D render of the game emblem, centered on a perfectly flat solid magenta background (#FF00FF), square canvas 2048x2048, the emblem filling about 70% of the canvas, wide empty margin on all sides, nothing cut off. A golden crown with colorful round jewels sitting on top of a big plump yellow lemon with a green leaf, the lemon has a friendly smile and big round eyes, tiny arms. Cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors, soft studio lighting from the top-left, FRONT VIEW, slightly glossy clay material, very high detail, crisp edges. NO text, NO letters, NO ground shadow, NO glow, NO halo.
