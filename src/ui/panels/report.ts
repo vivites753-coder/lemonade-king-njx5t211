@@ -1,7 +1,18 @@
 import { LOCATIONS } from '../../data/locations';
 import { payback } from '../../sim/points';
 import { t } from '../../i18n';
-import { coin, ico, lemiFace, signedCoin, stars } from '../dom';
+import { coin, ico, lemiFace, signedCoin, stars, type LemiMood } from '../dom';
+
+/** How Lemi looks telling the lesson of the day (thinking when not listed). */
+const LESSON_MOOD: Record<string, LemiMood> = {
+  'lesson.thief': 'sad',
+  'lesson.loss': 'sad',
+  'lesson.breakdown': 'sad',
+  'lesson.spoiled': 'sad',
+  'lesson.waste': 'sad',
+  'lesson.soldout': 'surprised',
+  'lesson.rest': 'neutral',
+};
 import type { Panel } from './types';
 
 function fbar(label: string, n: number, max: number): string {
@@ -68,7 +79,7 @@ export const reportPanel: Panel = {
           ${pointsIncome ? `<div class="kv"><span>${ico('pt_stand', '🏪')} ${t('report.pointsIncome')}</span><span>${coin(pointsIncome)}</span></div>` : ''}
           ${expenseRows.filter(([, v]) => v > 0).map(([k, v]) => `<div class="kv"><span>${k}</span><span class="neg">${coin('−' + v, 'neg')}</span></div>`).join('')}
         </div>`}
-        <div class="lesson">${lemiFace(true)}<div><b>💡 ${t('report.lesson')}</b>${lessonText}</div></div>
+        <div class="lesson">${lemiFace(true, r.lesson.key === 'lesson.profit' ? (r.profit >= 0 ? 'happy' : 'sad') : (LESSON_MOOD[r.lesson.key] ?? 'think'))}<div><b>💡 ${t('report.lesson')}</b>${lessonText}</div></div>
         ${pts.length
           ? `<h3>${ico('pt_stand', '🏪')} ${t('points.title')} · ${signedCoin(r.pointsProfit)}</h3>
         <div class="card">${pts

@@ -1133,6 +1133,40 @@ small {
     transform: translateY(-5px) rotate(-3deg);
   }
 }
+/* Lemi drawn (the pictures of sheet 08a): the tip shows him whole, a lesson shows him small */
+.lemi-pic {
+  flex: none;
+  width: 110px;
+  height: 110px;
+  margin: 0 -8px -6px -10px;
+}
+.lemi-pic img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 95%;
+  animation: bob 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+  pointer-events: none;
+  user-select: none;
+}
+.lemi-pic.mini {
+  width: 64px;
+  height: 64px;
+  margin: -8px -6px -10px -8px;
+}
+.lemi-pic.mini img {
+  animation: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+}
+html.phone .lemi-pic {
+  width: 96px;
+  height: 96px;
+}
+html.phone .lemi-pic.mini {
+  width: 60px;
+  height: 60px;
+}
 .lemi-bubble {
   position: relative;
   background: #fff;
@@ -4133,14 +4167,21 @@ html.phone .hud-bottom .hb-right .btn .ico-img {
 
 /* phones: the kitchen controls stand at the bottom of the window, right over "Pour the jug" */
 html.phone .kitchen .k-main {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   align-items: stretch;
+  /* the picture is sized by the room the window has (not by a guess from the screen height): nothing to scroll */
+  container-type: size;
 }
 html.phone .kitchen .k-wrap {
   align-self: flex-start;
+  width: min(62cqw, calc(100cqh * 900 / 672));
+  max-width: none;
 }
 html.phone .kitchen .k-side {
   justify-content: flex-end;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* buttons without a text size of their own got the browser's 13.3 px, which did not follow the text size setting */

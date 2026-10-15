@@ -90,7 +90,13 @@ export function dots(n: number, max = 5): string {
   return s + '</span>';
 }
 
-export function lemiFace(mini = false): string {
+/** Lemi's faces (assets/ui/ui_lemi_<mood>). */
+export type LemiMood = 'neutral' | 'happy' | 'think' | 'surprised' | 'sad';
+
+/** Lemi with the face of the moment; the face drawn by CSS when the pictures are missing. */
+export function lemiFace(mini = false, mood: LemiMood = 'neutral'): string {
+  const u = iconUrls[`/assets/ui/ui_lemi_${mood}.png`];
+  if (u) return `<div class="lemi-pic${mini ? ' mini' : ''}" aria-hidden="true"><img src="${u}" alt="" draggable="false"></div>`;
   return `<div class="lemi-face${mini ? ' mini' : ''}" aria-hidden="true"><i class="leaf"></i><i class="eye l"></i><i class="eye r"></i><i class="mouth"></i></div>`;
 }
 

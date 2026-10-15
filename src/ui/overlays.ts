@@ -2,7 +2,53 @@
 // the game pauses so a child never misses what is happening.
 import { t, tipText } from '../i18n';
 import type { CardInfo, Game } from '../sim/game';
-import { esc, lemiFace } from './dom';
+import { esc, lemiFace, type LemiMood } from './dom';
+
+/** How Lemi looks while giving a tip (neutral when not listed). */
+const TIP_MOOD: Record<string, LemiMood> = {
+  welcome: 'happy',
+  first_sale: 'happy',
+  bonus: 'happy',
+  loyalty: 'happy',
+  reputation: 'happy',
+  points: 'happy',
+  cookie_first: 'happy',
+  spoiled: 'sad',
+  breakdown: 'sad',
+  thief_hit: 'sad',
+  taste_bad: 'sad',
+  mix_over: 'sad',
+  thief: 'surprised',
+  rain: 'surprised',
+  expensive: 'surprised',
+  cookie_expensive: 'surprised',
+  price: 'think',
+  prepare_cost: 'think',
+  location: 'think',
+  wholesale: 'think',
+  cheap_lemons: 'think',
+  maintenance: 'think',
+  helper: 'think',
+  queue: 'think',
+  two_queues: 'think',
+  hand_stir: 'think',
+  mixer: 'think',
+  kitchen_more: 'think',
+};
+
+/** How Lemi looks under the lesson of an event card (thinking when not listed). */
+const CARD_MOOD: Record<string, LemiMood> = {
+  festival: 'happy',
+  thiefCaught: 'happy',
+  thiefLocked: 'happy',
+  broke: 'sad',
+  thiefStole: 'sad',
+  grandmaHelp: 'sad',
+  badLemons: 'sad',
+  sugarHike: 'surprised',
+  cupsSoldOut: 'surprised',
+  thiefEmpty: 'surprised',
+};
 
 export interface ModalSpec {
   render: () => string;
@@ -146,7 +192,7 @@ export class Overlays {
   }
 
   private renderTip(key: string): void {
-    this.lemiEl.innerHTML = `${lemiFace()}
+    this.lemiEl.innerHTML = `${lemiFace(false, TIP_MOOD[key] ?? 'neutral')}
       <div class="lemi-bubble"><div class="lemi-name">${t('lemi.name')}</div>
         <div>${esc(tipText(key, this.g.S.ageMode))}</div>
         <div class="lemi-actions">
@@ -161,7 +207,7 @@ export class Overlays {
       <div class="ev-ico">${c.icon}</div>
       <h2 class="ev-title">${esc(t(`card.${c.id}.title`, c.params))}</h2>
       <p>${esc(t(`card.${c.id}.text`, c.params))}</p>
-      <div class="lesson">${lemiFace(true)}<div>${esc(t(`card.${c.id}.lemi`, c.params))}</div></div>
+      <div class="lesson">${lemiFace(true, CARD_MOOD[c.id] ?? 'think')}<div>${esc(t(`card.${c.id}.lemi`, c.params))}</div></div>
       <div class="modal-actions${c.choices && c.choices.length > 2 ? ' wrap' : ''}">
         ${c.choices
           ? c.choices
