@@ -31,6 +31,9 @@ export interface LocationDef {
   indoor?: boolean;
   /** Back walls of an indoor place. */
   walls?: WallStyle;
+  /** Indoors: the y of the doorways in the left wall that people come in and go out through (near lane, far lane),
+   * when the wall picture has them elsewhere than the lanes. */
+  doors?: [number, number];
   /** Opens when the best reputation reaches this many stars. */
   minRep?: number;
   mix: Record<PedTypeId, number>;
@@ -254,6 +257,8 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     weatherSensitivity: -0.5,
     indoor: true,
     walls: 'station',
+    // the doorways of the drawn wall (assets/bg/wall_station_left: u 144-180 and 215-241, y = 12 - u / 32)
+    doors: [4.88, 6.94],
     minRep: 2,
     mix: { kid: 0.1, adult: 0.45, granny: 0.1, sport: 0.05, tourist: 0.3 },
     // trains bring waves of people: morning and evening rush, a smaller one at lunch

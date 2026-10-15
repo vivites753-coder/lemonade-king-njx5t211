@@ -92,6 +92,9 @@ const CAR_LANES = { toRight: 7.5, toLeft: 6.5 };
 /** Cars appear and leave a little beyond the island (they are long), and keep this distance (tiles) to the car ahead. */
 const CAR_ENTER = [-1.4, 13.4] as const;
 const CAR_GAP = 2.2;
+/** Indoors: just inside the doorway, and where people are back on their lane. */
+const DOOR_IN = 0.9;
+const DOOR_LANE = 2.6;
 
 export class Street {
   readonly peds: Ped[] = [];
@@ -216,19 +219,29 @@ export class Street {
     const x0 = randomX ? rng.range(0, CONFIG.MAP_SIZE) : dir > 0 ? CONFIG.SPAWN_LEFT : CONFIG.SPAWN_RIGHT;
     const x1 = dir > 0 ? CONFIG.SPAWN_RIGHT : CONFIG.SPAWN_LEFT;
     const counted = h.selling() && !randomX;
+    // indoors with doorways away from the lanes: in and out through the doorway, then along the lane
+    const door = this.doorY(lane.id === 'far');
+    let path: Vec[] = [{ x: x1, y: laneY }];
+    let y0 = laneY;
+    if (door !== null && dir > 0 && !randomX) {
+      y0 = door;
+      path = [{ x: DOOR_IN, y: door }, { x: DOOR_LANE, y: laneY }, { x: x1, y: laneY }];
+    } else if (door !== null && dir < 0) {
+      path = x0 > DOOR_LANE ? [{ x: DOOR_LANE, y: laneY }, { x: DOOR_IN, y: door }, { x: x1, y: door }] : [{ x: DOOR_IN, y: door }, { x: x1, y: door }];
+    }
     const p: Ped = {
       id: this.nextId++,
       type,
       look: randomLook(type),
       x: x0,
-      y: laneY,
+      y: y0,
       vx: dir,
       vy: 0,
       speed,
       dir,
       laneY,
       far: lane.id === 'far',
-      path: [{ x: x1, y: laneY }],
+      path,
       state: 'walk',
       moving: true,
       atSpot: false,
@@ -260,6 +273,12 @@ export class Street {
       n++;
     }
     return n;
+  }
+
+  /** The doorway of a lane in the left wall indoors, or null when people walk in along the lane itself. */
+  private doorY(far: boolean): number | null {
+    const d = LOCATIONS[this.host.location()].doors;
+    return d ? d[far ? 1 : 0] : null;
   }
 
   queueFor(counter: number): Ped[] {
@@ -317,6 +336,9 @@ export class Street {
       { x: p.x + p.dir * 0.4, y: p.laneY },
       { x: exitX, y: p.laneY },
     ];
+    // out through the doorway on the left
+    const door = this.doorY(p.far);
+    if (door !== null && p.dir < 0) p.path.splice(1, 1, { x: Math.min(DOOR_LANE, p.x - 0.4), y: p.laneY }, { x: DOOR_IN, y: door }, { x: exitX, y: door });
     if (emote) this.setEmote(p, emote, emoteT);
   }
 

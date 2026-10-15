@@ -1,4 +1,6 @@
 :root {
+  /* the text size of the settings (1 = normal), every font-size is multiplied by it */
+  --fs: 1;
   --yellow: #ffd43b;
   --yellow-d: #e0a800;
   --orange: #ff922b;
@@ -76,7 +78,7 @@ button {
   border-radius: 16px;
   padding: 10px 16px;
   min-height: 48px;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
   font-weight: 800;
   cursor: pointer;
   background: #fff;
@@ -125,12 +127,12 @@ button {
 .btn-sm {
   min-height: 40px;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   border-radius: 12px;
 }
 .btn-big {
   min-height: 60px;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs, 1));
   padding: 12px 22px;
   border-radius: 20px;
 }
@@ -139,7 +141,7 @@ button {
   min-height: 44px;
   padding: 6px;
   border-radius: 14px;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs, 1));
 }
 
 /* ---------- money / stars ---------- */
@@ -198,7 +200,7 @@ button {
   border-radius: 999px;
   padding: 6px 12px;
   font-weight: 800;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
   display: inline-flex;
   align-items: center;
@@ -207,7 +209,7 @@ button {
   min-height: 36px;
 }
 .chip.coins {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
   background: #fffbe6;
 }
 .spacer {
@@ -226,7 +228,7 @@ button {
   min-width: 42px;
   min-height: 38px;
   border-radius: 11px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
   font-weight: 900;
   cursor: pointer;
 }
@@ -239,7 +241,7 @@ button {
   border-radius: 14px;
   min-width: 44px;
   min-height: 44px;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs, 1));
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
   cursor: pointer;
 }
@@ -253,7 +255,7 @@ button {
   border-radius: 18px;
   padding: 10px 12px;
   box-shadow: var(--shadow);
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   max-height: calc(100% - 180px);
   overflow: auto;
 }
@@ -265,10 +267,10 @@ button {
   display: block;
   color: var(--muted);
   font-weight: 700;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
 }
 .hud-funnel .chance b {
-  font-size: 30px;
+  font-size: calc(30px * var(--fs, 1));
   color: var(--orange);
 }
 .frow {
@@ -282,13 +284,13 @@ button {
   flex: 1;
 }
 .frow b {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
 }
 .why {
   margin-top: 6px;
   border-top: 2px dashed var(--line);
   padding-top: 6px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 .why .wrow {
   display: flex;
@@ -303,7 +305,7 @@ button {
   border-top: 1px solid var(--line);
   margin-top: 4px;
   padding-top: 4px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 .why small {
   color: var(--muted);
@@ -361,12 +363,12 @@ button {
 }
 .price-box .val small {
   display: block;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   color: var(--muted);
   font-weight: 800;
 }
 .price-box .val b {
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
 }
 .serve-btn {
   position: relative;
@@ -376,7 +378,7 @@ button {
   border: 0;
   background: conic-gradient(var(--orange) calc(var(--p, 0) * 1turn), var(--yellow) 0);
   box-shadow: 0 6px 0 var(--yellow-d), 0 10px 22px rgba(0, 0, 0, 0.2);
-  font-size: 34px;
+  font-size: calc(34px * var(--fs, 1));
   font-weight: 900;
   cursor: pointer;
   display: flex;
@@ -386,7 +388,7 @@ button {
   line-height: 1;
 }
 .serve-btn small {
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   margin-top: 4px;
 }
 .serve-btn:active:not(:disabled) {
@@ -406,7 +408,7 @@ button {
   }
 }
 .cups-chip {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
 }
 
 /* ---------- panels ---------- */
@@ -458,7 +460,7 @@ button {
 }
 .panel-head h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
   flex: 1;
 }
 .panel-body {
@@ -480,7 +482,7 @@ button {
   flex: 1 1 160px;
 }
 .panel h3 {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
   margin: 14px 2px 6px;
 }
 .card {
@@ -503,14 +505,14 @@ button {
   color: var(--muted);
 }
 small {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 .big-ico {
-  font-size: 40px;
+  font-size: calc(40px * var(--fs, 1));
   line-height: 1;
 }
 .note {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   color: var(--muted);
   margin: 6px 2px;
 }
@@ -558,10 +560,10 @@ small {
   cursor: not-allowed;
 }
 .loc-ico {
-  font-size: 34px;
+  font-size: calc(34px * var(--fs, 1));
 }
 .loc b {
-  font-size: 17px;
+  font-size: calc(17px * var(--fs, 1));
 }
 .loc small {
   display: block;
@@ -572,7 +574,7 @@ small {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   font-weight: 800;
   margin: 3px 0;
 }
@@ -584,7 +586,7 @@ small {
 .tag,
 .loc .tag {
   display: inline-block;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   font-weight: 800;
   color: var(--blue-d);
   background: #e7f5ff;
@@ -595,13 +597,13 @@ small {
 .loc-lock,
 .loc-ev {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   font-weight: 900;
   margin: 2px 0;
 }
 .loc-own {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   font-weight: 900;
   color: var(--green-d);
   margin: 2px 0;
@@ -642,7 +644,7 @@ small {
 }
 .good .ico {
   grid-area: ico;
-  font-size: 30px;
+  font-size: calc(30px * var(--fs, 1));
   text-align: center;
 }
 .good .info {
@@ -675,16 +677,16 @@ small {
 .stepper b {
   min-width: 30px;
   text-align: center;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 .stepper .btn {
   min-width: 44px;
   min-height: 40px;
   padding: 0;
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
 }
 .total-line {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
   font-weight: 900;
   display: flex;
   align-items: center;
@@ -702,7 +704,7 @@ small {
   font-weight: 700;
 }
 .kv b {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 .taste {
   position: relative;
@@ -725,12 +727,12 @@ small {
 .taste-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   color: var(--muted);
   font-weight: 800;
 }
 .formula {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   background: #fff8db;
   border-radius: 10px;
   padding: 6px 8px;
@@ -800,7 +802,7 @@ small {
   color: var(--muted);
 }
 .big3 b {
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
 }
 .big3 .profit {
   background: #ebfbee;
@@ -814,7 +816,7 @@ small {
   gap: 2px 8px;
   margin: 5px 0;
   font-weight: 700;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 .fbar .bar {
   grid-column: 1 / -1;
@@ -838,7 +840,7 @@ small {
   background: #fff;
   border-radius: 999px;
   padding: 4px 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   font-weight: 800;
   box-shadow: 0 2px 0 var(--line);
 }
@@ -852,7 +854,7 @@ small {
   padding: 10px;
   margin: 10px 0;
   font-weight: 700;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
 }
 .lesson b {
   display: block;
@@ -882,7 +884,7 @@ small {
   background: #f4fce3;
 }
 .up .ico {
-  font-size: 32px;
+  font-size: calc(32px * var(--fs, 1));
   text-align: center;
 }
 .up small {
@@ -893,7 +895,7 @@ small {
 .up .idea {
   color: var(--blue-d);
   font-weight: 800;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
 }
 .chart {
   display: flex;
@@ -911,7 +913,7 @@ small {
   align-items: center;
   justify-content: flex-end;
   height: 100%;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   font-weight: 800;
 }
 .chart .col i {
@@ -928,7 +930,7 @@ small {
   display: flex;
   gap: 6px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   color: var(--muted);
   font-weight: 800;
 }
@@ -955,11 +957,11 @@ small {
   }
 }
 .logo {
-  font-size: 52px;
+  font-size: calc(52px * var(--fs, 1));
   line-height: 1;
 }
 .title-card h1 {
-  font-size: clamp(32px, 6vw, 48px);
+  font-size: calc(clamp(32px, 6vw, 48px) * var(--fs, 1));
   margin: 6px 0 2px;
   color: #e67700;
   text-shadow: 0 3px 0 #fff3bf;
@@ -995,12 +997,12 @@ small {
   background: #fff4e0;
 }
 .choice .big {
-  font-size: 40px;
+  font-size: calc(40px * var(--fs, 1));
   display: block;
 }
 .choice b {
   display: block;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
 }
 .choice small {
   color: var(--muted);
@@ -1137,7 +1139,7 @@ small {
   border-radius: 20px;
   padding: 12px 14px;
   box-shadow: var(--shadow);
-  font-size: 17px;
+  font-size: calc(17px * var(--fs, 1));
   font-weight: 700;
   line-height: 1.35;
   border: 3px solid var(--yellow);
@@ -1151,7 +1153,7 @@ small {
   border-right-color: var(--yellow);
 }
 .lemi-name {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   font-weight: 900;
   color: #e67700;
   text-transform: uppercase;
@@ -1192,10 +1194,10 @@ small {
 }
 .modal-card h2 {
   margin: 4px 0 8px;
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
 }
 .modal-card .ev-ico {
-  font-size: 54px;
+  font-size: calc(54px * var(--fs, 1));
   text-align: center;
   line-height: 1.1;
 }
@@ -1203,7 +1205,7 @@ small {
   text-align: center;
 }
 .modal-card p {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
   font-weight: 600;
   line-height: 1.4;
 }
@@ -1227,7 +1229,7 @@ small {
   color: #e67700;
 }
 .input-num {
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
   padding: 10px;
   border-radius: 14px;
   border: 3px solid var(--line);
@@ -1326,15 +1328,15 @@ small {
   justify-content: center;
   gap: 8px;
   padding: 24px;
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
 }
 #rotate small {
   color: var(--muted);
   font-weight: 700;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 .rot-phone {
-  font-size: 72px;
+  font-size: calc(72px * var(--fs, 1));
   animation: rot 2.2s ease-in-out infinite;
 }
 @keyframes rot {
@@ -1390,12 +1392,12 @@ html.phone .hud-funnel .frow {
   padding: 1px 0;
 }
 html.phone .hud-funnel .chance small {
-  font-size: 10px;
+  font-size: calc(10px * var(--fs, 1));
 }
 html.phone .link-btn {
   min-height: 28px;
   padding: 3px 8px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
 }
 html.phone .price-box {
   padding: 3px;
@@ -1405,7 +1407,7 @@ html.phone .price-box .val {
   min-width: 46px;
 }
 html.phone .price-box .val b {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 html.phone .price-box .btn-icon {
   min-width: 38px;
@@ -1415,46 +1417,46 @@ html.phone .hud-bottom {
   bottom: calc(6px + var(--safe-b));
 }
 html.phone .chip {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   padding: 4px 9px;
   min-height: 32px;
 }
 html.phone .chip.coins {
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
 }
 html.phone .hud-btn,
 html.phone .seg button {
   min-height: 36px;
   min-width: 36px;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
 }
 html.phone #panel {
   top: calc(48px + var(--safe-t));
 }
 html.phone .panel-head h2 {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 html.phone .hud-funnel {
   top: calc(46px + var(--safe-t));
   width: 168px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   padding: 5px 8px;
   max-height: calc(100% - 140px);
   border-radius: 14px;
 }
 html.phone .frow b {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .hud-funnel .chance b {
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
 }
 html.phone .serve-btn {
   width: 78px;
   height: 78px;
-  font-size: 28px;
+  font-size: calc(28px * var(--fs, 1));
 }
 html.phone .lemi-bubble {
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   padding: 8px 10px;
 }
 html.phone .lemi-face {
@@ -1479,11 +1481,11 @@ html.phone .lemi-face .leaf {
 }
 html.phone .btn {
   min-height: 44px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
 }
 html.phone .btn-big {
   min-height: 48px;
-  font-size: 17px;
+  font-size: calc(17px * var(--fs, 1));
   padding: 8px 16px;
 }
 html.phone .panel-head {
@@ -1538,7 +1540,7 @@ body.reduce-motion * {
   color: var(--ink);
 }
 .res-head {
-  font-size: 10px;
+  font-size: calc(10px * var(--fs, 1));
   font-weight: 900;
   text-transform: uppercase;
   color: var(--muted);
@@ -1549,14 +1551,14 @@ body.reduce-motion * {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   font-weight: 800;
   padding: 2px 3px;
   border-radius: 8px;
   white-space: nowrap;
 }
 .res-row .ri {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
   width: 20px;
   text-align: center;
 }
@@ -1565,7 +1567,7 @@ body.reduce-motion * {
 }
 .res-row small {
   display: block;
-  font-size: 10px;
+  font-size: calc(10px * var(--fs, 1));
 }
 .res-warn {
   background: #fff0f0;
@@ -1586,7 +1588,7 @@ body.reduce-motion * {
   border-bottom: 0;
 }
 .eq-row .ico {
-  font-size: 24px;
+  font-size: calc(24px * var(--fs, 1));
   width: 30px;
   text-align: center;
 }
@@ -1632,17 +1634,17 @@ body.reduce-motion * {
 }
 .prof-main b {
   display: block;
-  font-size: 17px;
+  font-size: calc(17px * var(--fs, 1));
 }
 .prof-main small {
   color: var(--muted);
   font-weight: 700;
 }
 .prof-ico {
-  font-size: 30px;
+  font-size: calc(30px * var(--fs, 1));
 }
 .prof-go {
-  font-size: 20px;
+  font-size: calc(20px * var(--fs, 1));
   color: var(--green-d);
 }
 .prof-del {
@@ -1652,7 +1654,7 @@ body.reduce-motion * {
   width: 46px;
   box-shadow: 0 3px 0 var(--line);
   cursor: pointer;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 .name-label {
   display: block;
@@ -1662,7 +1664,7 @@ body.reduce-motion * {
 .input-name {
   width: min(320px, 100%);
   font: inherit;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs, 1));
   font-weight: 800;
   padding: 10px 12px;
   border-radius: 14px;
@@ -1709,12 +1711,12 @@ html.phone .res-head {
   display: none;
 }
 html.phone .res-row {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   padding: 1px 2px;
   gap: 1px;
 }
 html.phone .res-row .ri {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   width: 16px;
 }
 html.phone #panel,
@@ -1737,10 +1739,10 @@ html.phone .title-card {
   padding: 10px 14px 12px;
 }
 html.phone .title-card .logo {
-  font-size: 30px;
+  font-size: calc(30px * var(--fs, 1));
 }
 html.phone .title-card h1 {
-  font-size: 26px;
+  font-size: calc(26px * var(--fs, 1));
   margin: 2px 0;
 }
 html.phone .title-card p {
@@ -1759,13 +1761,13 @@ html.phone .choice {
   padding: 6px;
 }
 html.phone .choice .big {
-  font-size: 26px;
+  font-size: calc(26px * var(--fs, 1));
 }
 html.phone .choice small {
   display: none;
 }
 html.phone .input-name {
-  font-size: 17px;
+  font-size: calc(17px * var(--fs, 1));
   padding: 6px 10px;
 }
 html.phone .panel-body {
@@ -1792,20 +1794,20 @@ html.phone #modal {
   padding: 4px;
 }
 html.phone .modal-card h2 {
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
   margin: 2px 0 6px;
 }
 html.phone .modal-card p {
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   margin: 6px 0;
 }
 html.phone .modal-card .ev-ico {
-  font-size: 36px;
+  font-size: calc(36px * var(--fs, 1));
 }
 html.phone .lesson {
   padding: 6px;
   margin: 6px 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 /* Lemi sits at the top so he never hides the action buttons at the bottom */
 html.phone #lemi {
@@ -1843,10 +1845,10 @@ html.phone .lemi-bubble::before {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 17px;
+  font-size: calc(17px * var(--fs, 1));
 }
 .pt-ico {
-  font-size: 28px;
+  font-size: calc(28px * var(--fs, 1));
 }
 .pt-seller {
   display: flex;
@@ -1861,7 +1863,7 @@ html.phone .lemi-bubble::before {
   font-weight: 700;
 }
 .pt-face {
-  font-size: 30px;
+  font-size: calc(30px * var(--fs, 1));
 }
 .pt-cand,
 .pt-new {
@@ -1886,7 +1888,7 @@ html.phone .lemi-bubble::before {
   border-radius: 12px;
   padding: 6px 10px;
   margin: 6px 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 .pt-bars {
   display: flex;
@@ -1912,7 +1914,7 @@ html.phone .lemi-bubble::before {
 .warn-chip {
   background: #fff0f0;
   color: var(--red-d);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
 }
 
 /* ================================================================ v0.4 interface */
@@ -1934,7 +1936,7 @@ html.phone .lemi-bubble::before {
     white-space: pre;
     background: var(--ink);
     color: #fff;
-    font-size: 14px;
+    font-size: calc(14px * var(--fs, 1));
     font-weight: 700;
     line-height: 1.35;
     padding: 7px 11px;
@@ -1953,19 +1955,19 @@ html.phone .lemi-bubble::before {
     border-radius: 20px;
   }
   .res-head {
-    font-size: 12px;
+    font-size: calc(12px * var(--fs, 1));
   }
   .res-row {
-    font-size: 19px;
+    font-size: calc(19px * var(--fs, 1));
     gap: 6px;
     padding: 4px 6px;
   }
   .res-row .ri {
-    font-size: 26px;
+    font-size: calc(26px * var(--fs, 1));
     width: 30px;
   }
   .res-row small {
-    font-size: 12px;
+    font-size: calc(12px * var(--fs, 1));
   }
 }
 
@@ -2012,7 +2014,7 @@ html.phone .panel-toggle {
   background: #fff;
   box-shadow: 0 2px 0 var(--line), 0 4px 10px rgba(0, 0, 0, 0.12);
   font: inherit;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
   font-weight: 900;
   color: var(--ink);
   cursor: pointer;
@@ -2026,7 +2028,7 @@ html.phone .panel-toggle.reopen {
   right: calc(10px + var(--safe-r));
   height: 44px;
   padding: 0 16px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
   background: var(--yellow);
   box-shadow: 0 4px 0 var(--yellow-d), 0 6px 12px rgba(0, 0, 0, 0.15);
 }
@@ -2035,15 +2037,15 @@ html.phone .kitchen .panel-head {
   padding-right: 52px;
 }
 html.phone .panel-head h2 {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
 }
 html.phone .panel h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   margin: 8px 2px 4px;
 }
 html.phone .panel-body {
   padding: 2px 10px 8px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .card {
   padding: 6px 10px;
@@ -2051,38 +2053,38 @@ html.phone .card {
   border-radius: 12px;
 }
 html.phone small {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
 }
 html.phone .note {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   margin: 4px 2px;
 }
 html.phone .warn-box,
 html.phone .good-box {
   padding: 6px 8px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   margin: 5px 0;
 }
 html.phone .kv {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .big-ico {
-  font-size: 28px;
+  font-size: calc(28px * var(--fs, 1));
 }
 html.phone .btn {
   min-height: 36px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   padding: 5px 11px;
   border-radius: 12px;
 }
 html.phone .btn-sm {
   min-height: 30px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   padding: 3px 9px;
 }
 html.phone .btn-big {
   min-height: 40px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
   padding: 5px 14px;
   border-radius: 14px;
 }
@@ -2090,45 +2092,45 @@ html.phone .panel-foot .btn {
   flex: 1 1 110px;
 }
 html.phone .chip {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   padding: 3px 8px;
   min-height: 28px;
 }
 html.phone .chip.coins {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .hud-btn,
 html.phone .seg button {
   min-height: 32px;
   min-width: 32px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 html.phone .loc {
   padding: 5px 8px;
   border-radius: 14px;
 }
 html.phone .loc b {
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 html.phone .loc-ico {
-  font-size: 26px;
+  font-size: calc(26px * var(--fs, 1));
 }
 html.phone .loc-meta {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
 }
 html.phone .loc-lock,
 html.phone .loc-ev,
 html.phone .loc-own {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
 }
 html.phone .toggle b {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .modal-card p {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .lemi-bubble {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .lbl-m {
   display: none;
@@ -2138,27 +2140,27 @@ html.phone .good {
   gap: 8px;
 }
 html.phone .good .ico {
-  font-size: 24px;
+  font-size: calc(24px * var(--fs, 1));
 }
 html.phone .good .info b {
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 html.phone .stepper b {
   min-width: 24px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
 }
 html.phone .stepper .btn {
   min-width: 34px;
   min-height: 32px;
-  font-size: 17px;
+  font-size: calc(17px * var(--fs, 1));
 }
 html.phone .total-line {
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
 }
 
 
 html.phone .taste-labels {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
 }
 
 
@@ -2220,7 +2222,7 @@ html.phone .taste-labels {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   line-height: 1;
   padding: 6px;
   background: #f1f3f5;
@@ -2257,7 +2259,7 @@ html.phone .taste-labels {
   margin-bottom: 6px;
 }
 .rm-chip {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   min-height: 26px;
   padding: 2px 9px;
   box-shadow: none;
@@ -2293,7 +2295,7 @@ html.phone .taste-labels {
   border-color: var(--green);
 }
 .rm-ico {
-  font-size: 22px;
+  font-size: calc(22px * var(--fs, 1));
 }
 .rm-txt {
   min-width: 0;
@@ -2301,10 +2303,10 @@ html.phone .taste-labels {
 }
 .rm-txt b {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 .rm-txt small {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   color: var(--muted);
   font-weight: 700;
 }
@@ -2343,7 +2345,7 @@ html.phone .taste-labels {
 html.phone .rm-node {
   width: 46px;
   min-height: 46px;
-  font-size: 10px;
+  font-size: calc(10px * var(--fs, 1));
 }
 html.phone .rm-road::before {
   left: 26px;
@@ -2468,7 +2470,7 @@ html.phone .rm-items {
 }
 .k-hint {
   text-align: center;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   font-weight: 700;
   color: var(--muted);
 }
@@ -2624,7 +2626,7 @@ html.phone .rm-items {
   border-radius: 10px;
   background: #fffaf0;
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
-  font-size: calc(var(--lab) * 1px / var(--ks));
+  font-size: calc(var(--lab) * 1px / var(--ks) * var(--fs, 1));
   line-height: 1.1;
 }
 .k-meta b {
@@ -2661,7 +2663,7 @@ html.phone .rm-items {
   top: 474px;
   width: 140px;
   text-align: center;
-  font-size: calc(var(--lab) * 0.85px / var(--ks));
+  font-size: calc(var(--lab) * 0.85px / var(--ks) * var(--fs, 1));
   font-weight: 800;
   color: #fff8e8;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
@@ -2739,7 +2741,7 @@ html.phone .rm-items {
   right: 14%;
   bottom: 6%;
   color: #fff;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs, 1));
   line-height: 0.7;
   text-align: center;
   word-break: break-all;
@@ -2776,7 +2778,7 @@ html.phone .rm-items {
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  font-size: 40px;
+  font-size: calc(40px * var(--fs, 1));
 }
 .k-splash .k-img,
 .k-drops .k-img {
@@ -2852,7 +2854,7 @@ html.phone .rm-items {
 .k-spoon {
   left: 470px;
   top: 250px;
-  font-size: 70px;
+  font-size: calc(70px * var(--fs, 1));
   z-index: 6;
   opacity: 0;
   pointer-events: none;
@@ -2921,7 +2923,7 @@ html.phone .rm-items {
   background: #fff;
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
   font-weight: 900;
-  font-size: calc(var(--lab) * 0.85px / var(--ks));
+  font-size: calc(var(--lab) * 0.85px / var(--ks) * var(--fs, 1));
 }
 .k-ready {
   left: 0;
@@ -2945,7 +2947,7 @@ html.phone .rm-items {
   animation: k-appear 0.4s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 .k-ready .k-mark {
-  font-size: 54px;
+  font-size: calc(54px * var(--fs, 1));
   line-height: 1;
 }
 @keyframes k-appear {
@@ -2966,7 +2968,7 @@ html.phone .rm-items {
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
-  font-size: calc(var(--lab) * 0.85px / var(--ks));
+  font-size: calc(var(--lab) * 0.85px / var(--ks) * var(--fs, 1));
 }
 .k-toolkit {
   left: 750px;
@@ -3026,7 +3028,7 @@ html.phone .rm-items {
   flex-wrap: wrap;
   justify-content: center;
   gap: 4px 14px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
   font-weight: 700;
 }
 .k-counts small {
@@ -3050,7 +3052,7 @@ html.phone .rm-items {
   border: 0;
   border-radius: 16px;
   font: inherit;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
   font-weight: 900;
   background: radial-gradient(circle at 40% 35%, #fff3bf, var(--yellow));
   box-shadow: 0 4px 0 var(--yellow-d), 0 6px 14px rgba(0, 0, 0, 0.14);
@@ -3061,7 +3063,7 @@ html.phone .rm-items {
 }
 .k-mixer-btn small {
   display: block;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   font-weight: 700;
   color: #6b5d1f;
 }
@@ -3079,7 +3081,7 @@ html.phone .rm-items {
 }
 .k-mix-status {
   font-weight: 800;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   min-height: 1.3em;
 }
 .k-tools {
@@ -3107,7 +3109,7 @@ html.phone .rm-items {
   z-index: 200;
   width: 64px;
   height: 64px;
-  font-size: 44px;
+  font-size: calc(44px * var(--fs, 1));
   pointer-events: none;
   transform: translate(-50%, -60%) rotate(-10deg);
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25));
@@ -3144,7 +3146,7 @@ html.phone .k-mixer-btn {
   grid-row: auto;
   min-height: 40px;
   padding: 0 12px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   justify-content: center;
 }
 html.phone .k-mixer-btn small {
@@ -3162,24 +3164,24 @@ html.phone .k-tools {
 html.phone .k-tools .btn {
   padding: 4px 8px;
   min-height: 32px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
 }
 html.phone .taste {
   margin: 4px 0 0;
 }
 html.phone .k-counts {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   gap: 2px 10px;
 }
 html.phone .k-mix-status {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
 }
 html.phone .k-pour {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
   gap: 4px;
 }
 html.phone .k-pour small {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   flex-basis: 100%;
 }
 html.phone .k-foot .btn-big {
@@ -3248,7 +3250,7 @@ html.phone .k-foot .btn-big {
   z-index: 8;
   opacity: 0;
   pointer-events: none;
-  font-size: 40px;
+  font-size: calc(40px * var(--fs, 1));
 }
 .k-puff .k-img {
   width: 100%;
@@ -3264,12 +3266,12 @@ html.phone .k-foot .btn-big {
 /* ---------- very low screens (a phone held sideways with the browser bars showing) ---------- */
 @media (max-height: 380px) {
   .chip {
-    font-size: 12px;
+    font-size: calc(12px * var(--fs, 1));
     padding: 2px 8px;
     min-height: 28px;
   }
   .chip.coins {
-    font-size: 13px;
+    font-size: calc(13px * var(--fs, 1));
   }
   .hud-top .chip .ico-img {
     height: 22px;
@@ -3287,7 +3289,7 @@ html.phone .k-foot .btn-big {
   .seg button {
     min-height: 30px;
     min-width: 30px;
-    font-size: 14px;
+    font-size: calc(14px * var(--fs, 1));
   }
   #panel:not(.center):not(.title-mode),
   #panel.wide {
@@ -3302,7 +3304,7 @@ html.phone .k-foot .btn-big {
     padding: 3px 10px 2px;
   }
   .panel-head h2 {
-    font-size: 15px;
+    font-size: calc(15px * var(--fs, 1));
   }
   .panel-head .chip.coins {
     display: none;
@@ -3318,7 +3320,7 @@ html.phone .k-foot .btn-big {
   .panel-foot .btn-big {
     min-height: 34px;
     padding: 3px 12px;
-    font-size: 14px;
+    font-size: calc(14px * var(--fs, 1));
   }
   .k-wrap {
     width: calc((var(--app-h, 100vh) - 140px) * 1.339);
@@ -3332,18 +3334,18 @@ html.phone .k-foot .btn-big {
     min-width: 130px;
     min-height: 32px;
     padding: 0 10px;
-    font-size: 13px;
+    font-size: calc(13px * var(--fs, 1));
   }
   .k-counts {
-    font-size: 11px;
+    font-size: calc(11px * var(--fs, 1));
   }
   .k-tools .btn {
     min-height: 28px;
     padding: 3px 7px;
-    font-size: 11px;
+    font-size: calc(11px * var(--fs, 1));
   }
   .k-pour {
-    font-size: 12px;
+    font-size: calc(12px * var(--fs, 1));
   }
 }
 
@@ -3358,20 +3360,20 @@ html.phone .k-foot .btn-big {
     border-width: 2px;
   }
   .modal-card h2 {
-    font-size: 17px;
+    font-size: calc(17px * var(--fs, 1));
     margin: 2px 0 4px;
   }
   .modal-card h3 {
-    font-size: 13px;
+    font-size: calc(13px * var(--fs, 1));
     margin: 6px 0 2px;
   }
   .modal-card p {
-    font-size: 13px;
+    font-size: calc(13px * var(--fs, 1));
     line-height: 1.25;
     margin: 4px 0;
   }
   .modal-card .ev-ico {
-    font-size: 34px;
+    font-size: calc(34px * var(--fs, 1));
   }
   .toggle {
     padding: 4px 10px;
@@ -3388,14 +3390,14 @@ html.phone .k-foot .btn-big {
   .modal-actions .btn {
     min-height: 34px;
     padding: 3px 12px;
-    font-size: 14px;
+    font-size: calc(14px * var(--fs, 1));
   }
   .card {
     padding: 6px 10px;
   }
   .note,
   small {
-    font-size: 11px;
+    font-size: calc(11px * var(--fs, 1));
   }
 }
 
@@ -3489,7 +3491,7 @@ html.phone .modal-actions {
 }
 .hv-eye {
   align-self: center;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 .hv-btn {
   border: 0;
@@ -3498,7 +3500,7 @@ html.phone .modal-actions {
   min-height: 36px;
   padding: 4px 12px;
   font-weight: 800;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
   cursor: pointer;
   white-space: nowrap;
@@ -3516,13 +3518,13 @@ html.phone .modal-actions {
   border-radius: 18px;
   padding: 10px 12px;
   box-shadow: var(--shadow);
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 .hp-title {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
 }
 .hp-btns {
   display: flex;
@@ -3565,7 +3567,7 @@ html.phone .modal-actions {
   justify-content: center;
   border-radius: 8px;
   background: #fff8db;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 .pt-up img,
 .pt-up .ui-ico {
@@ -3594,7 +3596,7 @@ html.phone .hv-btn .lbl {
 html.phone .hud-point {
   top: calc(76px + var(--safe-t));
   width: 210px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs, 1));
   padding: 8px 10px;
 }
 
@@ -3692,13 +3694,13 @@ html.phone .hud-top {
   top: calc(4px + var(--safe-t));
 }
 html.phone .hud-top .chip {
-  font-size: 19px;
+  font-size: calc(19px * var(--fs, 1));
   padding: 4px 12px;
   min-height: 46px;
   gap: 7px;
 }
 html.phone .hud-top .chip.coins {
-  font-size: 21px;
+  font-size: calc(21px * var(--fs, 1));
 }
 html.phone .hud-top .chip .ico-img {
   height: 32px;
@@ -3715,7 +3717,7 @@ html.phone .hud-top .hud-btn,
 html.phone .hud-top .seg button {
   min-height: 48px;
   min-width: 48px;
-  font-size: 24px;
+  font-size: calc(24px * var(--fs, 1));
   border-radius: 16px;
 }
 /* the speed buttons go down to the right, over "end the day" */
@@ -3760,7 +3762,7 @@ html.phone .panel-toggle {
     gap: 3px;
   }
   html.phone .hud-top .chip {
-    font-size: 17px;
+    font-size: calc(17px * var(--fs, 1));
     min-height: 44px;
     padding: 3px 6px;
     gap: 4px;
@@ -3771,7 +3773,7 @@ html.phone .panel-toggle {
   html.phone .hud-top .hud-btn {
     min-height: 44px;
     min-width: 42px;
-    font-size: 21px;
+    font-size: calc(21px * var(--fs, 1));
   }
 }
 
@@ -3800,7 +3802,7 @@ html.phone .hud-bottom .serve-btn {
   bottom: calc(8px + var(--safe-b));
   width: 88px;
   height: 88px;
-  font-size: 32px;
+  font-size: calc(32px * var(--fs, 1));
   z-index: 12;
 }
 html.phone .hud-bottom .hb-right {
@@ -3832,7 +3834,7 @@ html.phone .hud-top .seg button .ico-img {
 
 .version-note {
   margin: 4px 0 0;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs, 1));
   color: var(--muted);
   text-align: center;
 }
@@ -3974,13 +3976,13 @@ html.phone .hud-top .seg button .ico-img {
 html.phone .btn {
   min-height: 44px;
   padding: 6px 14px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs, 1));
   border-radius: 14px;
 }
 html.phone .btn-sm {
   min-height: 44px;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
 }
 html.phone .btn-big,
 html.phone .panel-foot .btn,
@@ -3988,7 +3990,7 @@ html.phone .panel-foot .btn-big,
 html.phone .modal-actions .btn {
   min-height: 48px;
   padding: 6px 16px;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs, 1));
 }
 html.phone .btn-icon,
 html.phone .price-box .btn-icon {
@@ -3998,7 +4000,7 @@ html.phone .price-box .btn-icon {
 html.phone .stepper .btn {
   min-width: 46px;
   min-height: 44px;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs, 1));
 }
 html.phone .stepper b {
   min-width: 28px;
@@ -4006,7 +4008,7 @@ html.phone .stepper b {
 html.phone .link-btn {
   min-height: 40px;
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .toggle {
   min-height: 48px;
@@ -4023,7 +4025,7 @@ html.phone .hv-btn {
 html.phone .panel-toggle {
   min-width: 44px;
   height: 44px;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
 }
 html.phone .panel-toggle.reopen {
   height: 48px;
@@ -4034,7 +4036,7 @@ html.phone .k-mixer-btn {
 html.phone .k-tools .btn {
   min-height: 44px;
   padding: 4px 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .k-foot .btn-big {
   min-height: 48px;
@@ -4066,7 +4068,7 @@ html.phone .good {
   margin: 5px 0;
 }
 html.phone .good .price {
-  font-size: 14px;
+  font-size: calc(14px * var(--fs, 1));
   line-height: 1.15;
 }
 
@@ -4116,7 +4118,7 @@ html.phone .res-row {
 html.phone .hud-bottom .hb-right .btn {
   min-height: 56px;
   padding: 6px 18px;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs, 1));
   border-radius: 16px;
 }
 html.phone .hud-bottom .hb-right .btn .lbl {
@@ -4139,4 +4141,16 @@ html.phone .kitchen .k-wrap {
 }
 html.phone .kitchen .k-side {
   justify-content: flex-end;
+}
+
+/* buttons without a text size of their own got the browser's 13.3 px, which did not follow the text size setting */
+.toggle,
+.res-bar,
+.panel-toggle,
+.k-item,
+.loc {
+  font-size: calc(14px * var(--fs, 1));
+}
+.link-btn {
+  font-size: calc(13px * var(--fs, 1));
 }

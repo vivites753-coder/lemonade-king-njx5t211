@@ -340,7 +340,7 @@ export class Renderer {
     ctx.drawImage(this.ground.canvas, GROUND_BOUNDS.x, GROUND_BOUNDS.y, GROUND_BOUNDS.w, GROUND_BOUNDS.h);
     this.drawWater(ctx);
     const walls = LOCATIONS[loc].walls;
-    if (walls) drawWalls(ctx, walls);
+    if (walls) drawWalls(ctx, walls, LOCATIONS[loc].doors);
 
     if (selling && g.S.settings.showZone) {
       groundCircle(ctx, CONFIG.STAND.x, CONFIG.STAND.y, g.radius);

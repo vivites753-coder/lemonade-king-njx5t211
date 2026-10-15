@@ -2,7 +2,7 @@
 import { CONFIG } from '../../core/config';
 import type { WallStyle } from '../../data/locations';
 import { t } from '../../i18n';
-import { drawSprite, registerProcs, type SpriteCall } from '../assets';
+import { drawSprite, getImage, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 
@@ -101,10 +101,10 @@ const DOOR_W = 58;
 const DOOR_H = 74;
 const DOORS = CONFIG.LANES.map((l) => (N - l.y) * 32 - DOOR_W / 2);
 
-/** Doormats on the floor in front of the doorways. */
-function doormats(ctx: Ctx): void {
-  for (const lane of CONFIG.LANES) {
-    poly(ctx, [P(0, lane.y - 0.75), P(0.55, lane.y - 0.75), P(0.55, lane.y + 0.75), P(0, lane.y + 0.75)], 'rgba(73,80,87,0.55)');
+/** Doormats on the floor in front of the doorways (at the lanes, or at the doors of the wall picture). */
+function doormats(ctx: Ctx, doors?: [number, number], half = 0.75): void {
+  for (const y of doors ?? CONFIG.LANES.map((l) => l.y)) {
+    poly(ctx, [P(0, y - half), P(0.55, y - half), P(0.55, y + half), P(0, y + half)], 'rgba(73,80,87,0.55)');
   }
 }
 
@@ -298,17 +298,7 @@ function stationWalls(ctx: Ctx): void {
     outside(ctx, 0, -104, LEN, 92);
     ctx.fillStyle = '#adb5bd';
     ctx.fillRect(0, -26, LEN, 14);
-    // a train rolls past now and then (more often when trains come from the city)
-    const period = ENV.trains ? 9 : 16;
-    const k = ENV.reduceMotion ? 0.4 : (ENV.t % period) / period;
-    const tx = -520 + k * (LEN + 760);
-    for (let c = 0; c < 4; c++) {
-      const x = tx + c * 128;
-      rrect(ctx, x, -60, 122, 36, 8, c === 0 ? '#e03131' : '#1c7ed6');
-      ctx.fillStyle = '#ffd43b';
-      ctx.fillRect(x, -36, 122, 4);
-      for (let w = 0; w < 4; w++) rrect(ctx, x + 10 + w * 28, -54, 20, 12, 3, '#e7f5ff');
-    }
+    passingTrain(ctx);
     ctx.restore();
     ctx.strokeStyle = '#8d6e52';
     ctx.lineWidth = 3;
@@ -322,8 +312,105 @@ function stationWalls(ctx: Ctx): void {
   wallTop(ctx, '#d8c9ad');
 }
 
-/** Back walls of an indoor place (drawn right after the floor). */
-export function drawWalls(ctx: Ctx, style: WallStyle): void {
+/** A train rolls past behind the station's windows now and then (more often when trains come from the city). */
+function passingTrain(ctx: Ctx): void {
+  const period = ENV.trains ? 9 : 16;
+  const k = ENV.reduceMotion ? 0.4 : (ENV.t % period) / period;
+  const tx = -520 + k * (LEN + 760);
+  for (let c = 0; c < 4; c++) {
+    const x = tx + c * 128;
+    rrect(ctx, x, -60, 122, 36, 8, c === 0 ? '#e03131' : '#1c7ed6');
+    ctx.fillStyle = '#ffd43b';
+    ctx.fillRect(x, -36, 122, 4);
+    for (let w = 0; w < 4; w++) rrect(ctx, x + 10 + w * 28, -54, 20, 12, 3, '#e7f5ff');
+  }
+}
+
+/** The hands of the drawn station clock (the picture is a little wider than high: rx, ry). */
+function clockHands(ctx: Ctx, u: number, v: number, rx: number, ry: number): void {
+  ctx.save();
+  ctx.translate(u, v);
+  ctx.scale(rx / ry, 1);
+  const h = ENV.hour;
+  const ah = ((h % 12) / 12) * Math.PI * 2;
+  const am = (h % 1) * Math.PI * 2;
+  line(ctx, 0, 0, Math.sin(ah) * ry * 0.5, -Math.cos(ah) * ry * 0.5, '#212529', 2.4);
+  line(ctx, 0, 0, Math.sin(am) * ry * 0.78, -Math.cos(am) * ry * 0.78, '#212529', 1.5);
+  circle(ctx, 0, 0, 1.8, '#c92a2a');
+  ctx.restore();
+}
+
+/** The trains on the drawn departures board (its dark inside: u, v, w, h). */
+function departuresText(ctx: Ctx, u: number, v: number, w: number, h: number): void {
+  text(ctx, t('world.departures'), u + w / 2, v + 7, 7, '#ffd43b', 'center', 900);
+  const now = ENV.hour;
+  for (let i = 0; i < 3; i++) {
+    const at = Math.ceil((now + 0.25 + i * 0.7) * 4) / 4;
+    const hh = Math.floor(at) % 24;
+    const mm = Math.round((at - Math.floor(at)) * 60);
+    const y = v + 18 + i * ((h - 21) / 3);
+    text(ctx, t(`world.city${((Math.floor(now) + i * 3) % 4) + 1}`), u + 6, y, 7, '#ffa94d', 'left', 800);
+    text(ctx, `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, u + w - 6, y, 7, '#ffa94d', 'right', 800);
+  }
+}
+
+/**
+ * The drawn walls (sheets 21-22, tools/make_walls.py): flat fronts of the two walls, 3 px per world px, with
+ * see-through doorways and windows, so what is behind them is drawn first. The game writes the words on the signs
+ * (in the player's language), turns the clock hands and fills the departures board. Positions in wall coordinates
+ * (u along the wall, v from −104 at the top to 0 at the floor), measured on the pictures.
+ */
+function drawnWalls(ctx: Ctx, style: WallStyle, doors?: [number, number]): boolean {
+  const left = getImage(`wall_${style}_left`);
+  const right = getImage(`wall_${style}_right`);
+  if (!left || !right) return false;
+  const station = style === 'station';
+  faceX(ctx, 0, N, 0, () => {
+    // behind the wall, seen only through its openings (and never past its ends)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, -WALL_H, LEN, WALL_H);
+    ctx.clip();
+    outside(ctx, 0, -WALL_H, LEN, WALL_H);
+    if (station) {
+      ctx.fillStyle = '#adb5bd';
+      ctx.fillRect(0, -26, LEN, 26);
+      passingTrain(ctx);
+    } else {
+      ctx.fillStyle = '#ced4da';
+      ctx.fillRect(0, -16, LEN, 16);
+    }
+    ctx.restore();
+    ctx.drawImage(left, 0, -WALL_H, LEN, WALL_H);
+    if (station) text(ctx, t('world.station'), 192, -77, 11, '#7a5230', 'center', 900);
+    else {
+      for (const u of [117, 220]) text(ctx, t('world.entrance'), u, -82.4, 6.5, '#7a4a00', 'center', 900);
+      text(ctx, t('world.mall'), 325, -38, 7, '#c2410c', 'center', 900);
+    }
+  });
+  faceY(ctx, 0, 0, 0, () => {
+    ctx.drawImage(right, 0, -WALL_H, LEN, WALL_H);
+    if (station) {
+      text(ctx, t('world.tickets'), 89, -69, 10, '#5c3d1e', 'center', 900);
+      clockHands(ctx, 192.4, -61.1, 20, 17);
+      departuresText(ctx, 244, -76, 102, 42);
+    } else {
+      const shops: [number, string, string][] = [
+        [71.7, 'world.shopToys', '#e03131'],
+        [195.8, 'world.shopClothes', '#7048e8'],
+        [316.4, 'world.shopCafe', '#e8590c'],
+      ];
+      for (const [u, key, color] of shops) text(ctx, t(key), u, -83.5, 9, color, 'center', 900);
+    }
+  });
+  doormats(ctx, doors, station ? 0.6 : 0.75);
+  wallTop(ctx, station ? '#d8c9ad' : '#e9dcc3');
+  return true;
+}
+
+/** Back walls of an indoor place (drawn right after the floor): the drawn ones, or the ones made in code. */
+export function drawWalls(ctx: Ctx, style: WallStyle, doors?: [number, number]): void {
+  if (drawnWalls(ctx, style, doors)) return;
   drawSprite(ctx, style === 'mall' ? 'wall_mall' : 'wall_station', { x: 0, y: 0, sx: 0, sy: 0, s: 1 });
 }
 

@@ -106,7 +106,7 @@ Row 3: 9) two cheerful little workers side by side, a girl and a boy in yellow a
 
 Імена: `ui_gd_lemon_bulk, ui_gd_water_bulk, ui_gd_sugar_bulk, ui_gd_cups_bulk, ui_pt_stand, ui_pt_look, ui_pt_upgrades, ui_pt_payback, ui_pt_team, ui_pt_hire, ui_pt_wholesale, ui_pt_closed`
 
-## Лист 11. Іконки апгрейдів, яких ще немає (4×1, ISO)
+## Лист 11. Іконки апгрейдів, яких ще немає (4×1, ISO) — ГОТОВО
 
 Іконку вагончика тепер зроблено з картинки гри (`tools/make_icons.py`), лишилися ці чотири (великий прилавок — гарніший за складений зі столів).
 
@@ -132,7 +132,7 @@ Row 4: 16) a megaphone, 17) a calculator (blank keys), 18) a coin bag with a gol
 
 Імена: `ui_loc_yard, ui_loc_park, ui_loc_school, ui_loc_beach, ui_loc_station, ui_loc_mall, ui_act_market2, ui_act_kitchen, ui_act_shop, ui_act_sleep, ui_btn_settings, ui_btn_glossary, ui_btn_roadmap, ui_btn_news, ui_btn_points, ui_btn_megaphone, ui_btn_calc, ui_btn_coinbag, ui_btn_map, ui_btn_gift`
 
-## Лист 12б. Кнопки верхньої панелі й керування (5×2, FLAT)
+## Лист 12б. Кнопки верхньої панелі й керування (5×2, FLAT) — ГОТОВО
 
 Кнопки праворуч угорі (підказка Лемі, словник, звук, налаштування), кнопки швидкості, «Закінчити день». Гра вже чекає ці файли: щойно вони з'являться в `assets/ui/`, емодзі на кнопках замінюються самі.
 
@@ -276,7 +276,7 @@ Colours: 1) lemon yellow body, orange trim, orange-white striped awning; 2) mint
 
 Імена: `stand_truck_lemon, stand_truck_mint, stand_truck_berry, stand_truck_sky, stand_truck_retro, stand_truck_lilac` (встановлює `tools/make_trucks.py`).
 
-## Лист 21. Стіни вокзалу (одна картинка 1536×1024, за шаблоном)
+## Лист 21. Стіни вокзалу (одна картинка 1536×1024, за шаблоном) — ГОТОВО
 
 Стіни малюються **рівно, як фасад** (не в ізометрії): гра сама «загне» їх на дві задні стіни залу.
 Обов'язково прикріпіть до запиту шаблон `docs/art/wall_station_layout.png`: у ньому двері стоять саме там,
@@ -299,7 +299,7 @@ The walls: warm cream plaster with tall pilasters, a decorative cornice along th
 
 Імена: `wall_station` (встановлю сам).
 
-## Лист 22. Стіни торгового центру (одна картинка 1536×1024, за шаблоном)
+## Лист 22. Стіни торгового центру (одна картинка 1536×1024, за шаблоном) — ГОТОВО
 
 Так само рівно, як фасад, з шаблоном `docs/art/wall_mall_layout.png`.
 

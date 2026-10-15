@@ -24,6 +24,10 @@ export interface Recipe {
 
 export interface Settings {
   sound: boolean;
+  /** Background music (the sound switch mutes it too). */
+  music: boolean;
+  /** Size of all the texts: 1 = normal (see FONT_SCALES). */
+  fontScale: number;
   reduceMotion: boolean;
   dyslexia: boolean;
   showZone: boolean;
@@ -272,7 +276,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     ageMode: o.ageMode,
     avatar: o.avatar,
     lang: o.lang,
-    settings: { sound: true, reduceMotion: false, dyslexia: false, showZone: true },
+    settings: { sound: true, music: true, fontScale: 1, reduceMotion: false, dyslexia: false, showZone: true },
     totals: { earned: 0, sold: 0 },
     weatherHistory: [],
     history: [],
@@ -333,6 +337,7 @@ export function normalizeState(S: GameState, D: DayState): void {
     if (S[k] === undefined) (S as unknown as Record<string, unknown>)[k] = fresh[k];
   }
   if (S.condition.mixer === undefined) S.condition.mixer = 100;
+  S.settings = { ...fresh.settings, ...S.settings };
   S.bestRep = Math.max(S.bestRep, S.rep);
   S.stock.cookies ??= 0;
   for (const id of Object.keys(S.upgrades)) {

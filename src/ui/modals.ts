@@ -9,6 +9,17 @@ import { toggleFullscreen } from './fullscreen';
 import { isNativeApp } from '../native';
 import type { ModalSpec } from './overlays';
 
+/** The text sizes of the settings: [scale, label]. */
+export const FONT_SCALES: [number, string][] = [
+  [0.9, 'settings.font.s'],
+  [1, 'settings.font.m'],
+  [1.15, 'settings.font.l'],
+  [1.3, 'settings.font.xl'],
+];
+
+/** The simple version for 6-8 year olds: its button comes back when that version is ready. */
+export const KID_MODE_READY = false;
+
 export function confirmModal(text: string, onYes: () => void): ModalSpec {
   return {
     render: () => `<p>${esc(text)}</p>
@@ -90,15 +101,20 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
       const inGame = g.phase !== 'title';
       return `<h2>⚙️ ${t('settings.title')}</h2>
         ${toggle('set:sound', s.sound, `🔊 ${t('settings.sound')}`)}
+        ${toggle('set:music', s.music, `🎵 ${t('settings.music')}`)}
         ${toggle('set:showZone', s.showZone, `🟡 ${t('settings.showZone')}`)}
         ${toggle('set:reduceMotion', s.reduceMotion, `🐢 ${t('settings.reduceMotion')}`)}
         ${toggle('set:dyslexia', s.dyslexia, `🔤 ${t('settings.dyslexia')}`)}
+        <h3>🔠 ${t('settings.fontSize')}</h3>
+        <div class="row font-sizes">
+          ${FONT_SCALES.map(([k, key]) => `<button class="btn btn-sm ${Math.abs((s.fontScale ?? 1) - k) < 0.01 ? 'btn-y' : ''}" data-act="font:${k}" style="font-size:${Math.round(14 * k)}px">${t(key)}</button>`).join('')}
+        </div>
         ${isNativeApp() ? '' : `<div class="row" style="margin:6px 0"><button class="btn btn-sm" data-act="fullscreen">⛶ ${t('settings.fullscreen')}</button></div>`}
         <h3>🌍 ${t('settings.lang')}</h3>
         <div class="row">
           ${LANGS.map((l) => `<button class="btn btn-sm ${g.S.lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
         </div>
-        ${inGame ? `<h3>🎚️ ${t('settings.mode')}</h3>
+        ${inGame && KID_MODE_READY ? `<h3>🎚️ ${t('settings.mode')}</h3>
         <div class="row">
           <button class="btn btn-sm ${g.S.ageMode === 'kid' ? 'btn-y' : ''}" data-act="mode:kid">${t('mode.kid')}</button>
           <button class="btn btn-sm ${g.S.ageMode === 'pro' ? 'btn-y' : ''}" data-act="mode:pro">${t('mode.pro')}</button>
@@ -124,6 +140,10 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
       if (act === 'set') {
         const key = arg as keyof typeof g.S.settings;
         g.updateSettings({ [key]: !g.S.settings[key] });
+        hooks.apply();
+      }
+      if (act === 'font') {
+        g.updateSettings({ fontScale: Number(arg) || 1 });
         hooks.apply();
       }
       if (act === 'fullscreen') {

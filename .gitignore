@@ -45,3 +45,6 @@ desktop.ini
 
 # local Claude Code state
 .claude/settings.local.json
+
+# the raw sounds and music as generated (big MP3s with cover pictures): tools/install_audio.py makes assets/audio
+assets/soundFX/

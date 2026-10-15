@@ -1,4 +1,5 @@
 import './styles.css';
+import { musicFor, playMusic } from './audio/music';
 import { initAudio } from './audio/sfx';
 import { readSave, wipeOnUpdate, writeSave } from './core/save';
 import { asLang, setLang, t } from './i18n';
@@ -48,6 +49,7 @@ function frame(now: number): void {
   const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
   last = now;
   ui.update();
+  playMusic(musicFor(game));
   game.update(dt);
   renderer.render(dt);
   debug.update(dt);

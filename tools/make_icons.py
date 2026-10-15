@@ -2,9 +2,11 @@
 
 Usage: python tools/make_icons.py
 Every icon is the object itself, cropped to its pixels and centred on a transparent square with a small margin.
-The big stand is put together from the two tables, placed as in the game.
+The big stand has its own drawn icon now (sheet 11, tools/cut_icons.py); big_stand() can still build one from the
+two tables (python tools/make_icons.py --big-stand).
 """
 import os
+import sys
 
 from PIL import Image
 
@@ -72,5 +74,6 @@ os.makedirs('assets/ui', exist_ok=True)
 for key, src in SOURCES.items():
     fit(asset(src)).save(f'assets/ui/ui_up_{key}.png', optimize=True)
     print('ok', key)
-fit(big_stand()).save('assets/ui/ui_up_big_stand.png', optimize=True)
-print('ok big_stand')
+if '--big-stand' in sys.argv:
+    fit(big_stand()).save('assets/ui/ui_up_big_stand.png', optimize=True)
+    print('ok big_stand')

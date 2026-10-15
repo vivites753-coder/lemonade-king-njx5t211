@@ -69,7 +69,7 @@ import { Critters } from './critters';
 import { Street, type Ped, type StreetHost } from './street';
 import { placeEventStop } from './traffic';
 
-export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'splash' | 'alarm' | 'fanfare' | 'buy' | 'mix' | 'break' | 'crash' | 'zap' | 'woof' | 'meow';
+export type SfxName = 'coin' | 'click' | 'pop' | 'buzz' | 'pour' | 'serve' | 'splash' | 'alarm' | 'fanfare' | 'buy' | 'mix' | 'break' | 'crash' | 'zap' | 'woof' | 'meow';
 
 export interface CardInfo {
   id: string;
@@ -1238,7 +1238,7 @@ export class Game {
     this.helperIdle[c] = 0;
     // a counter that a helper looks after pours at the helper's speed
     this.servings[c] = { ped: p, t: 0, dur: serveTime(this.active(), byHelper || this.autoCounter(c)), helper: byHelper };
-    this.sfx('pour');
+    this.sfx('serve');
     return 'ok';
   }
 

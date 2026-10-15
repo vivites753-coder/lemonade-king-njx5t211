@@ -1,4 +1,5 @@
 // UI controller: picks the panel for each phase, routes clicks/taps/keys, keeps the camera clear of panels.
+import { setMusicEnabled } from '../audio/music';
 import { play, setSoundEnabled } from '../audio/sfx';
 import { activeProfile, clearSave, createProfile, deleteProfile, listProfiles, parseSave, readSave, serializeSave, setActiveProfile, writeSave } from '../core/save';
 import type { AgeMode, Avatar, Lang, Phase } from '../core/types';
@@ -453,7 +454,9 @@ export class UI implements UIApi {
   private applySettings(): void {
     const s = this.g.S.settings;
     setSoundEnabled(s.sound);
+    setMusicEnabled(s.sound && s.music !== false);
     document.body.classList.toggle('dyslexia', s.dyslexia);
+    document.documentElement.style.setProperty('--fs', String(s.fontScale ?? 1));
     document.body.classList.toggle('reduce-motion', s.reduceMotion);
   }
 

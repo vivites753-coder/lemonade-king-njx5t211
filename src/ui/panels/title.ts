@@ -2,6 +2,7 @@ import { listProfiles } from '../../core/save';
 import type { AgeMode, Avatar } from '../../core/types';
 import { LANGS, asLang, t } from '../../i18n';
 import { coin, esc } from '../dom';
+import { KID_MODE_READY } from '../modals';
 import type { Panel } from './types';
 
 const AVATAR_ICON: Record<Avatar, string> = { boy: '👦', girl: '👧' };
@@ -34,13 +35,17 @@ export const titlePanel: Panel = {
               ${choice('avatar:girl', s.avatar === 'girl', '👧', t('newgame.girl'))}
             </div>
           </div>
-          <div>
+          ${
+            KID_MODE_READY
+              ? `<div>
             <h3>${t('newgame.mode')}</h3>
             <div class="choice-grid">
               ${choice('mode:kid', s.mode === 'kid', '🧸', t('mode.kid'), t('mode.kid.desc'))}
               ${choice('mode:pro', s.mode === 'pro', '💼', t('mode.pro'), t('mode.pro.desc'))}
             </div>
-          </div>
+          </div>`
+              : ''
+          }
         </div>
         <button class="btn btn-g btn-big" data-act="start">▶ ${t('btn.start')}</button>
         <button class="btn btn-sm" data-act="back">← ${t('btn.back')}</button>

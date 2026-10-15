@@ -1,0 +1,14 @@
+{
+  "music_morning": {
+    "loopEnd": 27.5,
+    "loopStart": 1.5
+  },
+  "music_sell_sunny": {
+    "loopEnd": 108.6,
+    "loopStart": 4.5
+  },
+  "music_title": {
+    "loopEnd": 30.0,
+    "loopStart": 1.5
+  }
+}
