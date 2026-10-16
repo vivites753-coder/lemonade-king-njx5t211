@@ -91,7 +91,6 @@ export interface GameState {
   totals: { earned: number; sold: number };
   weatherHistory: WeatherId[];
   history: DayHistory[];
-  stageDone: boolean;
 }
 
 export interface Funnel {
@@ -177,7 +176,6 @@ export interface DayReport {
   pointsProfit: number;
   /** Tonight the reputation first reached the level for extra stands. */
   pointsUnlocked: boolean;
-  stageGoalReached: boolean;
 }
 
 /** Everything about the current day. Saved too, so a reload can continue the day. */
@@ -282,7 +280,6 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     totals: { earned: 0, sold: 0 },
     weatherHistory: [],
     history: [],
-    stageDone: false,
   };
 }
 

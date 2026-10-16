@@ -7,7 +7,7 @@ import { setLang, t } from '../i18n';
 import type { Game } from '../sim/game';
 import type { Renderer } from '../render/renderer';
 import { Hud } from './hud';
-import { confirmModal, gateModal, glossaryModal, infoModal, settingsModal, stageModal } from './modals';
+import { confirmModal, gateModal, glossaryModal, infoModal, settingsModal } from './modals';
 import { Overlays } from './overlays';
 import { kitchenPanel } from './panels/kitchen';
 import { marketPanel } from './panels/market';
@@ -384,7 +384,6 @@ export class UI implements UIApi {
       this.panelEl.innerHTML = '';
     }
     if (p === 'sell') this.userPaused = false;
-    if (p === 'report' && this.g.D.report?.stageGoalReached) this.overlays.push({ kind: 'modal', spec: stageModal(this.g) });
     // a new stage always opens its window
     this.panelHidden = false;
     this.toggleEl.classList.toggle('hidden', !panel || p === 'title');

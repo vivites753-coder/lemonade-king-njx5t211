@@ -26,8 +26,6 @@ export const en: Record<I18nKey, string> = {
   'mode.pro.desc': 'More numbers, formulas and explanations.',
 
   'hud.day': 'Day {n}',
-  'hud.goal': 'Stage goal: {coins} / {goal}',
-  'hud.goalStars': 'and {stars}★',
   'hud.pause': 'Pause',
   'hud.tip': "Lemi's tip",
   'hud.glossary': 'Business words',
@@ -207,7 +205,6 @@ export const en: Record<I18nKey, string> = {
   'report.spoilTomorrow': 'Lemons that spoil tomorrow: {n}. Use them!',
   'report.stock': 'Goods at home worth {n} coins',
   'report.toShop': 'To the shop',
-  'report.goal': 'Stage goal',
 
   'shop.title': 'Upgrade shop',
   'shop.buy': 'Buy',
@@ -265,14 +262,9 @@ export const en: Record<I18nKey, string> = {
   'card.grandmaHelp.text': 'Grandma gave you {n} coins so you can start again.',
   'card.grandmaHelp.lemi': 'Even great entrepreneurs have bad days. What matters is learning from them!',
 
-  'stage.title': 'Stage 1 complete! 👑',
-  'stage.text': 'You earned {coins} coins and have {stars}★ reputation. You are a real entrepreneur!',
-  'stage.demo': 'This is the end of the demo. The full game has a lemonade cart, staff, a café and the Lemon Palace!',
-  'stage.full': 'Stage 2 is still being built. Keep playing meanwhile!',
-  'stage.continue': 'Keep playing',
 
-  'tip.welcome': "Hi! I'm Lemi 🍋 Grandma gave you 200 coins and a table. The first dream: save 600 coins and become a real entrepreneur!",
-  'tip.welcome.kid': "Hi! I'm Lemi 🍋 Grandma gave you 200 coins. Let's sell lemonade and save 600 coins!",
+  'tip.welcome': 'Hi! I\'m Lemi 🍋 Grandma gave you 200 coins and a table. Let\'s sell lemonade, and I\'ll show you how it all works!',
+  'tip.welcome.kid': 'Hi! I\'m Lemi 🍋 Grandma gave you 200 coins. Let\'s sell lemonade together!',
   'tip.morning': 'Every day starts in the morning. Check the forecast and choose where to sell. Different places, different crowds!',
   'tip.morning.kid': 'Morning! Look at the weather and pick a place.',
   'tip.location': 'The park has more people, but you pay for the spot. The school has lots of kids, but they have few coins. Choose wisely!',

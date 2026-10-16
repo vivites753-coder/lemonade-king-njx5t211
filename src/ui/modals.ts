@@ -215,13 +215,3 @@ export function glossaryModal(g: Game): ModalSpec {
   };
 }
 
-export function stageModal(g: Game): ModalSpec {
-  return {
-    render: () => `<div class="ev-ico">${ico('crown', '👑')}🍋${ico('trophy', '🎉')}</div>
-      <h2 class="ev-title">${t('stage.title')}</h2>
-      <p>${t('stage.text', { coins: g.S.coins, stars: g.S.rep.toFixed(1) })}</p>
-      <p>${EDITION === 'demo' ? t('stage.demo') : t('stage.full')}</p>
-      <div class="modal-actions"><button class="btn btn-g btn-big" data-act="ok">${t('stage.continue')}</button></div>`,
-    act: (act) => act === 'ok',
-  };
-}

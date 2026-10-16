@@ -1586,7 +1586,6 @@ export class Game {
       points,
       pointsProfit,
       pointsUnlocked: false,
-      stageGoalReached: false,
     };
     // reputation milestones open new places for good
     const before = S.bestRep;
@@ -1594,10 +1593,6 @@ export class Game {
     report.unlocked = LOCATION_IDS.filter((id) => !locationUnlocked(before, id) && locationUnlocked(S.bestRep, id));
     report.pointsUnlocked = before < POINTS.MIN_REP - 1e-9 && pointsOpen(S);
     report.lesson = pickLesson(S, D, report);
-    if (!S.stageDone && S.coins >= CONFIG.GOAL_COINS && S.rep >= CONFIG.GOAL_REP) {
-      report.stageGoalReached = true;
-      S.stageDone = true;
-    }
     S.history.push({ day: S.day, profit: report.profit, sold: f.sold, location: S.location, weather: D.weather });
     if (S.history.length > 60) S.history.shift();
     D.report = report;
@@ -1605,8 +1600,8 @@ export class Game {
     this.tip('report');
     // one jingle for the day, the biggest news first
     const newStar = Math.floor(S.rep + 1e-9) > Math.floor(D.repStart + 1e-9);
-    if (report.stageGoalReached) this.sfx('king');
-    else if (report.unlocked.length || report.pointsUnlocked) this.sfx('unlock');
+    // (the king's jingle is kept for the real end of the game)
+    if (report.unlocked.length || report.pointsUnlocked) this.sfx('unlock');
     else if (newStar) this.sfx('repUp');
     else if (report.profit > 0) this.sfx('profit');
     else if (report.profit < 0) this.sfx('loss');

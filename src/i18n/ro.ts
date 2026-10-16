@@ -27,8 +27,6 @@ export const ro: Record<I18nKey, string> = {
   'mode.pro.desc': 'Mai multe cifre, formule și explicații.',
 
   'hud.day': 'Ziua {n}',
-  'hud.goal': 'Obiectivul etapei: {coins} / {goal}',
-  'hud.goalStars': 'și {stars}★',
   'hud.pause': 'Pauză',
   'hud.tip': 'Sfatul lui Lemi',
   'hud.glossary': 'Cuvinte de afaceri',
@@ -208,7 +206,6 @@ export const ro: Record<I18nKey, string> = {
   'report.spoilTomorrow': 'Mâine se strică lămâi: {n}. Folosește-le!',
   'report.stock': 'Marfă acasă de {n} bani',
   'report.toShop': 'La magazin',
-  'report.goal': 'Obiectivul etapei',
 
   'shop.title': 'Magazinul de îmbunătățiri',
   'shop.buy': 'Cumpără',
@@ -266,14 +263,9 @@ export const ro: Record<I18nKey, string> = {
   'card.grandmaHelp.text': 'Bunica ți-a dat {n} bani ca să poți începe din nou.',
   'card.grandmaHelp.lemi': 'Chiar și marii antreprenori au zile proaste. Important e să tragi învățăminte!',
 
-  'stage.title': 'Etapa 1 e gata! 👑',
-  'stage.text': 'Ai câștigat {coins} bani și ai {stars}★ reputație. Ești un adevărat antreprenor!',
-  'stage.demo': 'Aici se termină versiunea demo. Jocul complet are o căruță cu limonadă, angajați, o cafenea și Palatul Lămâilor!',
-  'stage.full': 'Etapa 2 încă se construiește. Între timp, joacă mai departe!',
-  'stage.continue': 'Joacă mai departe',
 
-  'tip.welcome': 'Salut! Eu sunt Lemi 🍋 Bunica ți-a dat 200 de bani și o măsuță. Primul vis: strânge 600 de bani și devino un adevărat antreprenor!',
-  'tip.welcome.kid': 'Salut! Eu sunt Lemi 🍋 Bunica ți-a dat 200 de bani. Hai să vindem limonadă și să strângem 600 de bani!',
+  'tip.welcome': 'Salut! Eu sunt Lemi 🍋 Bunica ți-a dat 200 de bani și o măsuță. Hai să vindem limonadă, iar eu îți arăt cum merge totul!',
+  'tip.welcome.kid': 'Salut! Eu sunt Lemi 🍋 Bunica ți-a dat 200 de bani. Hai să vindem limonadă împreună!',
   'tip.morning': 'Fiecare zi începe dimineața. Uită-te la prognoză și alege unde vinzi. Locuri diferite — mulțimi diferite!',
   'tip.morning.kid': 'Bună dimineața! Uită-te la vreme și alege un loc.',
   'tip.location': 'În parc sunt mai mulți oameni, dar locul se plătește. La școală sunt mulți copii, dar au puțini bani. Alege cu cap!',
