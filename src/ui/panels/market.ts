@@ -76,7 +76,7 @@ export const marketPanel: Panel = {
       : '';
     const total = g.cartTotal();
     const tooMuch = total > S.coins;
-    const lemonsPer = lemonsConsumed(S.recipe, S.upgrades);
+    const lemonsPer = lemonsConsumed(S.recipe, g.active());
     return `<div class="panel">
       <div class="panel-head"><h2>${ico('gd_market', '🛒')} ${t('market.title', { time: fmtHour(g.D.hour) })}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">

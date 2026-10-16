@@ -88,6 +88,8 @@ export class Renderer {
   private floats: Float[] = [];
   private fx = new WeatherFx();
   private items: Item[] = [];
+  /** The middle of every decoration (they never move, and are asked for every frame). */
+  private centres = new WeakMap<DecorDef, [number, number]>();
   private bubbles: Bubble[] = [];
   private t = 0;
   /** A copy of the frame for the heat haze. */
@@ -104,7 +106,10 @@ export class Renderer {
     private game: Game,
   ) {
     this.ctx = canvas.getContext('2d')!;
-    onAssetsChanged(() => (this.ground = null));
+    // the ground is drawn from its tiles only: nothing else that loads makes it new
+    onAssetsChanged((id) => {
+      if (id.startsWith('tile_')) this.ground = null;
+    });
     game.bus.on('found', (e) => !this.view && this.floats.push({ x: e.x, y: e.y, text: `+${e.amount} ${e.icon}`, color: '#2b8a3e', t: 0 }));
     game.bus.on('sale', (e) => !this.view && this.floats.push({ x: e.x, y: e.y - (e.cookie ? 0.35 : 0), text: `+${e.amount}${e.cookie ? ' 🍪' : ''}`, color: e.cookie ? '#a0612b' : '#2b8a3e', t: 0 }));
     game.bus.on('thief', (e) => {
@@ -307,7 +312,7 @@ export class Renderer {
     // strongest in the hottest hours
     const noon = Math.max(0, Math.sin((Math.PI * (hour - 8)) / 12));
     const strength = (0.55 + 0.45 * noon) * d;
-    const strip = Math.max(2, Math.round(2 * d));
+    const strip = Math.max(3, Math.round(3 * d));
     const y0 = Math.round(H * 0.18);
     const t = this.t;
     for (let y = y0; y < H; y += strip) {
@@ -362,7 +367,11 @@ export class Renderer {
       const [px, py] = P(x, y);
       return px > view.x0 - 170 && px < view.x1 + 170 && py > view.y0 - 60 && py < view.y1 + 300;
     };
-    const decorCentre = (d: DecorDef): [number, number] => [d.w ? d.x + d.w / 2 : d.x, d.d ? d.y + d.d / 2 : d.y];
+    const decorCentre = (d: DecorDef): [number, number] => {
+      let c = this.centres.get(d);
+      if (!c) this.centres.set(d, (c = [d.w ? d.x + d.w / 2 : d.x, d.d ? d.y + d.d / 2 : d.y]));
+      return c;
+    };
     // shadows lie on the ground, under everything that stands on it
     for (const d of decor) {
       const [cx, cy] = decorCentre(d);

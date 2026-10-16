@@ -401,9 +401,10 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       { id: 'prop_lamp', x: 3.2, y: 5.4 },
       { id: 'prop_bin', x: 0.7, y: 4.7 },
       { id: 'prop_lamp', x: 6.9, y: 5.4 },
-      // the stop: the sign at the kerb, the shelter behind it (the buses stop in front of them)
+      // the stop: the sign at the kerb, the shelter at the back of the pavement (the people walk along y = 5.5, the
+      // queue stands at y = 4.25: nobody walks through it)
       { id: 'prop_bus_sign', x: 8.55, y: 5.9 },
-      { id: 'prop_bus_shelter', x: 10.45, y: 4.95 },
+      { id: 'prop_bus_shelter', x: 10.6, y: 3.35 },
       // across the road
       { id: 'prop_tree_a', x: 1.2, y: 10.3, s: 1.2 },
       { id: 'prop_tree_c', x: 4.4, y: 10.7 },

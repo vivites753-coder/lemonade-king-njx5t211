@@ -26,6 +26,24 @@ describe('save files', () => {
     expect(parseSave('{"v":2,"S":{},"D":{}}')).toBeNull();
   });
 
+  it('rejects a save with its stock or upgrades missing (it would crash the game when loaded)', () => {
+    const g = new Game(8);
+    g.newGame({ ageMode: 'pro', avatar: 'boy', lang: 'uk', seed: 8 });
+    const good = JSON.parse(serializeSave(g.snapshot()));
+    expect(parseSave(JSON.stringify(good))).not.toBeNull();
+    for (const damage of [
+      (o: any) => delete o.S.stock,
+      (o: any) => (o.S.stock.lemons = 5),
+      (o: any) => (o.S.upgrades = null),
+      (o: any) => (o.S.coins = 'lots'),
+      (o: any) => delete o.D.hour,
+    ]) {
+      const bad = JSON.parse(JSON.stringify(good));
+      damage(bad);
+      expect(parseSave(JSON.stringify(bad))).toBeNull();
+    }
+  });
+
   it('old saves with the removed read-aloud setting still load', () => {
     const g = new Game(7);
     g.newGame({ ageMode: 'kid', avatar: 'boy', lang: 'uk', seed: 7 });

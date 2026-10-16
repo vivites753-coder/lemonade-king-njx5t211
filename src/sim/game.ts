@@ -291,6 +291,7 @@ export class Game {
     }
     this.speed = 1;
     this.paused = false;
+    this.midKitchen = false;
     this.startMorning(0, []);
   }
 
@@ -1312,10 +1313,15 @@ export class Game {
     return this.active().dispenser ? CONFIG.POUR_ZONE_DISPENSER : CONFIG.POUR_ZONE;
   }
 
-  /** How fast this cup fills (gauges a second): a little different every time, steadier with the dispenser. */
+  /** With the dispenser the tap stops by itself when the cup is full (this level): a tap on "Pour" is enough. */
+  pourDose(): number | null {
+    return this.active().dispenser ? CONFIG.POUR_DOSE_DISPENSER : null;
+  }
+
+  /** How fast this cup fills (gauges a second): a little different every time; the dispenser is fast and even. */
   private pourRate(): number {
-    const vary = this.active().dispenser ? CONFIG.POUR_VARY_DISPENSER : CONFIG.POUR_VARY;
-    return (1 + (Math.random() * 2 - 1) * vary) / CONFIG.POUR_TIME;
+    if (this.active().dispenser) return 1 / CONFIG.POUR_TIME_DISPENSER;
+    return (1 + (Math.random() * 2 - 1) * CONFIG.POUR_VARY) / CONFIG.POUR_TIME;
   }
 
   /** The counter where the player is pouring now, or -1. */
@@ -1353,7 +1359,8 @@ export class Game {
       this.servings[c] = null;
       return 'cancel';
     }
-    if (level > hi) {
+    // the dispenser never spills
+    if (level > hi && this.pourDose() === null) {
       this.servings[c] = null;
       if (this.D.cupsReady > 0) this.D.cupsReady--;
       this.sfx('spill');
@@ -2251,6 +2258,7 @@ export class Game {
     this.viewPoint = null;
     this.phase = 'title';
     this.paused = false;
+    this.midKitchen = false;
     this.servings = [null, null];
     this.making = null;
     this.bus.emit('phase', { phase: 'title' });

@@ -69,6 +69,9 @@ export const CONFIG = {
   /** The green part of the gauge (shares of the top): let go below it and the cup is not full, above it the cup overflows. */
   POUR_ZONE: [0.72, 0.9] as [number, number],
   POUR_ZONE_DISPENSER: [0.66, 0.93] as [number, number],
+  /** With the dispenser a cup fills fast (real seconds to the top) and the tap stops by itself at the dose: no spills. */
+  POUR_TIME_DISPENSER: 0.55,
+  POUR_DOSE_DISPENSER: 0.8,
   /** A press shorter than this (share of the gauge) pours nothing: it was not meant. */
   POUR_MIN: 0.12,
   /** Satisfaction taken off for a cup that is not full, and added for a cup poured just right. */
@@ -146,6 +149,19 @@ export const CONFIG = {
   /** Maintenance in the shop costs this share of a repair at 0% condition. */
   MAINTENANCE_SHARE: 0.5,
 } as const;
+
+/**
+ * Where the selling buttons stand by default (the centres, as shares of the screen): "Pour" at the right edge, in reach
+ * of the thumb, and the cups, "Make" and "End the day" in a row along the bottom. The price and the speaker stay at the
+ * bottom left, the speed buttons at the top. The player can still drag them anywhere (Settings → Selling buttons).
+ */
+export const HUD_DEFAULT_LAYOUT: Record<string, [number, number]> = {
+  speed: [0.7, 0.052],
+  serve: [0.861, 0.697],
+  cups: [0.505, 0.938],
+  make: [0.634, 0.925],
+  end: [0.813, 0.923],
+};
 
 /** Place number i in the queue of a counter (0: to the right of the stand, 1: to the left). */
 export function queueSpot(i: number, counter = 0): { x: number; y: number } {

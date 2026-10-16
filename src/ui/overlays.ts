@@ -66,6 +66,8 @@ type Item = { kind: 'tip'; key: string } | { kind: 'card'; card: CardInfo } | { 
 export class Overlays {
   private q: Item[] = [];
   private current: Item | null = null;
+  /** The dialog (spec) that is on screen now. */
+  private shown: ModalSpec | null = null;
   lastTip: string | null = null;
 
   constructor(
@@ -149,6 +151,7 @@ export class Overlays {
   close(): void {
     this.lemiEl.classList.add('hidden');
     this.modalEl.classList.add('hidden');
+    this.shown = null;
     this.current = null;
     this.next();
   }
@@ -179,6 +182,7 @@ export class Overlays {
   private next(): void {
     this.lemiEl.classList.add('hidden');
     this.modalEl.classList.add('hidden');
+    this.shown = null;
     const it = this.q.shift();
     if (!it) {
       this.current = null;
@@ -227,6 +231,16 @@ export class Overlays {
   }
 
   private renderModal(spec: ModalSpec): void {
+    // the same dialog drawn again (after a purchase, a language change): only its content changes, so it neither
+    // pops in again nor jumps back to the top
+    const card = this.modalEl.firstElementChild as HTMLElement | null;
+    if (card && this.shown === spec && !this.modalEl.classList.contains('hidden')) {
+      const top = card.scrollTop;
+      card.innerHTML = spec.render();
+      card.scrollTop = top;
+      return;
+    }
+    this.shown = spec;
     this.modalEl.innerHTML = `<div class="modal-card${spec.wide ? ' wide' : ''}">${spec.render()}</div>`;
     this.modalEl.classList.remove('hidden');
   }

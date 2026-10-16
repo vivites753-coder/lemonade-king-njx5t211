@@ -23,10 +23,6 @@ export function setLang(l: Lang): void {
   if (typeof document !== 'undefined') document.documentElement.lang = current;
 }
 
-export function getLang(): Lang {
-  return current;
-}
-
 export function has(key: string): boolean {
   return key in DICTS[current] || key in uk;
 }

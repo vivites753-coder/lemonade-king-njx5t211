@@ -6,11 +6,6 @@ let ac: AudioContext | null = null;
 let enabled = true;
 const readyHooks: ((ac: AudioContext) => void)[] = [];
 
-/** The audio context, once the player has touched the page (browsers allow sound only after that). */
-export function audioContext(): AudioContext | null {
-  return ac;
-}
-
 /** Runs when sound can play (the first tap or key), or at once if it already can. */
 export function onAudioReady(cb: (ac: AudioContext) => void): void {
   if (ac) cb(ac);

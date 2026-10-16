@@ -43,7 +43,10 @@ const PREFIX_DEFAULTS: [string, SpriteMeta][] = [
 
 const procs = new Map<string, ProcDraw>();
 const images = new Map<string, HTMLImageElement>();
-let onLoadCb: (() => void) | null = null;
+let onLoadCb: ((id: string) => void) | null = null;
+/** The descriptions of the animated pictures, made once (they are asked for every frame). */
+const loopCache = new Map<string, LoopInfo>();
+const walkCache = new Map<string, WalkInfo>();
 
 export function metaFor(id: string): SpriteMeta {
   const own = SPRITE_META[id];
@@ -53,10 +56,6 @@ export function metaFor(id: string): SpriteMeta {
   if (w?.u) return { h: w.fh * w.u, anchor: [w.cx / w.fw, w.feetY / w.fh] };
   for (const [p, m] of PREFIX_DEFAULTS) if (id.startsWith(p)) return m;
   return { h: 64, anchor: [0.5, 0.9] };
-}
-
-export function registerProc(id: string, fn: ProcDraw): void {
-  procs.set(id, fn);
 }
 
 export function registerProcs(map: Record<string, ProcDraw>): void {
@@ -95,9 +94,14 @@ for (const m of Object.values(loopFiles)) loopManifest = m;
 
 /** A looping animation of one pose (idle, serving, squeezing, walking in place ...), if its strip has loaded. */
 export function getLoop(id: string): LoopInfo | undefined {
+  const known = loopCache.get(id);
+  if (known) return known;
   const g = loopManifest[id];
   const img = images.get(`${id}_loop`);
-  return g && img ? { ...g, img } : undefined;
+  if (!g || !img) return undefined;
+  const info = { ...g, img };
+  loopCache.set(id, info);
+  return info;
 }
 
 /** The sprite id has a picture, a still one or an animation. */
@@ -107,9 +111,14 @@ export function hasArt(id: string): boolean {
 
 /** The walking loop of a character sprite (e.g. char_kid_a_front), if its strip has loaded. */
 export function getWalk(id: string): WalkInfo | undefined {
+  const known = walkCache.get(id);
+  if (known) return known;
   const g = walkManifest[id];
   const img = images.get(`${id}_walk`);
-  return g && img ? { ...g, img } : undefined;
+  if (!g || !img) return undefined;
+  const info = { ...g, img };
+  walkCache.set(id, info);
+  return info;
 }
 
 export function hasImage(id: string): boolean {
@@ -120,8 +129,8 @@ export function getImage(id: string): HTMLImageElement | undefined {
   return images.get(id);
 }
 
-/** Called when a PNG finishes loading (so cached layers can be rebuilt). */
-export function onAssetsChanged(cb: () => void): void {
+/** Called when a picture finishes loading, with its id (so cached layers can be rebuilt). */
+export function onAssetsChanged(cb: (id: string) => void): void {
   onLoadCb = cb;
 }
 
@@ -136,7 +145,7 @@ export function loadAssets(): void {
     const img = new Image();
     img.onload = () => {
       images.set(id, img);
-      onLoadCb?.();
+      onLoadCb?.(id);
     };
     img.src = url;
   }

@@ -3659,7 +3659,7 @@ html.phone .hud-point {
   display: block;
   animation: tipBounce 0.9s ease-in-out infinite;
 }
-.tip-arrow.up svg {
+.tip-arrow.below svg {
   animation-name: tipBounceUp;
 }
 @keyframes tipBounce {
@@ -3683,7 +3683,7 @@ html.phone .hud-point {
 .reduce-motion .tip-arrow svg {
   animation: none;
 }
-.reduce-motion .tip-arrow.up svg {
+.reduce-motion .tip-arrow.below svg {
   transform: rotate(180deg);
 }
 

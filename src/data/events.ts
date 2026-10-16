@@ -53,6 +53,5 @@ export const DAY_EVENTS: DayEventDef[] = [
 
 /** The city festival happens outdoors: more people in the street, none extra indoors. */
 export const FESTIVAL_PED = 1.6;
-export const FESTIVAL_STOP = 1.3;
 export const BAD_LEMONS_SHARE = 0.3;
 export const NEWS_FLAVOURS = 4;

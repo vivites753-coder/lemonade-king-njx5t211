@@ -74,4 +74,28 @@ describe('the pouring mini-game', () => {
     expect(rates.size).toBeGreaterThan(1);
     for (const r of rates) expect(Math.abs(r * CONFIG.POUR_TIME - 1)).toBeLessThanOrEqual(CONFIG.POUR_VARY + 1e-9);
   });
+  it('with the dispenser a cup fills fast, always at the same speed, and never overflows', () => {
+    const g = sellingWithCustomer();
+    expect(g.pourDose()).toBeNull();
+    g.S.upgrades.dispenser = true;
+    g.S.condition.dispenser = 100;
+    const dose = g.pourDose();
+    expect(dose).not.toBeNull();
+    const [lo, hi] = g.pourZone();
+    expect(dose!).toBeGreaterThan(lo);
+    expect(dose!).toBeLessThan(hi);
+    const rates = new Set<number>();
+    for (let i = 0; i < 4; i++) {
+      expect(g.pourStart()).toBe('ok');
+      rates.add(g.servings[g.pouringAt()]!.pour!.rate);
+      g.pourEnd(0);
+    }
+    expect([...rates]).toEqual([1 / CONFIG.POUR_TIME_DISPENSER]);
+    expect(1 / CONFIG.POUR_TIME_DISPENSER).toBeGreaterThan(1 / CONFIG.POUR_TIME);
+    // even held to the top the cup is not spilt
+    const cups = g.D.cupsReady;
+    expect(g.pourStart()).toBe('ok');
+    expect(g.pourEnd(1)).toBe('perfect');
+    expect(g.D.cupsReady).toBe(cups - 1);
+  });
 });

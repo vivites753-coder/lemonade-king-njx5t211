@@ -32,7 +32,8 @@ const TARGETS: Record<string, string[] | WorldTarget> = {
   rain: ['[data-el="weather"]'],
   indoor: ['[data-el="loc"]'],
   spoiled: ['#resources'],
-  stock: ['#resources'],
+  // the Stock button at the top right shows while a window covers the column on the left
+  stock: ['[data-hud="stock"]', '#resources'],
   reputation: ['[data-el="rep"]'],
   thief: 'thief',
   thief_hit: 'thief',
@@ -100,7 +101,7 @@ export class TipArrow {
       return;
     }
     x = Math.max(26, Math.min(window.innerWidth - 26, x));
-    this.el.classList.toggle('up', below);
+    this.el.classList.toggle('below', below);
     this.el.style.transform = `translate(${Math.round(x - 24)}px, ${Math.round(below ? y + 2 : y - 62)}px)`;
     if (!this.shown) this.el.classList.remove('hidden');
     this.shown = true;

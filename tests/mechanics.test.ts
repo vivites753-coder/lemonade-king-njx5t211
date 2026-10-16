@@ -220,6 +220,20 @@ describe('kitchen in the middle of the day', () => {
     expect(g.D.cupsReady).toBe(20);
     expect(g.D.hour).toBeGreaterThan(hour);
   });
+
+  it('a kitchen left open by going to the title does not freeze the next game', () => {
+    const g = freshGame(5);
+    g.debugAddCoins(200);
+    toKitchen(g, 3);
+    cook(g, 1);
+    g.startSelling();
+    g.D.cupsReady = 0;
+    expect(g.openKitchen()).toBe(true);
+    g.goTitle();
+    expect(g.midKitchen).toBe(false);
+    g.newGame({ ageMode: 'pro', avatar: 'boy', lang: 'uk', seed: 9 });
+    expect(g.midKitchen).toBe(false);
+  });
 });
 
 describe('new upgrades', () => {

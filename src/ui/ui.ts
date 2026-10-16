@@ -22,7 +22,7 @@ import { isNativeApp, shareTextFile } from '../native';
 import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointShopModal, pointsModal, type PointsHooks } from './points';
 import { TipArrow, type WorldTarget } from './tipArrow';
-import { CONFIG } from '../core/config';
+import { CONFIG, HUD_DEFAULT_LAYOUT } from '../core/config';
 import { roadmapModal } from './roadmap';
 import { truckModal } from './truckModal';
 import { ResourceBar, stockModal } from './resources';
@@ -141,7 +141,10 @@ export class UI implements UIApi {
       if (e.key === ' ') this.endPour();
     });
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && g.phase === 'sell') this.userPaused = true;
+      if (!document.hidden) return;
+      if (g.phase === 'sell') this.userPaused = true;
+      // the finger that held "Pour" may be lifted while the page is away: the cup is not poured
+      if (this.pourLv >= 0) this.stopPour(g.pourEnd(0));
     });
 
     this.applySettings();
@@ -247,7 +250,14 @@ export class UI implements UIApi {
     if (!snap) return;
     this.userPaused = false;
     setLang(snap.S.lang);
-    this.g.restore(snap);
+    try {
+      this.g.restore(snap);
+    } catch {
+      // a damaged save: the game goes back to the title instead of freezing half-loaded
+      this.g.goTitle();
+      this.toast(t('toast.importBad'), 'warn');
+      return;
+    }
     this.hud.build();
     this.applySettings();
   }
@@ -475,13 +485,19 @@ export class UI implements UIApi {
     this.g.goTitle();
   }
 
+  /** The arrangement of the selling buttons the player saved (an empty one is none), or the standard one. */
+  private layoutOf(kind: 'phone' | 'pc'): Record<string, [number, number]> {
+    const own = this.g.S.settings.hudLayout?.[kind];
+    return own && Object.keys(own).length ? own : HUD_DEFAULT_LAYOUT;
+  }
+
   private applySettings(): void {
     const s = this.g.S.settings;
     setSoundEnabled(s.sound);
     setMusicEnabled(s.sound && s.music !== false);
     document.body.classList.toggle('dyslexia', s.dyslexia);
     document.documentElement.style.setProperty('--fs', String(s.fontScale ?? 1));
-    this.hud.setLayout(s.hudLayout?.[isPhone() ? 'phone' : 'pc'] ?? {});
+    this.hud.setLayout(this.layoutOf(isPhone() ? 'phone' : 'pc'));
     document.body.classList.toggle('reduce-motion', s.reduceMotion);
   }
 
@@ -612,6 +628,8 @@ export class UI implements UIApi {
     if (this.pourLv >= 0 || this.editingHud || g.pourStart() !== 'ok') return;
     const rate = g.servings[g.pouringAt()]?.pour?.rate ?? 1 / CONFIG.POUR_TIME;
     const [lo, hi] = g.pourZone();
+    // with the dispenser the cup fills to the dose and stops by itself, even if the button is let go early
+    const dose = g.pourDose();
     this.pourLv = 0;
     this.pourPointer = pointer;
     this.pourSound = playHeld('serve');
@@ -625,8 +643,10 @@ export class UI implements UIApi {
       time += dt;
       // the customer is gone or the day is over meanwhile
       if (g.pouringAt() < 0) return this.stopPour('');
-      this.pourLv += rate * dt * (1 + 0.18 * Math.sin(time * 5 + seed));
+      this.pourLv += rate * dt * (dose === null ? 1 + 0.18 * Math.sin(time * 5 + seed) : 1);
+      if (dose !== null && this.pourLv >= dose) this.pourLv = dose;
       this.hud.pourGauge({ level: this.pourLv, lo, hi });
+      if (dose !== null && this.pourLv >= dose) return this.stopPour(this.g.pourEnd(this.pourLv));
       // held to the top: it overflows by itself
       if (this.pourLv >= 1) return this.endPour();
       this.pourRaf = requestAnimationFrame(tick);
@@ -638,6 +658,8 @@ export class UI implements UIApi {
   private endPour(pointer = -1): void {
     if (this.pourLv < 0) return;
     if (pointer >= 0 && this.pourPointer >= 0 && pointer !== this.pourPointer) return;
+    const dose = this.g.pourDose();
+    if (dose !== null && this.pourLv < dose) return;
     this.stopPour(this.g.pourEnd(this.pourLv));
   }
 
@@ -665,7 +687,7 @@ export class UI implements UIApi {
     const html = document.documentElement;
     html.classList.add('hud-editing');
     const kind = isPhone() ? 'phone' : 'pc';
-    const layout: Record<string, [number, number]> = { ...(this.g.S.settings.hudLayout?.[kind] ?? {}) };
+    const layout: Record<string, [number, number]> = { ...this.layoutOf(kind) };
     const bar = document.createElement('div');
     bar.className = 'hud-edit-bar';
     bar.innerHTML = `<b>✋ ${t('hudEdit.hint')}</b>
@@ -709,6 +731,7 @@ export class UI implements UIApi {
       play('click');
       if (act === 'reset') {
         for (const k of Object.keys(layout)) delete layout[k];
+        Object.assign(layout, HUD_DEFAULT_LAYOUT);
         this.hud.setLayout(layout);
         return;
       }

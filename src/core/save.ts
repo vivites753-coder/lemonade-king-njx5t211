@@ -212,10 +212,28 @@ export function parseSave(text: string): Snapshot | null {
   }
 }
 
+/** The parts of a save the game cannot do without (the rest is completed by normalizeState). */
+function looksComplete(snap: Snapshot): boolean {
+  const { S, D } = snap;
+  const obj = (v: unknown) => !!v && typeof v === 'object' && !Array.isArray(v);
+  return (
+    typeof S.coins === 'number' &&
+    typeof S.day === 'number' &&
+    typeof S.rep === 'number' &&
+    obj(S.stock) &&
+    Array.isArray(S.stock.lemons) &&
+    obj(S.upgrades) &&
+    (S.condition === undefined || obj(S.condition)) &&
+    (S.points === undefined || Array.isArray(S.points)) &&
+    typeof D.hour === 'number' &&
+    typeof snap.phase === 'string'
+  );
+}
+
 export function migrate(o: unknown): Snapshot | null {
   if (!o || typeof o !== 'object') return null;
   const snap = o as Snapshot;
-  if (snap.v !== SAVE_VERSION || !snap.S || !snap.D) return null;
+  if (snap.v !== SAVE_VERSION || !snap.S || !snap.D || !looksComplete(snap)) return null;
   // Future versions: transform older snapshots here, field by field.
   // The read-aloud setting was removed (browser text-to-speech sounded wrong).
   if (snap.S.settings) delete (snap.S.settings as unknown as Record<string, unknown>).readAloud;

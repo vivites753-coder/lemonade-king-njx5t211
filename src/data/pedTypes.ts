@@ -20,5 +20,3 @@ export const PED_TYPES: Record<PedTypeId, PedTypeDef> = {
   sport: { id: 'sport', icon: '🏃', speed: 2.0, scale: 1.0, priceMult: 1.15, interest: 1.3 },
   tourist: { id: 'tourist', icon: '🧳', speed: 0.9, scale: 1.0, priceMult: 1.4, interest: 1.1 },
 };
-
-export const PED_TYPE_IDS = Object.keys(PED_TYPES) as PedTypeId[];
