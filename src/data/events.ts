@@ -9,7 +9,7 @@ import { locationUnlocked } from './locations';
  */
 export type DayEventId = 'festival' | 'thief' | 'sugarHike' | 'cupsSoldOut' | 'badLemons' | LocEventId;
 /** Events that change the crowd at one place only. */
-export type LocEventId = 'trains' | 'trackRepair' | 'concert' | 'mallSale';
+export type LocEventId = 'trains' | 'trackRepair' | 'concert' | 'mallSale' | 'busRush' | 'busStrike';
 
 export interface DayEventDef {
   id: DayEventId;
@@ -37,6 +37,8 @@ export const LOC_EVENTS: LocEventDef[] = [
   { id: 'trackRepair', loc: 'station', icon: '🚧', chance: 0.1, ped: () => 0.45 },
   { id: 'concert', loc: 'mall', icon: '🎤', chance: 0.16, ped: (h) => (h >= 15 ? 2.2 : 1.1), stop: 1.2 },
   { id: 'mallSale', loc: 'mall', icon: '🛍️', chance: 0.12, ped: () => 1.45 },
+  { id: 'busRush', loc: 'busstop', icon: '🚌', chance: 0.2, ped: () => 1.6 },
+  { id: 'busStrike', loc: 'busstop', icon: '🚧', chance: 0.1, ped: () => 0.45 },
 ];
 
 export const DAY_EVENTS: DayEventDef[] = [

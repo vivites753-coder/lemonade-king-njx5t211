@@ -16,6 +16,17 @@ export interface DecorDef {
 
 export type WallStyle = 'station' | 'mall';
 
+/** A bus stop: the buses of the road stop at `stopX` (tile x) and let out waves of people. */
+export interface BusStopDef {
+  stopX: number;
+  /** The share of the crowd that comes by bus (the rest walks past as everywhere). */
+  share: number;
+  /** People on one bus: from, to. */
+  load: [number, number];
+  /** The share of them who walk towards the stand. */
+  toward: number;
+}
+
 export interface LocationDef {
   id: LocationId;
   icon: string;
@@ -34,6 +45,8 @@ export interface LocationDef {
   /** Indoors: the y of the doorways in the left wall that people come in and go out through (near lane, far lane),
    * when the wall picture has them elsewhere than the lanes. */
   doors?: [number, number];
+  /** Set at a bus stop (see BusStopDef). */
+  bus?: BusStopDef;
   /** Opens when the best reputation reaches this many stars. */
   minRep?: number;
   mix: Record<PedTypeId, number>;
@@ -338,6 +351,67 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       { id: 'prop_plant', x: 6.2, y: 10.4 },
       { id: 'prop_bench', x: 8.6, y: 10.0 },
       { id: 'prop_balloons', x: 11.0, y: 10.3 },
+    ],
+  },
+
+  busstop: {
+    id: 'busstop',
+    icon: '🚌',
+    density: 28,
+    rent: 40,
+    travel: 1,
+    fairPrice: 11,
+    // people wait for their bus whatever the weather, and the shelter keeps them dry: rain hurts less than elsewhere
+    weatherSensitivity: 0.6,
+    minRep: 3,
+    // a big share of the crowd arrives in waves, by bus; the stop is at the right end of the pavement, so most
+    // passengers walk left, past the stand
+    bus: { stopX: 9.9, share: 0.4, load: [4, 8], toward: 0.75 },
+    mix: { kid: 0.1, adult: 0.5, granny: 0.15, sport: 0.05, tourist: 0.2 },
+    // commuters: the morning rush, an even day, and the evening rush after work
+    hourCurve: (h) => (h < 9.5 ? 1.7 : h < 12 ? 0.8 : h < 16.5 ? 1.0 : h < 19 ? 1.7 : 0.9),
+    cars: true,
+    trafficStars: 4,
+    map: [
+      G12,
+      G12,
+      G12,
+      'pppppppppppp',
+      'pppppppppppp',
+      'pppppppppppp',
+      'rrrrrrrrrrrr',
+      'RRRRRRRRRRRR',
+      'pppppppppppp',
+      G12,
+      G12,
+      G12,
+    ],
+    decor: [
+      // the city behind the plaza: trees, bushes and flowers
+      { id: 'prop_tree_a', x: 0.8, y: 1.1, s: 1.1 },
+      { id: 'prop_tree_b', x: 3.5, y: 0.6 },
+      { id: 'prop_tree_c', x: 6.4, y: 1.2, s: 0.9 },
+      { id: 'prop_tree_a', x: 9.3, y: 0.7 },
+      { id: 'prop_tree_b', x: 11.3, y: 2.1, s: 0.9 },
+      { id: 'prop_bush', x: 2.0, y: 2.4 },
+      { id: 'prop_flowers', x: 7.9, y: 2.1 },
+      { id: 'prop_bush', x: 5.0, y: 2.5 },
+      // the plaza: a bench, a bin and the lamps on the edge of the pavement
+      { id: 'prop_bench', x: 1.7, y: 4.5 },
+      { id: 'prop_lamp', x: 3.2, y: 5.4 },
+      { id: 'prop_bin', x: 0.7, y: 4.7 },
+      { id: 'prop_lamp', x: 6.9, y: 5.4 },
+      // the stop: the sign at the kerb, the shelter behind it (the buses stop in front of them)
+      { id: 'prop_bus_sign', x: 8.55, y: 5.9 },
+      { id: 'prop_bus_shelter', x: 10.45, y: 4.95 },
+      // across the road
+      { id: 'prop_tree_a', x: 1.2, y: 10.3, s: 1.2 },
+      { id: 'prop_tree_c', x: 4.4, y: 10.7 },
+      { id: 'prop_bench', x: 6.6, y: 9.5 },
+      { id: 'prop_tree_b', x: 8.6, y: 10.4, s: 1.1 },
+      { id: 'prop_bush', x: 6.0, y: 10.0 },
+      { id: 'prop_lamp', x: 9.8, y: 9.25 },
+      { id: 'prop_tree_a', x: 11.0, y: 10.8, s: 0.9 },
     ],
   },
 };

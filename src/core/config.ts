@@ -12,6 +12,10 @@ export const CONFIG = {
   MAX_STOP_CHANCE: 0.4,
   /** Flyers of the day add this to the advertising. */
   FLYERS_ADS: 0.15,
+  /** Online ads (from reputation 3): a daily price, and twice the flyers' effect for twice their price. */
+  ONLINE_ADS_COST: 50,
+  ONLINE_ADS_ADS: 0.3,
+  ONLINE_ADS_MIN_REP: 3,
   MAX_QUEUE: 6,
 
   /** Stand centre in tile coordinates (same in every location). */
@@ -108,11 +112,11 @@ export const CONFIG = {
 
   FORECAST_ACCURACY: 0.8,
 
-  /** Grandma's help when the player cannot afford even one pitcher. */
-  GRANDMA_GIFT: 40,
-  GRANDMA_GIFT_KID: 60,
-  /** Family helps in the morning when the purse is this empty. */
-  FAMILY_HELP_BELOW: 10,
+  /** What grandma or the parents give when the player has run out of money (the same for both game levels). */
+  GRANDMA_GIFT: 150,
+  GRANDMA_GIFT_KID: 150,
+  /** The family helps in the morning when the purse holds less than this (or cannot buy even one pitcher). */
+  FAMILY_HELP_BELOW: 30,
 
   /** Helper: daily wage, pours faster and serves by himself. Can be hired from this reputation. */
   HELPER_WAGE: 30,
@@ -131,6 +135,13 @@ export const CONFIG = {
   /** Taps needed to stir by hand when the mixer is broken. */
   STIR_TAPS: 14,
   MIX_QUALITY: { perfect: 1, over: 0.93, under: 0.85, none: 0.85 },
+
+  /** The freezer makes this many trays of ice a night (the stock holds up to the maximum); a jug takes one tray. */
+  FREEZER_ICE_PER_NIGHT: 2,
+  FREEZER_ICE_MAX: 6,
+  ICE_PER_PITCHER: 1,
+  /** Satisfaction of an iced cup indoors, where the weather matters less. */
+  ICE_INDOOR: 0.08,
 
   /** Maintenance in the shop costs this share of a repair at 0% condition. */
   MAINTENANCE_SHARE: 0.5,

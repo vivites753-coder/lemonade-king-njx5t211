@@ -42,5 +42,10 @@ export function pickLesson(S: GameState, D: DayState, r: DayReport): { key: stri
   }
   if (S.day >= 4 && !S.upgrades.speaker && r.outOfRange >= 15) return { key: 'lesson.reach', params: { n: r.outOfRange } };
   if (S.day >= 3 && S.location === 'yard' && f.passed < 150) return { key: 'lesson.location', params: { n: f.passed } };
+  // the freezer: ice pleases most on a hot day
+  if (S.upgrades.freezer && (D.weather === 'hot' || D.weather === 'sunny')) {
+    if (r.coldSold >= 5) return { key: 'lesson.cold', params: { n: r.coldSold } };
+    if (r.coldSold === 0 && (S.stock.ice ?? 0) >= CONFIG.ICE_PER_PITCHER && !S.broken.freezer) return { key: 'lesson.iceUnused', params: {} };
+  }
   return { key: 'lesson.profit', params: { income: r.income, expenses: r.expenses, profit: r.profit } };
 }

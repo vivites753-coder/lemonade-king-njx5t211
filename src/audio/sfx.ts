@@ -78,6 +78,7 @@ const RECORDED: Partial<Record<SfxName, { file: string; vol: number; vary?: numb
   pick: { file: 'pick_item', vol: 0.4, vary: 0.05 },
   drop: { file: 'drop_item', vol: 0.45, vary: 0.05 },
   spill: { file: 'spill', vol: 0.55, vary: 0.04 },
+  ice: { file: 'ice_clink', vol: 0.5, vary: 0.05 },
   // the jingles of the day
   dayStart: { file: 'jingle_day_start', vol: 0.45, jingle: true },
   profit: { file: 'jingle_profit', vol: 0.45, jingle: true },
@@ -310,6 +311,11 @@ export function play(name: SfxName): void {
         tone(240, 0.11, 'sawtooth', 0.07, i * 0.22, 140);
         noise(0.08, 500, 0.06);
       }
+      break;
+    case 'ice':
+      tone(2400, 0.05, 'triangle', 0.05);
+      tone(3100, 0.06, 'triangle', 0.04, 0.05);
+      tone(2700, 0.05, 'triangle', 0.04, 0.1);
       break;
     case 'meow':
       tone(620, 0.35, 'triangle', 0.07, 0, 880);

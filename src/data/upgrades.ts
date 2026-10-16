@@ -56,6 +56,7 @@ export interface UpgradeDef {
 }
 
 // Tiers: reputation 1 (from the start), 2 and 3. Higher tiers cost twice as much as before (v0.3 balance).
+// Level 3 has the big stand and the neon wagon (the dearest thing of the game so far), so the tent is a level 2 buy.
 export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   // advertising
   sign: { id: 'sign', icon: '🖍️', price: 60, cat: 'ads', ads: 0.12 },
@@ -69,14 +70,16 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   delivery: { id: 'delivery', icon: '🚚', price: 80, cat: 'comfort', deliveryMarkup: 1.1 },
   dispenser: { id: 'dispenser', icon: '🚰', price: 360, cat: 'comfort', minRep: 2, serveMult: 0.7 },
   bike: { id: 'bike', icon: '🚲', price: 600, cat: 'comfort', minRep: 2, tripHours: 1, travelReduce: 1 },
-  tent: { id: 'tent', icon: '⛺', price: 800, cat: 'comfort', minRep: 3, requires: 'umbrella', weatherShield: 0.5, comfort: 1.03, outdoorOnly: true },
+  tent: { id: 'tent', icon: '⛺', price: 800, cat: 'comfort', minRep: 2, requires: 'umbrella', weatherShield: 0.5, comfort: 1.03, outdoorOnly: true },
   scooter: { id: 'scooter', icon: '🛵', price: 900, cat: 'comfort', minRep: 3, tripHours: 1 / 3, travelReduce: 1 },
   tv: { id: 'tv', icon: '📺', price: 700, cat: 'comfort', minRep: 2, patience: 1.6, queueBonus: 3 },
   big_stand: { id: 'big_stand', icon: '👥', price: 900, cat: 'comfort', minRep: 3, counters: 2 },
-  truck: { id: 'truck', icon: '🚐', price: 2000, cat: 'comfort', minRep: 3, counters: 2, radius: 1.0, ads: 0.12, comfort: 1.05 },
+  truck: { id: 'truck', icon: '🚐', price: 3000, cat: 'comfort', minRep: 3, counters: 2, radius: 1.0, ads: 0.12, comfort: 1.05 },
   // production
   juicer_hand: { id: 'juicer_hand', icon: '🍋', price: 120, cat: 'production', lemonReduce: 1 },
   cooler: { id: 'cooler', icon: '🧊', price: 300, cat: 'production', minRep: 2, carryOver: true },
+  // makes ice every night: iced lemonade pleases the customers more (see CONFIG.FREEZER_*, iceBonus)
+  freezer: { id: 'freezer', icon: '❄️', price: 400, cat: 'production', minRep: 2 },
   mixer_pro: { id: 'mixer_pro', icon: '🌀', price: 500, cat: 'production', minRep: 3, perfectMix: true },
   juicer_lever: { id: 'juicer_lever', icon: '⚙️', price: 600, cat: 'production', minRep: 3, requires: 'juicer_hand', lemonReduce: 2 },
   // protection
@@ -96,13 +99,14 @@ export const UPGRADE_ORDER: UpgradeId[] = [
   'delivery',
   'dispenser',
   'tv',
-  'big_stand',
-  'truck',
   'bike',
   'tent',
+  'big_stand',
   'scooter',
+  'truck',
   'juicer_hand',
   'cooler',
+  'freezer',
   'mixer_pro',
   'juicer_lever',
   'cash_lock',

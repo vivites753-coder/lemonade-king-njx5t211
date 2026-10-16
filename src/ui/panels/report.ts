@@ -56,6 +56,7 @@ export const reportPanel: Panel = {
       [`🍋 ${t('report.ingredients')}`, r.ingredients],
       [`🏠 ${t('report.rent')}`, r.rent],
       [`📄 ${t('report.flyers')}`, r.flyers],
+      [`${ico('btn_onlineads', '📱')} ${t('report.onlineAds')}`, r.onlineAds ?? 0],
       [`🦊 ${t('report.stolen')}`, r.stolen],
       [`🍳 ${t('report.wages')}`, r.wages ?? 0],
       [`🔧 ${t('report.repairs')}`, r.repairs ?? 0],

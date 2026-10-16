@@ -64,7 +64,7 @@ export class PointScene implements SceneSource {
     });
     this.S = S;
     const D = Object.create(g.D) as DayState;
-    Object.assign(D, { helpers: 0, helper: false, cupsReady: 12, flyers: false, sales: 0, blackoutUntil: 0 });
+    Object.assign(D, { helpers: 0, helper: false, cupsReady: 12, flyers: false, onlineAds: false, sales: 0, blackoutUntil: 0 });
     this.D = D;
     this.seller = null;
     this.refresh();

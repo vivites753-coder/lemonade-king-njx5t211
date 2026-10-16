@@ -31,6 +31,8 @@ const TIP_MOOD: Record<string, LemiMood> = {
   cheap_lemons: 'think',
   maintenance: 'think',
   helper: 'think',
+  online_ads: 'think',
+  ice: 'happy',
   queue: 'think',
   two_queues: 'think',
   hand_stir: 'think',

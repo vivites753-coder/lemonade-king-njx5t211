@@ -15,6 +15,7 @@ const ROWS: { key: string; icon: string; img: string; label: string }[] = [
   { key: 'sugar', icon: '🍬', img: 'gd_sugar', label: 'res.sugar' },
   { key: 'cups', icon: '🥤', img: 'gd_cups', label: 'res.cups' },
   { key: 'cookies', icon: '🍪', img: 'gd_cookie', label: 'res.cookies' },
+  { key: 'ice', icon: '❄️', img: 'gd_ice', label: 'res.ice' },
   { key: 'ready', icon: '🥛', img: 'gd_ready', label: 'res.ready' },
   { key: 'cooler', icon: '🧊', img: 'gd_ice', label: 'res.cooler' },
   { key: 'make', icon: '🏺', img: 'gd_pitcher', label: 'res.canMake' },
@@ -86,6 +87,10 @@ export class ResourceBar {
     const cookiesAfter = market ? cookies + g.cart.cookies * 10 : cookies;
     this.set('cookies', `${cookies}${plus(cookies, cookiesAfter)}`);
     this.show('cookies', cookiesAfter > 0 || g.cookiesOpen());
+    // the trays of ice of the freezer (in the kitchen: what is left after the jug)
+    const ice = kitchen ? g.kitchenIceLeft() : (st.ice ?? 0);
+    this.set('ice', String(ice));
+    this.show('ice', !!g.S.upgrades.freezer);
     const ready = g.D.cupsReady;
     this.set('ready', String(ready));
     this.show('ready', ready > 0 || phase === 'sell' || phase === 'prepare');
@@ -107,6 +112,7 @@ export class ResourceBar {
     this.tip('sugar', `🍬 ${t('res.sugar')}: ${have.sugar}`);
     this.tip('cups', `🥤 ${t('res.cups')}: ${st.cups}`);
     this.tip('cookies', `🍪 ${t('res.cookies')}: ${cookies} · ${t('res.cookiePrice', { n: g.S.cookiePrice })}`);
+    this.tip('ice', `❄️ ${t('res.ice')}: ${ice}${g.S.broken.freezer ? ` · 🔧 ${t('res.iceBroken')}` : ''}`);
     this.tip('ready', `🥛 ${t('res.ready')}: ${ready}`);
     this.tip('cooler', `🧊 ${t(night ? 'res.coolerNight' : 'res.coolerTip', { n: cooled })}`);
     this.tip('make', `🏺 ${t('res.canMake')}: ${canMake}`);
@@ -156,6 +162,7 @@ export function stockModal(g: Game): ModalSpec {
           <div class="kv"><span>${ico('gd_water', '💧')} ${t('res.water')}</span><b>${st.water}</b></div>
           <div class="kv"><span>${ico('gd_sugar', '🍬')} ${t('res.sugar')}</span><b>${st.sugar}</b></div>
           <div class="kv"><span>${ico('gd_cups', '🥤')} ${t('res.cups')}</span><b>${st.cups}</b></div>
+          ${g.S.upgrades.freezer ? `<div class="kv"><span>${ico('gd_ice', '❄️')} ${t('res.ice')}</span><b>${st.ice ?? 0}</b></div>` : ''}
           <div class="note">${ico('gd_ready', '🥛')} ${t('stock.lemonade', { n: g.D.cupsReady })} · ${ico('gd_pitcher', '🏺')} ${t('stock.canMake', { n: g.maxPitchersNow() })}</div>
         </div>
         <h3>${t('stock.equipment')}</h3>

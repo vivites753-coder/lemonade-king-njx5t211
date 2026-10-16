@@ -95,6 +95,8 @@ export interface InterestInput {
   upgrades: Owned;
   speakerOn: boolean;
   flyers: boolean;
+  /** Online ads of the day (left out where there are none: other stands, old tests). */
+  onlineAds?: boolean;
   weather: WeatherId;
   rep: number;
   festival: boolean;
@@ -118,6 +120,12 @@ export function weatherThirst(weather: WeatherId, up: Owned, indoor = false): nu
   return 1 - (1 - t) * (1 - shield);
 }
 
+/** What an iced cup adds to the satisfaction of its customer (more on a hot day; indoors the weather matters less). */
+export function iceBonus(weather: WeatherId, indoor = false): number {
+  const v = WEATHER[weather].ice;
+  return indoor ? CONFIG.ICE_INDOOR + (v - CONFIG.ICE_INDOOR) * INDOOR_THIRST_DAMPING : v;
+}
+
 /**
  * Chance that a pedestrian in the attention zone stops (before the pedestrian type).
  * `parts` lists every factor so the "Why?" panel can show them; multiplying them gives `chance`.
@@ -137,6 +145,10 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
   if (i.flyers) {
     ads += CONFIG.FLYERS_ADS;
     parts.push({ key: 'why.flyers', kind: 'add', value: CONFIG.FLYERS_ADS });
+  }
+  if (i.onlineAds) {
+    ads += CONFIG.ONLINE_ADS_ADS;
+    parts.push({ key: 'why.onlineAds', kind: 'add', value: CONFIG.ONLINE_ADS_ADS });
   }
   const indoor = !!(i.location && LOCATIONS[i.location].indoor);
   const w = { thirst: weatherThirst(i.weather, i.upgrades, indoor) };

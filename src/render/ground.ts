@@ -135,6 +135,14 @@ function decals(ctx: Ctx, loc: LocationId): void {
       poly(ctx, [P(9.1, y), P(9.85, y), P(9.85, y + 0.17), P(9.1, y + 0.17)], 'rgba(255,255,255,0.88)');
     }
   }
+  if (loc === 'busstop') {
+    // a zebra crossing on the left, and the yellow line of the bus bay along the kerb of the stop
+    for (let i = 0; i < 6; i++) {
+      const y = 6.1 + i * 0.3;
+      poly(ctx, [P(2.4, y), P(3.15, y), P(3.15, y + 0.17), P(2.4, y + 0.17)], 'rgba(255,255,255,0.88)');
+    }
+    poly(ctx, [P(8.2, 6.03), P(11.7, 6.03), P(11.7, 6.13), P(8.2, 6.13)], '#fcc419');
+  }
 }
 
 export function buildGround(loc: LocationId, scale = 2): HTMLCanvasElement {

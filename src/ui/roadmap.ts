@@ -7,7 +7,7 @@ import { POINTS } from '../data/staff';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { coin, stars } from './dom';
+import { coin, ico, stars } from './dom';
 import type { ModalSpec } from './overlays';
 
 const LEVELS = [1, 2, 3, 4];
@@ -28,6 +28,7 @@ function itemsFor(g: Game, level: number): Item[] {
   }
   if (level === CONFIG.HELPER_MIN_REP) out.push({ icon: '🍳', name: t('roadmap.helper'), kind: 'feature', note: t('points.wage', { n: CONFIG.HELPER_WAGE }) });
   if (level === (GOODS.cookies.minRep ?? 1)) out.push({ icon: '🍪', name: t('roadmap.cookies'), kind: 'feature', note: t('roadmap.cookiesNote', { n: GOODS.cookies.price }) });
+  if (level === CONFIG.ONLINE_ADS_MIN_REP) out.push({ icon: ico('btn_onlineads', '📱'), name: t('roadmap.onlineAds'), kind: 'feature', note: t('roadmap.onlineAdsNote', { n: CONFIG.ONLINE_ADS_COST }) });
   if (level === POINTS.MIN_REP) out.push({ icon: '🏪', name: t('roadmap.points'), kind: 'feature', note: t('roadmap.pointsNote', { n: POINTS.COST }) });
   for (const id of UPGRADE_ORDER) {
     const u = UPGRADES[id];

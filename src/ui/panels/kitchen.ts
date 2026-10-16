@@ -7,7 +7,7 @@ import { quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
 import { coin, fmtDur, fmtHour, ico } from '../dom';
-import { coolerBag, cups, dropsArt, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, picUrl, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
+import { coolerBag, cups, dropsArt, iceTray, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, picUrl, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 import { startBuzz, stopBuzz } from '../../native';
 import { loopSfx, play } from '../../audio/sfx';
@@ -20,6 +20,8 @@ const ITEMS: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' }[] = [
   { id: 'water', icon: '💧', target: 'jug' },
   { id: 'sugar', icon: '🍬', target: 'jug' },
 ];
+/** The tray of ice (only with a freezer) stands on the right wall shelf, left of the mixer. */
+const ICE_ITEM: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' } = { id: 'ice', icon: '❄️', target: 'jug' };
 
 /** Mixer meter: 0..1 fills while holding; release between these marks for a perfect mix. */
 const PERFECT_FROM = 0.7;
@@ -31,7 +33,7 @@ let holdRaf = 0;
 let cleanup: (() => void) | null = null;
 /** Stops a drag or a mixer hold that is still going (the kitchen closes). */
 let abortGesture: (() => void) | null = null;
-const BUSY_KEYS = ['busylemon', 'busywater', 'busysugar'];
+const BUSY_KEYS = ['busylemon', 'busywater', 'busysugar', 'busyice'];
 /**
  * Ingredients on their way to the jug belong to the jug of the moment they were taken: "like last time", "start again",
  * pouring or leaving the kitchen start a new jug, and what is still flying then is dropped (it must not land in the
@@ -57,11 +59,17 @@ function juicerKind(g: Game): JuicerKind {
 
 /** What is still on the shelf: the stock minus what is already in the jug. */
 function shelf(g: Game): Record<KitchenItem, number> {
-  return g.kitchenLeft();
+  return { ...g.kitchenLeft(), ice: g.kitchenIceLeft() };
 }
 
 function art(item: KitchenItem, n: number): string {
-  return item === 'lemon' ? lemonCrate(n) : item === 'water' ? waterBottles(n) : sugarBag(n);
+  return item === 'lemon' ? lemonCrate(n) : item === 'water' ? waterBottles(n) : item === 'ice' ? iceTray(n) : sugarBag(n);
+}
+
+/** Why an ingredient cannot go into the jug. */
+function refusal(g: Game, item: KitchenItem, why: 'full' | 'noStock'): string {
+  if (item === 'ice') return t(why === 'full' ? 'kitchen.iceFull' : g.active().freezer ? 'kitchen.noIce' : 'kitchen.freezerBroken');
+  return t(why === 'full' ? 'kitchen.full' : 'kitchen.noStock');
 }
 
 /** Position of an element inside the scene (scene pixels), from the offset chain. */
@@ -91,6 +99,7 @@ const CARRY: Record<KitchenItem, { w: number; h: number }> = {
   lemon: { w: 54, h: 57 },
   water: { w: 44, h: 96 },
   sugar: { w: 74, h: 84 },
+  ice: { w: 50, h: 50 },
 };
 
 /** The stream that runs from a tilted bottle or sack into the jug. */
@@ -152,7 +161,7 @@ function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): voi
   scene.appendChild(f);
   const busyKey = `busy${item}`;
   el.dataset[busyKey] = '1';
-  if (item === 'lemon') {
+  if (item === 'lemon' || item === 'ice') {
     const tx = b.x + b.w / 2 - sx;
     const ty = b.y + b.h * 0.3 - sy;
     const LEMON_MS = 480;
@@ -203,12 +212,8 @@ function addAnimated(el: HTMLElement, item: KitchenItem, apply: () => void): voi
 
 function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
   const can = g.kitchenCanAdd(item);
-  if (can === 'full') {
-    ui.toast(t('kitchen.full'), 'warn');
-    return;
-  }
-  if (can === 'noStock') {
-    ui.toast(t('kitchen.noStock'), 'warn');
+  if (can === 'full' || can === 'noStock') {
+    ui.toast(refusal(g, item, can), 'warn');
     return;
   }
   // a bottle or a sack is already on its way
@@ -218,8 +223,7 @@ function addItem(g: Game, ui: UIApi, el: HTMLElement, item: KitchenItem): void {
     // the jug was started again meanwhile: this one does not go in
     if (gen !== jugGen) return;
     const r = g.kitchenAdd(item);
-    if (r === 'full') ui.toast(t('kitchen.full'), 'warn');
-    else if (r === 'noStock') ui.toast(t('kitchen.noStock'), 'warn');
+    if (r === 'full' || r === 'noStock') ui.toast(refusal(g, item, r), 'warn');
     else if (r === 'ok') {
       if (item === 'lemon') {
         bump(q(el, '.k-juicer'), 'k-squeeze');
@@ -421,13 +425,19 @@ export const kitchenPanel: Panel = {
                 (i, n) => `<button class="k-item" data-item="${i.id}" style="left:68px;top:${PLANKS[n] + 3 - 96}px"><span class="k-art" data-k="art-${i.id}"></span>
                   <span class="k-meta"><b>${t(`kitchen.${i.id}`)}</b><small data-k="left-${i.id}"></small></span></button>`,
               ).join('')}
+              ${
+                up.freezer
+                  ? `<button class="k-item k-ice" data-item="ice"><span class="k-art" data-k="art-ice"></span>
+                  <span class="k-meta"><b>${t('kitchen.ice')}</b><small data-k="left-ice"></small></span></button>`
+                  : ''
+              }
               <div class="k-mixer${mixKind === 'pro' ? ' pro' : ''}${mixKind === 'broken' ? ' off' : ''}" data-k="mixer"><div class="k-mixer-art">${mixer(mixKind)}</div></div>
               <div class="k-juicer" data-drop="juicer"><span class="k-tool-art">${juicer(jk)}</span></div>
               <div class="k-cap">${juicerLabel}</div>
               <div class="k-meter"><i class="k-zone" style="left:${zoneL}%;width:${zoneW}%"></i><i class="k-needle"></i></div>
               <div class="k-jug${jugPic ? ' has-art' : ''}" data-drop="jug">
                 ${jugPic}
-                <div class="k-liq-clip"${jugPic ? ` style="--jug-mask:url('${picUrl('jug')}')"` : ''}><div class="k-liquid" data-k="liquid"></div><div class="k-grains" data-k="grains"></div></div>
+                <div class="k-liq-clip"${jugPic ? ` style="--jug-mask:url('${picUrl('jug')}')"` : ''}><div class="k-liquid" data-k="liquid"></div><div class="k-ice-cubes" data-k="icecubes"><i></i><i></i><i></i></div><div class="k-grains" data-k="grains"></div></div>
               </div>
               <div class="k-glass${jugPic ? ' has-art' : ''}">${jugPic}</div>
               <div class="k-drops">${dropsArt()}</div>
@@ -552,13 +562,13 @@ export const kitchenPanel: Panel = {
     set('coins', coin(g.S.coins));
     const st = g.S.stock;
     const left = shelf(g);
-    for (const i of ITEMS) {
+    for (const i of g.S.upgrades.freezer ? [...ITEMS, ICE_ITEM] : ITEMS) {
       set(`left-${i.id}`, t('kitchen.left', { n: Math.max(0, left[i.id]) }));
       set(`art-${i.id}`, art(i.id, Math.max(0, left[i.id])));
       const btn = q<HTMLButtonElement>(el, `.k-item[data-item="${i.id}"]`);
       const can = g.kitchenCanAdd(i.id);
       btn.disabled = can !== 'ok';
-      btn.title = can === 'full' ? t('kitchen.full') : can === 'noStock' ? t('kitchen.noStock') : '';
+      btn.title = can === 'full' || can === 'noStock' ? refusal(g, i.id, can) : '';
     }
     set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>🥤 ${st.cups}</small>`);
     // as many jugs as are prepared: four to a row on the right half of the counter (they overlap a little), the next
@@ -580,12 +590,17 @@ export const kitchenPanel: Panel = {
     const juiceShare = k.water + k.juice > 0 ? k.juice / (k.juice + k.water * 2) : 0;
     const liquid = q(el, '[data-k="liquid"]');
     liquid.style.height = `${fill}%`;
+    // the ice floats on the lemonade
+    const cubes = q(el, '[data-k="icecubes"]');
+    cubes.classList.toggle('show', k.ice > 0);
+    cubes.style.bottom = `${Math.max(0, fill - 7)}%`;
     liquid.style.background = `linear-gradient(180deg, rgba(255,${Math.round(236 - 40 * juiceShare)},${Math.round(200 - 170 * juiceShare)},0.9), rgba(255,${Math.round(220 - 40 * juiceShare)},${Math.round(160 - 140 * juiceShare)},0.95))`;
     set('grains', k.mix === 'none' ? '•'.repeat(k.sugar * 3) : '');
     const lemonsUse = g.kitchenLemons();
     set(
       'counts',
       `<span>${ico('gd_lemon_half', '🍋')} ${t('kitchen.juice')}: <b>${k.juice}</b></span><span>${ico('gd_water', '💧')} ${t('kitchen.waterN')}: <b>${k.water}/${CONFIG.WATER_PER_PITCHER}</b></span><span>${ico('gd_sugar', '🍬')} ${t('kitchen.sugarN')}: <b>${k.sugar}</b></span>` +
+        (g.S.upgrades.freezer ? `<span>${ico('gd_ice', '❄️')} ${t('kitchen.ice')}: <b>${k.ice}/${CONFIG.ICE_PER_PITCHER}</b></span>` : '') +
         (k.juice && lemonsUse !== k.juice ? `<small>⚙️ ${t('kitchen.lemonsUse', { n: lemonsUse })}</small>` : ''),
     );
     // taste

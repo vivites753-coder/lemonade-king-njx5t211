@@ -1,5 +1,5 @@
 // Developer mode for testing on a phone: coins, reputation, weather, events, speed.
-// Switched on by tapping "Entrepreneur" in the settings 5 times; remembered on this device only.
+// Switched on by tapping the biggest text size in the settings 6 times; remembered on this device only.
 import type { WeatherId } from '../core/types';
 import { DAY_EVENTS, type DayEventId } from '../data/events';
 import { ACCIDENTS, BONUSES } from '../data/incidents';

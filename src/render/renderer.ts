@@ -7,7 +7,7 @@ import type { Game } from '../sim/game';
 import { PointScene, type SceneSource } from '../sim/pointScene';
 import { FOX_LOOK } from '../sim/looks';
 import type { Critter } from '../sim/critters';
-import type { Ped } from '../sim/street';
+import type { Car, Ped } from '../sim/street';
 import { drawSprite, onAssetsChanged, spriteShadow } from './assets';
 import { ENV } from './env';
 import { smooth, WeatherFx } from './fx';
@@ -403,7 +403,7 @@ export class Renderer {
           this.drawPed(ctx, it.o as Ped);
           break;
         case 2: {
-          const c = it.o as { x: number; y: number; color: string; dir: number; variant: number };
+          const c = it.o as Car;
           const a = edgeAlpha(c.x, 0.9);
           if (a <= 0) break;
           ctx.globalAlpha = a;

@@ -15,9 +15,12 @@
 3. ~~Лист 18, скорочений: `kt_jug` і `kt_bowl`~~ — готово (лимонад набирає форму глечика).
 4. **Лист 14, оновлений: тварини й знахідки** (кіт, 3 собаки, гаманець, монетка, м'яч, 4 кульки) — зараз
    прості фігури кодом.
-5. **Лист 12в: іконки місць** (6 шт., зараз емодзі на картках ранку), кнопка складу `ui_btn_stock` і порожній
-   банер прилавка `stand_banner` (напис гра пише сама).
-6. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
+5. **Лист 12в: іконки місць** (7 шт. з автобусною зупинкою, зараз емодзі на картках ранку), кнопка складу
+   `ui_btn_stock`, іконки морозилки й реклами в інтернеті. Порожній банер прилавка `stand_banner` (напис гра пише
+   сама): окремо, пізніше.
+6. **Лист 23: автобусна зупинка** (автобус в обидва боки, навіс, знак): зараз гра малює їх кодом.
+7. **Лист 24: лід для кухні** (форма з кубиками й один кубик): зараз малюється кодом.
+8. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
 
 ## СІТКА (підстав стовпці, рядки, кількість, % заповнення)
@@ -187,6 +190,44 @@ Row 2: exactly the same five vehicles, same colors and shapes, in the same order
 ```
 
 Імена: `prop_car_a_front, prop_car_b_front, prop_car_c_front, prop_car_d_front, prop_van_front, prop_car_a_back, prop_car_b_back, prop_car_c_back, prop_car_d_back, prop_van_back`
+
+## Лист 12в. Іконки місць і нових речей (5×2, FLAT)
+
+Іконки місць стоять на картках ранку замість емодзі, кнопка складу зліва, дві нові іконки для магазину й вікна підготовки.
+
+СІТКА 10 / 5×2 / 78% + FLAT +
+
+```
+Each item is a single ICON object (no background, no frame, no button shape behind it), readable when shrunk to 48 pixels.
+Row 1 (places): 1) a cozy cottage with a red roof, 2) a round green tree with a small bench, 3) a school building with a little clock tower, 4) a palm tree and a red-white beach umbrella on a patch of sand, 5) a small yellow train in front of a station roof.
+Row 2: 6) a shopping mall: a building with a big orange circle on the front, 7) a bus stop: a small green city bus next to a blue round bus sign, 8) a wooden crate of lemons with a water bottle and a paper sugar bag (the stock), 9) a small white chest freezer with a blue snowflake on the lid (a freezer), 10) a smartphone with a small megaphone and a heart bubble (ads on the internet).
+```
+
+Імена: `ui_loc_yard, ui_loc_park, ui_loc_school, ui_loc_beach, ui_loc_station, ui_loc_mall, ui_loc_busstop, ui_btn_stock, ui_up_freezer, ui_btn_onlineads`
+
+## Лист 23. Автобусна зупинка (2×2, ISO)
+
+Автобус їде по діагоналі 2:1, як машини з листа 13: той, що їде вниз-праворуч, повернутий до нас передом і ПРАВИМ боком, той, що їде вгору-ліворуч, задом і ЛІВИМ боком. Двері в нього на правому боці (боці від нас), тому з цього боку їх не видно.
+
+СІТКА 4 / 2×2 / 75% + ISO +
+
+```
+Each item is one object of a city bus stop, a cute toy-like 3D object with chunky rounded shapes, no text, letters or numbers anywhere. All at the same scale.
+1) a small chubby city bus in green with a white stripe along the side, big round wheels and a row of windows with a soft sky reflection, driving toward the LOWER-RIGHT corner of the image (we see the FRONT with both headlights and the RIGHT side), no people inside; 2) exactly the same bus, same color and shape, driving toward the UPPER-LEFT corner (we see the BACK with both tail lights and the LEFT side); 3) a bus shelter: a green flat roof on four thin dark posts, glass back and side walls in pale blue, a wooden bench inside and an empty poster frame on the back wall, open to the front; 4) a bus stop sign: a thin grey pole with a round blue sign with a white bus silhouette.
+```
+
+Імена: `prop_bus_front, prop_bus_back, prop_bus_shelter, prop_bus_sign` (розмір і точку прив'язки підберу в `spriteMeta.ts`, коли побачу картинки; для кількох кольорів автобуса зробимо ще один лист)
+
+## Лист 24. Лід для кухні (2×1, FLAT)
+
+СІТКА 2 / 2×1 / 78% + FLAT +
+
+```
+Each item is a single object, front view slightly from above, no background shape behind it.
+1) a light-blue plastic ice cube tray holding six clear, slightly bluish ice cubes with soft white highlights; 2) a single big clear ice cube with a white highlight on one corner.
+```
+
+Імена: `kt_ice_tray, kt_ice` (кладуться в `assets/kitchen/`)
 
 ## Лист 14. Тварини й знахідки (4×3, ISO), оновлений
 

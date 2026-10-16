@@ -9,6 +9,9 @@ import { toggleFullscreen } from './fullscreen';
 import { isNativeApp } from '../native';
 import type { ModalSpec } from './overlays';
 
+/** Taps on the biggest text size that switch the developer mode on. */
+const DEV_TAPS = 6;
+
 /** The text sizes of the settings: [scale, label]. */
 export const FONT_SCALES: [number, string][] = [
   [0.9, 'settings.font.s'],
@@ -92,7 +95,8 @@ export interface SettingsHooks {
 }
 
 export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
-  // taps on "Entrepreneur" in a row (a pause longer than 2 s starts over)
+  // taps on the biggest text size in a row (a pause longer than 2 s starts over): the sixth one switches the developer
+  // mode on
   let taps = 0;
   let lastTap = 0;
   return {
@@ -151,24 +155,24 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         return true;
       }
       if (act === 'font') {
-        g.updateSettings({ fontScale: Number(arg) || 1 });
+        const scale = Number(arg) || 1;
+        g.updateSettings({ fontScale: scale });
         hooks.apply();
+        const biggest = scale === FONT_SCALES[FONT_SCALES.length - 1][0];
+        const now = Date.now();
+        taps = biggest ? (now - lastTap < 2000 ? taps + 1 : 1) : 0;
+        lastTap = now;
+        if (taps >= DEV_TAPS && !hooks.devMode()) {
+          taps = 0;
+          hooks.enableDev();
+        }
       }
       if (act === 'fullscreen') {
         toggleFullscreen();
         return false;
       }
       if (act === 'lang') hooks.setLang(asLang(arg));
-      if (act === 'mode') {
-        g.setAgeMode(arg === 'kid' ? 'kid' : 'pro');
-        const now = Date.now();
-        taps = arg === 'pro' && now - lastTap < 2000 ? taps + 1 : arg === 'pro' ? 1 : 0;
-        lastTap = now;
-        if (taps >= 5 && !hooks.devMode()) {
-          taps = 0;
-          hooks.enableDev();
-        }
-      }
+      if (act === 'mode') g.setAgeMode(arg === 'kid' ? 'kid' : 'pro');
       if (act === 'dev') {
         queueMicrotask(() => hooks.openDev());
         return true;

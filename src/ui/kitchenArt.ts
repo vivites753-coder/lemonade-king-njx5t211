@@ -228,9 +228,50 @@ export function dropsArt(): string {
   return pic('fx_drops') || '💧';
 }
 
+/** One ice cube (it is carried by the finger or flies into the jug). */
+function iceCube(): string {
+  return svg(
+    40,
+    40,
+    `<defs><linearGradient id="kic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#a5d8ff"/></linearGradient></defs>
+     <rect x="5" y="6" width="30" height="29" rx="7" fill="url(#kic)" stroke="#74c0fc" stroke-width="2.5"/>
+     <path d="M11 13 L19 11" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>`,
+  );
+}
+
 /** The picture of an ingredient that is carried by the finger or flies to its place. */
-export function itemGhost(item: 'lemon' | 'water' | 'sugar'): string {
+export function itemGhost(item: 'lemon' | 'water' | 'sugar' | 'ice'): string {
+  if (item === 'ice') return pic('ice') || iceCube();
   return pic(item === 'lemon' ? 'lemon' : item === 'water' ? 'water_1' : 'sugar_2') || (item === 'lemon' ? '🍋' : item === 'water' ? '💧' : '🍬');
+}
+
+/** The tray of ice that the freezer made: a cube for every tray that is left (up to six). */
+export function iceTray(n: number): string {
+  {
+    const p = pic('ice_tray', n <= 0 ? 'k-empty' : '');
+    if (p) return p;
+  }
+  const slots = [
+    [12, 28],
+    [38, 28],
+    [64, 28],
+    [25, 14],
+    [51, 14],
+    [74, 14],
+  ];
+  const cubes = slots
+    .slice(0, Math.max(0, Math.min(6, n)))
+    .reverse()
+    .map(([x, y]) => `<rect x="${x}" y="${y}" width="22" height="22" rx="5" fill="#e7f5ff" stroke="#74c0fc" stroke-width="2"/><path d="M${x + 5} ${y + 7} L${x + 11} ${y + 5}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`)
+    .join('');
+  return svg(
+    100,
+    76,
+    `${cubes}
+     <path d="M6 38 L94 38 L86 66 Q85 71 80 71 L20 71 Q15 71 14 66 Z" fill="#74c0fc" stroke="#1c7ed6" stroke-width="2.5"/>
+     <path d="M12 44 L88 44" stroke="#a5d8ff" stroke-width="3" stroke-linecap="round"/>
+     ${n <= 0 ? '<text x="50" y="62" font-size="15" font-weight="900" fill="#fff" text-anchor="middle">—</text>' : ''}`,
+  );
 }
 
 /** A jug of ready lemonade standing on the counter. */

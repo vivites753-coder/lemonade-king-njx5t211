@@ -59,6 +59,7 @@ STAGES = {
             ('stir_spoon_2', {'max': 0.6}),
             ('mixer_start', {'max': 0.7}),
             ('mixer_loop', {'loop': True}),
+            ('ice_clink', {'max': 0.8}),
             'mixer_perfect',
             'mixer_over',
             'jug_ready',

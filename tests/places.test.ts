@@ -17,7 +17,7 @@ const profit = (loc: LocationId, weather: 'rain' | 'hot' | 'sunny') =>
   expectedDay({ loc, weather, price: LOCATIONS[loc].fairPrice, upgrades: { sign: true, banner: true }, rep: 2, from: 10.5 }).profit;
 
 describe('station and mall', () => {
-  it('open with reputation (beach and station at 2, mall at 3) and stay open even if it drops', () => {
+  it('open with reputation (beach and station at 2, the mall and the bus stop at 3) and stay open even if it drops', () => {
     const g = freshGame();
     g.S.day = 5;
     expect(g.chooseLocation('station')).toBe(false);
@@ -34,14 +34,14 @@ describe('station and mall', () => {
     expect(g.chooseLocation('station')).toBe(true);
     expect(g.S.location).toBe('station');
     expect(g.chooseLocation('mall')).toBe(false);
-    // the same milestone does not repeat the card; the next one opens the mall
+    // the same milestone does not repeat the card; the next one opens the mall and the bus stop
     g.restDay();
     expect(g.D.report?.unlocked).toEqual([]);
     g.S.rep = 3.02;
     g.openShop();
     g.sleep();
     g.restDay();
-    expect(g.D.report?.unlocked).toEqual(['mall']);
+    expect(g.D.report?.unlocked).toEqual(['mall', 'busstop']);
   });
 
   it('rain brings people inside, while the street empties', () => {

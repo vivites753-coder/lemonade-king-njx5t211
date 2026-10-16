@@ -52,7 +52,7 @@ export const preparePanel: Panel = {
       <div class="panel-body">
         <div class="card">
           <div class="kv"><span>${ico('gd_ready', '🥛')} ${t('prep.ready')}</span><b>${t('prep.readyN', { n: D.cupsReady })}</b></div>
-          <small class="muted">🍋 ${r.lemons} · 🍬 ${r.sugar} — ${t(tasteKey(r))} · ${t('prep.mix')}: ${t(MIX_KEY[String(D.mixQuality)] ?? 'kitchen.mixPerfect')}</small>
+          <small class="muted">🍋 ${r.lemons} · 🍬 ${r.sugar} — ${t(tasteKey(r))} · ${t('prep.mix')}: ${t(MIX_KEY[String(D.mixQuality)] ?? 'kitchen.mixPerfect')}${D.coldCups > 0 ? ` · ❄️ ${t('prep.cold', { n: Math.min(D.coldCups, D.cupsReady) })}` : ''}</small>
           <div style="margin-top:6px"><button class="btn btn-sm btn-b" data-act="kitchen">🍳 ${t('prep.kitchen')}</button></div>
           <small class="muted">🕐 ${t('prep.spoils')}</small>
         </div>
@@ -79,6 +79,13 @@ export const preparePanel: Panel = {
             : ''
         }
         ${toggle('flyers', D.flyers, `📄 ${t('prep.flyers', { n: CONFIG.FLYERS_COST })}`, t('prep.flyersDesc'))}
+        ${
+          g.onlineAdsOpen()
+            ? toggle('onlineAds', D.onlineAds, `${ico('btn_onlineads', '📱')} ${t('prep.onlineAds', { n: CONFIG.ONLINE_ADS_COST })}`, t('prep.onlineAdsDesc'))
+            : S.bestRep >= CONFIG.ONLINE_ADS_MIN_REP - 1
+              ? `<div class="note">🔒 ${ico('btn_onlineads', '📱')} ${t('prep.onlineAdsLocked', { n: CONFIG.ONLINE_ADS_MIN_REP })}</div>`
+              : ''
+        }
         ${
           g.helperCap() >= 2
             ? `<div class="card"><div class="kv"><span>🍳 ${t('prep.helpers', { n: CONFIG.HELPER_WAGE })}</span>${stepper('helpers', String(D.helpers), D.helpers > 0, D.helpers < 2)}</div>
@@ -107,6 +114,7 @@ export const preparePanel: Panel = {
     if (act === 'price') g.setPrice(g.S.price + d);
     if (act === 'cprice') g.setCookiePrice(g.S.cookiePrice + d);
     if (act === 'flyers') g.setFlyers(!g.D.flyers);
+    if (act === 'onlineAds') g.setOnlineAds(!g.D.onlineAds);
     if (act === 'helper') g.setHelper(!g.D.helper);
     if (act === 'helpers') g.setHelpers(g.D.helpers + d);
     if (act === 'kitchen') g.goKitchen();

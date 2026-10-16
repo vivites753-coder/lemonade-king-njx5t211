@@ -50,7 +50,7 @@ function wantedPlace(g: Game): LocationId {
   return 'yard';
 }
 
-const WANT: Record<LocationId, number> = { yard: 2, park: 4, school: 3, beach: 6, station: 5, mall: 5 };
+const WANT: Record<LocationId, number> = { yard: 2, park: 4, school: 3, beach: 6, station: 5, mall: 5, busstop: 5 };
 
 /** Makes lemonade in the kitchen like a careful player: every jug from scratch, then off to the stand. */
 export function cook(g: Game, pitchers: number): boolean {

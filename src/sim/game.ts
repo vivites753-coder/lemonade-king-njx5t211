@@ -23,6 +23,7 @@ import {
   quality,
   repDelta,
   satisfaction,
+  iceBonus,
   serveTime,
   stockValue,
   tasteBalance,
@@ -99,6 +100,7 @@ export type SfxName =
   | 'pick'
   | 'drop'
   | 'spill'
+  | 'ice'
   // the jingles of the day
   | 'dayStart'
   | 'profit'
@@ -180,7 +182,7 @@ export const emptyCart = (): Cart => ({
   sugar_bulk: 0,
   cups_bulk: 0,
 });
-export type KitchenItem = 'lemon' | 'water' | 'sugar';
+export type KitchenItem = 'lemon' | 'water' | 'sugar' | 'ice';
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const clone = <T,>(o: T): T => JSON.parse(JSON.stringify(o)) as T;
@@ -200,7 +202,7 @@ export class Game {
   /** Cups being poured, one slot per counter. */
   servings: (Serving | null)[] = [null, null];
   /** Lemonade being made at the stand: `jugs` pitchers are ready when the time is up. */
-  making: { t: number; dur: number; jugs: number } | null = null;
+  making: { t: number; dur: number; jugs: number; cold: number } | null = null;
   /** The kitchen mini-game is open in the middle of the selling day (the world waits). */
   midKitchen = false;
   /** Actors of accidents and lucky finds (only for the show). */
@@ -439,12 +441,12 @@ export class Game {
   }
 
   /**
-   * Soft safety net: when the purse is (almost) empty, or coins and stock cannot make even one pitcher,
-   * grandma or the parents help. Counts as income (a gift).
+   * Soft safety net: when the purse holds less than FAMILY_HELP_BELOW coins, or coins and stock cannot make even one
+   * pitcher, grandma or the parents help. Counts as income (a gift).
    */
   private grandmaHelp(): number {
     const onePitcher = Math.ceil(pitcherCost(this.S.recipe, this.active())) + CONFIG.CUPS_PER_PITCHER;
-    const broke = this.S.coins <= CONFIG.FAMILY_HELP_BELOW;
+    const broke = this.S.coins < CONFIG.FAMILY_HELP_BELOW;
     if (!broke && this.S.coins + stockValue(this.S.stock) + this.D.cupsReady >= onePitcher) return 0;
     const gift = this.S.ageMode === 'kid' ? CONFIG.GRANDMA_GIFT_KID : CONFIG.GRANDMA_GIFT;
     this.S.coins += gift;
@@ -472,6 +474,7 @@ export class Game {
     if (this.S.location === id) return true;
     this.S.location = id;
     if (LOCATIONS[id].indoor) this.tip('indoor');
+    if (LOCATIONS[id].bus) this.tip('busstop');
     this.street.reset(true);
     this.refreshInterest();
     this.sfx('pop');
@@ -653,6 +656,7 @@ export class Game {
     this.D.rottenToday += rotten + rottenCheap;
     this.cart = emptyCart();
     this.sfx('coin');
+    this.tip('stock');
     this.goKitchen();
     if (boughtCheap > 0) {
       this.toast(rottenCheap > 0 ? 'toast.cheapRotten' : 'toast.cheapLucky', { n: rottenCheap, total: boughtCheap }, rottenCheap > 0 ? 'warn' : 'good');
@@ -688,6 +692,7 @@ export class Game {
     this.setPhase('kitchen');
     this.tip('kitchen');
     if (mixerBroken(this.S)) this.tip('hand_stir');
+    if (this.active().freezer) this.tip('ice');
   }
 
   /** The kitchen mini-game is on screen (before selling, or in the middle of the day). */
@@ -729,10 +734,15 @@ export class Game {
   }
 
   /** What is still on the shelves: the stock minus what is already in the jug. */
-  kitchenLeft(): Record<KitchenItem, number> {
+  kitchenLeft(): Record<Exclude<KitchenItem, 'ice'>, number> {
     const k = this.D.kitchen;
     const st = this.S.stock;
     return { lemon: lemonsTotal(st) - this.kitchenLemons(), water: st.water - k.water, sugar: st.sugar - k.sugar };
+  }
+
+  /** Trays of ice still in the freezer (what is in the jug is not there any more). */
+  kitchenIceLeft(): number {
+    return (this.S.stock.ice ?? 0) - this.D.kitchen.ice;
   }
 
   /** Juice of one more lemon: a juicer squeezes more out of the first one (that is how it saves lemons). */
@@ -753,6 +763,11 @@ export class Game {
       if (k.water >= CONFIG.WATER_PER_PITCHER) return 'full';
       return st.water >= k.water + 1 ? 'ok' : 'noStock';
     }
+    if (item === 'ice') {
+      // one tray a jug; a broken freezer gives none
+      if (k.ice >= CONFIG.ICE_PER_PITCHER) return 'full';
+      return this.active().freezer && (st.ice ?? 0) >= k.ice + 1 ? 'ok' : 'noStock';
+    }
     if (k.sugar >= CONFIG.KITCHEN_MAX_SUGAR) return 'full';
     return st.sugar >= k.sugar + 1 ? 'ok' : 'noStock';
   }
@@ -767,11 +782,14 @@ export class Game {
     const k = this.D.kitchen;
     if (item === 'lemon') k.juice = this.nextJuice();
     else if (item === 'water') k.water++;
+    else if (item === 'ice') k.ice++;
     else k.sugar++;
-    // anything added after mixing has to be mixed again
-    k.mix = 'none';
-    k.stir = 0;
-    this.sfx(item === 'lemon' ? 'squeeze' : item === 'water' ? 'water' : 'sugar');
+    // anything added after mixing has to be mixed again (ice goes in last: it does not)
+    if (item !== 'ice') {
+      k.mix = 'none';
+      k.stir = 0;
+    }
+    this.sfx(item === 'lemon' ? 'squeeze' : item === 'water' ? 'water' : item === 'ice' ? 'ice' : 'sugar');
     // the first time the jug can be mixed, Lemi explains the mixer
     if (this.kitchenCanMix() && !this.S.upgrades.mixer_pro && !mixerBroken(this.S)) this.tip('mixer');
     this.changed();
@@ -792,12 +810,15 @@ export class Game {
     for (let i = 0; i < CONFIG.WATER_PER_PITCHER; i++) if (this.kitchenCanAdd('water') === 'ok') this.D.kitchen.water++;
     while (this.D.kitchen.juice < r.lemons && this.kitchenCanAdd('lemon') === 'ok') this.D.kitchen.juice = this.nextJuice();
     for (let i = 0; i < r.sugar; i++) if (this.kitchenCanAdd('sugar') === 'ok') this.D.kitchen.sugar++;
+    // the jug of last time had ice: ice again, if the freezer has it
+    for (let i = 0; i < (r.ice ?? 0); i++) if (this.kitchenCanAdd('ice') === 'ok') this.D.kitchen.ice++;
     this.sfx('water');
     this.changed();
   }
 
   kitchenRecipe(): Recipe {
-    return { lemons: this.D.kitchen.juice, sugar: this.D.kitchen.sugar };
+    const k = this.D.kitchen;
+    return k.ice > 0 ? { lemons: k.juice, sugar: k.sugar, ice: k.ice } : { lemons: k.juice, sugar: k.sugar };
   }
 
   kitchenCanMix(): boolean {
@@ -870,7 +891,9 @@ export class Game {
     }
     const recipe = this.kitchenRecipe();
     this.S.recipe = recipe;
-    this.D.recipeUsed = { ...recipe };
+    // (the recipe of the day has no ice: the quick pitcher of the tests and bots would take ice out of the freezer)
+    this.D.recipeUsed = { lemons: recipe.lemons, sugar: recipe.sugar };
+    const cold = recipe.ice ? CONFIG.CUPS_PER_PITCHER : 0;
     this.D.mixQuality = CONFIG.MIX_QUALITY[k.mix];
     this.consumePitcher(recipe);
     this.D.pitchersMade++;
@@ -881,9 +904,12 @@ export class Game {
       if (this.making) {
         this.making.dur += dur;
         this.making.jugs++;
-      } else this.making = { t: 0, dur, jugs: 1 };
+        this.making.cold += cold;
+      } else this.making = { t: 0, dur, jugs: 1, cold };
     } else {
+      this.clampCold();
       this.D.cupsReady += CONFIG.CUPS_PER_PITCHER;
+      this.D.coldCups += cold;
       this.D.hour += hours;
     }
     this.D.kitchen = emptyKitchen();
@@ -908,6 +934,7 @@ export class Game {
     this.setPhase('prepare');
     this.tip('prepare_cost');
     this.tip('price');
+    if (this.onlineAdsOpen()) this.tip('online_ads');
     if (this.S.day >= 2 && this.helperOpen()) this.tip('helper');
   }
 
@@ -922,6 +949,17 @@ export class Game {
 
   setFlyers(on: boolean): void {
     this.D.flyers = on;
+    this.refreshInterest();
+    this.changed();
+  }
+
+  /** Online ads can be ordered once the reputation has reached this level (the best ever reached counts). */
+  onlineAdsOpen(): boolean {
+    return this.S.bestRep >= CONFIG.ONLINE_ADS_MIN_REP - 1e-9;
+  }
+
+  setOnlineAds(on: boolean): void {
+    this.D.onlineAds = on && this.onlineAdsOpen();
     this.refreshInterest();
     this.changed();
   }
@@ -968,9 +1006,10 @@ export class Game {
     return c === 1 || h >= 2;
   }
 
-  /** Coins needed today before opening (rent, flyers, the helper's wage). */
+  /** Coins needed today before opening (rent, flyers, online ads, the helper's wage). */
   openingCosts(): number {
-    return LOCATIONS[this.S.location].rent + (this.D.flyers ? CONFIG.FLYERS_COST : 0) + this.D.helpers * CONFIG.HELPER_WAGE;
+    const D = this.D;
+    return LOCATIONS[this.S.location].rent + (D.flyers ? CONFIG.FLYERS_COST : 0) + (D.onlineAds ? CONFIG.ONLINE_ADS_COST : 0) + D.helpers * CONFIG.HELPER_WAGE;
   }
 
   canStartSelling(): { ok: boolean; reason?: string } {
@@ -1001,6 +1040,10 @@ export class Game {
     if (D.flyers) {
       this.S.coins -= CONFIG.FLYERS_COST;
       D.expenses.flyers += CONFIG.FLYERS_COST;
+    }
+    if (D.onlineAds) {
+      this.S.coins -= CONFIG.ONLINE_ADS_COST;
+      D.expenses.onlineAds += CONFIG.ONLINE_ADS_COST;
     }
     // the helpers' wages (a stand with one counter has room for one helper)
     D.helpers = Math.min(D.helpers, this.helperCap());
@@ -1038,6 +1081,12 @@ export class Game {
     st.water -= CONFIG.WATER_PER_PITCHER;
     st.sugar -= r.sugar;
     st.cups -= CONFIG.CUPS_PER_PITCHER;
+    if (r.ice) st.ice = Math.max(0, (st.ice ?? 0) - r.ice);
+  }
+
+  /** The iced cups are some of the ready ones: lemonade that was lost or sold cannot stay iced. */
+  private clampCold(): void {
+    this.D.coldCups = Math.max(0, Math.min(this.D.coldCups, this.D.cupsReady));
   }
 
   // ---------------------------------------------------------------- selling
@@ -1047,6 +1096,7 @@ export class Game {
       upgrades: this.active(),
       speakerOn: this.S.speakerOn,
       flyers: this.D.flyers,
+      onlineAds: this.D.onlineAds,
       weather: this.D.weather,
       rep: this.S.rep,
       // the city festival is outdoors; indoor places have their own events
@@ -1090,7 +1140,9 @@ export class Game {
     if (this.making) {
       this.making.t += dt;
       if (this.making.t >= this.making.dur) {
+        this.clampCold();
         D.cupsReady += CONFIG.CUPS_PER_PITCHER * this.making.jugs;
+        D.coldCups += this.making.cold;
         this.making = null;
         D.outAsked = false;
         this.sfx('splash');
@@ -1358,7 +1410,13 @@ export class Game {
     // the lemonade was spilt meanwhile: the customer keeps waiting for the next pitcher
     if (D.cupsReady <= 0) return;
     const up = this.active();
+    this.clampCold();
+    const cold = D.coldCups > 0;
     D.cupsReady--;
+    if (cold) {
+      D.coldCups--;
+      D.coldSold++;
+    }
     D.funnel.sold++;
     S.totals.sold++;
     // loyalty card: every N-th cup is a gift
@@ -1374,6 +1432,8 @@ export class Game {
     // a cup poured just right pleases a little more, a cup not full pleases less
     if (fill === 'perfect') sat = Math.min(1, sat + CONFIG.PERFECT_POUR_BONUS);
     else if (fill === 'under') sat = Math.max(0, sat - CONFIG.UNDERFILL_PENALTY);
+    // an iced cup is a cold drink: the customer is happier, and the reputation grows faster
+    if (cold) sat = Math.min(1, sat + iceBonus(D.weather, LOCATIONS[S.location].indoor));
     S.rep = clamp(S.rep + repDelta(sat, S.rep, up), 0, 5);
     const bal = tasteBalance(D.recipeUsed);
     const emote = free ? '🎁' : fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
@@ -1400,7 +1460,7 @@ export class Game {
     }
     this.consumePitcher(this.D.recipeUsed);
     this.D.pitchersMade++;
-    this.making = { t: 0, dur: CONFIG.PITCHER_TIME * (mixerBroken(this.S) ? 2 : 1), jugs: 1 };
+    this.making = { t: 0, dur: CONFIG.PITCHER_TIME * (mixerBroken(this.S) ? 2 : 1), jugs: 1, cold: 0 };
     this.sfx('splash');
     return true;
   }
@@ -1563,6 +1623,7 @@ export class Game {
       ingredients: D.expenses.ingredients,
       rent: D.expenses.rent,
       flyers: D.expenses.flyers,
+      onlineAds: D.expenses.onlineAds,
       stolen: D.expenses.stolen,
       wages: D.expenses.wages,
       repairs: D.expenses.repairs,
@@ -1583,6 +1644,7 @@ export class Game {
       broke: [...D.brokeToday],
       unlocked: [],
       spilled: D.spilled,
+      coldSold: D.coldSold,
       points,
       pointsProfit,
       pointsUnlocked: false,
@@ -2173,6 +2235,11 @@ export class Game {
     });
     // worn equipment may break overnight; the player finds out in the morning
     const broke = rollBreaks(this.S, this.rng);
+    // the freezer makes ice for tomorrow; a broken one makes none, and what was in it melts
+    if (this.S.upgrades.freezer) {
+      if (this.S.broken.freezer) this.S.stock.ice = 0;
+      else this.S.stock.ice = Math.min(CONFIG.FREEZER_ICE_MAX, (this.S.stock.ice ?? 0) + CONFIG.FREEZER_ICE_PER_NIGHT);
+    }
     this.S.weatherHistory.push(this.D.weather);
     if (this.S.weatherHistory.length > 30) this.S.weatherHistory.shift();
     this.S.day++;

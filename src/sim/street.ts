@@ -1,8 +1,8 @@
 // The living street: pedestrians walking along two lanes, the queue at the stand, cars and the fox thief.
 import { CONFIG, queueSpot } from '../core/config';
-import type { RNG } from '../core/rng';
+import { RNG } from '../core/rng';
 import type { LocationId, PedTypeId, Vec, WeatherId } from '../core/types';
-import { LOCATIONS } from '../data/locations';
+import { LOCATIONS, type BusStopDef } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
 import { randomLook, type Look } from './looks';
 import { spawnRatePerHour, type Crowd } from './traffic';
@@ -42,14 +42,27 @@ export interface Ped {
   counter: number;
 }
 
+/** A bus of a bus stop: it brakes to the stop, waits while its people get off, and drives on. */
+export interface Bus {
+  state: 'in' | 'dwell' | 'out';
+  /** Seconds (simulation) since it stopped. */
+  t: number;
+  /** The people who get off here, and how many already did. */
+  load: number;
+  released: number;
+}
+
 export interface Car {
   x: number;
   y: number;
   dir: 1 | -1;
   speed: number;
+  /** The speed on a free road (behind a slower car or a stopped bus the car drives slower for a while). */
+  cruise: number;
   color: string;
-  /** Which drawn car: 0-3 small cars, 4 the van. */
+  /** Which drawn car: 0-3 small cars, 4 the van, 5 the bus. */
   variant: number;
+  bus?: Bus;
 }
 
 export interface Thief {
@@ -92,6 +105,17 @@ const CAR_LANES = { toRight: 7.5, toLeft: 6.5 };
 /** Cars appear and leave a little beyond the island (they are long), and keep this distance (tiles) to the car ahead. */
 const CAR_ENTER = [-1.4, 13.4] as const;
 const CAR_GAP = 2.2;
+/** A bus is long: the cars behind it keep this far from its middle. It brakes to its stop, people get off one by one,
+ * and it waits at least BUS_DWELL seconds. */
+const BUS_GAP = 2.7;
+const BUS_SPEED = 2.2;
+const BUS_BRAKE = 1.5;
+const BUS_ACCEL = 1.2;
+const BUS_RELEASE_GAP = 0.3;
+const BUS_DWELL = 3.2;
+const BUS_COLORS = ['#2f9e44', '#1c7ed6', '#f08c00'];
+/** The people get off on the pavement, at the kerb (the doors are on the right of the bus, away from the viewer). */
+const BUS_DOOR_Y = 5.95;
 /** Indoors: just inside the doorway, and where people are back on their lane. */
 const DOOR_IN = 0.9;
 const DOOR_LANE = 2.6;
@@ -107,6 +131,13 @@ export class Street {
   private spawnAcc = 0;
   private carTimer = 1;
   private nextId = 1;
+  /** The people expected by bus since the last bus left, and the load of the next one. */
+  private busAcc = 0;
+  private busLoad = 0;
+  private busCount = 0;
+  /** The dice of the traffic: cars (and so the buses, which keep behind them) must not use the game's dice or the
+   * browser's, so the same game plays out the same every time. */
+  private carRng = new RNG(0x2c1b3c6d);
 
   constructor(private host: StreetHost) {}
 
@@ -117,6 +148,8 @@ export class Street {
     this.cars.length = 0;
     this.thief = null;
     this.spawnAcc = 0;
+    this.busAcc = 0;
+    this.busLoad = 0;
     if (!prewarm) return;
     const rate = spawnRatePerHour(this.host.location(), this.host.hour(), this.host.weather(), this.host.crowd());
     const n = Math.min(CONFIG.MAX_PEDS - 10, Math.round(rate));
@@ -126,7 +159,10 @@ export class Street {
   update(dt: number): void {
     const h = this.host;
     const rate = spawnRatePerHour(h.location(), h.hour(), h.weather(), h.crowd());
-    this.spawnAcc += (rate * dt) / CONFIG.HOUR_SEC;
+    // at a bus stop part of the crowd comes by bus (in waves), the rest walks past
+    const bus = LOCATIONS[h.location()].bus;
+    this.spawnAcc += (rate * (1 - (bus?.share ?? 0)) * dt) / CONFIG.HOUR_SEC;
+    if (bus) this.busArrivals(bus, rate * bus.share, dt);
     while (this.spawnAcc >= 1) {
       this.spawnAcc -= 1;
       if (this.peds.length < CONFIG.MAX_PEDS) this.spawn(false);
@@ -205,25 +241,31 @@ export class Street {
     return false;
   }
 
-  private spawn(randomX: boolean): void {
+  /** A person appears at the edge of the island, anywhere on the street (`randomX`), or from the door of a bus. */
+  private spawn(randomX: boolean, fromBus?: { x: number; y: number; dir: 1 | -1 }): void {
     const h = this.host;
     const rng = h.rng;
     const loc = LOCATIONS[h.location()];
-    const lane = rng.chance(CONFIG.LANES[0].weight) ? CONFIG.LANES[0] : CONFIG.LANES[1];
-    const dir: 1 | -1 = rng.chance(0.5) ? 1 : -1;
+    // (the dice are thrown in the same order as before for everybody who does not come by bus)
+    const lane = fromBus ? CONFIG.LANES[0] : rng.chance(CONFIG.LANES[0].weight) ? CONFIG.LANES[0] : CONFIG.LANES[1];
+    const dir: 1 | -1 = fromBus ? fromBus.dir : rng.chance(0.5) ? 1 : -1;
     const laneY = lane.y + rng.range(-CONFIG.LANE_JITTER, CONFIG.LANE_JITTER);
     const type = rng.weighted(loc.mix);
     const t = PED_TYPES[type];
     const speed = t.speed * rng.range(0.85, 1.15);
     const maxPrice = loc.fairPrice * t.priceMult * rng.range(CONFIG.WALLET_MIN, CONFIG.WALLET_MAX);
-    const x0 = randomX ? rng.range(0, CONFIG.MAP_SIZE) : dir > 0 ? CONFIG.SPAWN_LEFT : CONFIG.SPAWN_RIGHT;
+    const x0 = fromBus ? fromBus.x : randomX ? rng.range(0, CONFIG.MAP_SIZE) : dir > 0 ? CONFIG.SPAWN_LEFT : CONFIG.SPAWN_RIGHT;
     const x1 = dir > 0 ? CONFIG.SPAWN_RIGHT : CONFIG.SPAWN_LEFT;
     const counted = h.selling() && !randomX;
     // indoors with doorways away from the lanes: in and out through the doorway, then along the lane
     const door = this.doorY(lane.id === 'far');
     let path: Vec[] = [{ x: x1, y: laneY }];
     let y0 = laneY;
-    if (door !== null && dir > 0 && !randomX) {
+    if (fromBus) {
+      // down from the door onto the pavement, then along the lane
+      y0 = fromBus.y;
+      path = [{ x: x0 + dir * 0.35, y: laneY }, { x: x1, y: laneY }];
+    } else if (door !== null && dir > 0 && !randomX) {
       y0 = door;
       path = [{ x: DOOR_IN, y: door }, { x: DOOR_LANE, y: laneY }, { x: x1, y: laneY }];
     } else if (door !== null && dir < 0) {
@@ -361,40 +403,109 @@ export class Street {
     return p && p.state === 'queue' && p.atSpot ? p : null;
   }
 
-  // ---------- cars (decoration only) ----------
+  // ---------- buses (they bring people in waves) ----------
+
+  /**
+   * The people who come by bus are counted up like all the others; when enough for a bus are there, a bus comes
+   * (one at a time on its lane). Its time table depends only on the crowd, never on the cars of the street.
+   */
+  private busArrivals(b: BusStopDef, perHour: number, dt: number): void {
+    this.busAcc += (perHour * dt) / CONFIG.HOUR_SEC;
+    if (this.busLoad <= 0) this.busLoad = this.host.rng.int(b.load[0], b.load[1]);
+    if (this.busAcc < this.busLoad || this.cars.some((c) => c.bus && c.bus.state !== 'out')) return;
+    // not into a car that is still at the start of the lane
+    if (this.cars.some((c) => c.dir < 0 && Math.abs(c.x - CAR_ENTER[1]) < BUS_GAP)) return;
+    this.busAcc -= this.busLoad;
+    this.cars.push({
+      x: CAR_ENTER[1],
+      y: CAR_LANES.toLeft,
+      dir: -1,
+      speed: BUS_SPEED,
+      cruise: BUS_SPEED,
+      color: BUS_COLORS[this.busCount++ % BUS_COLORS.length],
+      variant: 5,
+      bus: { state: 'in', t: 0, load: this.busLoad, released: 0 },
+    });
+    this.busLoad = 0;
+  }
+
+  /** The speed of a bus now (and the people getting off while it stands). */
+  private driveBus(c: Car, dt: number): number {
+    const bus = c.bus!;
+    const b = LOCATIONS[this.host.location()].bus;
+    if (!b) return BUS_SPEED;
+    if (bus.state === 'in') {
+      const rem = (b.stopX - c.x) * c.dir;
+      if (rem <= 0.04) {
+        c.x = b.stopX;
+        bus.state = 'dwell';
+        bus.t = 0;
+        return 0;
+      }
+      return Math.max(0.3, Math.min(BUS_SPEED, Math.sqrt(2 * BUS_BRAKE * rem)));
+    }
+    if (bus.state === 'dwell') {
+      bus.t += dt;
+      while (bus.released < bus.load && bus.t >= 0.5 + bus.released * BUS_RELEASE_GAP) {
+        this.getOff(c, b);
+        bus.released++;
+      }
+      if (bus.released >= bus.load && bus.t >= Math.max(BUS_DWELL, 0.5 + bus.load * BUS_RELEASE_GAP + 1.2)) bus.state = 'out';
+      return 0;
+    }
+    return Math.min(BUS_SPEED * 1.3, c.speed + BUS_ACCEL * dt);
+  }
+
+  /** One person gets off the bus: most walk towards the stand. */
+  private getOff(c: Car, b: BusStopDef): void {
+    if (this.peds.length >= CONFIG.MAX_PEDS) return;
+    const rng = this.host.rng;
+    const toward: 1 | -1 = b.stopX > CONFIG.STAND.x ? -1 : 1;
+    const dir: 1 | -1 = rng.chance(b.toward) ? toward : toward === 1 ? -1 : 1;
+    this.spawn(false, { x: c.x + rng.range(-0.7, 0.7), y: BUS_DOOR_Y, dir });
+  }
+
+  // ---------- cars (decoration only, except the buses) ----------
   private updateCars(dt: number): void {
     if (LOCATIONS[this.host.location()].cars) {
       this.carTimer -= dt;
       if (this.carTimer <= 0) {
-        const dir: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
+        const dir: 1 | -1 = this.carRng.chance(0.5) ? 1 : -1;
         const x = dir > 0 ? CAR_ENTER[0] : CAR_ENTER[1];
         // right-hand traffic: driving to the lower right (+x) the right side of the road is the near lane (bigger y)
         const y = dir > 0 ? CAR_LANES.toRight : CAR_LANES.toLeft;
         // a new car comes only when the start of its lane is free
         if (this.cars.some((c) => c.dir === dir && Math.abs(c.x - x) < CAR_GAP)) this.carTimer = 0.6;
         else {
-          this.carTimer = 2.5 + Math.random() * 5;
+          this.carTimer = this.carRng.range(2.5, 7.5);
+          const speed = this.carRng.range(2.4, 3.6);
           this.cars.push({
             x,
             y,
             dir,
-            speed: 2.4 + Math.random() * 1.2,
-            color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)],
-            variant: Math.random() < 0.14 ? 4 : Math.floor(Math.random() * 4),
+            speed,
+            cruise: speed,
+            color: this.carRng.pick(CAR_COLORS),
+            variant: this.carRng.chance(0.14) ? 4 : this.carRng.int(0, 3),
           });
         }
       }
     }
     for (let i = this.cars.length - 1; i >= 0; i--) {
       const c = this.cars[i];
+      c.speed = c.bus ? this.driveBus(c, dt) : c.cruise;
       c.x += c.dir * c.speed * dt;
-      // a faster car slows down behind a slower one instead of driving through it
-      for (const o of this.cars) {
-        if (o === c || o.dir !== c.dir) continue;
-        const gap = (o.x - c.x) * c.dir;
-        if (gap > 0 && gap < CAR_GAP) {
-          c.x = o.x - c.dir * CAR_GAP;
-          c.speed = Math.min(c.speed, o.speed);
+      // a faster car slows down behind a slower one (or a bus standing at its stop) instead of driving through it;
+      // a bus at its stop stays where it is, and keeps behind a car on the way
+      if (!(c.bus && c.bus.state === 'dwell')) {
+        for (const o of this.cars) {
+          if (o === c || o.dir !== c.dir) continue;
+          const need = o.bus || c.bus ? BUS_GAP : CAR_GAP;
+          const gap = (o.x - c.x) * c.dir;
+          if (gap > 0 && gap < need) {
+            c.x = o.x - c.dir * need;
+            c.speed = Math.min(c.speed, o.speed);
+          }
         }
       }
       if (c.x < CAR_ENTER[0] - 0.3 || c.x > CAR_ENTER[1] + 0.3) this.cars.splice(i, 1);

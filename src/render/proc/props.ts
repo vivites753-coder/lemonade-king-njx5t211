@@ -1,7 +1,7 @@
 // Procedural props: trees, benches, lamps, fences, beach things, cars.
 import { drawSprite, getImage, hasImage, metaFor, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
-import { box, circle, ellipse, faceY, line, P, poly, rrect, shadow, type Ctx } from '../iso';
+import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 
 function tree(ctx: Ctx, c: SpriteCall, palette: [string, string, string], tall = 1): void {
   const s = c.s * tall;
@@ -211,7 +211,54 @@ export function drawCar(ctx: Ctx, x: number, y: number, color: string, dir: numb
   circle(ctx, hx, hy, 2, '#fff3bf');
 }
 
-const CAR_SPRITES = ['car_a', 'car_b', 'car_c', 'car_d', 'van'];
+/** A city bus: long along x, a window band on its side, a white stripe, and lights on the end the viewer sees. */
+export function drawBus(ctx: Ctx, x: number, y: number, color: string, dir: number, standing = false): void {
+  const L = 2.4;
+  const W = 0.62;
+  const H = 30;
+  const Z = 5;
+  const [sx, sy] = P(x, y);
+  carShadow(ctx, sx, sy, 1.9);
+  const x0 = x - L / 2;
+  const y1 = y + W / 2;
+  // the wheels under the body, on the side the viewer sees
+  for (const wx of [x - 0.8, x + 0.75]) {
+    const [px, py] = P(wx, y1, 4);
+    ellipse(ctx, px, py, 5.2, 5.2, '#212529');
+    ellipse(ctx, px, py, 2.2, 2.2, '#adb5bd');
+  }
+  box(ctx, x0, y - W / 2, L, W, H, Z, color);
+  // a lower skirt and a white stripe on the side
+  faceY(ctx, x0, y1, Z + H, () => {
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
+    ctx.fillRect(0, H - 7, L * 32, 7);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, H - 13, L * 32, 3);
+    // the windows (the first one, at the front, is wider: the driver)
+    const n = 7;
+    const w = (L * 32 - 10) / n;
+    for (let i = 0; i < n; i++) {
+      ctx.fillStyle = '#cfe8ff';
+      ctx.fillRect(5 + i * w + 1.5, 4, w - 3, 11);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillRect(5 + i * w + 3, 5, 3, 7);
+    }
+  });
+  // the end the viewer sees: lights, and a window
+  faceX(ctx, x0 + L, y1, Z + H, () => {
+    ctx.fillStyle = '#cfe8ff';
+    ctx.fillRect(4, 4, W * 32 - 8, 11);
+    const rear = dir < 0;
+    ctx.fillStyle = rear ? (standing ? '#ff6b6b' : '#c92a2a') : '#fff3bf';
+    ctx.fillRect(2, H - 9, 5, 4);
+    ctx.fillRect(W * 32 - 7, H - 9, 5, 4);
+  });
+  // vents on the roof
+  box(ctx, x - 0.45, y - 0.12, 0.3, 0.24, 3, Z + H, '#dee2e6');
+  box(ctx, x + 0.25, y - 0.12, 0.3, 0.24, 3, Z + H, '#dee2e6');
+}
+
+const CAR_SPRITES = ['car_a', 'car_b', 'car_c', 'car_d', 'van', 'bus'];
 
 /**
  * A drawn car (or van) on the road: the front picture drives to the lower right, the back one to the upper left,
@@ -236,11 +283,12 @@ function carShadow(ctx: Ctx, sx: number, sy: number, k: number): void {
   ctx.restore();
 }
 
-export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; dir: number; variant: number }): void {
+export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; dir: number; variant: number; speed?: number; bus?: unknown }): void {
   const id = `prop_${CAR_SPRITES[c.variant % CAR_SPRITES.length]}_${c.dir > 0 ? 'front' : 'back'}`;
   const img = getImage(id);
   if (!img) {
-    drawCar(ctx, c.x, c.y, c.color, c.dir);
+    if (c.bus) drawBus(ctx, c.x, c.y, c.color, c.dir, (c.speed ?? 1) < 0.05);
+    else drawCar(ctx, c.x, c.y, c.color, c.dir);
     return;
   }
   const [sx, sy] = P(c.x, c.y);
@@ -263,7 +311,71 @@ export function drawCarArt(ctx: Ctx, c: { x: number; y: number; color: string; d
   }
 }
 
+/** A bus shelter: a green roof on four posts, glass at the back and the side, a bench and a poster of the stand. */
+function busShelter(ctx: Ctx, c: SpriteCall): void {
+  const { x, y, sx, sy } = c;
+  const L = 1.7;
+  const D = 0.5;
+  const H = 40;
+  const x0 = x - L / 2;
+  const y0 = y - D / 2;
+  shadow(ctx, sx + 8, sy + 3, 38, 0.16);
+  // the glass wall at the back, with a poster
+  faceY(ctx, x0, y0, H, () => {
+    ctx.fillStyle = 'rgba(190,226,255,0.55)';
+    ctx.fillRect(2, 5, L * 32 - 4, H - 7);
+    ctx.strokeStyle = '#74c0fc';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(2, 5, L * 32 - 4, H - 7);
+    ctx.fillStyle = '#fff3bf';
+    ctx.fillRect(L * 32 - 40, 9, 32, 24);
+    ctx.strokeStyle = '#fab005';
+    ctx.strokeRect(L * 32 - 40, 9, 32, 24);
+  });
+  const [px, py] = P(x0 + L - 0.38, y0 + 0.02, H - 10);
+  text(ctx, '🍋', px, py + 8, 13, '#000', 'center', 400);
+  // the bench
+  box(ctx, x0 + 0.16, y0 + 0.07, L - 0.5, 0.16, 3, 10, '#c58b4f');
+  box(ctx, x0 + 0.2, y0 + 0.09, 0.05, 0.12, 10, 0, '#495057');
+  box(ctx, x0 + L - 0.58, y0 + 0.09, 0.05, 0.12, 10, 0, '#495057');
+  // the posts at the back, the glass at the side, the posts in front
+  for (const [qx, qy] of [
+    [x0, y0],
+    [x0 + L - 0.05, y0],
+  ])
+    box(ctx, qx, qy, 0.05, 0.05, H, 0, '#495057');
+  faceX(ctx, x0 + L, y0 + D, H, () => {
+    ctx.fillStyle = 'rgba(190,226,255,0.5)';
+    ctx.fillRect(2, 5, D * 32 - 4, H - 7);
+    ctx.strokeStyle = '#74c0fc';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(2, 5, D * 32 - 4, H - 7);
+  });
+  for (const [qx, qy] of [
+    [x0, y0 + D - 0.05],
+    [x0 + L - 0.05, y0 + D - 0.05],
+  ])
+    box(ctx, qx, qy, 0.05, 0.05, H, 0, '#495057');
+  // the roof, a little wider than the shelter
+  box(ctx, x0 - 0.08, y0 - 0.1, L + 0.16, D + 0.2, 4, H, '#2b8a3e');
+}
+
+/** The bus stop sign: a blue disc with a bus on a pole. */
+function busSign(ctx: Ctx, c: SpriteCall): void {
+  const { sx, sy } = c;
+  shadow(ctx, sx, sy, 6, 0.2);
+  rrect(ctx, sx - 1.4, sy - 56, 2.8, 56, 1.4, '#868e96');
+  circle(ctx, sx, sy - 62, 11, '#1971c2', '#ffffff', 2);
+  rrect(ctx, sx - 7, sy - 67, 14, 9, 2.5, '#ffffff');
+  rrect(ctx, sx - 5.5, sy - 65.5, 4.5, 3.5, 1, '#1971c2');
+  rrect(ctx, sx + 1, sy - 65.5, 4.5, 3.5, 1, '#1971c2');
+  circle(ctx, sx - 4, sy - 57.6, 1.4, '#ffffff');
+  circle(ctx, sx + 4, sy - 57.6, 1.4, '#ffffff');
+}
+
 registerProcs({
+  prop_bus_shelter: busShelter,
+  prop_bus_sign: busSign,
   prop_tree_a: (ctx, c) => tree(ctx, c, ['#5cbc5e', '#4fae52', '#44a047']),
   prop_tree_b: (ctx, c) => tree(ctx, c, ['#7bc96f', '#69b85c', '#5aa84e'], 0.9),
   prop_tree_c: (ctx, c) => tree(ctx, c, ['#94d82d', '#82c91e', '#74b816'], 0.8),

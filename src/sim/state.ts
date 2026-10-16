@@ -15,11 +15,15 @@ export interface Stock {
   sugar: number;
   cups: number;
   cookies: number;
+  /** Trays of ice in the freezer (older saves: none). */
+  ice?: number;
 }
 
 export interface Recipe {
   lemons: number;
   sugar: number;
+  /** Trays of ice put into the jug (only in the recipe of a jug that had ice). */
+  ice?: number;
 }
 
 export interface Settings {
@@ -121,6 +125,10 @@ export interface DayEvents {
   concert: boolean;
   /** Mall: a big sale (more shoppers all day). */
   mallSale: boolean;
+  /** Bus stop: extra buses (many people). */
+  busRush: boolean;
+  /** Bus stop: the road is being repaired (few buses, few people). */
+  busStrike: boolean;
   /** How busy each place is today (1 = usual). Missing (old saves, tests) means 1. */
   busy?: Partial<Record<LocationId, number>>;
 }
@@ -135,6 +143,8 @@ export interface KitchenState {
   /** Stirred by hand because the mixer is broken (takes longer). */
   hand: boolean;
   stir: number;
+  /** Trays of ice in the jug (the freezer; ice goes in last, the jug need not be mixed again). */
+  ice: number;
 }
 
 export type PointReport = PointDay & { id: number; loc: LocationId; nameId: number | null };
@@ -149,6 +159,7 @@ export interface DayReport {
   ingredients: number;
   rent: number;
   flyers: number;
+  onlineAds: number;
   stolen: number;
   wages: number;
   repairs: number;
@@ -171,6 +182,8 @@ export interface DayReport {
   unlocked: LocationId[];
   /** Cups lost in accidents. */
   spilled: number;
+  /** Iced cups sold today. */
+  coldSold: number;
   /** The player's other stands today (already included in income and expenses). */
   points: PointReport[];
   pointsProfit: number;
@@ -195,8 +208,10 @@ export interface DayState {
   cookieSales: number;
   cookiesSold: number;
   bonus: number;
-  expenses: { ingredients: number; rent: number; flyers: number; stolen: number; wages: number; repairs: number; training: number };
+  expenses: { ingredients: number; rent: number; flyers: number; onlineAds: number; stolen: number; wages: number; repairs: number; training: number };
   flyers: boolean;
+  /** Online ads are on today (they cost CONFIG.ONLINE_ADS_COST when the selling starts). */
+  onlineAds: boolean;
   /** At least one helper today (kept for older saves and simple checks). */
   helper: boolean;
   /** Helpers hired today: 0, 1 or 2 (two need a stand with two counters). */
@@ -211,6 +226,10 @@ export interface DayState {
   /** 0.85–1: how well the lemonade was mixed. */
   mixQuality: number;
   cupsReady: number;
+  /** How many of the ready cups have ice (the cups poured from jugs with ice; they are sold with a bonus). */
+  coldCups: number;
+  /** Iced cups sold today. */
+  coldSold: number;
   /** Cups that came from the cooler this morning (sold first). */
   carriedIn: number;
   pitchersMade: number;
@@ -242,11 +261,11 @@ export function emptyFunnel(): Funnel {
 }
 
 export function emptyEvents(): DayEvents {
-  return { festival: false, thiefAt: null, sugarHike: false, cupsSoldOut: false, badLemons: false, trains: false, trackRepair: false, concert: false, mallSale: false, busy: {} };
+  return { festival: false, thiefAt: null, sugarHike: false, cupsSoldOut: false, badLemons: false, trains: false, trackRepair: false, concert: false, mallSale: false, busRush: false, busStrike: false, busy: {} };
 }
 
 export function emptyKitchen(): KitchenState {
-  return { juice: 0, sugar: 0, water: 0, mix: 'none', hand: false, stir: 0 };
+  return { juice: 0, sugar: 0, water: 0, mix: 'none', hand: false, stir: 0, ice: 0 };
 }
 
 export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar; lang: Lang; name?: string }): GameState {
@@ -258,7 +277,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     coins: CONFIG.START_COINS,
     rep: CONFIG.START_REP,
     bestRep: CONFIG.START_REP,
-    stock: { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0 },
+    stock: { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0, ice: 0 },
     upgrades: {},
     condition: { mixer: 100 },
     broken: {},
@@ -297,8 +316,9 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     cookieSales: 0,
     cookiesSold: 0,
     bonus: 0,
-    expenses: { ingredients: 0, rent: 0, flyers: 0, stolen: 0, wages: 0, repairs: 0, training: 0 },
+    expenses: { ingredients: 0, rent: 0, flyers: 0, onlineAds: 0, stolen: 0, wages: 0, repairs: 0, training: 0 },
     flyers: false,
+    onlineAds: false,
     helper: false,
     helpers: 0,
     opened: false,
@@ -307,6 +327,8 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     outAsked: false,
     mixQuality: 1,
     cupsReady: 0,
+    coldCups: 0,
+    coldSold: 0,
     carriedIn: 0,
     pitchersMade: 0,
     recipeUsed: { ...s.recipe },
@@ -339,9 +361,10 @@ export function normalizeState(S: GameState, D: DayState): void {
   S.settings = { ...fresh.settings, ...S.settings };
   S.bestRep = Math.max(S.bestRep, S.rep);
   S.stock.cookies ??= 0;
+  S.stock.ice ??= 0;
   for (const id of Object.keys(S.upgrades)) {
     const eq = id as keyof GameState['condition'];
-    if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'scooter', 'dispenser', 'tv'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
+    if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'scooter', 'dispenser', 'tv', 'freezer'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;
   }
   const day = newDayState(S, D.weather ?? 'sunny', D.forecast ?? 'sunny');
   for (const k of Object.keys(day) as (keyof DayState)[]) {
@@ -367,5 +390,5 @@ export function lemonsTotal(stock: Stock): number {
 
 export function dayExpenses(d: DayState): number {
   const e = d.expenses;
-  return e.ingredients + e.rent + e.flyers + e.stolen + e.wages + e.repairs + e.training;
+  return e.ingredients + e.rent + e.flyers + e.onlineAds + e.stolen + e.wages + e.repairs + e.training;
 }
