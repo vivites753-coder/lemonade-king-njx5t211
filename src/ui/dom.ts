@@ -1,5 +1,6 @@
 // Small HTML helpers for the DOM overlay UI.
-import type { WeatherId } from '../core/types';
+import type { LocationId, WeatherId } from '../core/types';
+import { LOCATIONS } from '../data/locations';
 import { WEATHER } from '../data/weather';
 import { t } from '../i18n';
 export { fmtHour } from '../sim/lessons';
@@ -53,6 +54,11 @@ export function hasIco(id: string): boolean {
 export function ico(id: string, fallback: string, cls = ''): string {
   const u = iconUrls[`/assets/ui/ui_${id}.png`];
   return u ? `<img class="ico-img i-${id} ${cls}" src="${u}" alt="" draggable="false">` : fallback;
+}
+
+/** The picture of a place (the emoji from the data when there is none). */
+export function locIco(id: LocationId, cls = ''): string {
+  return ico(`loc_${id}`, LOCATIONS[id].icon, cls);
 }
 
 /** The picture of the weather (the emoji from the data when there is none). */

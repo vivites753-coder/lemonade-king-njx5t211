@@ -4,7 +4,7 @@ import { LOCATIONS, LOCATION_IDS } from '../../data/locations';
 import { t } from '../../i18n';
 import { lemonsTotal } from '../../sim/state';
 import type { Game } from '../../sim/game';
-import { coin, dots, fmtDur, fmtHour, ico, weatherIco } from '../dom';
+import { coin, dots, fmtDur, fmtHour, ico, locIco, weatherIco } from '../dom';
 import type { Panel } from './types';
 
 /** Cards of all places; a tap sends `loc:<id>`. */
@@ -19,7 +19,7 @@ export function locationCards(g: Game): string {
       const travel = g.travelHours(id);
       const ev = repLock ? undefined : LOC_EVENTS.find((e) => e.loc === id && D.events[e.id]);
       return `<button class="loc${S.location === id ? ' sel' : ''}${repLock ? ' rep-lock' : ''}" data-act="loc:${id}" ${locked ? 'disabled' : ''}>
-        <span class="loc-ico">${repLock ? ico('lock', '🔒') : l.icon}</span>
+        <span class="loc-ico">${repLock ? ico('lock', '🔒') : locIco(id)}</span>
         <span class="grow">
           <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}
           ${repLock ? `<span class="loc-lock">⭐ ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}

@@ -1,10 +1,9 @@
 // Heads-up display: top bar (always), funnel card and selling controls (only while selling).
 import type { Phase } from '../core/types';
-import { LOCATIONS } from '../data/locations';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
 import { payback, pointOpensAt, pointProgress, pointWorkers, skillStars, type Point } from '../sim/points';
-import { fmtHour, ico, round1, signedCoin, stars, weatherIco } from './dom';
+import { fmtHour, ico, locIco, round1, signedCoin, stars, weatherIco } from './dom';
 
 /** Phases in which the scene is in view and the player may look at their other stands. */
 const VIEW_PHASES: Phase[] = ['morning', 'prepare', 'sell', 'report', 'shop'];
@@ -191,7 +190,7 @@ export class Hud {
     this.set('clock', fmtHour(D.hour));
     // .lbl parts are hidden on small screens, .sm parts are shown only there
     this.set('weather', `${weatherIco(D.weather)}<span class="lbl"> ${t(`weather.${D.weather}`)}</span>`);
-    this.set('loc', `${LOCATIONS[S.location].icon}<span class="lbl"> ${t(`loc.${S.location}.name`)}</span>`);
+    this.set('loc', `${locIco(S.location)}<span class="lbl"> ${t(`loc.${S.location}.name`)}</span>`);
     this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">${ico('star_full', '⭐')}</span> ${S.rep.toFixed(1)}`);
     this.set('sound', S.settings.sound ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇'));
     this.show('points', g.pointsOpen() || S.points.length > 0);
@@ -252,7 +251,7 @@ export class Hud {
     const btn = (id: string, icon: string, label: string, on: boolean) =>
       `<button class="hv-btn${on ? ' on' : ''}" data-hud="view:${id}" title="${label}" aria-label="${label}">${icon}<span class="lbl"> ${label}</span></button>`;
     return `<span class="hv-eye">${ico('pt_look', '👀')}</span>${btn('own', '🍋', t('points.home'), g.viewPoint === null)}${g.S.points
-      .map((p) => btn(String(p.id), LOCATIONS[p.loc].icon, t(`loc.${p.loc}.name`), g.viewPoint === p.id))
+      .map((p) => btn(String(p.id), locIco(p.loc), t(`loc.${p.loc}.name`), g.viewPoint === p.id))
       .join('')}`;
   }
 
@@ -275,7 +274,7 @@ export class Hud {
           : `🥤 ${t('points.soFar', { n: Math.round(p.today.sold * k), m: Math.round(p.today.revenue * k) })}`;
     } else if (p.last) today = t('points.lastProfit', { n: signedCoin(p.last.profit) });
     const pct = Math.max(0, Math.min(100, Math.round(payback(p).share * 100)));
-    return `<div class="hp-title">${LOCATIONS[p.loc].icon} <b>${t(`loc.${p.loc}.name`)}</b></div>
+    return `<div class="hp-title">${locIco(p.loc)} <b>${t(`loc.${p.loc}.name`)}</b></div>
       <div>${who}</div>
       ${today ? `<div>${today}</div>` : ''}
       <div class="hp-pb"><span>${ico('pt_payback', '💹')} ${t('points.payback')}: <b>${pct}%</b></span><div class="bar pb-bar"><i style="width:${pct}%"></i></div></div>

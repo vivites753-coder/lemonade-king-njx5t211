@@ -53,6 +53,11 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_car_c_back: { h: 72.0, anchor: [0.5, CAR_AY] },
   prop_car_d_back: { h: 74.8, anchor: [0.5, CAR_AY] },
   prop_van_back: { h: 79.2, anchor: [0.5, CAR_AY] },
+  // the bus (it rides like the cars: the front picture to the lower right, the back one to the upper left), the shelter and the sign
+  prop_bus_front: { h: 104, anchor: [0.5, CAR_AY] },
+  prop_bus_back: { h: 100, anchor: [0.5, CAR_AY] },
+  prop_bus_shelter: { h: 84, anchor: [0.5, 0.9] },
+  prop_bus_sign: { h: 66, anchor: [0.5, 0.97] },
   // the anchor is the centre of the footprint, not the front corner: the front corner is about 40 px lower
   // the stand people: the same size for every pose of one person (their pictures differ in height)
   char_player_boy_front: { h: 42.9, anchor: [0.5, 0.975] },

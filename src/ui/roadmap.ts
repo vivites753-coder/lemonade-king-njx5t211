@@ -7,7 +7,7 @@ import { POINTS } from '../data/staff';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { coin, ico, stars } from './dom';
+import { coin, ico, locIco, stars } from './dom';
 import type { ModalSpec } from './overlays';
 
 const LEVELS = [1, 2, 3, 4];
@@ -24,7 +24,7 @@ function itemsFor(g: Game, level: number): Item[] {
   const out: Item[] = [];
   for (const id of LOCATION_IDS) {
     if ((LOCATIONS[id].minRep ?? 1) !== level) continue;
-    out.push({ icon: LOCATIONS[id].icon, name: t(`loc.${id}.name`), kind: 'place', note: LOCATIONS[id].rent ? t('loc.rent', { n: coin(LOCATIONS[id].rent) }) : t('loc.free') });
+    out.push({ icon: locIco(id), name: t(`loc.${id}.name`), kind: 'place', note: LOCATIONS[id].rent ? t('loc.rent', { n: coin(LOCATIONS[id].rent) }) : t('loc.free') });
   }
   if (level === CONFIG.HELPER_MIN_REP) out.push({ icon: '🍳', name: t('roadmap.helper'), kind: 'feature', note: t('points.wage', { n: CONFIG.HELPER_WAGE }) });
   if (level === (GOODS.cookies.minRep ?? 1)) out.push({ icon: '🍪', name: t('roadmap.cookies'), kind: 'feature', note: t('roadmap.cookiesNote', { n: GOODS.cookies.price }) });

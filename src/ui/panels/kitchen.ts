@@ -437,7 +437,7 @@ export const kitchenPanel: Panel = {
               <div class="k-meter"><i class="k-zone" style="left:${zoneL}%;width:${zoneW}%"></i><i class="k-needle"></i></div>
               <div class="k-jug${jugPic ? ' has-art' : ''}" data-drop="jug">
                 ${jugPic}
-                <div class="k-liq-clip"${jugPic ? ` style="--jug-mask:url('${picUrl('jug')}')"` : ''}><div class="k-liquid" data-k="liquid"></div><div class="k-ice-cubes" data-k="icecubes"><i></i><i></i><i></i></div><div class="k-grains" data-k="grains"></div></div>
+                <div class="k-liq-clip"${jugPic ? ` style="--jug-mask:url('${picUrl('jug')}')"` : ''}><div class="k-liquid" data-k="liquid"></div><div class="k-ice-cubes${picUrl('ice') ? ' art' : ''}" data-k="icecubes"${picUrl('ice') ? ` style="--ice-img:url('${picUrl('ice')}')"` : ''}><i></i><i></i><i></i></div><div class="k-grains" data-k="grains"></div></div>
               </div>
               <div class="k-glass${jugPic ? ' has-art' : ''}">${jugPic}</div>
               <div class="k-drops">${dropsArt()}</div>

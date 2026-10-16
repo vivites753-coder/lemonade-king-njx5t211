@@ -6,7 +6,7 @@ import { UPGRADES } from '../data/upgrades';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
 import { freePlaces, isGirl, payback, pointCapacity, pointHasRoomFor2, pointUps, POINT_UPGRADE_IDS, skillStars, type Point, type Seller } from '../sim/points';
-import { coin, ico, signedCoin } from './dom';
+import { coin, ico, locIco, signedCoin } from './dom';
 import type { ModalSpec } from './overlays';
 
 export interface PointsHooks {
@@ -103,7 +103,7 @@ function pointCard(g: Game, p: Point): string {
         : `<div class="pt-hire2"><small class="muted">${ico('pt_team', '👥')} ${t('points.hire2Wide')}</small></div>`;
   const ups = POINT_UPGRADE_IDS.filter((id) => pointUps(p)[id]);
   return `<div class="pt-card">
-    <div class="pt-head"><span class="pt-ico">${LOCATIONS[p.loc].icon}</span><b class="grow">${t(`loc.${p.loc}.name`)}</b>${today}</div>
+    <div class="pt-head"><span class="pt-ico">${locIco(p.loc)}</span><b class="grow">${t(`loc.${p.loc}.name`)}</b>${today}</div>
     ${away}
     ${seller}
     ${helper}
@@ -143,7 +143,7 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
                 .map((loc) => {
                   const l = LOCATIONS[loc];
                   const ok = g.canOpenPoint(loc).ok;
-                  return `<div class="pt-new"><span class="pt-ico">${l.icon}</span>
+                  return `<div class="pt-new"><span class="pt-ico">${locIco(loc)}</span>
                     <span class="grow"><b>${t(`loc.${loc}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}
                     <small>${t('loc.rent', { n: coin(l.rent) })} · ${t('points.fair', { n: l.fairPrice })}</small></span>
                     <button class="btn btn-sm ${ok ? 'btn-g' : ''}" data-act="open:${loc}" ${ok ? '' : 'disabled'}>${coin(POINTS.COST)}</button></div>`;

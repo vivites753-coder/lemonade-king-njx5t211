@@ -4457,3 +4457,19 @@ html.hud-editing #hud [data-move].dragging {
 .reduce-motion .k-ice-cubes i {
   animation: none;
 }
+
+/* the cubes of ice in the jug, when the picture of the ice is there */
+.k-ice-cubes.art i {
+  width: 40px;
+  height: 44px;
+  border: 0;
+  background: var(--ice-img) center / contain no-repeat;
+  box-shadow: none;
+}
+/* the pictures of the places on their cards and in the lists */
+.loc-ico .ico-img,
+.pt-ico .ico-img,
+.rm-ico .ico-img {
+  height: 1.15em;
+  vertical-align: middle;
+}

@@ -1,5 +1,6 @@
 // Drawing of accident and lucky-find actors (see sim/critters.ts).
 import type { Critter } from '../../sim/critters';
+import { getImage } from '../assets';
 import { ENV } from '../env';
 import { circle, ellipse, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { drawCharacter } from './people';
@@ -14,7 +15,34 @@ function tapRing(ctx: Ctx, x: number, y: number, r: number): void {
   ctx.stroke();
 }
 
+/** A picture standing at a point (world px): `h` or `w` is its size, `ay` the share of its height that is above the point. */
+function pic(ctx: Ctx, id: string, x: number, y: number, size: { h?: number; w?: number }, o: { flip?: boolean; ay?: number; rot?: number } = {}): boolean {
+  const img = getImage(id);
+  if (!img) return false;
+  const h = size.h ?? ((size.w ?? 20) * img.naturalHeight) / img.naturalWidth;
+  const w = (h * img.naturalWidth) / img.naturalHeight;
+  ctx.save();
+  ctx.translate(x, y);
+  if (o.rot) ctx.rotate(o.rot);
+  if (o.flip) ctx.scale(-1, 1);
+  ctx.drawImage(img, -w / 2, -h * (o.ay ?? 0.92), w, h);
+  ctx.restore();
+  return true;
+}
+
+/** The three stray dogs of the game (see Critters.dogs) and their pictures. */
+const DOG_ART: Record<string, string> = { '#a0522d': 'char_dog_brown', '#e9c46a': 'char_dog_sand', '#495057': 'char_dog_gray' };
+/** The colours of the balloons and their pictures. */
+const BALLOON_ART: Record<string, string> = { '#ff6b6b': 'item_balloon_red', '#4dabf7': 'item_balloon_blue', '#da77f2': 'item_balloon_purple', '#69db7c': 'item_balloon_green' };
+
 function dog(ctx: Ctx, c: Critter, sx: number, sy: number): void {
+  const art = DOG_ART[c.color ?? '#a0522d'] ?? 'char_dog_brown';
+  if (getImage(art)) {
+    shadow(ctx, sx, sy, 12, 0.18);
+    const hop = c.moving ? Math.abs(Math.sin(c.anim * 1.5)) * 2.5 : 0;
+    pic(ctx, art, sx, sy - hop, { w: 31 }, { flip: c.dirX < 0, ay: 0.9 });
+    return;
+  }
   const step = c.moving ? Math.sin(c.anim) * 2.5 : 0;
   const col = c.color ?? '#a0522d';
   ctx.save();
@@ -34,6 +62,12 @@ function dog(ctx: Ctx, c: Critter, sx: number, sy: number): void {
 }
 
 function cat(ctx: Ctx, c: Critter, sx: number, sy: number): void {
+  if (getImage('char_cat_walk')) {
+    shadow(ctx, sx, sy, 10, 0.18);
+    const hop = c.moving ? Math.abs(Math.sin(c.anim * 0.9)) * 1.5 : 0;
+    pic(ctx, c.moving ? 'char_cat_walk' : 'char_cat_sit', sx, sy - hop, { h: 31 }, { flip: c.dirX < 0, ay: 0.92 });
+    return;
+  }
   const step = c.moving ? Math.sin(c.anim * 0.6) * 1.8 : 0;
   ctx.save();
   ctx.translate(sx, sy);
@@ -62,12 +96,20 @@ function cat(ctx: Ctx, c: Critter, sx: number, sy: number): void {
 
 function wallet(ctx: Ctx, sx: number, sy: number): void {
   shadow(ctx, sx, sy, 8, 0.15);
+  if (pic(ctx, 'item_wallet', sx, sy + 1, { w: 22 }, { ay: 0.85 })) return;
   rrect(ctx, sx - 7, sy - 8, 14, 9, 2, '#9c36b5', '#5f3dc4', 1);
   rrect(ctx, sx - 2, sy - 6, 9, 4, 1.5, '#cc5de8');
   circle(ctx, sx + 4, sy - 4, 1.1, '#ffd43b');
 }
 
 function coin(ctx: Ctx, sx: number, sy: number): void {
+  if (getImage('item_coin_ground')) {
+    // it lies on the ground and breathes a little; a sparkle runs over it
+    const k = ENV.reduceMotion ? 1 : 1 + Math.sin(ENV.t * 4) * 0.05;
+    pic(ctx, 'item_coin_ground', sx, sy, { w: 18 * k }, { ay: 0.7 });
+    if (!ENV.reduceMotion && Math.sin(ENV.t * 4) > 0.6) text(ctx, '✦', sx + 6, sy - 9, 8, '#fff3bf');
+    return;
+  }
   const s = ENV.reduceMotion ? 1 : Math.abs(Math.cos(ENV.t * 3));
   ellipse(ctx, sx, sy - 6, 5 * Math.max(0.25, s), 5, '#fcc419', '#e0a800', 1);
   if (!ENV.reduceMotion && Math.sin(ENV.t * 4) > 0.6) text(ctx, '✦', sx + 6, sy - 12, 8, '#fff3bf');
@@ -75,6 +117,8 @@ function coin(ctx: Ctx, sx: number, sy: number): void {
 
 function balloon(ctx: Ctx, c: Critter, sx: number, sy: number): void {
   const by = sy - c.z;
+  // the picture has its string; the body hangs around the tap point
+  if (pic(ctx, BALLOON_ART[c.color ?? '#ff6b6b'] ?? 'item_balloon_red', sx + (ENV.reduceMotion ? 0 : Math.sin(ENV.t * 2) * 2), by + 32, { h: 48 }, { ay: 1 })) return;
   ctx.beginPath();
   ctx.moveTo(sx, by + 10);
   ctx.quadraticCurveTo(sx + Math.sin(ENV.t * 2) * 4, by + 22, sx, by + 34);
@@ -89,6 +133,7 @@ function balloon(ctx: Ctx, c: Critter, sx: number, sy: number): void {
 function ball(ctx: Ctx, c: Critter, sx: number, sy: number): void {
   shadow(ctx, sx, sy, 6, 0.15);
   const by = sy - c.z;
+  if (pic(ctx, 'item_ball', sx, by + 7, { w: 15 }, { ay: 0.5, rot: c.t * 9 })) return;
   circle(ctx, sx, by, 6, '#ffffff', '#343a40', 1);
   const a = c.t * 12;
   for (let i = 0; i < 3; i++) circle(ctx, sx + Math.cos(a + i * 2.1) * 3, by + Math.sin(a + i * 2.1) * 3, 1.6, '#343a40');

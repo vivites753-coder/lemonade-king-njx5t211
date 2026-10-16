@@ -1,7 +1,6 @@
-import { LOCATIONS } from '../../data/locations';
 import { payback } from '../../sim/points';
 import { t } from '../../i18n';
-import { coin, ico, lemiFace, signedCoin, stars, type LemiMood } from '../dom';
+import { coin, ico, lemiFace, locIco, signedCoin, stars, type LemiMood } from '../dom';
 
 /** How Lemi looks telling the lesson of the day (thinking when not listed). */
 const LESSON_MOOD: Record<string, LemiMood> = {
@@ -27,7 +26,7 @@ function paybackRows(g: Parameters<Panel['render']>[0]): string {
     .map((p) => {
       const pb = payback(p);
       const pct = Math.max(0, Math.min(100, Math.round(pb.share * 100)));
-      return `<div class="kv"><span>${LOCATIONS[p.loc].icon} ${t(`loc.${p.loc}.name`)}</span><span>${pct}%${
+      return `<div class="kv"><span>${locIco(p.loc)} ${t(`loc.${p.loc}.name`)}</span><span>${pct}%${
         pb.days === 0 ? ' ✅' : pb.days ? ` · ${t('points.paybackDays', { n: pb.days })}` : ''
       }</span></div><div class="bar pb-bar"><i style="width:${pct}%"></i></div>`;
     })
@@ -85,7 +84,7 @@ export const reportPanel: Panel = {
           ? `<h3>${ico('pt_stand', '🏪')} ${t('points.title')} · ${signedCoin(r.pointsProfit)}</h3>
         <div class="card">${pts
           .map(
-            (p) => `<div class="kv"><span>${LOCATIONS[p.loc].icon} ${t(`loc.${p.loc}.name`)} <small class="muted">${t(`points.status.${p.status}`)}${p.stolen ? ` · 💸 −${p.stolen}` : ''}</small></span><b>${signedCoin(p.profit)}</b></div>`,
+            (p) => `<div class="kv"><span>${locIco(p.loc)} ${t(`loc.${p.loc}.name`)} <small class="muted">${t(`points.status.${p.status}`)}${p.stolen ? ` · 💸 −${p.stolen}` : ''}</small></span><b>${signedCoin(p.profit)}</b></div>`,
           )
           .join('')}${paybackRows(g)}</div>`
           : ''}
