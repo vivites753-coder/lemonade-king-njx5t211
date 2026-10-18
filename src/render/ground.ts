@@ -27,6 +27,8 @@ const STYLES: Record<string, TileStyle> = {
   e: { a: '#dcc68d', b: '#d6c086', side: '#b39550', img: 'tile_sand' },
   w: { a: '#56c1e6', b: '#4fb8de', side: '#2f8fb8', img: 'tile_water' },
   d: { a: '#c99a63', b: '#c1925b', side: '#8a5d33', img: 'tile_boardwalk' },
+  // the floor of the own store: wooden planks
+  f: { a: '#e3b47a', b: '#dcab70', side: '#8a5d33', img: 'tile_store_floor' },
   // the town square: stones, and a band of other stones along the walks
   c: { a: '#e6ded0', b: '#ddd4c4', side: '#9c9284', img: 'tile_plaza' },
   C: { a: '#d3c6b0', b: '#ccbea7', side: '#9c9284', img: 'tile_plaza_walk' },
@@ -71,6 +73,18 @@ function drawTile(ctx: Ctx, ch: string, x: number, y: number): void {
     case 'p':
     case 't':
       poly(ctx, [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], undefined, ch === 'p' ? '#c7ccd1' : '#d6b892', 1);
+      break;
+    case 'f':
+      for (let k = 1; k <= 2; k++) {
+        const [a1, b1] = P(x, y + k / 3);
+        const [a2, b2] = P(x + 1, y + k / 3);
+        line(ctx, a1, b1, a2, b2, '#c9935a', 1);
+      }
+      if (hash(x, y, 7) > 0.4) {
+        const [s1, t1] = P(x + 0.3 + hash(x, y, 8) * 0.4, y + 1 / 3);
+        const [s2, t2] = P(x + 0.3 + hash(x, y, 8) * 0.4, y + 2 / 3);
+        line(ctx, s1, t1, s2, t2, '#c9935a', 1);
+      }
       break;
     case 'c':
     case 'C': {

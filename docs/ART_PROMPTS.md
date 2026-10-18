@@ -18,8 +18,8 @@
    (напис гра пише сама): окремо, пізніше.
 6. ~~Лист 23: автобусна зупинка~~ — готово (автобус, навіс, знак).
 7. ~~Лист 24: лід для кухні~~ — готово.
-8. **Свій магазин (рівень 4, етап A):** лист 25 (будівля), 26 (прилавок), 27 (ратуша), 12г (іконки). Поки їх немає,
-   гра малює все це кодом.
+8. **Свій магазин (рівень 4, етап A):** лист 25 (стіни магазину в розрізі, за шаблоном), 26 (прилавок), 28 (столики й
+   буфет), 27 (ратуша), 12г (іконки). Поки їх немає, гра малює все це кодом.
 9. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
 
@@ -205,23 +205,34 @@ Row 2: 6) a shopping mall: a building with a big orange circle on the front, 7) 
 
 Імена: `ui_loc_yard, ui_loc_park, ui_loc_school, ui_loc_beach, ui_loc_station, ui_loc_mall, ui_loc_busstop, ui_btn_stock, ui_up_freezer, ui_btn_onlineads`
 
-## Лист 25. Будівля свого магазину (одна велика картинка, ISO)
+## Лист 25. Стіни свого магазину (одна картинка 1536×1024, за шаблоном)
 
-Магазин рівня 4 (місця «Площа біля ратуші» й «Тиха вулиця біля парку»). Прилавок стоїть перед будівлею окремою картинкою
-(лист 26), тому перед будинком нічого не має бути. Вивіска порожня: назву «ЛИМОНАДНА» гра пише сама.
+Магазин тепер показаний у розрізі, як ляльковий будиночок: підлога, дві задні стіни, а перед відкритим боком вулиця.
+Стіни малюються **рівно, як фасад** (не в ізометрії), як для вокзалу й торгового центру: гра сама «загне» їх.
+Обов'язково прикріпіть до запиту шаблон `docs/art/wall_store_layout.png` (вікна, табличка з назвою, годинник і дошка
+меню стоять там на своїх місцях; ліва частина верхньої смуги пурпурна, бо ця стіна коротка). Назву «ЛИМОНАДНА»,
+стрілки годинника й ціни в меню гра пише сама.
 
 ```
-A single large 3D render of ONE small city shop building for a lemonade business, centered on a perfectly flat solid magenta background (#FF00FF), square canvas 2048x2048, the building filling about 75% of the width, wide empty magenta margin on all sides, nothing cut off.
-Use the attached image as the exact style reference: isometric 3D render, cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft studio lighting from the top-left, gentle ambient occlusion, 2:1 dimetric isometric camera (about 30 degrees elevation, rotated 45 degrees), clean readable silhouette, kid-friendly mobile game art.
-The building: one tall storey with a flat roof and a low yellow parapet, cream walls. Its LONG front side faces the LOWER-LEFT of the image and is about two and a half times longer than the short side, which faces the lower-right. On the front: two big shop windows with lemons and glass jugs of lemonade on the shelves inside, a green door with a glass panel between them, small flower boxes with pink and white flowers under the windows, a yellow-and-white striped awning with a scalloped edge along the whole front above the windows, and above the awning a wide EMPTY cream signboard with an orange frame. One small window on the short side.
-NO ground plate, NO ground shadow, NO pavement, NO counter, NO people, NO tables in front of it. NO text, letters or numbers anywhere. All glass is opaque pale blue with a soft highlight.
+Flat front view (elevation, NOT isometric, no perspective) of the two inner walls of a cozy cartoon lemonade café, for a kids' mobile game. Same style as the game: soft 3D clay-like cartoon look, warm light, rounded shapes, clean simple details, no people.
+
+Follow the attached layout image EXACTLY: the same 1536x1024 canvas, the same positions and sizes of every shape.
+- Everything outside the grey areas stays pure flat magenta #FF00FF (also the whole left part of the top strip: that wall is short).
+- The top grey area is the short side wall of the café, the bottom strip is its long back wall. Paint each grey area as a wall, filling it edge to edge.
+- Magenta shapes INSIDE the grey areas are see-through windows. Keep them pure flat #FF00FF with crisp edges, paint nothing inside them; give them white wooden frames with a small sill.
+- Yellow rectangle: an empty name board in a decorative orange frame, cream colour inside, NO letters.
+- White circle: a round wall clock face with hour dots but NO hands.
+- Dark rectangle: an empty dark green chalkboard (a menu board) in a wooden frame, NO writing.
+The walls: warm cream plaster on top, a turquoise wooden wainscot on the lower third with a white rail, a wooden baseboard. On the back wall, under the name board, two wooden shelves with glass jars of yellow lemonade and fresh lemons. A string of small round colourful lights along the top of both walls, a small framed picture of a lemon on the short wall. No text or letters anywhere. Even front light, no floor, no ceiling, no perspective lines.
 ```
 
-Ім'я: `bld_store` (вирізає `tools/cut_single.py`, розмір і прив'язку підберу в `spriteMeta.ts`).
+Ім'я: `wall_store` (встановлю сам: `python tools/make_walls.py <лист> store`). Підлогу магазину (дерев'яні дошки)
+можна згенерувати окремо як велику текстуру: `warm honey-colored wooden floor planks with soft grain` (див. «Великі
+суцільні текстури»), ім'я `tile_store_floor`.
 
 ## Лист 26. Прилавок магазину (одна картинка, ISO)
 
-Довгий прилавок перед магазином замість столика. На ньому гра сама ставить глечики, стаканчики й касу, тож верх пустий.
+Довгий прилавок усередині магазину, замість столика. На ньому гра сама ставить глечики, стаканчики й касу, тож верх пустий.
 
 ```
 A single 3D render of ONE long shop counter for a lemonade shop, centered on a perfectly flat solid magenta background (#FF00FF), canvas 2048x1024, the counter filling about 80% of the width, wide empty magenta margin on all sides, nothing cut off.
@@ -231,6 +242,20 @@ NO people, NO objects on the top, NO ground shadow, NO text, letters or numbers.
 ```
 
 Ім'я: `stand_store_counter`.
+
+## Лист 28. Меблі магазину (3×1, ISO)
+
+Столики для покупців і буфет біля задньої стіни, за прилавком. Стільці стоять зліва й справа від столика (так, як
+вони стоятимуть у магазині).
+
+СІТКА 3 / 3×1 / 75% + ISO +
+
+```
+Each item is one piece of furniture of a cozy lemonade café, a cute toy-like 3D object with chunky rounded shapes, no text, letters or numbers anywhere. All at the same scale and the same camera.
+1) a small round café table with a white top on one dark grey leg, with two turquoise wooden chairs: one on the upper-left side of the table and one on the lower-right side, both facing the table; a small vase with a pink flower and a glass of lemonade on the table; 2) exactly the same table and chairs, with a plate with a slice of lemon cake and a cup on the table instead; 3) a long low wooden back-bar cabinet with a cream top, its long side facing the LOWER-LEFT, about three times longer than deep; on top: a silver coffee machine, a big glass jar of yellow lemonade with a little tap, and a cake on a stand under a glass dome.
+```
+
+Імена: `prop_cafe_table, prop_cafe_table_b, prop_store_backbar`
 
 ## Лист 27. Ратуша (одна велика картинка, ISO)
 

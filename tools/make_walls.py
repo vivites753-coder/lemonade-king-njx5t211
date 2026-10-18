@@ -55,9 +55,11 @@ assert len(strips) == 2, f'expected 2 strips, found {merged}'
 # show along the floor otherwise)
 full = (alpha > 0.5).mean(axis=1)
 for b in strips:
-    while full[b[0]] < 0.6:
+    # (a wall that stands only along part of the strip, like the left wall of the store: compared with its own rows)
+    ref = float(np.median(full[b[0]:b[1]]))
+    while full[b[0]] < 0.6 * ref:
         b[0] += 1
-    while full[b[1] - 1] < 0.6:
+    while full[b[1] - 1] < 0.6 * ref:
         b[1] -= 1
 os.makedirs('assets/bg', exist_ok=True)
 for (y0, y1), side in zip(strips, ('left', 'right')):

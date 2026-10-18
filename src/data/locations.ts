@@ -427,7 +427,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     ],
   },
 
-  // ---- level 4: the own store (a counter in front of rented premises; the stand stays at home)
+  // ---- level 4: the own store (a café room seen in a cut, open to the street; its counter instead of the stand)
   townhall: {
     id: 'townhall',
     icon: '🏛️',
@@ -443,43 +443,46 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     hourCurve: (h) => (h < 10 ? 0.7 : h < 12 ? 1.1 : h < 14 ? 1.6 : h < 17 ? 1.1 : h < 19.5 ? 1.4 : 0.8),
     cars: false,
     trafficStars: 5,
+    // the room of the store at the back (wooden floor), the square in front of its open side
     map: [
-      'gggccccccccc',
-      'gggccccccccc',
-      'gggccccccccc',
-      'cccccccccccc',
-      'cccccccccccc',
+      'ffffffffffff',
+      'ffffffffffff',
+      'ffffffffffff',
+      'ffffffffffff',
+      'ffffffffffff',
       'CCCCCCCCCCCC',
       'cccccccccccc',
       'cccccccccccc',
       'CCCCCCCCCCCC',
       'cccccccccccc',
-      G12,
-      G12,
+      'ccccccccgggg',
+      'ccccccccgggg',
     ],
     decor: [
-      // the town hall on the right, the store in the middle of the back of the square (its counter stands in front)
-      { id: 'bld_townhall', x: 8.15, y: -0.2, w: 3.75, d: 2.5, back: true },
-      { id: 'bld_store', x: 3.35, y: 0.25, w: 4.5, d: 1.8, back: true },
-      { id: 'prop_tree_a', x: 0.9, y: 0.9, s: 1.1 },
-      { id: 'prop_tree_c', x: 2.4, y: 1.7, s: 0.9 },
-      { id: 'prop_bush', x: 0.6, y: 2.7 },
-      { id: 'prop_flowers', x: 1.7, y: 3.3 },
-      // lamps at the back of the square, away from the queues (y = 4.25) and the walks (y = 5.5 and 8.5)
-      { id: 'prop_lamp', x: 2.3, y: 3.3 },
-      { id: 'prop_lamp', x: 11.5, y: 3.4 },
-      // the fountain in the middle of the square, between the two walks
+      // inside: the bar along the back wall behind the counter, tables for the customers (away from the queues at
+      // y = 4.25), plants in the corners
+      { id: 'prop_store_backbar', x: 5.0, y: 0.6 },
+      { id: 'prop_cafe_table', x: 1.4, y: 1.6 },
+      { id: 'prop_cafe_table_b', x: 1.5, y: 3.2 },
+      { id: 'prop_cafe_table', x: 8.6, y: 1.5 },
+      { id: 'prop_cafe_table_b', x: 10.3, y: 2.8 },
+      { id: 'prop_plant', x: 0.45, y: 0.45, s: 0.9 },
+      { id: 'prop_plant', x: 11.55, y: 0.5, s: 0.9 },
+      // the square: the fountain between the two walks (y = 5.5 and 8.5), benches and lamps there too
       { id: 'bld_fountain', x: 6.0, y: 7.0 },
-      { id: 'prop_bench', x: 2.4, y: 7.1 },
-      { id: 'prop_bench', x: 9.7, y: 7.1 },
-      // the front: flower beds, trees, benches
-      { id: 'prop_tree_b', x: 0.9, y: 10.4, s: 1.1 },
-      { id: 'prop_flowers', x: 3.3, y: 10.2 },
-      { id: 'prop_bench', x: 5.0, y: 9.55 },
-      { id: 'prop_flowers', x: 7.0, y: 10.3 },
-      { id: 'prop_lamp', x: 8.6, y: 9.35 },
-      { id: 'prop_tree_a', x: 10.9, y: 10.5 },
-      { id: 'prop_bin', x: 11.3, y: 9.4 },
+      { id: 'prop_bench', x: 3.3, y: 7.1 },
+      { id: 'prop_bench', x: 9.4, y: 7.1 },
+      { id: 'prop_lamp', x: 1.4, y: 7.0 },
+      { id: 'prop_lamp', x: 11.0, y: 7.0 },
+      // the town hall at the front corner of the square, behind the walk
+      { id: 'bld_townhall', x: 0.2, y: 9.15, w: 3.3, d: 2.7 },
+      { id: 'prop_lamp', x: 4.6, y: 9.35 },
+      { id: 'prop_flowers', x: 5.6, y: 10.2 },
+      { id: 'prop_bench', x: 6.9, y: 9.6 },
+      { id: 'prop_tree_b', x: 8.7, y: 10.7, s: 0.9 },
+      { id: 'prop_flowers', x: 9.9, y: 10.0 },
+      { id: 'prop_tree_a', x: 10.9, y: 10.6 },
+      { id: 'prop_bin', x: 11.4, y: 9.4 },
     ],
   },
 
@@ -499,12 +502,13 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     hourCurve: (h) => (h < 10 ? 0.9 : h < 16 ? 1.1 : h < 19 ? 1.4 : 0.8),
     cars: true,
     trafficStars: 3,
+    // the room of the store at the back, a pavement and a quiet road in front of it, the park across
     map: [
-      G12,
-      G12,
-      G12,
-      'pppppppppppp',
-      'pppppppppppp',
+      'ffffffffffff',
+      'ffffffffffff',
+      'ffffffffffff',
+      'ffffffffffff',
+      'ffffffffffff',
       'pppppppppppp',
       'rrrrrrrrrrrr',
       'RRRRRRRRRRRR',
@@ -514,17 +518,14 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       G12,
     ],
     decor: [
-      { id: 'bld_store', x: 3.35, y: 0.25, w: 4.5, d: 1.8, back: true },
-      { id: 'prop_tree_a', x: 0.8, y: 0.8, s: 1.1 },
-      { id: 'prop_tree_c', x: 2.3, y: 2.0, s: 0.9 },
-      { id: 'prop_bush', x: 0.6, y: 2.6 },
-      { id: 'prop_tree_b', x: 9.2, y: 0.9 },
-      { id: 'prop_tree_a', x: 11.0, y: 1.7, s: 0.9 },
-      { id: 'prop_flowers', x: 8.6, y: 2.4 },
-      // on the pavement, behind the queues
-      { id: 'prop_lamp', x: 2.3, y: 3.3 },
-      { id: 'prop_bin', x: 1.1, y: 3.4 },
-      { id: 'prop_bike_rack', x: 10.4, y: 3.35 },
+      // inside: the bar along the back wall behind the counter, tables for the customers, plants
+      { id: 'prop_store_backbar', x: 5.0, y: 0.6 },
+      { id: 'prop_cafe_table', x: 1.4, y: 1.7 },
+      { id: 'prop_cafe_table_b', x: 1.6, y: 3.3 },
+      { id: 'prop_cafe_table', x: 9.0, y: 1.8 },
+      { id: 'prop_plant', x: 0.45, y: 0.45, s: 0.9 },
+      { id: 'prop_plant', x: 11.55, y: 0.5, s: 0.9 },
+      { id: 'prop_plant', x: 11.45, y: 3.3, s: 0.8 },
       // across the street: the park with its pond
       { id: 'prop_tree_a', x: 1.2, y: 10.4, s: 1.1 },
       { id: 'prop_flowers', x: 2.2, y: 9.5 },

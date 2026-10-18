@@ -17,6 +17,8 @@ import { pedFacing } from './facing';
 import { drawCharacter, drawCup, pedCupSpriteId, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
 import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
+import { drawStoreRoom } from './proc/store';
+import { drawKey } from './depth';
 import { drawCritter } from './proc/critters';
 import { drawStand, drawStandPart, drawStandShadows, standSideParts, type StandPart } from './proc/stand';
 import { TRUCK } from './proc/truck';
@@ -36,6 +38,7 @@ const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
 
 type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6; // decor, ped, car, stand, thief, critter, a side part of the stand
 interface Item {
+  /** The sort key (see drawKey). */
   d: number;
   k: Kind;
   o: unknown;
@@ -346,6 +349,8 @@ export class Renderer {
     this.drawWater(ctx);
     const walls = LOCATIONS[loc].walls;
     if (walls) drawWalls(ctx, walls, LOCATIONS[loc].doors);
+    // the own store: its room in a cut (the menu on its wall shows today's prices)
+    if (LOCATIONS[loc].store) drawStoreRoom(ctx, g.S.price, (g.S.stock.cookies ?? 0) > 0 ? g.S.cookiePrice : null);
 
     if (selling && g.S.settings.showZone) {
       groundCircle(ctx, CONFIG.STAND.x, CONFIG.STAND.y, g.radius);
@@ -384,11 +389,16 @@ export class Renderer {
 
     const items = this.items;
     items.length = 0;
-    for (const d of decor) if (!d.back && seen(...decorCentre(d))) items.push({ d: d.x + d.y, k: 0, o: d });
-    for (const p of g.street.peds) if (seen(p.x, p.y)) items.push({ d: p.x + p.y, k: 1, o: p });
-    // a car is long: it is sorted so that people on the near pavement stay in front of it and people on the far one
-    // behind it (the near lane a little earlier, the far lane a little later than its middle point)
-    for (const c of g.street.cars) if (seen(c.x, c.y)) items.push({ d: c.x + c.y + (c.y > 7 ? -0.9 : 0.5), k: 2, o: c });
+    // on a street with cars the road is a layer of its own between what is behind it and what is in front of it
+    const road = LOCATIONS[loc].cars;
+    const key = (depth: number, y: number) => drawKey(depth, y, road);
+    for (const d of decor) {
+      if (d.back) continue;
+      const [cx, cy] = decorCentre(d);
+      if (seen(cx, cy)) items.push({ d: key(cx + cy, cy), k: 0, o: d });
+    }
+    for (const p of g.street.peds) if (seen(p.x, p.y)) items.push({ d: key(p.x + p.y, p.y), k: 1, o: p });
+    for (const c of g.street.cars) if (seen(c.x, c.y)) items.push({ d: key(c.x + c.y, c.y), k: 2, o: c });
     // a truck is long: its depth is that of its front left corner, so people walking past in front of it (and the lamp,
     // the mailbox, the bin there) are drawn over it; nothing behind it reaches into its picture
     // the counter of a store is long: the people of the left queue, who stand in front of its left end, are drawn after it
@@ -397,14 +407,14 @@ export class Renderer {
       : LOCATIONS[loc].store
         ? CONFIG.STAND.x + CONFIG.STAND.y - 1.8
         : CONFIG.STAND.x + CONFIG.STAND.y + 0.05;
-    items.push({ d: standD, k: 3, o: null });
+    items.push({ d: key(standD, CONFIG.STAND.y), k: 3, o: null });
     // the sign, the mascot and the TV stand apart from the table: each one is sorted by its own depth
-    for (const s of standSideParts(g)) items.push({ d: s.x + s.y, k: 6, o: s.part });
-    if (g.street.thief) items.push({ d: g.street.thief.x + g.street.thief.y, k: 4, o: g.street.thief });
-    for (const c of g.critters.list) items.push({ d: c.x + c.y + (c.kind === 'splash' ? 0.3 : 0), k: 5, o: c });
+    for (const s of standSideParts(g)) items.push({ d: key(s.x + s.y, s.y), k: 6, o: s.part });
+    const th = g.street.thief;
+    if (th) items.push({ d: key(th.x + th.y, th.y), k: 4, o: th });
+    for (const c of g.critters.list) items.push({ d: key(c.x + c.y + (c.kind === 'splash' ? 0.3 : 0), c.y), k: 5, o: c });
     this.tapTargets = [];
-    // of two cars the one in the near lane is in front
-    items.sort((a, b) => (a.k === 2 && b.k === 2 ? (a.o as { y: number }).y - (b.o as { y: number }).y : 0) || a.d - b.d);
+    items.sort((a, b) => a.d - b.d);
 
     this.bubbles.length = 0;
     this.thiefScreen = null;

@@ -139,9 +139,10 @@ export const CONFIG = {
   STIR_TAPS: 14,
   MIX_QUALITY: { perfect: 1, over: 0.93, under: 0.85, none: 0.85 },
 
-  /** The freezer makes this many trays of ice a night (the stock holds up to the maximum); a jug takes one tray. */
-  FREEZER_ICE_PER_NIGHT: 2,
-  FREEZER_ICE_MAX: 6,
+  /** The freezer fills up every night: this many trays at most (the ice that does not fit is thrown away); a jug takes
+   * one tray. */
+  FREEZER_ICE_PER_NIGHT: 14,
+  FREEZER_ICE_MAX: 14,
   ICE_PER_PITCHER: 1,
   /** Satisfaction of an iced cup indoors, where the weather matters less. */
   ICE_INDOOR: 0.08,

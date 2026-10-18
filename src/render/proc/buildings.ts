@@ -116,71 +116,6 @@ function lifeguard(ctx: Ctx, c: SpriteCall): void {
   poly(ctx, [[fx, fy - 26], [fx + 14, fy - 22], [fx, fy - 18]], '#fa5252');
 }
 
-/**
- * The own store (level 4): a cream house with a big shop window, a glass door, a striped awning over the counter in
- * front of it and the signboard above. The counter itself is the stand's (stand_store_counter).
- */
-function store(ctx: Ctx, c: SpriteCall): void {
-  const x = c.x;
-  const y = c.y;
-  const w = (c.w as number) ?? 4.5;
-  const d = (c.d as number) ?? 1.8;
-  const h = 118;
-  const wall = '#fff4d6';
-  box(ctx, x, y, w, d, h, 0, wall);
-  // the parapet of the flat roof
-  box(ctx, x - 0.05, y - 0.05, w + 0.1, d + 0.1, 7, h, '#f2c94c');
-  const front = w * 32;
-  faceY(ctx, x, y + d, 0, () => {
-    // the plinth
-    ctx.fillStyle = '#c8b38f';
-    ctx.fillRect(0, -8, front, 8);
-    // two shop windows and the glass door between them
-    const win = (u0: number, u1: number) => {
-      rrect(ctx, u0, -78, u1 - u0, 64, 3, '#bfe3f5', '#ffffff', 3);
-      line(ctx, u0 + 8, -70, u0 + 22, -56, 'rgba(255,255,255,0.7)', 3);
-      // lemons and jugs on the shelf of the window
-      ctx.fillStyle = '#e9c46a';
-      ctx.fillRect(u0 + 4, -30, u1 - u0 - 8, 4);
-      for (let i = 0; i < 4; i++) ellipse(ctx, u0 + 10 + i * ((u1 - u0 - 20) / 3), -34, 4.5, 3.5, '#ffd43b', '#e8b500', 0.8);
-      rrect(ctx, u0 + (u1 - u0) / 2 - 5, -50, 10, 16, 2, 'rgba(255,224,102,0.9)', '#74c0fc', 1);
-    };
-    win(10, front * 0.42);
-    win(front * 0.62, front - 10);
-    rrect(ctx, front * 0.46, -68, front * 0.12, 68, 3, '#8fd16a', '#5c940d', 2);
-    rrect(ctx, front * 0.46 + 4, -62, front * 0.12 - 8, 40, 2, '#d0ebff');
-    circle(ctx, front * 0.46 + front * 0.12 - 6, -32, 1.8, '#ffd43b');
-    // the signboard over the awning
-    rrect(ctx, front * 0.12, -114, front * 0.76, 22, 6, '#ffd43b', '#e8590c', 2);
-    text(ctx, `🍋 ${t('world.storeSign')}`, front / 2, -103, 12, '#c92a2a', 'center', 900);
-    // flower boxes under the windows
-    for (const u of [12, front * 0.62 + 2]) {
-      rrect(ctx, u, -14, front * 0.3, 6, 2, '#a0522d');
-      for (let i = 0; i < 5; i++) circle(ctx, u + 5 + i * (front * 0.3 - 10) / 4, -16, 3, i % 2 ? '#ff7aa8' : '#ffffff');
-    }
-  });
-  faceX(ctx, x + w, y + d, 0, () => {
-    rrect(ctx, 14, -78, 22, 30, 2, '#bfe3f5', '#ffffff', 2);
-  });
-  // the awning: yellow and white stripes from the wall out over the counter
-  const z0 = 86;
-  const z1 = 76;
-  const out = 0.75;
-  const n = Math.max(6, Math.round(w * 3));
-  const sw = w / n;
-  for (let i = 0; i < n; i++) {
-    poly(ctx, [P(x + i * sw, y + d, z0), P(x + (i + 1) * sw, y + d, z0), P(x + (i + 1) * sw, y + d + out, z1), P(x + i * sw, y + d + out, z1)], i % 2 ? '#ffffff' : '#ffd43b');
-  }
-  // the scalloped edge of the awning
-  for (let i = 0; i < n; i++) {
-    const [ax, ay] = P(x + i * sw, y + d + out, z1);
-    const [bx, by] = P(x + (i + 1) * sw, y + d + out, z1);
-    poly(ctx, [[ax, ay], [bx, by], [(ax + bx) / 2, (ay + by) / 2 + 6]], i % 2 ? '#f1f3f5' : '#fab005');
-  }
-  // its side
-  poly(ctx, [P(x + w, y + d, z0), P(x + w, y + d + out, z1), P(x + w, y + d + out, z1 - 6)], '#e8b500');
-}
-
 /** The town hall: a stone house with columns, a clock tower and a flag. */
 function townhall(ctx: Ctx, c: SpriteCall): void {
   const x = c.x;
@@ -237,7 +172,6 @@ function townhall(ctx: Ctx, c: SpriteCall): void {
 }
 
 registerProcs({
-  bld_store: store,
   bld_townhall: townhall,
   bld_house_yard: house,
   bld_school: school,

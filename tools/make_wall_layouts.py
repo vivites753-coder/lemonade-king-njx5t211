@@ -94,8 +94,28 @@ def mall():
     return im
 
 
+ROOM_D = 5  # the depth of the room of the store (src/render/proc/store.ts)
+
+
+def store():
+    """The own store (level 4) in a cut: the back wall is whole; the left wall stands only along the room (its back
+    ROOM_D tiles: u from (12 - ROOM_D) * 32 to 384), the rest of that strip is the street (magenta). Positions as in
+    STORE_WALL of src/render/proc/store.ts."""
+    im, d = sheet()
+    u0 = (12 - ROOM_D) * 32
+    rect(d, TOP, 0, -104, u0, 0, MAGENTA)
+    rect(d, TOP, 262, -86, 346, -30, MAGENTA)
+    for a, b in ((14, 80), (318, 376)):
+        rect(d, BOT, a, -86, b, -30, MAGENTA)
+    rect(d, BOT, 100, -102, 214, -86, YELLOW)
+    d.ellipse([(236 - 11) * K, wy(BOT, -76 - 11), (236 + 11) * K, wy(BOT, -76 + 11)], fill=WHITE)
+    rect(d, BOT, 254, -92, 306, -42, DARK)
+    return im
+
+
 if __name__ == '__main__':
     os.makedirs('docs/art', exist_ok=True)
     station().save('docs/art/wall_station_layout.png', optimize=True)
     mall().save('docs/art/wall_mall_layout.png', optimize=True)
-    print('docs/art/wall_station_layout.png, docs/art/wall_mall_layout.png')
+    store().save('docs/art/wall_store_layout.png', optimize=True)
+    print('docs/art/wall_station_layout.png, docs/art/wall_mall_layout.png, docs/art/wall_store_layout.png')

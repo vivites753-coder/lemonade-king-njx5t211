@@ -96,13 +96,20 @@ describe('online ads', () => {
 });
 
 describe('the freezer and the ice', () => {
-  it('makes ice every night, up to the stock limit, and a broken one makes none', () => {
+  it('fills up every night (14 trays, what does not fit is thrown away), and a broken one makes none', () => {
     const g = freshGame();
     OWNED_ICE(g, 0);
     g.restDay();
     g.openShop();
     g.sleep();
+    expect(CONFIG.FREEZER_ICE_MAX).toBe(14);
     expect(g.S.stock.ice).toBe(CONFIG.FREEZER_ICE_PER_NIGHT);
+    // some of it used: the next morning the freezer is full again, never more
+    g.S.stock.ice = 9;
+    g.restDay();
+    g.openShop();
+    g.sleep();
+    expect(g.S.stock.ice).toBe(CONFIG.FREEZER_ICE_MAX);
     for (let i = 0; i < 6; i++) {
       g.restDay();
       g.openShop();

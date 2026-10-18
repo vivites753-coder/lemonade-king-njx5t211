@@ -22,7 +22,7 @@ const SKY_IN: Record<string, [string, string]> = {
 };
 
 /** What you see through a window: the sky and today's weather. */
-function outside(ctx: Ctx, x: number, y: number, w: number, h: number): void {
+export function outside(ctx: Ctx, x: number, y: number, w: number, h: number): void {
   const [top, bottom] = SKY_IN[ENV.weather] ?? SKY_IN.sunny;
   const g = ctx.createLinearGradient(0, y, 0, y + h);
   g.addColorStop(0, top);
@@ -50,7 +50,7 @@ function outside(ctx: Ctx, x: number, y: number, w: number, h: number): void {
   }
 }
 
-function glassShine(ctx: Ctx, x: number, y: number, w: number, h: number): void {
+export function glassShine(ctx: Ctx, x: number, y: number, w: number, h: number): void {
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, h);
@@ -242,7 +242,7 @@ function departures(ctx: Ctx, u: number, v: number, w: number, h: number): void 
   }
 }
 
-function clock(ctx: Ctx, u: number, v: number, r: number): void {
+export function clock(ctx: Ctx, u: number, v: number, r: number): void {
   circle(ctx, u, v, r + 2, '#495057');
   circle(ctx, u, v, r, '#ffffff');
   for (let i = 0; i < 12; i++) {
@@ -327,7 +327,7 @@ function passingTrain(ctx: Ctx): void {
 }
 
 /** The hands of the drawn station clock (the picture is a little wider than high: rx, ry). */
-function clockHands(ctx: Ctx, u: number, v: number, rx: number, ry: number): void {
+export function clockHands(ctx: Ctx, u: number, v: number, rx: number, ry: number): void {
   ctx.save();
   ctx.translate(u, v);
   ctx.scale(rx / ry, 1);
