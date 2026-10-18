@@ -8,12 +8,13 @@ import { EQUIPMENT } from '../data/equipment';
 import { BAD_LEMONS_SHARE, LOC_EVENTS, type DayEventId } from '../data/events';
 import { COOKIES, COOKIE_TASTE, GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
 import { TIP_GLOSSARY } from '../data/glossary';
-import { LOCATIONS, LOCATION_IDS, locationUnlocked } from '../data/locations';
+import { LOCATIONS, LOCATION_IDS, locationUnlocked, storeSetupCost } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
 import { UPGRADES } from '../data/upgrades';
 import { WEATHER, WEATHER_ORDER } from '../data/weather';
 import {
   attentionRadius,
+  breakEvenCups,
   costPerCup,
   interestChance,
   lemonReduction,
@@ -26,6 +27,7 @@ import {
   iceBonus,
   serveTime,
   stockValue,
+  storeTax,
   tasteBalance,
   type Owned,
 } from './economy';
@@ -41,6 +43,7 @@ import {
   normalizeState,
   type DayReport,
   type DayState,
+  type StoreDay,
   type PointReport,
   type TruckLook,
   type GameState,
@@ -472,6 +475,11 @@ export class Game {
       this.sfx('buzz');
       return false;
     }
+    if (!this.storeReady(id)) {
+      this.toast('toast.storeClosed', { n: storeSetupCost(id) }, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
     if (this.S.location === id) return true;
     this.S.location = id;
     if (LOCATIONS[id].indoor) this.tip('indoor');
@@ -479,6 +487,50 @@ export class Game {
     this.street.reset(true);
     this.refreshInterest();
     this.sfx('pop');
+    this.changed();
+    return true;
+  }
+
+  // ---------------------------------------------------------------- the own store (level 4)
+
+  /** Today the player works at an own store (not at the stand). */
+  atStore(): boolean {
+    return !!LOCATIONS[this.S.location].store;
+  }
+
+  /** A place without a store, or one whose store is open (its renovation and equipment are paid). */
+  storeReady(id: LocationId): boolean {
+    return !LOCATIONS[id].store || !!this.S.stores[id];
+  }
+
+  canOpenStore(id: LocationId): { ok: boolean; reason?: 'na' | 'ready' | 'locked' | 'phase' | 'money' } {
+    if (!LOCATIONS[id].store) return { ok: false, reason: 'na' };
+    if (this.S.stores[id]) return { ok: false, reason: 'ready' };
+    if (!this.unlocked(id)) return { ok: false, reason: 'locked' };
+    if (this.phase !== 'morning' && this.phase !== 'prepare') return { ok: false, reason: 'phase' };
+    if (this.S.coins < storeSetupCost(id)) return { ok: false, reason: 'money' };
+    return { ok: true };
+  }
+
+  /**
+   * Opens the store of a place: its renovation and equipment are paid once, and the player works there today. It is
+   * an investment, not a cost of the day: the profits of the store pay it back (see the evening report).
+   */
+  openStore(id: LocationId): boolean {
+    const can = this.canOpenStore(id);
+    if (!can.ok) {
+      if (can.reason === 'money') this.toast('toast.storeNoMoney', { n: storeSetupCost(id), coins: this.S.coins }, 'warn');
+      this.sfx('buzz');
+      return false;
+    }
+    const cost = storeSetupCost(id);
+    this.S.coins -= cost;
+    this.S.stores[id] = { opened: this.S.day, invested: cost, earned: 0, days: 0 };
+    this.sfx('buy');
+    this.chooseLocation(id);
+    this.card('storeOpened', '🏪', { place: `@loc.${id}.name`, n: cost, rent: LOCATIONS[id].rent, util: LOCATIONS[id].store!.utilities, tax: Math.round(CONFIG.STORE_TAX * 100) });
+    this.tip('store');
+    this.save();
     this.changed();
     return true;
   }
@@ -989,7 +1041,8 @@ export class Game {
 
   /** Serving counters of the stand (the big stand and the truck have two). */
   counters(): number {
-    let n = 1;
+    // the counter of a store has two places
+    let n = this.atStore() ? 2 : 1;
     for (const id of Object.keys(this.active()) as UpgradeId[]) n = Math.max(n, UPGRADES[id].counters ?? 1);
     return n;
   }
@@ -1010,7 +1063,7 @@ export class Game {
   /** Coins needed today before opening (rent, flyers, online ads, the helper's wage). */
   openingCosts(): number {
     const D = this.D;
-    return LOCATIONS[this.S.location].rent + (D.flyers ? CONFIG.FLYERS_COST : 0) + (D.onlineAds ? CONFIG.ONLINE_ADS_COST : 0) + D.helpers * CONFIG.HELPER_WAGE;
+    return LOCATIONS[this.S.location].rent + (LOCATIONS[this.S.location].store?.utilities ?? 0) + (D.flyers ? CONFIG.FLYERS_COST : 0) + (D.onlineAds ? CONFIG.ONLINE_ADS_COST : 0) + D.helpers * CONFIG.HELPER_WAGE;
   }
 
   canStartSelling(): { ok: boolean; reason?: string } {
@@ -1037,6 +1090,12 @@ export class Game {
     if (rent) {
       this.S.coins -= rent;
       D.expenses.rent += rent;
+    }
+    // a store pays for electricity and water too
+    const utilities = LOCATIONS[this.S.location].store?.utilities ?? 0;
+    if (utilities) {
+      this.S.coins -= utilities;
+      D.expenses.utilities += utilities;
     }
     if (D.flyers) {
       this.S.coins -= CONFIG.FLYERS_COST;
@@ -1105,6 +1164,7 @@ export class Game {
       location: this.S.location,
       event: placeEventStop(this.S.location, this.D.events),
       scare: this.D.dogsUntil > this.D.hour ? { key: 'why.dogs', mult: INCIDENT.DOGS_STOP } : undefined,
+      store: this.atStore(),
     });
   }
 
@@ -1600,7 +1660,8 @@ export class Game {
     // unsold lemonade: poured out, or kept for tomorrow in the cooler (cups from the cooler are sold first)
     let wasted = D.cupsReady;
     let carried = 0;
-    if (this.active().cooler) {
+    // the cooler (or the cold display of a store) keeps it
+    if (this.active().cooler || (this.atStore() && D.opened)) {
       const oldLeft = Math.max(0, D.carriedIn - D.funnel.sold);
       wasted = Math.min(oldLeft, D.cupsReady);
       carried = D.cupsReady - wasted;
@@ -1617,6 +1678,7 @@ export class Game {
     const pointsProfit = pointsIncome - pointsCosts;
     // the rent and the wages were paid in the morning; the takings minus the goods (and a theft) come in now
     S.coins += pointsProfit + prepaid;
+    const store = this.storeDay();
     const income = D.sales + D.bonus + pointsIncome;
     const expenses = dayExpenses(D) + pointsCosts;
     const f = { ...D.funnel };
@@ -1655,6 +1717,9 @@ export class Game {
       points,
       pointsProfit,
       pointsUnlocked: false,
+      utilities: D.expenses.utilities,
+      tax: D.expenses.tax,
+      store,
     };
     // reputation milestones open new places for good
     const before = S.bestRep;
@@ -1677,6 +1742,36 @@ export class Game {
     if (report.unlocked.length) this.card('locUnlocked', '🔓', { list: report.unlocked.map((id) => `@loc.${id}.name`).join(', ') });
     if (report.pointsUnlocked) this.card('pointsUnlocked', '🏪');
     for (const p of S.points) if (p.issue === 'stole' && p.seller) this.staffCard(p);
+  }
+
+  /**
+   * The evening of a day at the own store: the tax on the day's profit (the takings minus the costs of the day; not
+   * the takings themselves, and nothing on a loss), and the payback of the store.
+   */
+  private storeDay(): StoreDay | undefined {
+    const S = this.S;
+    const D = this.D;
+    const st = S.stores[S.location];
+    if (!this.atStore() || !D.opened || !st) return undefined;
+    const e = D.expenses;
+    // (training belongs to the sellers of the other stands, not to the store)
+    const taxBase = D.sales - (dayExpenses(D) - e.training);
+    const tax = Math.min(S.coins, storeTax(taxBase));
+    S.coins -= tax;
+    e.tax += tax;
+    st.earned += taxBase - tax;
+    st.days++;
+    const fixed = e.rent + e.utilities + e.flyers + e.onlineAds + e.wages;
+    return {
+      loc: S.location,
+      taxBase,
+      tax,
+      fixed,
+      breakEven: breakEvenCups(fixed, S.price, costPerCup(D.recipeUsed, this.active())),
+      invested: st.invested,
+      earned: st.earned,
+      days: st.days,
+    };
   }
 
   // ---------------------------------------------------------------- accidents and lucky finds
@@ -2243,14 +2338,17 @@ export class Game {
     // worn equipment may break overnight; the player finds out in the morning
     const broke = rollBreaks(this.S, this.rng);
     // the freezer makes ice for tomorrow; a broken one makes none, and what was in it melts
+    const iceBefore = this.S.stock.ice ?? 0;
     if (this.S.upgrades.freezer) {
       if (this.S.broken.freezer) this.S.stock.ice = 0;
-      else this.S.stock.ice = Math.min(CONFIG.FREEZER_ICE_MAX, (this.S.stock.ice ?? 0) + CONFIG.FREEZER_ICE_PER_NIGHT);
+      else this.S.stock.ice = Math.min(CONFIG.FREEZER_ICE_MAX, iceBefore + CONFIG.FREEZER_ICE_PER_NIGHT);
     }
     this.S.weatherHistory.push(this.D.weather);
     if (this.S.weatherHistory.length > 30) this.S.weatherHistory.shift();
     this.S.day++;
     this.startMorning(spoiled, broke);
+    const iceMade = (this.S.stock.ice ?? 0) - iceBefore;
+    if (iceMade > 0) this.toast('toast.iceMade', { n: iceMade, total: this.S.stock.ice ?? 0, max: CONFIG.FREEZER_ICE_MAX }, 'good');
   }
 
   /** Back to the main menu (the game stays saved at its last phase). */

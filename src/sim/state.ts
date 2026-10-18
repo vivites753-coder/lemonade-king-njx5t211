@@ -47,6 +47,18 @@ export interface DayHistory {
   weather: WeatherId;
 }
 
+/** An own store (level 4). */
+export interface StoreState {
+  /** The day it opened. */
+  opened: number;
+  /** What its renovation and equipment cost. */
+  invested: number;
+  /** Profit (after the tax) of all the days the player worked there: the payback of `invested`. */
+  earned: number;
+  /** Days the player worked there. */
+  days: number;
+}
+
 /** Everything that survives between days. */
 export interface TruckLook {
   /** Colour scheme (see TRUCK_SKINS). */
@@ -78,6 +90,8 @@ export interface GameState {
   /** Extra stands at other places, run by sellers. */
   points: Point[];
   nextPointId: number;
+  /** The own stores of level 4 that are open (their renovation and equipment are paid), by place. */
+  stores: Partial<Record<LocationId, StoreState>>;
   location: LocationId;
   price: number;
   /** Price of one cookie (cookies are sold together with lemonade). */
@@ -189,6 +203,25 @@ export interface DayReport {
   pointsProfit: number;
   /** Tonight the reputation first reached the level for extra stands. */
   pointsUnlocked: boolean;
+  /** The own store (level 4): electricity and water, and the tax on the profit (older reports: none). */
+  utilities?: number;
+  tax?: number;
+  /** A day at the own store: its numbers for the lessons and the payback. */
+  store?: StoreDay;
+}
+
+export interface StoreDay {
+  loc: LocationId;
+  /** The profit the tax is counted from (the takings minus the costs of the day), and the tax. */
+  taxBase: number;
+  tax: number;
+  /** Costs that do not depend on the cups sold (rent, utilities, advertising, wages), and the cups that pay them. */
+  fixed: number;
+  breakEven: number | null;
+  /** The payback of the store so far. */
+  invested: number;
+  earned: number;
+  days: number;
 }
 
 /** Everything about the current day. Saved too, so a reload can continue the day. */
@@ -208,7 +241,8 @@ export interface DayState {
   cookieSales: number;
   cookiesSold: number;
   bonus: number;
-  expenses: { ingredients: number; rent: number; flyers: number; onlineAds: number; stolen: number; wages: number; repairs: number; training: number };
+  /** utilities and tax: the own store only (level 4). */
+  expenses: { ingredients: number; rent: number; flyers: number; onlineAds: number; stolen: number; wages: number; repairs: number; training: number; utilities: number; tax: number };
   flyers: boolean;
   /** Online ads are on today (they cost CONFIG.ONLINE_ADS_COST when the selling starts). */
   onlineAds: boolean;
@@ -285,6 +319,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     truck: { skin: 0, logo: 0, text: '' },
     points: [],
     nextPointId: 1,
+    stores: {},
     location: 'yard',
     price: 8,
     cookiePrice: 5,
@@ -316,7 +351,7 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     cookieSales: 0,
     cookiesSold: 0,
     bonus: 0,
-    expenses: { ingredients: 0, rent: 0, flyers: 0, onlineAds: 0, stolen: 0, wages: 0, repairs: 0, training: 0 },
+    expenses: { ingredients: 0, rent: 0, flyers: 0, onlineAds: 0, stolen: 0, wages: 0, repairs: 0, training: 0, utilities: 0, tax: 0 },
     flyers: false,
     onlineAds: false,
     helper: false,
@@ -390,5 +425,5 @@ export function lemonsTotal(stock: Stock): number {
 
 export function dayExpenses(d: DayState): number {
   const e = d.expenses;
-  return e.ingredients + e.rent + e.flyers + e.onlineAds + e.stolen + e.wages + e.repairs + e.training;
+  return e.ingredients + e.rent + e.flyers + e.onlineAds + e.stolen + e.wages + e.repairs + e.training + (e.utilities ?? 0) + (e.tax ?? 0);
 }

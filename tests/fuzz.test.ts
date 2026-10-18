@@ -48,8 +48,9 @@ function roundTrip(g: Game): void {
 
 function playRandomDay(g: Game, rnd: () => number): void {
   const pick = <T,>(a: T[]): T => a[Math.floor(rnd() * a.length)];
-  // morning
-  const open = LOCATION_IDS.filter((id) => g.unlocked(id) && !g.S.points.some((p) => p.loc === id));
+  // morning (level 4: now and then the player opens a store when the money is there)
+  for (const id of LOCATION_IDS) if (g.canOpenStore(id).ok && rnd() < 0.3) g.openStore(id);
+  const open = LOCATION_IDS.filter((id) => g.unlocked(id) && g.storeReady(id) && !g.S.points.some((p) => p.loc === id));
   g.chooseLocation(pick(open.length ? open : (['yard'] as LocationId[])));
   for (const id of Object.keys(g.S.broken) as (keyof typeof g.S.broken)[]) if (rnd() < 0.5) g.repair(id);
   if (rnd() < 0.15) roundTrip(g);
@@ -138,7 +139,7 @@ describe('random play', () => {
       g.newGame({ ageMode: seed % 2 ? 'pro' : 'kid', avatar: seed % 3 ? 'boy' : 'girl', lang: 'uk', seed });
       // a rich start opens more of the game (points, trucks, helpers)
       if (seed % 3 === 0) {
-        g.debugAddCoins(3000);
+        g.debugAddCoins(seed % 2 ? 3000 : 6000);
         g.S.bestRep = 4;
         g.S.rep = 4;
       }

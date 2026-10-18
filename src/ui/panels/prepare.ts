@@ -3,13 +3,13 @@ import type { LocationId } from '../../core/types';
 import { UNIT_COST } from '../../data/goods';
 import { LOCATIONS } from '../../data/locations';
 import { t } from '../../i18n';
-import { costPerCup, lemonsConsumed, tasteKey } from '../../sim/economy';
+import { breakEvenCups, costPerCup, lemonsConsumed, tasteKey } from '../../sim/economy';
 import { coin, fmtDur, fmtHour, ico, round1, toggle } from '../dom';
-import { locationCards } from './morning';
+import { locationCards, pickPlace } from './morning';
 import type { Panel } from './types';
 
 /** The place list is opened from the "Change place" button. */
-let pickPlace = false;
+let placeList = false;
 
 /** Scrolls the stage window so that the button and the place list under it are in view. */
 function showPlaces(): void {
@@ -44,6 +44,9 @@ export const preparePanel: Panel = {
     const loc = LOCATIONS[S.location];
     const chk = g.canStartSelling();
     const used = lemonsConsumed(r, up);
+    // the costs that do not depend on the cups (rent, utilities, advertising, wages) and the cups that pay them
+    const fixed = g.openingCosts();
+    const be = breakEvenCups(fixed, S.price, cost);
     const formula = kid
       ? ''
       : `<div class="formula">(${used}🍋×${UNIT_COST.lemons} + ${CONFIG.WATER_PER_PITCHER}💧×${UNIT_COST.water} + ${r.sugar}🍬×${UNIT_COST.sugar} + 10🥤×${UNIT_COST.cups}) ÷ 10 = <b>${round1(cost)}</b></div>`;
@@ -67,6 +70,12 @@ export const preparePanel: Panel = {
           <div class="kv"><span>${t('prep.profitCup')}</span><b>${coin((profit >= 0 ? '+' : '') + round1(profit), profit >= 0 ? 'pos' : 'neg')}</b></div>
           ${kid ? '' : `<div class="formula">${S.price} − ${round1(cost)} = <b>${round1(profit)}</b></div>`}
           ${profit < 0 ? `<div class="warn-box">${t('prep.loss')}</div>` : ''}
+          ${
+            fixed > 0
+              ? `<div class="kv be-line"><span>${ico('breakeven', '⚖️')} ${t('prep.breakEven')}</span><b>${be === null ? '—' : t('prep.breakEvenN', { n: be })}</b></div>
+          <small class="muted">${be === null ? t('prep.breakEvenNever') : t('prep.breakEvenHelp', { cost: fixed })}</small>`
+              : ''
+          }
         </div>
 
         ${
@@ -97,9 +106,10 @@ export const preparePanel: Panel = {
         ${g.counters() >= 2 && g.helperCap() < 2 && g.helperOpen() ? `<div class="note">🔒 ${t('prep.helper2Locked', { n: CONFIG.HELPER2_MIN_REP })}</div>` : ''}
 
         <h3>📍 ${t(`loc.${S.location}.name`)}</h3>
-        <div class="good-box">🕐 ${t('prep.open', { a: fmtHour(g.openingHour(false)), b: fmtHour(CONFIG.DAY_END) })}${loc.rent ? ` · ${t('prep.rent', { n: coin(loc.rent) })}` : ''}</div>
-        <button class="btn btn-sm${chk.reason === 'toast.noRent' ? ' btn-y' : ''}" data-act="place">📍 ${t(pickPlace ? 'prep.placeHide' : 'prep.place')}</button>
-        ${pickPlace ? `<div class="locs" style="margin-top:8px">${locationCards(g)}</div>` : ''}
+        <div class="good-box">🕐 ${t('prep.open', { a: fmtHour(g.openingHour(false)), b: fmtHour(CONFIG.DAY_END) })}${loc.rent ? ` · ${t('prep.rent', { n: coin(loc.rent) })}` : ''}${loc.store ? ` · ${t('prep.utilities', { n: coin(loc.store.utilities) })}` : ''}</div>
+        ${loc.store ? `<div class="note">${ico('tax', '🧾')} ${t('prep.tax', { n: Math.round(CONFIG.STORE_TAX * 100) })}</div>` : ''}
+        <button class="btn btn-sm${chk.reason === 'toast.noRent' ? ' btn-y' : ''}" data-act="place">📍 ${t(placeList ? 'prep.placeHide' : 'prep.place')}</button>
+        ${placeList ? `<div class="locs" style="margin-top:8px">${locationCards(g)}</div>` : ''}
         ${!chk.ok && chk.reason ? `<div class="warn-box">${t(chk.reason, { rent: g.openingCosts() })}</div>` : ''}
       </div>
       <div class="panel-foot">
@@ -119,14 +129,18 @@ export const preparePanel: Panel = {
     if (act === 'helpers') g.setHelpers(g.D.helpers + d);
     if (act === 'kitchen') g.goKitchen();
     if (act === 'place') {
-      pickPlace = !pickPlace;
+      placeList = !placeList;
       g.changed();
       // the list opens under the button, on small screens below the edge of the window: scroll it into view
-      if (pickPlace) setTimeout(showPlaces, 30);
+      if (placeList) setTimeout(showPlaces, 30);
     }
-    if (act === 'loc' && g.chooseLocation(arg as LocationId)) {
-      pickPlace = false;
-      g.changed();
+    if (act === 'loc') {
+      const before = g.S.location;
+      pickPlace(g, ui, arg as LocationId);
+      if (g.S.location !== before) {
+        placeList = false;
+        g.changed();
+      }
     }
     if (act === 'start') g.startSelling();
     if (act === 'market') g.goMarket();

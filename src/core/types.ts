@@ -1,5 +1,5 @@
 export type WeatherId = 'sunny' | 'hot' | 'cloudy' | 'rain' | 'wind' | 'cold';
-export type LocationId = 'yard' | 'park' | 'school' | 'beach' | 'station' | 'mall' | 'busstop';
+export type LocationId = 'yard' | 'park' | 'school' | 'beach' | 'station' | 'mall' | 'busstop' | 'townhall' | 'parkside';
 export type PedTypeId = 'kid' | 'adult' | 'granny' | 'sport' | 'tourist';
 export type UpgradeId =
   | 'umbrella'

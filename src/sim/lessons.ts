@@ -20,6 +20,11 @@ export function pickLesson(S: GameState, D: DayState, r: DayReport): { key: stri
   // the very first evening teaches the main formula
   if (S.day === 1) return { key: 'lesson.profit', params: { income: r.income, expenses: r.expenses, profit: r.profit } };
   if (r.broke.length) return { key: 'lesson.breakdown', params: { item: `@equip.${r.broke[0]}`, cost: r.repairs } };
+  // the own store: the costs of a real business (the cups that pay the fixed costs, the tax on the profit)
+  const st = r.store;
+  if (st && r.profit < 0 && st.breakEven !== null && f.sold < st.breakEven)
+    return { key: 'lesson.storeBreakEven', params: { fixed: st.fixed, n: st.breakEven, sold: f.sold } };
+  if (st && st.tax > 0 && st.days <= 2) return { key: 'lesson.storeTax', params: { base: st.taxBase, tax: st.tax, sales: r.sales } };
   const badWeather = D.weather === 'rain' || D.weather === 'cold';
   if (loc.indoor && badWeather && f.passed > 0) return { key: 'lesson.indoorRain', params: { w: `@weather.${D.weather}`, n: f.passed } };
   if (badWeather && f.sold < 15)
@@ -46,6 +51,13 @@ export function pickLesson(S: GameState, D: DayState, r: DayReport): { key: stri
   if (S.upgrades.freezer && (D.weather === 'hot' || D.weather === 'sunny')) {
     if (r.coldSold >= 5) return { key: 'lesson.cold', params: { n: r.coldSold } };
     if (r.coldSold === 0 && (S.stock.ice ?? 0) >= CONFIG.ICE_PER_PITCHER && !S.broken.freezer) return { key: 'lesson.iceUnused', params: {} };
+  }
+  // the payback of the store: how much of its opening has come back, and how long the rest takes at this pace
+  if (st) {
+    const pct = Math.max(0, Math.min(100, Math.round((st.earned / st.invested) * 100)));
+    if (st.earned >= st.invested) return { key: 'lesson.storePaid', params: { days: st.days, n: st.invested } };
+    const perDay = st.earned / st.days;
+    if (perDay > 0) return { key: 'lesson.storePayback', params: { pct, total: st.invested, days: Math.ceil((st.invested - st.earned) / perDay) } };
   }
   return { key: 'lesson.profit', params: { income: r.income, expenses: r.expenses, profit: r.profit } };
 }

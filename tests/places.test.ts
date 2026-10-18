@@ -12,7 +12,8 @@ function freshGame(seed = 7): Game {
   return g;
 }
 
-const OUTDOOR = LOCATION_IDS.filter((id) => !LOCATIONS[id].indoor);
+// the places of the stand outdoors (the stores of level 4 are rented premises with their own rules, see store.test)
+const OUTDOOR = LOCATION_IDS.filter((id) => !LOCATIONS[id].indoor && !LOCATIONS[id].store);
 const profit = (loc: LocationId, weather: 'rain' | 'hot' | 'sunny') =>
   expectedDay({ loc, weather, price: LOCATIONS[loc].fairPrice, upgrades: { sign: true, banner: true }, rep: 2, from: 10.5 }).profit;
 

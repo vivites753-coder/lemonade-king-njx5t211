@@ -27,6 +27,15 @@ export interface BusStopDef {
   toward: number;
 }
 
+/** The own store of level 4: premises in town, rented by the day, with a counter instead of the stand. */
+export interface StoreDef {
+  /** Paid once, the first time: the renovation of the premises and the equipment (counter, cold display, signboard). */
+  renovation: number;
+  equipment: number;
+  /** Electricity and water: paid every day the store opens, like the rent. */
+  utilities: number;
+}
+
 export interface LocationDef {
   id: LocationId;
   icon: string;
@@ -47,6 +56,8 @@ export interface LocationDef {
   doors?: [number, number];
   /** Set at a bus stop (see BusStopDef). */
   bus?: BusStopDef;
+  /** Set where the player has a store instead of a stand (level 4, see StoreDef). */
+  store?: StoreDef;
   /** Opens when the best reputation reaches this many stars. */
   minRep?: number;
   mix: Record<PedTypeId, number>;
@@ -415,9 +426,125 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       { id: 'prop_tree_a', x: 11.0, y: 10.8, s: 0.9 },
     ],
   },
+
+  // ---- level 4: the own store (a counter in front of rented premises; the stand stays at home)
+  townhall: {
+    id: 'townhall',
+    icon: '🏛️',
+    density: 36,
+    rent: 200,
+    travel: 1,
+    fairPrice: 14,
+    weatherSensitivity: 0.9,
+    minRep: 4,
+    store: { renovation: 2500, equipment: 2500, utilities: 50 },
+    mix: { kid: 0.15, adult: 0.4, granny: 0.1, sport: 0.05, tourist: 0.3 },
+    // office workers at lunch, tourists all day, a walk in the evening
+    hourCurve: (h) => (h < 10 ? 0.7 : h < 12 ? 1.1 : h < 14 ? 1.6 : h < 17 ? 1.1 : h < 19.5 ? 1.4 : 0.8),
+    cars: false,
+    trafficStars: 5,
+    map: [
+      'gggccccccccc',
+      'gggccccccccc',
+      'gggccccccccc',
+      'cccccccccccc',
+      'cccccccccccc',
+      'CCCCCCCCCCCC',
+      'cccccccccccc',
+      'cccccccccccc',
+      'CCCCCCCCCCCC',
+      'cccccccccccc',
+      G12,
+      G12,
+    ],
+    decor: [
+      // the town hall on the right, the store in the middle of the back of the square (its counter stands in front)
+      { id: 'bld_townhall', x: 8.15, y: -0.2, w: 3.75, d: 2.5, back: true },
+      { id: 'bld_store', x: 3.35, y: 0.25, w: 4.5, d: 1.8, back: true },
+      { id: 'prop_tree_a', x: 0.9, y: 0.9, s: 1.1 },
+      { id: 'prop_tree_c', x: 2.4, y: 1.7, s: 0.9 },
+      { id: 'prop_bush', x: 0.6, y: 2.7 },
+      { id: 'prop_flowers', x: 1.7, y: 3.3 },
+      // lamps at the back of the square, away from the queues (y = 4.25) and the walks (y = 5.5 and 8.5)
+      { id: 'prop_lamp', x: 2.3, y: 3.3 },
+      { id: 'prop_lamp', x: 11.5, y: 3.4 },
+      // the fountain in the middle of the square, between the two walks
+      { id: 'bld_fountain', x: 6.0, y: 7.0 },
+      { id: 'prop_bench', x: 2.4, y: 7.1 },
+      { id: 'prop_bench', x: 9.7, y: 7.1 },
+      // the front: flower beds, trees, benches
+      { id: 'prop_tree_b', x: 0.9, y: 10.4, s: 1.1 },
+      { id: 'prop_flowers', x: 3.3, y: 10.2 },
+      { id: 'prop_bench', x: 5.0, y: 9.55 },
+      { id: 'prop_flowers', x: 7.0, y: 10.3 },
+      { id: 'prop_lamp', x: 8.6, y: 9.35 },
+      { id: 'prop_tree_a', x: 10.9, y: 10.5 },
+      { id: 'prop_bin', x: 11.3, y: 9.4 },
+    ],
+  },
+
+  parkside: {
+    id: 'parkside',
+    icon: '🏪',
+    density: 30,
+    rent: 80,
+    travel: 1,
+    fairPrice: 13,
+    weatherSensitivity: 1.0,
+    minRep: 4,
+    // smaller premises: a cheaper renovation
+    store: { renovation: 1500, equipment: 2500, utilities: 30 },
+    mix: { kid: 0.25, adult: 0.3, granny: 0.2, sport: 0.15, tourist: 0.1 },
+    // like the park across the street: busier in the afternoon and in the evening
+    hourCurve: (h) => (h < 10 ? 0.9 : h < 16 ? 1.1 : h < 19 ? 1.4 : 0.8),
+    cars: true,
+    trafficStars: 3,
+    map: [
+      G12,
+      G12,
+      G12,
+      'pppppppppppp',
+      'pppppppppppp',
+      'pppppppppppp',
+      'rrrrrrrrrrrr',
+      'RRRRRRRRRRRR',
+      'pppppppppppp',
+      G12,
+      'gggwwwgggggg',
+      G12,
+    ],
+    decor: [
+      { id: 'bld_store', x: 3.35, y: 0.25, w: 4.5, d: 1.8, back: true },
+      { id: 'prop_tree_a', x: 0.8, y: 0.8, s: 1.1 },
+      { id: 'prop_tree_c', x: 2.3, y: 2.0, s: 0.9 },
+      { id: 'prop_bush', x: 0.6, y: 2.6 },
+      { id: 'prop_tree_b', x: 9.2, y: 0.9 },
+      { id: 'prop_tree_a', x: 11.0, y: 1.7, s: 0.9 },
+      { id: 'prop_flowers', x: 8.6, y: 2.4 },
+      // on the pavement, behind the queues
+      { id: 'prop_lamp', x: 2.3, y: 3.3 },
+      { id: 'prop_bin', x: 1.1, y: 3.4 },
+      { id: 'prop_bike_rack', x: 10.4, y: 3.35 },
+      // across the street: the park with its pond
+      { id: 'prop_tree_a', x: 1.2, y: 10.4, s: 1.1 },
+      { id: 'prop_flowers', x: 2.2, y: 9.5 },
+      { id: 'prop_duck', x: 4.4, y: 10.5 },
+      { id: 'prop_lamp', x: 6.6, y: 9.25 },
+      { id: 'prop_tree_c', x: 7.5, y: 10.4, s: 0.9 },
+      { id: 'prop_bench', x: 8.9, y: 9.45 },
+      { id: 'prop_tree_b', x: 10.6, y: 10.5 },
+      { id: 'prop_bush', x: 11.2, y: 9.5 },
+    ],
+  },
 };
 
 export const LOCATION_IDS = Object.keys(LOCATIONS) as LocationId[];
+
+/** What opening the store of a place costs once (0 where there is no store). */
+export function storeSetupCost(id: LocationId): number {
+  const s = LOCATIONS[id].store;
+  return s ? s.renovation + s.equipment : 0;
+}
 
 export function locationUnlocked(bestRep: number, id: LocationId): boolean {
   return bestRep >= (LOCATIONS[id].minRep ?? 0) - 1e-9;

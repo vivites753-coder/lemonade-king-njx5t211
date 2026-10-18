@@ -391,7 +391,12 @@ export class Renderer {
     for (const c of g.street.cars) if (seen(c.x, c.y)) items.push({ d: c.x + c.y + (c.y > 7 ? -0.9 : 0.5), k: 2, o: c });
     // a truck is long: its depth is that of its front left corner, so people walking past in front of it (and the lamp,
     // the mailbox, the bin there) are drawn over it; nothing behind it reaches into its picture
-    const standD = g.active().truck ? TRUCK.x0 + TRUCK.y0 + TRUCK.d - 0.6 : CONFIG.STAND.x + CONFIG.STAND.y + 0.05;
+    // the counter of a store is long: the people of the left queue, who stand in front of its left end, are drawn after it
+    const standD = g.active().truck
+      ? TRUCK.x0 + TRUCK.y0 + TRUCK.d - 0.6
+      : LOCATIONS[loc].store
+        ? CONFIG.STAND.x + CONFIG.STAND.y - 1.8
+        : CONFIG.STAND.x + CONFIG.STAND.y + 0.05;
     items.push({ d: standD, k: 3, o: null });
     // the sign, the mascot and the TV stand apart from the table: each one is sorted by its own depth
     for (const s of standSideParts(g)) items.push({ d: s.x + s.y, k: 6, o: s.part });

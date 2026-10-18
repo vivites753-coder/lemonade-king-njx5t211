@@ -1,4 +1,6 @@
+import { CONFIG } from '../../core/config';
 import { payback } from '../../sim/points';
+import type { DayReport } from '../../sim/state';
 import { t } from '../../i18n';
 import { coin, ico, lemiFace, locIco, signedCoin, stars, type LemiMood } from '../dom';
 
@@ -11,12 +13,27 @@ const LESSON_MOOD: Record<string, LemiMood> = {
   'lesson.waste': 'sad',
   'lesson.soldout': 'surprised',
   'lesson.rest': 'neutral',
+  'lesson.storeBreakEven': 'sad',
+  'lesson.storePaid': 'happy',
 };
 import type { Panel } from './types';
 
 function fbar(label: string, n: number, max: number): string {
   const w = max > 0 ? Math.max(2, Math.round((n / max) * 100)) : 0;
   return `<div class="fbar"><span>${label}</span><b>${n}</b><div class="bar"><i style="width:${w}%"></i></div></div>`;
+}
+
+/** The own store: how much of its opening has come back. */
+function storeBox(r: DayReport): string {
+  const s = r.store;
+  if (!s) return '';
+  const pct = Math.max(0, Math.min(100, Math.round((s.earned / s.invested) * 100)));
+  const paid = s.earned >= s.invested;
+  return `<div class="card store-pb">
+    <div class="kv"><span>${ico('store', '🏪')} <b>${t('report.storeTitle')}</b> · ${t(`loc.${s.loc}.name`)}</span><b>${pct}%</b></div>
+    <div class="bar pb-bar"><i style="width:${pct}%"></i></div>
+    <small class="${paid ? 'pos' : 'muted'}">${paid ? t('report.storePaid') : t('report.storePayback', { n: coin(Math.max(0, s.earned)), total: coin(s.invested) })}</small>
+  </div>`;
 }
 
 /** Payback of every stand: how much of what it cost has come back. */
@@ -54,12 +71,14 @@ export const reportPanel: Panel = {
     const expenseRows: [string, number][] = [
       [`🍋 ${t('report.ingredients')}`, r.ingredients],
       [`🏠 ${t('report.rent')}`, r.rent],
+      [`${ico('utilities', '🔌')} ${t('report.utilities')}`, r.utilities ?? 0],
       [`📄 ${t('report.flyers')}`, r.flyers],
       [`${ico('btn_onlineads', '📱')} ${t('report.onlineAds')}`, r.onlineAds ?? 0],
       [`🦊 ${t('report.stolen')}`, r.stolen],
       [`🍳 ${t('report.wages')}`, r.wages ?? 0],
       [`🔧 ${t('report.repairs')}`, r.repairs ?? 0],
       [`🎓 ${t('report.training')}`, r.training ?? 0],
+      [`${ico('tax', '🧾')} ${t('report.tax', { n: Math.round(CONFIG.STORE_TAX * 100) })}`, r.tax ?? 0],
       [`${ico('pt_stand', '🏪')} ${t('report.pointsCosts')}`, pts.reduce((n, p) => n + p.ingredients + p.rent + p.wage + p.stolen, 0)],
     ];
     const pointsIncome = pts.reduce((n, p) => n + p.revenue, 0);
@@ -80,6 +99,7 @@ export const reportPanel: Panel = {
           ${expenseRows.filter(([, v]) => v > 0).map(([k, v]) => `<div class="kv"><span>${k}</span><span class="neg">${coin('−' + v, 'neg')}</span></div>`).join('')}
         </div>`}
         <div class="lesson">${lemiFace(true, r.lesson.key === 'lesson.profit' ? (r.profit >= 0 ? 'happy' : 'sad') : (LESSON_MOOD[r.lesson.key] ?? 'think'))}<div><b>💡 ${t('report.lesson')}</b>${lessonText}</div></div>
+        ${storeBox(r)}
         ${pts.length
           ? `<h3>${ico('pt_stand', '🏪')} ${t('points.title')} · ${signedCoin(r.pointsProfit)}</h3>
         <div class="card">${pts

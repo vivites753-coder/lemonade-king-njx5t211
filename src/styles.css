@@ -4473,3 +4473,25 @@ html.hud-editing #hud [data-move].dragging {
   height: 1.15em;
   vertical-align: middle;
 }
+
+/* the own store (level 4): its tag on the place card and the line about opening it */
+.loc .tag-store {
+  color: #9c36b5;
+  background: #f8f0fc;
+}
+.loc-store {
+  display: block;
+  font-size: calc(13px * var(--fs, 1));
+  font-weight: 900;
+  color: #9c36b5;
+  margin: 2px 0;
+}
+html.phone .loc-store {
+  font-size: calc(12px * var(--fs, 1));
+}
+.be-line {
+  margin-top: 6px;
+}
+.store-pb {
+  margin-top: 8px;
+}

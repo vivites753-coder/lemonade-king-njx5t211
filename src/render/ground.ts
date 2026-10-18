@@ -27,6 +27,9 @@ const STYLES: Record<string, TileStyle> = {
   e: { a: '#dcc68d', b: '#d6c086', side: '#b39550', img: 'tile_sand' },
   w: { a: '#56c1e6', b: '#4fb8de', side: '#2f8fb8', img: 'tile_water' },
   d: { a: '#c99a63', b: '#c1925b', side: '#8a5d33', img: 'tile_boardwalk' },
+  // the town square: stones, and a band of other stones along the walks
+  c: { a: '#e6ded0', b: '#ddd4c4', side: '#9c9284', img: 'tile_plaza' },
+  C: { a: '#d3c6b0', b: '#ccbea7', side: '#9c9284', img: 'tile_plaza_walk' },
   // indoor floors
   m: { a: '#f8f3eb', b: '#ede5d6', side: '#b8a98f', img: 'tile_mall' },
   n: { a: '#ead9bf', b: '#e4d2b6', side: '#b8a98f', img: 'tile_mall_walk' },
@@ -69,6 +72,23 @@ function drawTile(ctx: Ctx, ch: string, x: number, y: number): void {
     case 't':
       poly(ctx, [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], undefined, ch === 'p' ? '#c7ccd1' : '#d6b892', 1);
       break;
+    case 'c':
+    case 'C': {
+      // four stones a tile, a little uneven
+      const edge = ch === 'c' ? '#cbbfac' : '#b9aa91';
+      poly(ctx, [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], undefined, edge, 1);
+      const [m1, n1] = P(x + 0.5, y);
+      const [m2, n2] = P(x + 0.5, y + 1);
+      line(ctx, m1, n1, m2, n2, edge, 0.8);
+      const [k1, l1] = P(x, y + 0.5);
+      const [k2, l2] = P(x + 1, y + 0.5);
+      line(ctx, k1, l1, k2, l2, edge, 0.8);
+      if (hash(x, y, 2) > 0.7) {
+        const [sx, sy] = P(x + 0.25 + (hash(x, y, 4) > 0.5 ? 0.5 : 0), y + 0.25);
+        poly(ctx, [[sx, sy - 4], [sx + 8, sy], [sx, sy + 4], [sx - 8, sy]], 'rgba(255,255,255,0.18)');
+      }
+      break;
+    }
     case 'R': {
       const [a1, b1] = P(x + 0.2, y, 0);
       const [a2, b2] = P(x + 0.65, y, 0);

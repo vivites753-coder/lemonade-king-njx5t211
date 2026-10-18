@@ -109,7 +109,8 @@ export function pointUps(p: Point): Owned {
 
 /** Places where a new stand can go: open for the player, not home (home is always yours), not taken. */
 export function freePlaces(S: GameState): LocationId[] {
-  return LOCATION_IDS.filter((id) => id !== 'yard' && locationUnlocked(S.bestRep, id) && !pointAt(S, id));
+  // a stand cannot stand where the stores are (level 4): there are only rented premises
+  return LOCATION_IDS.filter((id) => id !== 'yard' && !LOCATIONS[id].store && locationUnlocked(S.bestRep, id) && !pointAt(S, id));
 }
 
 export function skillStars(skill: number): number {

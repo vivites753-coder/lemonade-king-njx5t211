@@ -16,9 +16,11 @@ export function ownedEquipment(S: GameState): EquipId[] {
   });
 }
 
-/** Equipment that stays in the bag at an indoor place (an umbrella in a mall). */
+/** Equipment that stays at home here: an umbrella in a mall, the parts of the stand at the own store. */
 export function unusedHere(S: GameState, id: UpgradeId | EquipId): boolean {
-  return !!LOCATIONS[S.location].indoor && !!UPGRADES[id as UpgradeId]?.outdoorOnly;
+  const loc = LOCATIONS[S.location];
+  const u = UPGRADES[id as UpgradeId];
+  return (!!loc.indoor && !!u?.outdoorOnly) || (!!loc.store && !!u?.standOnly);
 }
 
 /** Upgrades that work right now: broken equipment gives no bonus, an umbrella is useless indoors. */

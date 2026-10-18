@@ -9,6 +9,7 @@ const TARGETS: Record<string, string[] | WorldTarget> = {
   welcome: ['.hud-top .chip.coins'],
   morning: ['#panel .locs .loc.sel', '#panel .locs'],
   location: ['#panel .locs'],
+  store: ['#panel .locs .loc.sel', '#panel .locs'],
   market: ['#panel [data-act="kit"]'],
   wholesale: ['#panel .wholesale-h'],
   delivery: ['#panel [data-act="kit"]'],

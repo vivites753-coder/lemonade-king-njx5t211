@@ -2,7 +2,7 @@
 // Opens from the reputation chip in the top bar. Built from the game data, so it stays in sync.
 import { CONFIG } from '../core/config';
 import { GOODS } from '../data/goods';
-import { LOCATIONS, LOCATION_IDS } from '../data/locations';
+import { LOCATIONS, LOCATION_IDS, storeSetupCost } from '../data/locations';
 import { POINTS } from '../data/staff';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades';
 import { t } from '../i18n';
@@ -24,7 +24,10 @@ function itemsFor(g: Game, level: number): Item[] {
   const out: Item[] = [];
   for (const id of LOCATION_IDS) {
     if ((LOCATIONS[id].minRep ?? 1) !== level) continue;
-    out.push({ icon: locIco(id), name: t(`loc.${id}.name`), kind: 'place', note: LOCATIONS[id].rent ? t('loc.rent', { n: coin(LOCATIONS[id].rent) }) : t('loc.free') });
+    const rent = LOCATIONS[id].rent ? t('loc.rent', { n: coin(LOCATIONS[id].rent) }) : t('loc.free');
+    // a store: its opening costs once
+    const note = LOCATIONS[id].store ? `🏪 ${t('roadmap.storeNote', { n: coin(storeSetupCost(id)) })} · ${rent}` : rent;
+    out.push({ icon: locIco(id), name: t(`loc.${id}.name`), kind: 'place', note, done: !!g.S.stores[id] });
   }
   if (level === CONFIG.HELPER_MIN_REP) out.push({ icon: '🍳', name: t('roadmap.helper'), kind: 'feature', note: t('points.wage', { n: CONFIG.HELPER_WAGE }) });
   if (level === (GOODS.cookies.minRep ?? 1)) out.push({ icon: '🍪', name: t('roadmap.cookies'), kind: 'feature', note: t('roadmap.cookiesNote', { n: GOODS.cookies.price }) });

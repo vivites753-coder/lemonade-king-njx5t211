@@ -148,6 +148,15 @@ export const CONFIG = {
 
   /** Maintenance in the shop costs this share of a repair at 0% condition. */
   MAINTENANCE_SHARE: 0.5,
+
+  /** Level 4, the own store (LocationDef.store): the tax is this share of the day's profit (not of the takings). */
+  STORE_TAX: 0.1,
+  /** What the store brings by itself: its shop window and signboard (stop chance), a pleasant place (comfort) and the
+   * awning (this share of the bad-weather penalty is gone). Its counter has two places, and its cold display keeps
+   * unsold lemonade until tomorrow. */
+  STORE_ADS: 0.25,
+  STORE_COMFORT: 1.08,
+  STORE_WEATHER_SHIELD: 0.6,
 } as const;
 
 /**

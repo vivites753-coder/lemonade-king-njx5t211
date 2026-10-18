@@ -49,6 +49,9 @@ export interface UpgradeDef {
   carryOver?: boolean;
   /** Only useful outdoors: no effect and no wear under a roof (station, mall). */
   outdoorOnly?: boolean;
+  /** A part of the stand itself: in the own store (level 4) the store's counter and awning take its place, so it
+   * stays at home there (no effect, no wear). */
+  standOnly?: boolean;
   /** Mixing in the kitchen is always perfect. */
   perfectMix?: boolean;
   /** Market prices markup when the goods are delivered (no trip). */
@@ -66,15 +69,15 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   branded_cups: { id: 'branded_cups', icon: '🥤', price: 400, cat: 'ads', minRep: 3, repMult: 1.5 },
   mascot: { id: 'mascot', icon: '🍋', price: 440, cat: 'ads', minRep: 3, ads: 0.08, adsSpecial: 0.2 },
   // comfort and speed
-  umbrella: { id: 'umbrella', icon: '⛱️', price: 80, cat: 'comfort', comfort: 1.05, patience: 1.3, outdoorOnly: true },
+  umbrella: { id: 'umbrella', icon: '⛱️', price: 80, cat: 'comfort', comfort: 1.05, patience: 1.3, outdoorOnly: true, standOnly: true },
   delivery: { id: 'delivery', icon: '🚚', price: 80, cat: 'comfort', deliveryMarkup: 1.1 },
   dispenser: { id: 'dispenser', icon: '🚰', price: 360, cat: 'comfort', minRep: 2, serveMult: 0.7 },
   bike: { id: 'bike', icon: '🚲', price: 600, cat: 'comfort', minRep: 2, tripHours: 1, travelReduce: 1 },
-  tent: { id: 'tent', icon: '⛺', price: 800, cat: 'comfort', minRep: 2, requires: 'umbrella', weatherShield: 0.5, comfort: 1.03, outdoorOnly: true },
+  tent: { id: 'tent', icon: '⛺', price: 800, cat: 'comfort', minRep: 2, requires: 'umbrella', weatherShield: 0.5, comfort: 1.03, outdoorOnly: true, standOnly: true },
   scooter: { id: 'scooter', icon: '🛵', price: 900, cat: 'comfort', minRep: 3, tripHours: 1 / 3, travelReduce: 1 },
   tv: { id: 'tv', icon: '📺', price: 700, cat: 'comfort', minRep: 2, patience: 1.6, queueBonus: 3 },
-  big_stand: { id: 'big_stand', icon: '👥', price: 900, cat: 'comfort', minRep: 3, counters: 2 },
-  truck: { id: 'truck', icon: '🚐', price: 3000, cat: 'comfort', minRep: 3, counters: 2, radius: 1.0, ads: 0.12, comfort: 1.05 },
+  big_stand: { id: 'big_stand', icon: '👥', price: 900, cat: 'comfort', minRep: 3, counters: 2, standOnly: true },
+  truck: { id: 'truck', icon: '🚐', price: 3000, cat: 'comfort', minRep: 3, counters: 2, radius: 1.0, ads: 0.12, comfort: 1.05, standOnly: true },
   // production
   juicer_hand: { id: 'juicer_hand', icon: '🍋', price: 120, cat: 'production', lemonReduce: 1 },
   cooler: { id: 'cooler', icon: '🧊', price: 300, cat: 'production', minRep: 2, carryOver: true },

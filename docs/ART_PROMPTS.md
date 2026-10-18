@@ -18,7 +18,9 @@
    (напис гра пише сама): окремо, пізніше.
 6. ~~Лист 23: автобусна зупинка~~ — готово (автобус, навіс, знак).
 7. ~~Лист 24: лід для кухні~~ — готово.
-8. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
+8. **Свій магазин (рівень 4, етап A):** лист 25 (будівля), 26 (прилавок), 27 (ратуша), 12г (іконки). Поки їх немає,
+   гра малює все це кодом.
+9. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
 
 ## СІТКА (підстав стовпці, рядки, кількість, % заповнення)
@@ -202,6 +204,56 @@ Row 2: 6) a shopping mall: a building with a big orange circle on the front, 7) 
 ```
 
 Імена: `ui_loc_yard, ui_loc_park, ui_loc_school, ui_loc_beach, ui_loc_station, ui_loc_mall, ui_loc_busstop, ui_btn_stock, ui_up_freezer, ui_btn_onlineads`
+
+## Лист 25. Будівля свого магазину (одна велика картинка, ISO)
+
+Магазин рівня 4 (місця «Площа біля ратуші» й «Тиха вулиця біля парку»). Прилавок стоїть перед будівлею окремою картинкою
+(лист 26), тому перед будинком нічого не має бути. Вивіска порожня: назву «ЛИМОНАДНА» гра пише сама.
+
+```
+A single large 3D render of ONE small city shop building for a lemonade business, centered on a perfectly flat solid magenta background (#FF00FF), square canvas 2048x2048, the building filling about 75% of the width, wide empty magenta margin on all sides, nothing cut off.
+Use the attached image as the exact style reference: isometric 3D render, cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft studio lighting from the top-left, gentle ambient occlusion, 2:1 dimetric isometric camera (about 30 degrees elevation, rotated 45 degrees), clean readable silhouette, kid-friendly mobile game art.
+The building: one tall storey with a flat roof and a low yellow parapet, cream walls. Its LONG front side faces the LOWER-LEFT of the image and is about two and a half times longer than the short side, which faces the lower-right. On the front: two big shop windows with lemons and glass jugs of lemonade on the shelves inside, a green door with a glass panel between them, small flower boxes with pink and white flowers under the windows, a yellow-and-white striped awning with a scalloped edge along the whole front above the windows, and above the awning a wide EMPTY cream signboard with an orange frame. One small window on the short side.
+NO ground plate, NO ground shadow, NO pavement, NO counter, NO people, NO tables in front of it. NO text, letters or numbers anywhere. All glass is opaque pale blue with a soft highlight.
+```
+
+Ім'я: `bld_store` (вирізає `tools/cut_single.py`, розмір і прив'язку підберу в `spriteMeta.ts`).
+
+## Лист 26. Прилавок магазину (одна картинка, ISO)
+
+Довгий прилавок перед магазином замість столика. На ньому гра сама ставить глечики, стаканчики й касу, тож верх пустий.
+
+```
+A single 3D render of ONE long shop counter for a lemonade shop, centered on a perfectly flat solid magenta background (#FF00FF), canvas 2048x1024, the counter filling about 80% of the width, wide empty magenta margin on all sides, nothing cut off.
+Use the attached image as the exact style reference: isometric 3D render, cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft studio lighting from the top-left, gentle ambient occlusion, 2:1 dimetric isometric camera (about 30 degrees elevation, rotated 45 degrees), clean readable silhouette, kid-friendly mobile game art.
+The counter is a long low box, waist-high, about three times longer than deep. Its LONG front side faces the LOWER-LEFT of the image, its short end faces the lower-right. The top is a flat cream stone counter top, completely EMPTY (nothing on it). The front: on the left third a glass display case with lemons and small cakes inside, the rest warm wood panels, a turquoise trim along the top edge and along the bottom.
+NO people, NO objects on the top, NO ground shadow, NO text, letters or numbers.
+```
+
+Ім'я: `stand_store_counter`.
+
+## Лист 27. Ратуша (одна велика картинка, ISO)
+
+```
+A single large 3D render of ONE small town hall building, centered on a perfectly flat solid magenta background (#FF00FF), square canvas 2048x2048, the building filling about 75% of the width, wide empty magenta margin on all sides, nothing cut off.
+Use the attached image as the exact style reference: isometric 3D render, cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft studio lighting from the top-left, gentle ambient occlusion, 2:1 dimetric isometric camera (about 30 degrees elevation, rotated 45 degrees), clean readable silhouette, kid-friendly mobile game art.
+The town hall: two storeys of light warm stone, its front faces the LOWER-LEFT of the image. Four white columns at the entrance, a big wooden double door with three steps, tall arched windows on both floors, a triangular pediment above the columns, an EMPTY plaque above the door. In the middle of the roof a small square clock tower with a round white clock face (only dots for the hours, no numbers) and a pointed turquoise roof with a small blue flag on top.
+NO ground plate, NO ground shadow, NO people, NO text, letters or numbers anywhere.
+```
+
+Ім'я: `bld_townhall`.
+
+## Лист 12г. Іконки магазину (3×2, FLAT)
+
+СІТКА 6 / 3×2 / 78% + FLAT +
+
+```
+Each item is a single ICON object (no background, no frame, no button shape behind it), readable when shrunk to 48 pixels.
+Row 1: 1) a town hall building with white columns and a small clock tower, 2) a small shop with a yellow-white striped awning next to a round green tree, 3) a shop front with a striped awning and a big lemon on its signboard.
+Row 2: 4) a paper receipt with a big percent sign on it (a tax), 5) a glowing yellow light bulb with a blue water drop next to it (electricity and water bills), 6) a simple balance scale with a gold coin on one pan and a cup of lemonade on the other.
+```
+
+Імена: `ui_loc_townhall, ui_loc_parkside, ui_store, ui_tax, ui_utilities, ui_breakeven`
 
 ## Лист 23. Автобусна зупинка (2×2, ISO) — ГОТОВО
 

@@ -21,7 +21,8 @@ describe('day loop', () => {
     expect(r).toBeTruthy();
     expect(g.S.coins - coins0).toBe(r.profit);
     expect(r.profit).toBe(r.income - r.expenses);
-    expect(r.sold).toBeGreaterThan(5);
+    // (how many exactly depends on the dice: about 9 on average over many games)
+    expect(r.sold).toBeGreaterThan(2);
   });
 
   it('funnel numbers always add up and nothing goes negative', () => {

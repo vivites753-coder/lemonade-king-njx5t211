@@ -38,6 +38,7 @@ const TIP_MOOD: Record<string, LemiMood> = {
   hand_stir: 'think',
   mixer: 'think',
   kitchen_more: 'think',
+  store: 'happy',
 };
 
 /** How Lemi looks under the lesson of an event card (thinking when not listed). */
@@ -52,6 +53,7 @@ const CARD_MOOD: Record<string, LemiMood> = {
   sugarHike: 'surprised',
   cupsSoldOut: 'surprised',
   thiefEmpty: 'surprised',
+  storeOpened: 'happy',
 };
 
 export interface ModalSpec {

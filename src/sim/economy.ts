@@ -105,17 +105,20 @@ export interface InterestInput {
   event?: { key: string; mult: number };
   /** Something scares people away (stray dogs). */
   scare?: { key: string; mult: number };
+  /** The own store of level 4: its shop window, comfort and awning. */
+  store?: boolean;
 }
 
 /** Indoors the weather changes thirst this much less (no sun, no rain on your head). */
 export const INDOOR_THIRST_DAMPING = 0.4;
 
-/** Weather factor for the stop chance; a tent removes part of the bad-weather penalty. */
-export function weatherThirst(weather: WeatherId, up: Owned, indoor = false): number {
+/** Weather factor for the stop chance; a tent (or the awning of a store: `shield0`) removes part of the bad-weather
+ * penalty. */
+export function weatherThirst(weather: WeatherId, up: Owned, indoor = false, shield0 = 0): number {
   const t = WEATHER[weather].thirst;
   if (indoor) return 1 + (t - 1) * INDOOR_THIRST_DAMPING;
   if (t >= 1) return t;
-  let shield = 0;
+  let shield = shield0;
   for (const id of Object.keys(up) as UpgradeId[]) shield = Math.max(shield, UPGRADES[id].weatherShield ?? 0);
   return 1 - (1 - t) * (1 - shield);
 }
@@ -150,11 +153,16 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
     ads += CONFIG.ONLINE_ADS_ADS;
     parts.push({ key: 'why.onlineAds', kind: 'add', value: CONFIG.ONLINE_ADS_ADS });
   }
+  if (i.store) {
+    ads += CONFIG.STORE_ADS;
+    parts.push({ key: 'why.store', kind: 'add', value: CONFIG.STORE_ADS });
+  }
   const indoor = !!(i.location && LOCATIONS[i.location].indoor);
-  const w = { thirst: weatherThirst(i.weather, i.upgrades, indoor) };
+  const w = { thirst: weatherThirst(i.weather, i.upgrades, indoor, i.store ? CONFIG.STORE_WEATHER_SHIELD : 0) };
   parts.push({ key: indoor ? 'why.indoor' : `why.weather.${i.weather}`, kind: 'mul', value: w.thirst });
   let comfort = 1;
   for (const id of Object.keys(i.upgrades) as UpgradeId[]) if (!(indoor && UPGRADES[id].outdoorOnly)) comfort *= UPGRADES[id].comfort ?? 1;
+  if (i.store) comfort *= CONFIG.STORE_COMFORT;
   if (comfort !== 1) parts.push({ key: 'why.comfort', kind: 'mul', value: comfort });
   const repF = 0.85 + 0.06 * i.rep;
   parts.push({ key: 'why.rep', kind: 'mul', value: repF });
@@ -171,6 +179,22 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
 export function walletRange(loc: LocationId, type: PedTypeId): [number, number] {
   const base = LOCATIONS[loc].fairPrice * PED_TYPES[type].priceMult;
   return [base * CONFIG.WALLET_MIN, base * CONFIG.WALLET_MAX];
+}
+
+/**
+ * Cups to sell today so that the day is not a loss: the costs that do not depend on the cups (`fixed`: rent,
+ * utilities, advertising, wages) divided by what one cup brings (price minus its ingredients). Null when a cup brings
+ * nothing: then no number of cups covers them.
+ */
+export function breakEvenCups(fixed: number, price: number, cupCost: number): number | null {
+  const margin = price - cupCost;
+  if (fixed <= 0) return 0;
+  return margin > 0.001 ? Math.ceil(fixed / margin - 1e-9) : null;
+}
+
+/** The tax of the own store on a day's profit (nothing on a loss). */
+export function storeTax(profit: number): number {
+  return profit > 0 ? Math.round(profit * CONFIG.STORE_TAX) : 0;
 }
 
 /** Probability that a pedestrian of this type accepts the price (wallet is uniform). */
@@ -237,6 +261,7 @@ export function expectedDay(o: {
     festival: ev.festival && !loc.indoor,
     location: o.loc,
     event: placeEventStop(o.loc, ev),
+    store: !!loc.store,
   }).chance;
   let buyShare = 0;
   for (const [type, share] of Object.entries(loc.mix) as [PedTypeId, number][]) {
@@ -245,7 +270,9 @@ export function expectedDay(o: {
   }
   const buyers = inRange * buyShare;
   const revenue = buyers * o.price;
-  const profit = buyers * (o.price - costPerCup(o.recipe ?? { lemons: 4, sugar: 2 }, o.upgrades)) - loc.rent;
+  // a store also pays for electricity and water, and the tax on its profit
+  const before = buyers * (o.price - costPerCup(o.recipe ?? { lemons: 4, sugar: 2 }, o.upgrades)) - loc.rent - (loc.store?.utilities ?? 0);
+  const profit = loc.store ? before - storeTax(before) : before;
   return { passers, inRange, buyers, revenue, profit, profitPerPasser: passers > 0 ? profit / passers : 0 };
 }
 

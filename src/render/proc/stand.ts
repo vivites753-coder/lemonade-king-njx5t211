@@ -50,6 +50,33 @@ function table(ctx: Ctx): void {
   });
 }
 
+/**
+ * The counter of the own store (level 4): as long as the big stand (both its tables), with a glass case of lemons in
+ * its front and a turquoise trim. The things on it are the stand's, in the same places.
+ */
+function storeCounter(ctx: Ctx): void {
+  const x0 = SX - 2.0;
+  const y0 = SY - 0.45;
+  const w = 2.8;
+  const [cx, cy] = P(SX - 0.6, SY);
+  shadow(ctx, cx, cy + 4, 70, 0.18);
+  box(ctx, x0, y0, w, 0.9, TABLE_H, 0, '#ffe8a3', { top: '#fffaf0' });
+  faceY(ctx, x0, y0 + 0.9, 0, () => {
+    const front = w * 32;
+    // the glass case on the left, wood on the right
+    rrect(ctx, 3, -TABLE_H + 3, front * 0.4, TABLE_H - 6, 2, '#d0ebff', '#ffffff', 1.5);
+    for (let i = 0; i < 4; i++) ellipse(ctx, 9 + i * 8, -6, 3.4, 2.6, '#ffd43b', '#e8b500', 0.6);
+    line(ctx, 6, -TABLE_H + 6, 14, -TABLE_H + 12, 'rgba(255,255,255,0.8)', 2);
+    ctx.fillStyle = '#c58b4f';
+    ctx.fillRect(front * 0.43, -TABLE_H + 2, front * 0.57 - 2, TABLE_H - 4);
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    for (let i = 0; i < 4; i++) ctx.fillRect(front * 0.43 + 4 + i * 12, -TABLE_H + 4, 1.5, TABLE_H - 8);
+    ctx.fillStyle = '#2bb3a3';
+    ctx.fillRect(0, -TABLE_H, front, 2.5);
+    ctx.fillRect(0, -2.5, front, 2.5);
+  });
+}
+
 function chair(ctx: Ctx): void {
   const x = SX + 0.55;
   const y = SY - 1.25;
@@ -265,6 +292,7 @@ function soldOutPlate(ctx: Ctx): void {
 
 registerProcs({
   stand_table: (ctx) => table(ctx),
+  stand_store_counter: (ctx) => storeCounter(ctx),
   stand_chair: (ctx) => chair(ctx),
   stand_banner: (ctx) => banner(ctx),
   stand_sign: (ctx, c) => sign(ctx, (c as StandCall).price ?? 0),
@@ -365,7 +393,11 @@ function table2(ctx: Ctx, level: number): void {
       ctx.fillRect(0, -3, 38.4, 3);
     });
   }
-  // a pitcher and cups for the second queue
+  table2Items(ctx, level);
+}
+
+/** The pitcher and the cups of the second counter (on the blue table, or on the left of the store's counter). */
+function table2Items(ctx: Ctx, level: number): void {
   if (hasImage('item_pitcher_full') && hasImage('item_cups_pack')) {
     // the same pictures as on the main table, moved onto the blue one
     const [sx, sy] = P(SX, SY);
@@ -409,6 +441,8 @@ export function standSideParts(g: SceneSource): { part: StandPart; x: number; y:
   const up = g.S.upgrades;
   const wide = g.counters() >= 2;
   const isTruck = !!g.active().truck;
+  // the own store has one long counter (no blue table), and its awning instead of the tent
+  const store = !!LOCATIONS[g.S.location].store;
   const out: { part: StandPart; x: number; y: number }[] = [];
   // the sign stands in front of the left end of the table: it is drawn after the table
   if (up.sign) out.push({ part: 'sign', x: SX - 0.9 + (wide ? (isTruck ? -2.3 : -1.9) : 0), y: SY + 1.0 + (wide ? (isTruck ? 0.5 : -0.2) : 0) });
@@ -417,9 +451,9 @@ export function standSideParts(g: SceneSource): { part: StandPart; x: number; y:
   // next to a truck the TV moves further right, behind the bar stools
   if (up.tv) out.push({ part: 'tv', x: SX + 2.2 + (isTruck ? 0.8 : 0), y: SY + 0.35 });
   // the blue table of the big stand stands behind the people of the second queue, but in front of what is behind it
-  if (wide && !isTruck) out.push({ part: 'table2', x: SX - 1.0, y: SY });
+  if (wide && !isTruck && !store) out.push({ part: 'table2', x: SX - 1.0, y: SY });
   // the legs of the tent stand where they touch the ground: people pass in front of or behind each one
-  const outdoor = !LOCATIONS[g.S.location].indoor && !isTruck;
+  const outdoor = !LOCATIONS[g.S.location].indoor && !isTruck && !store;
   const box = up.tent && outdoor ? tentBox(wide) : null;
   if (box) {
     TENT_LEGS.forEach((leg, i) => {
@@ -459,7 +493,8 @@ export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
   const [sx, sy] = P(SX, SY);
   const wide = g.counters() >= 2;
   const isTruck = !!g.active().truck;
-  const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
+  const store = !!LOCATIONS[S.location].store;
+  const outdoor = !LOCATIONS[S.location].indoor && !isTruck && !store;
   if (isTruck) {
     const skinId = TRUCK_SKIN_IDS[S.truck.skin] ?? TRUCK_SKIN_IDS[0];
     spriteShadow(ctx, `stand_truck_${skinId}`, sx, sy);
@@ -470,7 +505,7 @@ export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
       spriteShadow(ctx, 'stand_truck_stool_a', tx, ty);
     }
   } else {
-    drawTableShadows(ctx, g, sx, sy, wide, outdoor);
+    drawTableShadows(ctx, g, sx, sy, wide, outdoor, store);
   }
   // the parts that stand apart (next to the truck too): where drawStandPart draws them
   if (up.tv) shifted(ctx, isTruck, 0.8, 0, () => spriteShadow(ctx, 'stand_tv', sx, sy));
@@ -479,12 +514,15 @@ export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
 }
 
 /** The shadows of the table stand and what stands on and around it. */
-function drawTableShadows(ctx: Ctx, g: SceneSource, sx: number, sy: number, wide: boolean, outdoor: boolean): void {
+function drawTableShadows(ctx: Ctx, g: SceneSource, sx: number, sy: number, wide: boolean, outdoor: boolean, store: boolean): void {
   const up = g.S.upgrades;
   if (up.tent && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_tent', sx, sy, wide ? 1.22 : 1));
   else if (up.umbrella && outdoor) shifted(ctx, wide, -0.6, 0, () => spriteShadow(ctx, 'stand_umbrella', sx, sy));
-  if (wide) spriteShadow(ctx, 'stand_table_blue', sx, sy);
-  spriteShadow(ctx, 'stand_table', sx, sy);
+  if (store) spriteShadow(ctx, 'stand_store_counter', sx, sy);
+  else {
+    if (wide) spriteShadow(ctx, 'stand_table_blue', sx, sy);
+    spriteShadow(ctx, 'stand_table', sx, sy);
+  }
   if (up.scooter) spriteShadow(ctx, 'stand_scooter', sx, sy);
   else if (up.bike) spriteShadow(ctx, 'stand_bike', sx, sy);
   if (up.speaker) spriteShadow(ctx, 'stand_speaker', sx, sy);
@@ -544,8 +582,10 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
   const br = S.broken;
   const wide = g.counters() >= 2;
   const isTruck = !!g.active().truck;
-  // under a roof the umbrella and the tent stay folded; the truck has its own awning
-  const outdoor = !LOCATIONS[S.location].indoor && !isTruck;
+  // the own store: its counter instead of the tables (the awning is the store's)
+  const store = !!LOCATIONS[S.location].store;
+  // under a roof the umbrella and the tent stay folded; the truck and the store have their own awnings
+  const outdoor = !LOCATIONS[S.location].indoor && !isTruck && !store;
   // the fastest vehicle is parked at the stand; boxes and vehicles make room for a wide stand
   // the fastest vehicle is parked on the right of the table (on the left it would hang over the house)
   if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
@@ -629,7 +669,7 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
     }
 
     if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
-    drawSprite(ctx, 'stand_table', call());
+    drawSprite(ctx, store ? 'stand_store_counter' : 'stand_table', call());
     if (up.banner) drawSprite(ctx, 'stand_banner', call());
     // on the table, from the back to the front
     const lemons = playing ? Math.max(lemonsTotal(S.stock), 3) : lemonsTotal(S.stock);
@@ -645,6 +685,8 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
     drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
     if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
     if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
+    // the second place of the store's counter has its own pitcher and cups
+    if (store) table2Items(ctx, level);
     // the canopy of the umbrella is over the heads of the sellers (its pole stays behind the table)
     if (!up.tent && up.umbrella && outdoor) umbrellaCanopy(ctx, sx, sy, wide, br.umbrella ? 0.5 : 1);
   }
