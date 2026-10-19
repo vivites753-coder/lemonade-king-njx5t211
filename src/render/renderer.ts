@@ -419,10 +419,11 @@ export class Renderer {
       const [cx, cy] = decorCentre(d);
       if (seen(cx, cy)) items.push({ d: key(cx + cy, cy), k: 0, o: d });
     }
-    // somebody sitting at a table is between the chair and the table: in front of the chair, behind the table
+    // somebody sitting at a table is between the chair and the table (on the left chair: in front of the chair,
+    // behind the table; on the right one: in front of the table, behind the chair's back)
     for (const p of g.street.peds) {
       if (!seen(p.x, p.y)) continue;
-      const sit = p.state === 'sit' && p.seat ? 0.01 : 0;
+      const sit = p.state === 'sit' && p.seat ? (p.seat.side < 0 ? 0.01 : -0.01) : 0;
       items.push({ d: key(p.x + p.y + sit, p.y), k: 1, o: p });
     }
     // the low walls of the store and its door, piece by piece among the people
@@ -565,22 +566,23 @@ export class Renderer {
   }
 
   /**
-   * Somebody sitting on a chair of the store, with the cup, facing the table and us: to the lower right on the left
-   * chair, to the lower left (mirrored) on the chair behind the table. The drawn sitting picture (sheet 29) has its
-   * hips on the seat; without one the standing picture is lowered and cut below the seat (the table hides the legs).
+   * Somebody sitting on a chair of the store, with the cup, facing the table: on the left chair they face us too, on
+   * the right one (in front of the table) they turn their back to us. The drawn sitting picture (sheet 29) has its hips
+   * on the seat; without one the standing picture is lowered and cut below the seat (the table and the chair hide the
+   * legs).
    */
   private drawSitter(ctx: Ctx, p: Ped, side: -1 | 1): void {
     const [sx, sy] = P(p.x, p.y);
     const type = PED_TYPES[p.type];
-    const dirX = side < 0 ? 1 : -1;
-    const sitId = pedSitSpriteId(p.type, p.look.variant);
+    const front = side < 0;
+    const sitId = pedSitSpriteId(p.type, p.look.variant, front);
     if (sitId) {
-      drawSprite(ctx, sitId, { x: p.x, y: p.y, sx, sy: sy - SEAT_H, s: type.scale, flip: dirX < 0 });
+      drawSprite(ctx, sitId, { x: p.x, y: p.y, sx, sy: sy - SEAT_H, s: type.scale });
       const m = metaFor(sitId);
       if (p.emote) this.bubbles.push({ sx, sy: sy - SEAT_H - m.h * type.scale * m.anchor[1], emote: p.emote, patience: -1 });
       return;
     }
-    const id = pedCupSpriteId(p.type, p.look.variant, true) ?? pedSpriteId(p.type, p.look.variant, true);
+    const id = pedCupSpriteId(p.type, p.look.variant, front) ?? pedSpriteId(p.type, p.look.variant, front);
     const seat = 15;
     // a kid lowered as much would hide behind the table: kids sit up on their knees
     const drop = p.type === 'kid' ? 4 : 13 * type.scale;
@@ -594,8 +596,8 @@ export class Renderer {
       scale: type.scale,
       moving: false,
       anim: p.anim,
-      facingCam: true,
-      dirX,
+      facingCam: front,
+      dirX: front ? 1 : -1,
       hasCup: false,
       umbrella: false,
     });

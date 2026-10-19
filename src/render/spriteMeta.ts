@@ -123,13 +123,14 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   // (src/data/storeRoom.ts) above the floor
   prop_cafe_table: { h: 44.7, anchor: [0.5, 0.885] },
   prop_cafe_table_b: { h: 38.7, anchor: [0.5, 0.87] },
-  prop_cafe_chair_l: { h: 51, anchor: [0.515, 0.805] },
-  prop_cafe_chair_r: { h: 45.3, anchor: [0.47, 0.79] },
+  prop_cafe_chair_l: { h: 50, anchor: [0.52, 0.815] },
+  // (seen from behind: its backrest is on our side)
+  prop_cafe_chair_r: { h: 44, anchor: [0.46, 0.77] },
   // the customers sitting with a cup (sheet 29): the anchor is on the hips, drawn on the seat
   ...Object.fromEntries(
-    ['kid_a', 'kid_b', 'kid_c', 'adult_a', 'adult_b', 'adult_c', 'granny_a', 'granny_b', 'sport_a', 'sport_b', 'tourist_a', 'tourist_b'].map((n) => [
-      `char_${n}_sit_front`,
-      { h: 55, anchor: [0.45, 0.72] as [number, number] },
+    ['kid_a', 'kid_b', 'kid_c', 'adult_a', 'adult_b', 'adult_c', 'granny_a', 'granny_b', 'sport_a', 'sport_b', 'tourist_a', 'tourist_b'].flatMap((n) => [
+      [`char_${n}_sit_front`, { h: 55, anchor: [0.45, 0.72] as [number, number] }],
+      [`char_${n}_sit_back`, { h: 52, anchor: [0.55, 0.74] as [number, number] }],
     ]),
   ),
 };

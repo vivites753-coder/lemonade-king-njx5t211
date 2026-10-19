@@ -56,9 +56,10 @@ export function pedCupSpriteId(type: string, variant: number, front: boolean): s
   return pedWithSpriteId('cup', type, variant, front);
 }
 
-/** A customer of the store sitting with a cup (sheet 29), when one is drawn for this look: always the front view. */
-export function pedSitSpriteId(type: string, variant: number): string | undefined {
-  return pedWithSpriteId('sit', type, variant, true);
+/** A customer of the store sitting with a cup (sheet 29), when one is drawn for this look: the front view faces the
+ * lower right, the back view the upper left (as they sit on the left and on the right chair). */
+export function pedSitSpriteId(type: string, variant: number, front: boolean): string | undefined {
+  return pedWithSpriteId('sit', type, variant, front);
 }
 
 /** A pedestrian picture with something in the hands (`umb`, `cup`), when one is drawn for this look. */
