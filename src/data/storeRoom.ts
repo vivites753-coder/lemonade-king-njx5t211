@@ -23,14 +23,35 @@ export const COUNTER_X: [number, number] = [CONFIG.STAND.x - 2.0, CONFIG.STAND.x
  * queues or in front of the aisle. */
 export const AISLE_Y = 3.0;
 export const AISLE_IN: Vec = { x: DOOR.x, y: AISLE_Y };
-/** The chairs stand this far on the left and on the right of their table (tiles). */
+/** The chairs stand this far from their table (tiles): one on its left, one behind it. */
 export const CHAIR_DX = 0.42;
+/** The seat of a chair: this high above the floor (world px). People sit on it. */
+export const SEAT_H = 14.5;
 
-/** A chair of the store: on the left of its table (side −1, its sitter faces the camera) or on the right (side 1). */
+/** A chair of the store: on the left of its table (side −1: its sitter faces the table to the lower right) or behind
+ * it (side 1: the sitter faces the table to the lower left). Both sitters face the camera. */
 export interface Seat {
   x: number;
   y: number;
   side: -1 | 1;
+}
+
+/** The table of a chair. */
+export function seatTable(s: Seat): Vec {
+  return s.side < 0 ? { x: s.x + CHAIR_DX, y: s.y } : { x: s.x, y: s.y + CHAIR_DX };
+}
+
+/**
+ * The last steps to a chair from the open floor (and the first ones when getting up), round its table and never across
+ * it: the left chair from in front of it (from behind, at a table in front of the aisle), the chair behind the table
+ * from its right side.
+ */
+export function seatApproach(s: Seat): Vec[] {
+  const t = seatTable(s);
+  const front = t.y > AISLE_Y;
+  if (s.side < 0) return [{ x: s.x, y: front ? t.y - 0.55 : t.y + 0.55 }];
+  const side = { x: t.x + 0.55, y: s.y };
+  return front ? [side] : [{ x: t.x + 0.55, y: t.y + 0.55 }, side];
 }
 
 /** How far back the stand stands (tiles): in the own store at its back wall, elsewhere where it always is. */

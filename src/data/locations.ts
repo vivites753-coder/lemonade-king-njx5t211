@@ -84,12 +84,13 @@ function fence(y: number, x0: number, x1: number): DecorDef[] {
 
 const G12 = 'gggggggggggg';
 
-/** A table of the store with a chair on its left and one on its right (the people who sit down use the chairs). */
+/** A table of the store with a chair on its left and one behind it, so that both sitters face the camera (the people
+ * who sit down use the chairs; see seatApproach in storeRoom.ts). */
 function cafeTable(x: number, y: number, cake = false, needs?: UpgradeId): DecorDef[] {
   return [
     { id: 'prop_cafe_chair_l', x: x - CHAIR_DX, y, needs },
+    { id: 'prop_cafe_chair_r', x, y: y - CHAIR_DX, needs },
     { id: cake ? 'prop_cafe_table_b' : 'prop_cafe_table', x, y, needs },
-    { id: 'prop_cafe_chair_r', x: x + CHAIR_DX, y, needs },
   ];
 }
 

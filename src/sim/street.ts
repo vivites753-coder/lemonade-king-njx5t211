@@ -3,7 +3,7 @@ import { CONFIG, queueSpot } from '../core/config';
 import { RNG } from '../core/rng';
 import type { LocationId, PedTypeId, Vec, WeatherId } from '../core/types';
 import { LOCATIONS, type BusStopDef } from '../data/locations';
-import { AISLE_IN, AISLE_Y, COUNTER_X, counterDy, DOOR as STORE_DOOR, DOOR_IN as STORE_IN, DOOR_OUT as STORE_OUT, inRoom, ROOM_D, type Seat } from '../data/storeRoom';
+import { AISLE_IN, AISLE_Y, COUNTER_X, counterDy, DOOR as STORE_DOOR, DOOR_IN as STORE_IN, DOOR_OUT as STORE_OUT, inRoom, ROOM_D, seatApproach, type Seat } from '../data/storeRoom';
 import { PED_TYPES } from '../data/pedTypes';
 import { randomLook, type Look } from './looks';
 import { spawnRatePerHour, type Crowd } from './traffic';
@@ -410,17 +410,20 @@ export class Street {
     }
     p.state = 'leave';
     p.atSpot = false;
+    const seat = p.seat;
     this.freeSeat(p);
     const exitX = p.dir > 0 ? CONFIG.SPAWN_RIGHT : CONFIG.SPAWN_LEFT;
     p.path = [
       { x: p.x + p.dir * 0.4, y: p.laneY },
       { x: exitX, y: p.laneY },
     ];
-    // out of the store: along the aisle to the door (round the tables), through it, then along the lane
+    // out of the store: up from the chair round the table, along the aisle to the door, through it, along the lane
     if (this.host.store() && p.y < ROOM_D + 0.05) {
-      const atDoor = p.y > AISLE_Y && Math.abs(p.x - STORE_DOOR.x) < 0.7;
-      const aisle = atDoor ? [] : [{ x: p.x, y: AISLE_Y }, AISLE_IN];
-      p.path = [...aisle, STORE_IN, STORE_OUT, { x: STORE_OUT.x + p.dir * 0.5, y: p.laneY }, { x: exitX, y: p.laneY }];
+      const up = seat ? seatApproach(seat).reverse() : [];
+      const from = up.length ? up[up.length - 1] : p;
+      const atDoor = from.y > AISLE_Y && Math.abs(from.x - STORE_DOOR.x) < 0.7;
+      const aisle = atDoor ? [] : [{ x: from.x, y: AISLE_Y }, AISLE_IN];
+      p.path = [...up, ...aisle, STORE_IN, STORE_OUT, { x: STORE_OUT.x + p.dir * 0.5, y: p.laneY }, { x: exitX, y: p.laneY }];
     }
     // out through the doorway on the left
     const door = this.doorY(p.far);
@@ -455,16 +458,15 @@ export class Street {
     return free.length ? free[this.host.rng.int(0, free.length - 1)] : null;
   }
 
-  /** From the counter to a chair: to a table behind the queue on the same side of the counter by the front of the
-   * chair (not across the table), otherwise along the aisle (round the counter and between the tables). */
+  /** From the counter to a chair: straight to a table behind the queue on the same side of the counter, otherwise
+   * along the aisle (round the counter and between the tables); the last steps round the table (seatApproach). */
   private seatPath(p: Ped, seat: Seat): Vec[] {
+    const near = seatApproach(seat);
+    const first = near[0];
     const [x0, x1] = COUNTER_X;
-    const sameSide = (p.x > x1 && seat.x > x1) || (p.x < x0 && seat.x < x0);
-    if (seat.y < AISLE_Y && sameSide) return [{ x: seat.x, y: seat.y + 0.55 }];
-    return [
-      { x: p.x, y: AISLE_Y },
-      { x: seat.x, y: AISLE_Y },
-    ];
+    const sameSide = (p.x > x1 && first.x > x1) || (p.x < x0 && first.x < x0);
+    if (first.y < AISLE_Y && sameSide) return near;
+    return [{ x: p.x, y: AISLE_Y }, { x: first.x, y: AISLE_Y }, ...near];
   }
 
   private freeSeat(p: Ped): void {

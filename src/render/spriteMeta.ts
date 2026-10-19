@@ -119,4 +119,17 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   prop_plant: { h: 54, anchor: [0.5, 0.92] },
   prop_balloons: { h: 80, anchor: [0.5, 0.97] },
   prop_kiosk_info: { h: 80, anchor: [0.5, 0.8] },
+  // the store (sheet 28): the tables and the chairs stand on the middle of their foot; the seat of a chair is SEAT_H
+  // (src/data/storeRoom.ts) above the floor
+  prop_cafe_table: { h: 44.7, anchor: [0.5, 0.885] },
+  prop_cafe_table_b: { h: 38.7, anchor: [0.5, 0.87] },
+  prop_cafe_chair_l: { h: 51, anchor: [0.515, 0.805] },
+  prop_cafe_chair_r: { h: 45.3, anchor: [0.47, 0.79] },
+  // the customers sitting with a cup (sheet 29): the anchor is on the hips, drawn on the seat
+  ...Object.fromEntries(
+    ['kid_a', 'kid_b', 'kid_c', 'adult_a', 'adult_b', 'adult_c', 'granny_a', 'granny_b', 'sport_a', 'sport_b', 'tourist_a', 'tourist_b'].map((n) => [
+      `char_${n}_sit_front`,
+      { h: 55, anchor: [0.45, 0.72] as [number, number] },
+    ]),
+  ),
 };

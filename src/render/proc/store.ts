@@ -324,7 +324,7 @@ function door(ctx: Ctx, a: number, b: number, open: number, neon: boolean): void
 
 // ---------------------------------------------------------------- the furniture
 
-/** A chair facing the table: its back is on the left (side −1) or on the right (side 1). */
+/** A chair facing its table: its back is on the left (side −1) or at the back (side 1). */
 function chair(ctx: Ctx, x: number, y: number, side: -1 | 1): void {
   const c = '#2bb3a3';
   for (const [dx, dy] of [
@@ -335,7 +335,8 @@ function chair(ctx: Ctx, x: number, y: number, side: -1 | 1): void {
   ])
     box(ctx, x + dx, y + dy, 0.03, 0.03, 13, 0, '#5c3d1e');
   box(ctx, x - 0.14, y - 0.14, 0.28, 0.28, 3, 13, c, { top: '#5fd3c2' });
-  box(ctx, side < 0 ? x - 0.16 : x + 0.12, y - 0.14, 0.04, 0.28, 17, 16, c);
+  if (side < 0) box(ctx, x - 0.16, y - 0.14, 0.04, 0.28, 17, 16, c);
+  else box(ctx, x - 0.14, y - 0.16, 0.28, 0.04, 17, 16, c);
 }
 
 /** A round table for the customers (its chairs are their own pictures: people sit on them): a vase and a glass of
