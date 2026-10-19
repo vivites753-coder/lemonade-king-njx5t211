@@ -254,7 +254,7 @@ NO people, NO objects on the top, NO ground shadow, NO text, letters or numbers.
 
 ```
 Each item is one piece of furniture of a cozy lemonade café, a cute toy-like 3D object with chunky rounded shapes, no text, letters or numbers anywhere. All at the same scale and the same camera.
-Row 1: 1) a small round café table WITHOUT chairs: a white round top on one dark grey leg with a round foot; on it a small vase with a pink flower and a tall glass of lemonade; 2) exactly the same table WITHOUT chairs, with a small plate with a slice of lemon cake and a cup on it instead; 3) a long low wooden back-bar cabinet with a cream top, its long side facing the LOWER-LEFT, about three times longer than deep; on top: a silver coffee machine, a big glass jar of yellow lemonade with a little tap, and a cake on a stand under a glass dome.
+Row 1: 1) a small round café table WITHOUT chairs: a white round top on one dark grey leg with a round foot; on it a small vase with a pink flower and a tall cup of yellow lemonade; 2) exactly the same table WITHOUT chairs, with a small plate with a slice of lemon cake and a cup on it instead; 3) a long low wooden back-bar cabinet with a cream top, its long side facing the LOWER-LEFT, about three times longer than deep; on top: a silver coffee machine, a big pastel-yellow jar of lemonade with a little tap, and a round cake on a stand.
 Row 2: 4) one turquoise wooden café chair with four thin dark legs, its backrest on the UPPER-LEFT side, so the empty seat faces the LOWER-RIGHT; 5) exactly the same chair turned around: its backrest on the LOWER-RIGHT side, the seat faces the UPPER-LEFT; 6) a tall green leafy plant in a round terracotta pot.
 ```
 
