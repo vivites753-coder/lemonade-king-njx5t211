@@ -24,6 +24,7 @@ coverage/
 .vite/
 .vitest/
 *.tsbuildinfo
+__pycache__/
 
 # logs
 *.log
