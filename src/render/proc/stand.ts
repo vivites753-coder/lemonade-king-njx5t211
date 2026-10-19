@@ -11,7 +11,7 @@ import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text,
 import { drawCharacter, standSpriteId } from './people';
 import { brokenMark } from './standExtras';
 import { TRUCK_SKINS } from '../../data/truck';
-import { DOOR, ROOM_D } from '../../data/storeRoom';
+import { counterDy, DOOR, ROOM_D } from '../../data/storeRoom';
 import { drawTruckBistro, drawTruckStools, TRUCK_BISTRO, TRUCK_STOOLS, truckRoofSpot, type TruckWorker } from './truck';
 
 const SX = CONFIG.STAND.x;
@@ -451,6 +451,14 @@ const SPOTS = {
 /** Things of the stand that stand apart from the table: each is sorted among the people by its own depth. */
 export type StandPart = 'sign' | 'mascot' | 'tv' | 'table2' | 'tentleg0' | 'tentleg1' | 'tentleg2' | 'bistro' | 'stools';
 
+/** How far back the whole stand stands here (tiles): in the own store its counter is at the back wall. */
+export function standDy(g: SceneSource): number {
+  return counterDy(!!LOCATIONS[g.S.location].store);
+}
+
+/** What stays where it is when the stand stands further back: the price sign and the mascot wait outside the store. */
+const STAYS: StandPart[] = ['sign', 'mascot'];
+
 /** Where the side parts of the stand stand now (tiles), for depth sorting. */
 export function standSideParts(g: SceneSource): { part: StandPart; x: number; y: number }[] {
   const up = g.S.upgrades;
@@ -484,7 +492,9 @@ export function standSideParts(g: SceneSource): { part: StandPart; x: number; y:
     out.push({ part: 'bistro', x: TRUCK_BISTRO.x, y: TRUCK_BISTRO.y });
     out.push({ part: 'stools', x: TRUCK_STOOLS.x, y: TRUCK_STOOLS.y });
   }
-  return out;
+  // in the store the rest stands at the counter, at the back
+  const dy = standDy(g);
+  return dy ? out.map((p) => (STAYS.includes(p.part) ? p : { ...p, y: p.y + dy })) : out;
 }
 
 /**
@@ -513,20 +523,24 @@ export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
   const isTruck = !!g.active().truck;
   const store = !!LOCATIONS[S.location].store;
   const outdoor = !LOCATIONS[S.location].indoor && !isTruck && !store;
-  if (isTruck) {
-    const skinId = TRUCK_SKIN_IDS[S.truck.skin] ?? TRUCK_SKIN_IDS[0];
-    spriteShadow(ctx, `stand_truck_${skinId}`, sx, sy);
-    const [bx, by] = P(TRUCK_BISTRO.x, TRUCK_BISTRO.y);
-    spriteShadow(ctx, 'stand_truck_bistro', bx, by);
-    for (let i = 0; i < 3; i++) {
-      const [tx, ty] = P(TRUCK_STOOLS.x, TRUCK_STOOLS.y - 0.32 + i * 0.32);
-      spriteShadow(ctx, 'stand_truck_stool_a', tx, ty);
+  const dy = standDy(g);
+  shifted(ctx, dy !== 0, 0, dy, () => {
+    if (isTruck) {
+      const skinId = TRUCK_SKIN_IDS[S.truck.skin] ?? TRUCK_SKIN_IDS[0];
+      spriteShadow(ctx, `stand_truck_${skinId}`, sx, sy);
+      const [bx, by] = P(TRUCK_BISTRO.x, TRUCK_BISTRO.y);
+      spriteShadow(ctx, 'stand_truck_bistro', bx, by);
+      for (let i = 0; i < 3; i++) {
+        const [tx, ty] = P(TRUCK_STOOLS.x, TRUCK_STOOLS.y - 0.32 + i * 0.32);
+        spriteShadow(ctx, 'stand_truck_stool_a', tx, ty);
+      }
+    } else {
+      drawTableShadows(ctx, g, sx, sy, wide, outdoor, store);
     }
-  } else {
-    drawTableShadows(ctx, g, sx, sy, wide, outdoor, store);
-  }
-  // the parts that stand apart (next to the truck too): where drawStandPart draws them
-  if (up.tv) shifted(ctx, isTruck, 0.8, 0, () => spriteShadow(ctx, 'stand_tv', sx, sy));
+    // the parts that stand apart (next to the truck too): where drawStandPart draws them
+    if (up.tv) shifted(ctx, isTruck, 0.8, 0, () => spriteShadow(ctx, 'stand_tv', sx, sy));
+  });
+  // (the sign and the mascot stay outside the store)
   if (up.sign) shifted(ctx, true, ...signShift(g), () => spriteShadow(ctx, 'stand_sign', sx, sy));
   if (up.mascot) shifted(ctx, wide, -0.3, 1.0, () => spriteShadow(ctx, 'stand_mascot', sx, sy));
 }
@@ -549,6 +563,11 @@ function drawTableShadows(ctx: Ctx, g: SceneSource, sx: number, sy: number, wide
 
 /** Draws one side part of the stand (see standSideParts). */
 export function drawStandPart(ctx: Ctx, g: SceneSource, part: StandPart): void {
+  const dy = STAYS.includes(part) ? 0 : standDy(g);
+  shifted(ctx, dy !== 0, 0, dy, () => drawPartHere(ctx, g, part));
+}
+
+function drawPartHere(ctx: Ctx, g: SceneSource, part: StandPart): void {
   const S = g.S;
   const br = S.broken;
   const [sx, sy] = P(SX, SY);
@@ -593,6 +612,11 @@ export function drawStandPart(ctx: Ctx, g: SceneSource, part: StandPart): void {
 
 /** Draws the stand itself (the table or the truck, the people and everything near the table), back to front. */
 export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
+  const dy = standDy(g);
+  shifted(ctx, dy !== 0, 0, dy, () => drawStandHere(ctx, g, playing));
+}
+
+function drawStandHere(ctx: Ctx, g: SceneSource, playing: boolean): void {
   const S = g.S;
   const up = S.upgrades;
   const [sx, sy] = P(SX, SY);

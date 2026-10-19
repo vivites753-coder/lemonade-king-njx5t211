@@ -23,6 +23,7 @@ import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointShopModal, pointsModal, type PointsHooks } from './points';
 import { TipArrow, type WorldTarget } from './tipArrow';
 import { CONFIG, HUD_DEFAULT_LAYOUT } from '../core/config';
+import { counterDy } from '../data/storeRoom';
 import { roadmapModal } from './roadmap';
 import { truckModal } from './truckModal';
 import { ResourceBar, stockModal } from './resources';
@@ -477,7 +478,7 @@ export class UI implements UIApi {
       const c = g.critters.list.find((x) => x.bonus) ?? null;
       return c ? at(c.x, c.y, 30) : null;
     }
-    return at(CONFIG.STAND.x, CONFIG.STAND.y, 100);
+    return at(CONFIG.STAND.x, CONFIG.STAND.y + counterDy(g.atStore()), 100);
   }
 
   private toTitle(): void {

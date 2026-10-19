@@ -1,6 +1,6 @@
 // The own store (level 4) seen in a cut, like a doll's house: the floor of the room, its two back walls (windows,
 // shelves, the name board, the menu with today's prices), low cut walls on the street sides with a glass door, the
-// bar behind the counter, the tables and chairs of the customers.
+// tables and chairs of the customers. The counter stands at the back wall (src/render/proc/stand.ts).
 import { CONFIG } from '../../core/config';
 import { DOOR, ROOM_D } from '../../data/storeRoom';
 import { t } from '../../i18n';
@@ -34,19 +34,43 @@ export const STORE_WALL = {
   leftWindow: [262, 346] as [number, number],
 };
 
-/** What the menu board says: today's prices. */
-function menuText(ctx: Ctx, price: number, cookiePrice: number | null): void {
-  const m = STORE_WALL.menu;
-  const cx = (m.u0 + m.u1) / 2;
-  text(ctx, t('world.menu'), cx, m.v0 + 8, 7, '#fff3bf', 'center', 900);
-  line(ctx, m.u0 + 8, m.v0 + 14, m.u1 - 8, m.v0 + 14, 'rgba(255,255,255,0.5)', 1);
-  text(ctx, `🍋 ${price}`, cx, m.v0 + 24, 8, '#ffffff', 'center', 900);
-  if (cookiePrice !== null) text(ctx, `🍪 ${cookiePrice}`, cx, m.v0 + 37, 8, '#ffffff', 'center', 900);
+/** Where the name board, the clock and the menu board are on the generated wall picture (assets/bg/wall_store_right,
+ * measured after tools/make_walls.py): the game writes on them. */
+const WALL_ART = {
+  sign: { u0: 98, u1: 179, v0: -96.3, v1: -82 },
+  clock: { u: 227, v: -71.3, rx: 13, ry: 10.5 },
+  menu: { u0: 260.7, u1: 300.3, v0: -82, v1: -42 },
+};
+
+interface Rect {
+  u0: number;
+  u1: number;
+  v0: number;
+  v1: number;
 }
 
-function signText(ctx: Ctx): void {
-  const s = STORE_WALL.sign;
-  text(ctx, `🍋 ${t('world.storeSign')}`, (s.u0 + s.u1) / 2, (s.v0 + s.v1) / 2 + 0.5, 10, '#c92a2a', 'center', 900);
+/** What the menu board says: today's prices (laid out for the height of the board). */
+function menuText(ctx: Ctx, m: Rect, price: number, cookiePrice: number | null): void {
+  const cx = (m.u0 + m.u1) / 2;
+  const k = (m.v1 - m.v0) / 50;
+  const big = Math.min(1, k + 0.1);
+  const pad = Math.min(8, (m.u1 - m.u0) * 0.15);
+  text(ctx, t('world.menu'), cx, m.v0 + 8 * k, 7 * big, '#fff3bf', 'center', 900);
+  line(ctx, m.u0 + pad, m.v0 + 14 * k, m.u1 - pad, m.v0 + 14 * k, 'rgba(255,255,255,0.5)', 1);
+  text(ctx, `🍋 ${price}`, cx, m.v0 + 24 * k, 8 * big, '#ffffff', 'center', 900);
+  if (cookiePrice !== null) text(ctx, `🍪 ${cookiePrice}`, cx, m.v0 + 37 * k, 8 * big, '#ffffff', 'center', 900);
+}
+
+/** The name of the store on its board, as big as the board allows. */
+function signText(ctx: Ctx, s: Rect): void {
+  const str = `🍋 ${t('world.storeSign')}`;
+  let size = Math.min(10, (s.v1 - s.v0) * 0.75);
+  // (the font of text() in iso.ts)
+  ctx.font = `900 ${size}px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
+  const room = (s.u1 - s.u0) * 0.92;
+  const w = ctx.measureText(str).width;
+  if (w > room) size *= room / w;
+  text(ctx, str, (s.u0 + s.u1) / 2, (s.v0 + s.v1) / 2 + 0.5, size, '#c92a2a', 'center', 900);
 }
 
 /** A window with the weather behind it. */
@@ -80,7 +104,7 @@ function plaster(ctx: Ctx, len: number, shade: number): void {
 function backWallDrawn(ctx: Ctx, price: number, cookiePrice: number | null): void {
   plaster(ctx, LEN, 0);
   for (const [u0, u1] of STORE_WALL.windows) windowPane(ctx, u0, u1);
-  // shelves with jars of lemonade and lemons, behind the bar
+  // shelves with jars of lemonade and lemons, behind the counter
   for (const v of [-66, -50]) {
     ctx.fillStyle = '#c58b4f';
     ctx.fillRect(104, v, 108, 4);
@@ -92,12 +116,12 @@ function backWallDrawn(ctx: Ctx, price: number, cookiePrice: number | null): voi
   }
   const s = STORE_WALL.sign;
   rrect(ctx, s.u0, s.v0, s.u1 - s.u0, s.v1 - s.v0, 5, '#ffd43b', '#e8590c', 2);
-  signText(ctx);
+  signText(ctx, s);
   clock(ctx, STORE_WALL.clock.u, STORE_WALL.clock.v, STORE_WALL.clock.r);
   const m = STORE_WALL.menu;
   rrect(ctx, m.u0 - 3, m.v0 - 3, m.u1 - m.u0 + 6, m.v1 - m.v0 + 6, 3, '#8a5a35');
   rrect(ctx, m.u0, m.v0, m.u1 - m.u0, m.v1 - m.v0, 2, '#2f4f3f');
-  menuText(ctx, price, cookiePrice);
+  menuText(ctx, m, price, cookiePrice);
   // a garland of little lights along the top of the wall
   for (let i = 0; i < 24; i++) {
     const u = 8 + i * 16;
@@ -168,9 +192,10 @@ export function drawStoreRoom(ctx: Ctx, price: number, cookiePrice: number | nul
     faceY(ctx, 0, 0, 0, () => {
       outside(ctx, 0, -WALL_H, LEN, WALL_H);
       ctx.drawImage(right, 0, -WALL_H, LEN, WALL_H);
-      signText(ctx);
-      clockHands(ctx, STORE_WALL.clock.u, STORE_WALL.clock.v, STORE_WALL.clock.r, STORE_WALL.clock.r);
-      menuText(ctx, price, cookiePrice);
+      const a = WALL_ART;
+      signText(ctx, a.sign);
+      clockHands(ctx, a.clock.u, a.clock.v, a.clock.rx, a.clock.ry);
+      menuText(ctx, a.menu, price, cookiePrice);
     });
   } else {
     faceX(ctx, 0, ROOM_D, 0, () => leftWallDrawn(ctx));
@@ -332,41 +357,6 @@ function cafeTable(ctx: Ctx, c: SpriteCall, cake: boolean): void {
   }
 }
 
-/** The bar along the back wall behind the counter: a coffee machine, a big jar of lemonade, a cake under a dome. */
-function backBar(ctx: Ctx, c: SpriteCall): void {
-  const x0 = c.x - 1.6;
-  const y0 = c.y - 0.28;
-  const h = 30;
-  box(ctx, x0, y0, 3.2, 0.55, h, 0, '#c58b4f', { top: '#fffaf0' });
-  faceY(ctx, x0, y0 + 0.55, 0, () => {
-    for (let i = 0; i < 4; i++) {
-      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(4 + i * 25, -h + 5, 21, h - 10);
-      circle(ctx, 14.5 + i * 25, -h / 2, 1.4, '#e9c46a');
-    }
-  });
-  // the coffee machine
-  box(ctx, x0 + 0.25, y0 + 0.08, 0.5, 0.36, 26, h, '#adb5bd');
-  const [mx, my] = P(x0 + 0.5, y0 + 0.44, h + 18);
-  circle(ctx, mx, my, 2, '#fa5252');
-  // the big jar of lemonade with a tap
-  const [jx, jy] = P(x0 + 1.5, y0 + 0.28, h);
-  rrect(ctx, jx - 9, jy - 30, 18, 30, 5, 'rgba(208,235,255,0.6)', '#74c0fc', 1.2);
-  rrect(ctx, jx - 8, jy - 20, 16, 19, 4, 'rgba(255,212,59,0.95)');
-  for (let i = 0; i < 3; i++) circle(ctx, jx - 4 + i * 4, jy - 14 + (i % 2) * 4, 2, '#fff3bf');
-  // a cake under a glass dome
-  const [kx, ky] = P(x0 + 2.6, y0 + 0.28, h);
-  ellipse(ctx, kx, ky - 1, 10, 4, '#ffffff', '#ced4da', 1);
-  rrect(ctx, kx - 7, ky - 10, 14, 8, 3, '#ffd8a8');
-  ellipse(ctx, kx, ky - 10, 7, 2.5, '#ff7aa8');
-  ctx.beginPath();
-  ctx.ellipse(kx, ky - 4, 10, 13, 0, Math.PI, 0);
-  ctx.strokeStyle = 'rgba(165,216,255,0.9)';
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-}
-
 registerProcs({
   prop_cafe_table: (ctx, c) => cafeTable(ctx, c, false),
   prop_cafe_table_b: (ctx, c) => cafeTable(ctx, c, true),
@@ -378,5 +368,4 @@ registerProcs({
     shadow(ctx, c.sx, c.sy, 8, 0.1);
     chair(ctx, c.x, c.y, 1);
   },
-  prop_store_backbar: backBar,
 });

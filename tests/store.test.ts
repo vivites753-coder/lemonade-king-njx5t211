@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../src/core/config';
 import { LOCATIONS, storeSetupCost } from '../src/data/locations';
-import { DOOR, ROOM_D } from '../src/data/storeRoom';
+import type { UpgradeId } from '../src/core/types';
+import { COUNTER_X, DOOR, ROOM_D, STORE_COUNTER_DY } from '../src/data/storeRoom';
 import { breakEvenCups, costPerCup, storeTax } from '../src/sim/economy';
 import { Game } from '../src/sim/game';
 import { freePlaces } from '../src/sim/points';
@@ -182,12 +183,13 @@ describe('the own store (level 4)', () => {
 
 describe('inside the store', () => {
   /** Plays a store day and checks every step: nobody walks through the walls, only through the door. */
-  function storeDay(seed: number, check: (g: Game) => void): Game {
+  function storeDay(seed: number, check: (g: Game) => void, extra: UpgradeId[] = []): Game {
     const g = level4(seed, 9000);
     for (const id of ['dispenser', 'tv'] as const) {
       g.S.upgrades[id] = true;
       g.S.condition[id] = 100;
     }
+    for (const id of extra) g.S.upgrades[id] = true;
     expect(g.openStore('townhall')).toBe(true);
     g.D.weather = 'sunny';
     toSelling(g, 8);
@@ -227,6 +229,31 @@ describe('inside the store', () => {
     expect(maxSitting).toBeGreaterThan(0);
     expect(maxSitting).toBeLessThanOrEqual(g.storeSeats().length);
     expect(g.D.report!.tips).toBeGreaterThanOrEqual(0);
+  });
+
+  it('the counter stands at the back: its queues wait in front of it, nobody walks through a table or the counter', () => {
+    const qy = CONFIG.QUEUE_Y + STORE_COUNTER_DY;
+    const sy = CONFIG.STAND.y + STORE_COUNTER_DY;
+    let queued = 0;
+    let through = 0;
+    storeDay(
+      57,
+      (g) => {
+        const tables = LOCATIONS[g.S.location].decor.filter((d) => d.id.startsWith('prop_cafe_table') && (!d.needs || g.active()[d.needs]));
+        for (const p of g.street.peds) {
+          if (p.state === 'queue') {
+            queued++;
+            expect(Math.abs(p.y - qy)).toBeLessThan(0.06);
+          }
+          if (p.state === 'sit') continue;
+          for (const d of tables) if (Math.hypot(p.x - d.x, p.y - d.y) < 0.3) through++;
+          if (p.x > COUNTER_X[0] && p.x < COUNTER_X[1] && p.y > sy - 0.45 && p.y < sy + 0.45) through++;
+        }
+      },
+      ['store_tables'],
+    );
+    expect(queued).toBeGreaterThan(100);
+    expect(through).toBe(0);
   });
 
   it('the seated customers leave tips now and then (income of the day)', () => {

@@ -179,10 +179,11 @@ export const HUD_DEFAULT_LAYOUT: Record<string, [number, number]> = {
   end: [0.813, 0.923],
 };
 
-/** Place number i in the queue of a counter (0: to the right of the stand, 1: to the left). */
-export function queueSpot(i: number, counter = 0): { x: number; y: number } {
-  if (counter === 1) return { x: CONFIG.QUEUE2_X0 - CONFIG.QUEUE2_DX * i, y: CONFIG.QUEUE_Y };
-  return { x: CONFIG.QUEUE_X0 + CONFIG.QUEUE_DX * i, y: CONFIG.QUEUE_Y };
+/** Place number i in the queue of a counter (0: to the right of the stand, 1: to the left); dy: the stand stands that
+ * much further back (the own store, see counterDy in src/data/storeRoom.ts). */
+export function queueSpot(i: number, counter = 0, dy = 0): { x: number; y: number } {
+  if (counter === 1) return { x: CONFIG.QUEUE2_X0 - CONFIG.QUEUE2_DX * i, y: CONFIG.QUEUE_Y + dy };
+  return { x: CONFIG.QUEUE_X0 + CONFIG.QUEUE_DX * i, y: CONFIG.QUEUE_Y + dy };
 }
 
 export type Edition = 'demo' | 'full';

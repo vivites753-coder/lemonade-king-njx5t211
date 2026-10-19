@@ -18,9 +18,9 @@
    (напис гра пише сама): окремо, пізніше.
 6. ~~Лист 23: автобусна зупинка~~ — готово (автобус, навіс, знак).
 7. ~~Лист 24: лід для кухні~~ — готово.
-8. **Свій магазин (рівень 4, етап A):** лист 25 (стіни магазину в розрізі, за шаблоном), 26 (прилавок), 28 (столики,
-   стільці окремо, буфет), 27 (ратуша), 12г (іконки місць і апгрейдів магазину). Поки їх немає, гра малює все це кодом.
-   Низькі передні стіни й скляні двері гра малює сама: для них картинок не треба.
+8. **Свій магазин (рівень 4, етап A):** ~~лист 25 (стіни)~~ — готово; лишились 26 (прилавок), 28 (столики й стільці
+   окремо), 29 (покупці сидять), 27 (ратуша), 12г (іконки місць і апгрейдів магазину). Поки їх немає, гра малює все
+   це кодом. Низькі передні стіни й скляні двері гра малює сама: для них картинок не треба.
 9. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
 
@@ -206,7 +206,7 @@ Row 2: 6) a shopping mall: a building with a big orange circle on the front, 7) 
 
 Імена: `ui_loc_yard, ui_loc_park, ui_loc_school, ui_loc_beach, ui_loc_station, ui_loc_mall, ui_loc_busstop, ui_btn_stock, ui_up_freezer, ui_btn_onlineads`
 
-## Лист 25. Стіни свого магазину (одна картинка 1536×1024, за шаблоном)
+## Лист 25. Стіни свого магазину (одна картинка 1536×1024, за шаблоном) — ГОТОВО
 
 Магазин тепер показаний у розрізі, як ляльковий будиночок: підлога, дві задні стіни, а перед відкритим боком вулиця.
 Стіни малюються **рівно, як фасад** (не в ізометрії), як для вокзалу й торгового центру: гра сама «загне» їх.
@@ -227,7 +227,10 @@ Follow the attached layout image EXACTLY: the same 1536x1024 canvas, the same po
 The walls: warm cream plaster on top, a turquoise wooden wainscot on the lower third with a white rail, a wooden baseboard. On the back wall, under the name board, two wooden shelves with glass jars of yellow lemonade and fresh lemons. A string of small round colourful lights along the top of both walls, a small framed picture of a lemon on the short wall. No text or letters anywhere. Even front light, no floor, no ceiling, no perspective lines.
 ```
 
-Ім'я: `wall_store` (встановлю сам: `python tools/make_walls.py <лист> store`). Підлогу магазину (дерев'яні дошки)
+Ім'я: `wall_store` (встановлено: `python tools/make_walls.py art/sheets/walls_store.jpg store 224`; генератор
+лишив сіру рамку шаблону й змінив розмір полотна, тому стіни вирізаються з рамки, а коротка стіна стає на u 224–384).
+Табличку, годинник і дошку меню на картинці гра знаходить за `WALL_ART` у `src/render/proc/store.ts` (виміряно на
+картинці). Підлогу магазину (дерев'яні дошки)
 можна згенерувати окремо як велику текстуру: `warm honey-colored wooden floor planks with soft grain` (див. «Великі
 суцільні текстури»), ім'я `tile_store_floor`.
 
@@ -244,22 +247,46 @@ NO people, NO objects on the top, NO ground shadow, NO text, letters or numbers.
 
 Ім'я: `stand_store_counter`.
 
-## Лист 28. Меблі магазину (3×2, ISO)
+## Лист 28. Столики й стільці магазину (2×2, ISO)
 
-Столики для покупців, стільці й буфет біля задньої стіни, за прилавком. Стільці — **окремі** картинки: на них сідають
-покупці (гра садить людину між стільцем і столиком). Стілець 4 стоїть ліворуч від столика (спинка вгорі зліва, хто
-сидить, дивиться на нас), стілець 5 — праворуч (спинка внизу справа, людину видно зі спини).
+Столики для покупців і стільці — **окремі** картинки: на стільці сідають покупці (гра садить людину між стільцем і
+столиком). Стілець 3 стоїть ліворуч від столика (спинка вгорі зліва, хто сидить, дивиться на нас), стілець 4 —
+праворуч (спинка внизу справа, людину видно зі спини). Буфета біля задньої стіни більше немає: там тепер прилавок.
 
-СІТКА 6 / 3×2 / 72% + ISO +
+СІТКА 4 / 2×2 / 72% + ISO +
 
 ```
 Each item is one piece of furniture of a cozy lemonade café, a cute toy-like 3D object with chunky rounded shapes, no text, letters or numbers anywhere. All at the same scale and the same camera.
-Row 1: 1) a small round café table WITHOUT chairs: a white round top on one dark grey leg with a round foot; on it a small vase with a pink flower and a tall cup of yellow lemonade; 2) exactly the same table WITHOUT chairs, with a small plate with a slice of lemon cake and a cup on it instead; 3) a long low wooden back-bar cabinet with a cream top, its long side facing the LOWER-LEFT, about three times longer than deep; on top: a silver coffee machine, a big pastel-yellow jar of lemonade with a little tap, and a round cake on a stand.
-Row 2: 4) one turquoise wooden café chair with four thin dark legs, its backrest on the UPPER-LEFT side, so the empty seat faces the LOWER-RIGHT; 5) exactly the same chair turned around: its backrest on the LOWER-RIGHT side, the seat faces the UPPER-LEFT; 6) a tall green leafy plant in a round terracotta pot.
+Row 1: 1) a small round café table WITHOUT chairs: a white round top on one dark grey leg with a round foot; on it a small vase with a pink flower and a tall cup of yellow lemonade; 2) exactly the same table WITHOUT chairs, with a small plate with a slice of lemon cake and a cup on it instead.
+Row 2: 3) one turquoise wooden café chair with four thin dark legs, its backrest on the UPPER-LEFT side, so the empty seat faces the LOWER-RIGHT; 4) exactly the same chair turned around: its backrest on the LOWER-RIGHT side, the seat faces the UPPER-LEFT.
 ```
 
-Імена: `prop_cafe_table, prop_cafe_table_b, prop_store_backbar, prop_cafe_chair_l, prop_cafe_chair_r, prop_plant`
-(вазон уже є; шостий можна просто викинути, якщо старий подобається).
+Імена: `prop_cafe_table, prop_cafe_table_b, prop_cafe_chair_l, prop_cafe_chair_r`
+
+## Лист 29. Покупці сидять за столиком (3×4 пари, ISO)
+
+Ті самі 12 людей, що й на листі 06 (пішоходи), у тому самому порядку, але сидять із лимонадом у руках. Кожна клітинка —
+пара: ліворуч вигляд спереду (так людина сидить на лівому стільці, обличчям до нас), праворуч ззаду (на правому стільці).
+Обидва вигляди повернуті праворуч, як у пішоходів: гра сама дзеркалить того, хто сидить спиною. Стільця на картинці
+немає: гра садить людину на свій стілець, а ноги частково ховає столик. Прикріпіть дві картинки: спершу лист людей
+`art/sheets/sheet_people.jpg` (хто є хто), потім референс стилю `art/style-test/sheet_01.jpg`. До негативного промпта
+додайте `chair, stool, bench, table, furniture`.
+
+```
+A character sprite sheet arranged in a strict 3-column by 4-row grid on a perfectly flat solid magenta background (#FF00FF). Each of the 12 cells holds ONE character shown twice side by side: on the left a FRONT view, on the right a BACK view, with a clear magenta gap between the two and a wide empty magenta margin around the cell (at least 12% of the cell), no overlap, no grid lines, no labels, no numbers, no text, no watermark.
+
+The 12 characters are EXACTLY the same people as in the first attached image, in the same order, with the same faces, hair, skin, clothes, colours and accessories, the same chibi proportions and the same size. Row 1: a boy with a red backpack, a girl in a pink dress with two pigtails, a boy in a green cap and a green hoodie. Row 2: a man in a grey jacket, a woman with long brown hair in a red coat, a bearded man in a mustard sweater with a briefcase. Row 3: a granny with glasses and a cane in a lilac cardigan, a granny with white curly hair in a blue coat and a pink scarf, a sporty man with a red headband in an orange tank top. Row 4: a sporty woman with a dark ponytail in a turquoise top and black leggings, a tourist man in a straw hat and a flowery shirt with a camera, a tourist woman in a wide sun hat and a yellow dress.
+
+Now every character is SITTING on an INVISIBLE chair: NO chair, NO stool, NO bench, NO table, NO furniture at all is drawn. The hips are at knee height, the thighs horizontal, the lower legs hanging down (the kids' feet dangle). Each one holds a paper cup of yellow lemonade with a straw in both hands in front of the chest, relaxed and happy; bags, the briefcase and the cane rest against the legs.
+FRONT view (the left figure of each pair): three-quarter isometric view, FACING THE VIEWER and turned toward the RIGHT side of the image, the knees pointing to the lower-right, the face visible.
+BACK view (the right figure of each pair): the same sitting pose seen from BEHIND, turned toward the RIGHT: the back of the head and the back visible, the knees pointing to the upper-right, the cup hidden in front of the body.
+
+Use the second attached image as the exact style reference: isometric 3D render, cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft studio lighting from the top-left, gentle ambient occlusion, 2:1 dimetric isometric camera (about 30 degrees elevation, rotated 45 degrees), clean readable silhouettes, kid-friendly mobile game art. NO ground shadows, NO cast shadows, NO glow, NO halo, NO light rays, NO text, letters or numbers on any object. Same camera, same lighting, same level of detail and consistent scale for all characters.
+```
+
+Імена (наріжу з `--pairs`): `char_<ім'я>_sit_front, char_<ім'я>_sit_back` для `kid_a, kid_b, kid_c, adult_a, adult_b,
+adult_c, granny_a, granny_b, sport_a, sport_b, tourist_a, tourist_b`. Поки їх немає, гра садить людину, опустивши й
+обрізавши її звичайну картинку.
 
 ## Лист 27. Ратуша (одна велика картинка, ISO)
 

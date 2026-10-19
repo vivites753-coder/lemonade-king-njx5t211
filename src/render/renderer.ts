@@ -21,7 +21,7 @@ import { drawStorePiece, drawStoreRoom, STORE_PIECES, type StorePiece } from './
 import { DOOR, ROOM_D } from '../data/storeRoom';
 import { drawKey } from './depth';
 import { drawCritter } from './proc/critters';
-import { drawStand, drawStandPart, drawStandShadows, standSideParts, type StandPart } from './proc/stand';
+import { drawStand, drawStandPart, drawStandShadows, standDy, standSideParts, type StandPart } from './proc/stand';
 import { TRUCK } from './proc/truck';
 import './proc/buildings';
 
@@ -34,8 +34,6 @@ const PHONE_ZOOM = 1.4 * 1.4 * 0.6 * 0.85;
 const PHONE_SELL_ZOOM = 1.5;
 /** Two fingers zoom the field between "everything fits" and this many times that. */
 const PINCH_MAX = 4;
-/** The stand in world pixels (the phone camera leans towards it). */
-const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
 
 type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; // decor, ped, car, stand, thief, critter, a side part of the stand, a low wall of the store
 interface Item {
@@ -120,8 +118,9 @@ export class Renderer {
     game.bus.on('sale', (e) => !this.view && this.floats.push({ x: e.x, y: e.y - (e.cookie ? 0.35 : 0), text: `+${e.amount}${e.cookie ? ' 🍪' : ''}`, color: e.cookie ? '#a0612b' : '#2b8a3e', t: 0 }));
     game.bus.on('thief', (e) => {
       if (this.view) return;
-      if (e.state === 'caught') this.floats.push({ x: CONFIG.STAND.x - 1, y: CONFIG.STAND.y + 0.8, text: `+${e.amount}`, color: '#2b8a3e', t: 0 });
-      if (e.state === 'stole' && e.amount) this.floats.push({ x: CONFIG.STAND.x, y: CONFIG.STAND.y, text: `−${e.amount}`, color: '#e03131', t: 0 });
+      const y = CONFIG.STAND.y + standDy(game);
+      if (e.state === 'caught') this.floats.push({ x: CONFIG.STAND.x - 1, y: y + 0.8, text: `+${e.amount}`, color: '#2b8a3e', t: 0 });
+      if (e.state === 'stole' && e.amount) this.floats.push({ x: CONFIG.STAND.x, y, text: `−${e.amount}`, color: '#e03131', t: 0 });
       const th = game.street.thief;
       if (e.state === 'hit' && th) this.floats.push({ x: th.x, y: th.y, text: `💥 ${e.amount}/${CONFIG.THIEF_HITS}`, color: '#e8590c', t: 0 });
     });
@@ -201,8 +200,9 @@ export class Renderer {
     const s = Math.min(availW / vw, fitH / vh) * PHONE_ZOOM * (selling ? PHONE_SELL_ZOOM : 1);
     // while selling the camera leans further towards the stand (the customers and the queue)
     const k = selling ? 0.62 : 0.5;
-    const cx = (VIEW.minX + VIEW.maxX) / 2 + (STAND_PX[0] - (VIEW.minX + VIEW.maxX) / 2) * k;
-    const cy = (VIEW.minY + VIEW.maxY) / 2 + (STAND_PX[1] - (VIEW.minY + VIEW.maxY) / 2) * k;
+    const stand = P(CONFIG.STAND.x, CONFIG.STAND.y + standDy(this.src));
+    const cx = (VIEW.minX + VIEW.maxX) / 2 + (stand[0] - (VIEW.minX + VIEW.maxX) / 2) * k;
+    const cy = (VIEW.minY + VIEW.maxY) / 2 + (stand[1] - (VIEW.minY + VIEW.maxY) / 2) * k;
     return { s, ox: i.left + 6 + availW / 2 - cx * s, oy: i.top + 4 + fitH / 2 - cy * s, fit };
   }
 
@@ -435,12 +435,14 @@ export class Renderer {
     // a truck is long: its depth is that of its front left corner, so people walking past in front of it (and the lamp,
     // the mailbox, the bin there) are drawn over it; nothing behind it reaches into its picture
     // the counter of a store is long: the people of the left queue, who stand in front of its left end, are drawn after it
+    // (in the store the counter stands at the back wall)
+    const sdy = standDy(g);
     const standD = g.active().truck
       ? TRUCK.x0 + TRUCK.y0 + TRUCK.d - 0.6
       : LOCATIONS[loc].store
-        ? CONFIG.STAND.x + CONFIG.STAND.y - 1.8
+        ? CONFIG.STAND.x + CONFIG.STAND.y + sdy - 1.8
         : CONFIG.STAND.x + CONFIG.STAND.y + 0.05;
-    items.push({ d: key(standD, CONFIG.STAND.y), k: 3, o: null });
+    items.push({ d: key(standD, CONFIG.STAND.y + sdy), k: 3, o: null });
     // the sign, the mascot and the TV stand apart from the table: each one is sorted by its own depth
     for (const s of standSideParts(g)) items.push({ d: key(s.x + s.y, s.y), k: 6, o: s.part });
     const th = g.street.thief;
@@ -497,7 +499,7 @@ export class Renderer {
         ctx.fillStyle = 'rgba(10,12,40,0.35)';
         ctx.fillRect(-420, -200, 840, 640);
       }
-      const [bx, by] = P(CONFIG.STAND.x, CONFIG.STAND.y, 120);
+      const [bx, by] = P(CONFIG.STAND.x, CONFIG.STAND.y + standDy(g), 120);
       const pulse = ENV.reduceMotion ? 1 : 0.8 + Math.abs(Math.sin(this.t * 4)) * 0.3;
       circle(ctx, bx, by, 13 * pulse, '#fff9db', '#fab005', 2);
       text(ctx, '⚡', bx, by + 0.5, 14, '#000', 'center', 400);
@@ -656,7 +658,7 @@ export class Renderer {
       const s = g.servings[c];
       if (!s) continue;
       const k = Math.min(1, s.t / s.dur);
-      const spot = queueSpot(0, c);
+      const spot = queueSpot(0, c, standDy(g));
       const [sx, sy] = P(spot.x, spot.y, 78);
       circle(ctx, sx, sy, 13, 'rgba(255,255,255,0.95)');
       ctx.beginPath();
@@ -668,7 +670,7 @@ export class Renderer {
     }
     if (g.making) {
       const k = Math.min(1, g.making.t / g.making.dur);
-      const [sx, sy] = P(CONFIG.STAND.x - 0.1, CONFIG.STAND.y - 0.85, 96);
+      const [sx, sy] = P(CONFIG.STAND.x - 0.1, CONFIG.STAND.y - 0.85 + standDy(g), 96);
       circle(ctx, sx, sy, 15, 'rgba(255,255,255,0.95)');
       ctx.beginPath();
       ctx.arc(sx, sy, 15, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2);

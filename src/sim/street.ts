@@ -3,7 +3,7 @@ import { CONFIG, queueSpot } from '../core/config';
 import { RNG } from '../core/rng';
 import type { LocationId, PedTypeId, Vec, WeatherId } from '../core/types';
 import { LOCATIONS, type BusStopDef } from '../data/locations';
-import { DOOR_IN as STORE_IN, DOOR_OUT as STORE_OUT, inRoom, ROOM_D, type Seat } from '../data/storeRoom';
+import { AISLE_IN, AISLE_Y, COUNTER_X, counterDy, DOOR as STORE_DOOR, DOOR_IN as STORE_IN, DOOR_OUT as STORE_OUT, inRoom, ROOM_D, type Seat } from '../data/storeRoom';
 import { PED_TYPES } from '../data/pedTypes';
 import { randomLook, type Look } from './looks';
 import { spawnRatePerHour, type Crowd } from './traffic';
@@ -158,6 +158,11 @@ export class Street {
   /** The chairs of the store that are taken now. */
   private taken = new Set<string>();
 
+  /** In the store the counter and its queues stand at the back of the room (see storeRoom.ts). */
+  private get standDy(): number {
+    return counterDy(this.host.store());
+  }
+
   constructor(private host: StreetHost) {}
 
   reset(prewarm: boolean): void {
@@ -232,7 +237,7 @@ export class Street {
       p.atSpot = false;
       if (this.moveTo(p, p.path[0].x, p.path[0].y, dt)) p.path.shift();
     } else {
-      const spot = queueSpot(this.queueFor(p.counter).indexOf(p), p.counter);
+      const spot = queueSpot(this.queueFor(p.counter).indexOf(p), p.counter, this.standDy);
       p.atSpot = this.moveTo(p, spot.x, spot.y, dt);
       if (p.atSpot) {
         p.state = 'queue';
@@ -369,7 +374,7 @@ export class Street {
     while (standing < q.length && q[standing].state === 'queue') standing++;
     if (q.length - standing < 2) return;
     const stand = q.filter((p) => p.state === 'queue');
-    const spot = queueSpot(stand.length, counter);
+    const spot = queueSpot(stand.length, counter, this.standDy);
     const dist = (p: Ped) => (p.x - spot.x) ** 2 + (p.y - spot.y) ** 2;
     const walking = q.filter((p) => p.state !== 'queue').sort((a, b) => dist(a) - dist(b));
     q.splice(0, q.length, ...stand, ...walking);
@@ -389,8 +394,8 @@ export class Street {
     p.counter = counter;
     this.queueFor(counter).push(p);
     p.state = 'toQueue';
-    // into the store through its door (the queue stands inside)
-    p.path = this.host.store() && !inRoom(p) ? [STORE_OUT, STORE_IN] : [];
+    // into the store through its door and up the aisle (the queue stands inside, at the back)
+    p.path = this.host.store() && !inRoom(p) ? [STORE_OUT, STORE_IN, AISLE_IN] : [];
     p.atSpot = false;
     p.patienceMax = rng.range(CONFIG.PATIENCE_MIN, CONFIG.PATIENCE_MAX) * this.host.patienceMult();
     p.patience = p.patienceMax;
@@ -411,8 +416,12 @@ export class Street {
       { x: p.x + p.dir * 0.4, y: p.laneY },
       { x: exitX, y: p.laneY },
     ];
-    // out of the store through its door, then along the lane
-    if (this.host.store() && p.y < ROOM_D + 0.05) p.path = [STORE_IN, STORE_OUT, { x: STORE_OUT.x + p.dir * 0.5, y: p.laneY }, { x: exitX, y: p.laneY }];
+    // out of the store: along the aisle to the door (round the tables), through it, then along the lane
+    if (this.host.store() && p.y < ROOM_D + 0.05) {
+      const atDoor = p.y > AISLE_Y && Math.abs(p.x - STORE_DOOR.x) < 0.7;
+      const aisle = atDoor ? [] : [{ x: p.x, y: AISLE_Y }, AISLE_IN];
+      p.path = [...aisle, STORE_IN, STORE_OUT, { x: STORE_OUT.x + p.dir * 0.5, y: p.laneY }, { x: exitX, y: p.laneY }];
+    }
     // out through the doorway on the left
     const door = this.doorY(p.far);
     if (door !== null && p.dir < 0) p.path.splice(1, 1, { x: Math.min(DOOR_LANE, p.x - 0.4), y: p.laneY }, { x: DOOR_IN, y: door }, { x: exitX, y: door });
@@ -431,7 +440,7 @@ export class Street {
       this.taken.add(seatKey(seat));
       p.seat = seat;
       p.state = 'toSeat';
-      p.path = [];
+      p.path = this.seatPath(p, seat);
       p.atSpot = false;
       p.sitT = this.host.rng.range(CONFIG.SIT_TIME[0], CONFIG.SIT_TIME[1]) * this.host.sitMult();
       this.setEmote(p, emote, 3);
@@ -444,6 +453,18 @@ export class Street {
   private pickSeat(): Seat | null {
     const free = this.host.seats().filter((s) => !this.taken.has(seatKey(s)));
     return free.length ? free[this.host.rng.int(0, free.length - 1)] : null;
+  }
+
+  /** From the counter to a chair: to a table behind the queue on the same side of the counter by the front of the
+   * chair (not across the table), otherwise along the aisle (round the counter and between the tables). */
+  private seatPath(p: Ped, seat: Seat): Vec[] {
+    const [x0, x1] = COUNTER_X;
+    const sameSide = (p.x > x1 && seat.x > x1) || (p.x < x0 && seat.x < x0);
+    if (seat.y < AISLE_Y && sameSide) return [{ x: seat.x, y: seat.y + 0.55 }];
+    return [
+      { x: p.x, y: AISLE_Y },
+      { x: seat.x, y: AISLE_Y },
+    ];
   }
 
   private freeSeat(p: Ped): void {
@@ -459,7 +480,10 @@ export class Street {
       return;
     }
     if (p.state === 'toSeat') {
-      if (this.moveTo(p, seat.x, seat.y, dt)) {
+      const w = p.path[0];
+      if (w) {
+        if (this.moveTo(p, w.x, w.y, dt)) p.path.shift();
+      } else if (this.moveTo(p, seat.x, seat.y, dt)) {
         p.state = 'sit';
         p.moving = false;
       }
@@ -631,7 +655,7 @@ export class Street {
     let result: 'steal' | null = null;
     const mover = { x: th.x, y: th.y, vx: 0, vy: 0, speed: th.speed, moving: false };
     if (th.state === 'run') {
-      if (this.follow(mover, th, CONFIG.STAND.x - 1.05, CONFIG.STAND.y + 0.8, rdt)) {
+      if (this.follow(mover, th, CONFIG.STAND.x - 1.05, CONFIG.STAND.y + 0.8 + this.standDy, rdt)) {
         th.state = 'grab';
         th.t = 0;
       }

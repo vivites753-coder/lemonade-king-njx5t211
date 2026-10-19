@@ -471,16 +471,15 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       'ccccccccgggg',
     ],
     decor: [
-      // inside: the bar along the back wall behind the counter, tables for the customers (away from the queues at
-      // y = 4.25), plants in the corners
-      { id: 'prop_store_backbar', x: 5.0, y: 0.6 },
-      ...cafeTable(1.4, 1.6),
-      ...cafeTable(1.5, 3.2, true),
-      ...cafeTable(8.6, 1.5),
-      ...cafeTable(10.3, 2.8, true),
+      // inside: the counter stands at the back wall (storeRoom.ts), the tables for the customers stand behind its
+      // queues (y = 2.4) at the sides, or in front of the aisle (y = 3), away from the way to the door
+      ...cafeTable(1.5, 1.2),
+      ...cafeTable(9.6, 1.15, true),
+      ...cafeTable(1.2, 4.0, true),
+      ...cafeTable(6.9, 4.0),
       // two more with the upgrade
-      ...cafeTable(2.75, 1.3, false, 'store_tables'),
-      ...cafeTable(11.0, 1.35, true, 'store_tables'),
+      ...cafeTable(4.6, 4.0, true, 'store_tables'),
+      ...cafeTable(9.2, 4.0, false, 'store_tables'),
       { id: 'prop_plant', x: 0.45, y: 0.45, s: 0.9 },
       { id: 'prop_plant', x: 11.55, y: 0.5, s: 0.9 },
       // the square: the fountain between the two walks (y = 5.5 and 8.5), benches and lamps there too
@@ -533,14 +532,13 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       G12,
     ],
     decor: [
-      // inside: the bar along the back wall behind the counter, tables for the customers, plants
-      { id: 'prop_store_backbar', x: 5.0, y: 0.6 },
-      ...cafeTable(1.4, 1.7),
-      ...cafeTable(1.6, 3.3, true),
-      ...cafeTable(9.0, 1.8),
+      // inside: the counter at the back wall, the tables behind its queues at the sides or in front of the aisle
+      ...cafeTable(1.5, 1.2),
+      ...cafeTable(9.6, 1.15, true),
+      ...cafeTable(6.9, 4.0),
       // two more with the upgrade
-      ...cafeTable(2.75, 1.35, true, 'store_tables'),
-      ...cafeTable(7.8, 2.6, false, 'store_tables'),
+      ...cafeTable(1.2, 4.0, true, 'store_tables'),
+      ...cafeTable(4.6, 4.0, false, 'store_tables'),
       { id: 'prop_plant', x: 0.45, y: 0.45, s: 0.9 },
       { id: 'prop_plant', x: 11.55, y: 0.5, s: 0.9 },
       { id: 'prop_plant', x: 11.45, y: 3.3, s: 0.8 },
