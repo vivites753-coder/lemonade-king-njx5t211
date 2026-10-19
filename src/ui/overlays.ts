@@ -39,6 +39,7 @@ const TIP_MOOD: Record<string, LemiMood> = {
   mixer: 'think',
   kitchen_more: 'think',
   store: 'happy',
+  tables: 'happy',
 };
 
 /** How Lemi looks under the lesson of an event card (thinking when not listed). */

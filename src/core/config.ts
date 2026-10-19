@@ -158,6 +158,12 @@ export const CONFIG = {
   STORE_ADS: 0.25,
   STORE_COMFORT: 1.08,
   STORE_WEATHER_SHIELD: 0.6,
+  /** In the store this share of the served customers sits down at a free table for a while (simulation seconds), and
+   * leaving, some leave a tip (coins). */
+  SIT_CHANCE: 0.4,
+  SIT_TIME: [8, 16] as [number, number],
+  TIP_CHANCE: 0.5,
+  TIP: [1, 3] as [number, number],
 } as const;
 
 /**

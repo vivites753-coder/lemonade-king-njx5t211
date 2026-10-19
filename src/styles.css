@@ -2351,6 +2351,14 @@ html.phone .taste-labels {
   flex-wrap: wrap;
   gap: 6px;
 }
+.dev-err {
+  margin: 0 0 6px;
+  font-size: calc(12px * var(--fs, 1));
+  overflow-wrap: anywhere;
+}
+.dev-err code {
+  color: var(--red-d);
+}
 
 /* a new version is available */
 .update-bar {

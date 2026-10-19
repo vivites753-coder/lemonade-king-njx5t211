@@ -3,11 +3,13 @@ import { CONFIG, queueSpot } from '../core/config';
 import { RNG } from '../core/rng';
 import type { LocationId, PedTypeId, Vec, WeatherId } from '../core/types';
 import { LOCATIONS, type BusStopDef } from '../data/locations';
+import { DOOR_IN as STORE_IN, DOOR_OUT as STORE_OUT, inRoom, ROOM_D, type Seat } from '../data/storeRoom';
 import { PED_TYPES } from '../data/pedTypes';
 import { randomLook, type Look } from './looks';
 import { spawnRatePerHour, type Crowd } from './traffic';
 
-export type PedState = 'walk' | 'toQueue' | 'queue' | 'leave';
+/** toSeat / sit: in the store, a served customer goes to a free chair and sits there for a while. */
+export type PedState = 'walk' | 'toQueue' | 'queue' | 'leave' | 'toSeat' | 'sit';
 
 export interface Ped {
   id: number;
@@ -40,6 +42,9 @@ export interface Ped {
   gone: boolean;
   /** Which counter's queue the person stands in. */
   counter: number;
+  /** The chair of the store taken by this customer, and the seconds left to sit there. */
+  seat: Seat | null;
+  sitT: number;
 }
 
 /** A bus of a bus stop: it brakes to the stop, waits while its people get off, and drives on. */
@@ -80,6 +85,9 @@ export interface Thief {
   /** Where he runs to after a hit. */
   tx: number;
   ty: number;
+  /** The way to the current target (through the door of the store), and that target. */
+  path: Vec[];
+  pathTo: string;
 }
 
 export interface StreetHost {
@@ -97,7 +105,16 @@ export interface StreetHost {
   onSpawnCounted(): void;
   onInRange(p: Ped): void;
   onImpatient(p: Ped): void;
+  /** The place is the own store: people walk in and out through its door (see storeRoom.ts). */
+  store(): boolean;
+  /** The chairs of the store where served customers may sit down, and how much longer they stay than usual. */
+  seats(): Seat[];
+  sitMult(): number;
+  /** A customer leaves the table: maybe a tip. */
+  onTip(p: Ped): void;
 }
+
+const seatKey = (s: Seat) => `${s.x},${s.y}`;
 
 const CAR_COLORS = ['#e03131', '#1971c2', '#f59f00', '#2f9e44', '#f8f9fa', '#7048e8'];
 /** The two lanes of the road (tile y): the road takes rows 6 and 7, the dashed line is at y = 7. */
@@ -138,6 +155,8 @@ export class Street {
   /** The dice of the traffic: cars (and so the buses, which keep behind them) must not use the game's dice or the
    * browser's, so the same game plays out the same every time. */
   private carRng = new RNG(0x2c1b3c6d);
+  /** The chairs of the store that are taken now. */
+  private taken = new Set<string>();
 
   constructor(private host: StreetHost) {}
 
@@ -150,6 +169,7 @@ export class Street {
     this.spawnAcc = 0;
     this.busAcc = 0;
     this.busLoad = 0;
+    this.taken.clear();
     if (!prewarm) return;
     const rate = spawnRatePerHour(this.host.location(), this.host.hour(), this.host.weather(), this.host.crowd());
     const n = Math.min(CONFIG.MAX_PEDS - 10, Math.round(rate));
@@ -184,6 +204,11 @@ export class Street {
       p.emoteT -= dt;
       if (p.emoteT <= 0) p.emote = null;
     }
+    if (p.state === 'toSeat' || p.state === 'sit') {
+      this.updateSitter(p, dt);
+      if (p.moving) p.anim += dt * (4 + p.speed * 4);
+      return;
+    }
     if (p.state === 'walk' || p.state === 'leave') {
       const target = p.path[0];
       if (!target) {
@@ -202,6 +227,10 @@ export class Street {
           this.host.onInRange(p);
         }
       }
+    } else if (p.state === 'toQueue' && p.path.length) {
+      // into the store through its door first
+      p.atSpot = false;
+      if (this.moveTo(p, p.path[0].x, p.path[0].y, dt)) p.path.shift();
     } else {
       const spot = queueSpot(this.queueFor(p.counter).indexOf(p), p.counter);
       p.atSpot = this.moveTo(p, spot.x, spot.y, dt);
@@ -299,6 +328,8 @@ export class Street {
       hasCup: false,
       gone: false,
       counter: 0,
+      seat: null,
+      sitT: 0,
     };
     this.peds.push(p);
     if (counted) h.onSpawnCounted();
@@ -358,7 +389,8 @@ export class Street {
     p.counter = counter;
     this.queueFor(counter).push(p);
     p.state = 'toQueue';
-    p.path = [];
+    // into the store through its door (the queue stands inside)
+    p.path = this.host.store() && !inRoom(p) ? [STORE_OUT, STORE_IN] : [];
     p.atSpot = false;
     p.patienceMax = rng.range(CONFIG.PATIENCE_MIN, CONFIG.PATIENCE_MAX) * this.host.patienceMult();
     p.patience = p.patienceMax;
@@ -373,11 +405,14 @@ export class Street {
     }
     p.state = 'leave';
     p.atSpot = false;
+    this.freeSeat(p);
     const exitX = p.dir > 0 ? CONFIG.SPAWN_RIGHT : CONFIG.SPAWN_LEFT;
     p.path = [
       { x: p.x + p.dir * 0.4, y: p.laneY },
       { x: exitX, y: p.laneY },
     ];
+    // out of the store through its door, then along the lane
+    if (this.host.store() && p.y < ROOM_D + 0.05) p.path = [STORE_IN, STORE_OUT, { x: STORE_OUT.x + p.dir * 0.5, y: p.laneY }, { x: exitX, y: p.laneY }];
     // out through the doorway on the left
     const door = this.doorY(p.far);
     if (door !== null && p.dir < 0) p.path.splice(1, 1, { x: Math.min(DOOR_LANE, p.x - 0.4), y: p.laneY }, { x: DOOR_IN, y: door }, { x: exitX, y: door });
@@ -386,7 +421,59 @@ export class Street {
 
   serveDone(p: Ped, emote: string): void {
     p.hasCup = true;
+    // in the store some customers sit down at a free table for a while
+    const seat = this.host.store() ? this.pickSeat() : null;
+    if (seat && this.host.rng.chance(CONFIG.SIT_CHANCE)) {
+      for (const q of [this.queue, this.queue2]) {
+        const i = q.indexOf(p);
+        if (i >= 0) q.splice(i, 1);
+      }
+      this.taken.add(seatKey(seat));
+      p.seat = seat;
+      p.state = 'toSeat';
+      p.path = [];
+      p.atSpot = false;
+      p.sitT = this.host.rng.range(CONFIG.SIT_TIME[0], CONFIG.SIT_TIME[1]) * this.host.sitMult();
+      this.setEmote(p, emote, 3);
+      return;
+    }
     this.leave(p, emote, 3);
+  }
+
+  /** A free chair of the store (any of them), or null. */
+  private pickSeat(): Seat | null {
+    const free = this.host.seats().filter((s) => !this.taken.has(seatKey(s)));
+    return free.length ? free[this.host.rng.int(0, free.length - 1)] : null;
+  }
+
+  private freeSeat(p: Ped): void {
+    if (p.seat) this.taken.delete(seatKey(p.seat));
+    p.seat = null;
+  }
+
+  /** People sitting down: to the chair, a while on it (with the cup), then out (maybe leaving a tip). */
+  private updateSitter(p: Ped, dt: number): void {
+    const seat = p.seat;
+    if (!seat) {
+      this.leave(p, null);
+      return;
+    }
+    if (p.state === 'toSeat') {
+      if (this.moveTo(p, seat.x, seat.y, dt)) {
+        p.state = 'sit';
+        p.moving = false;
+      }
+      return;
+    }
+    p.sitT -= dt;
+    if (p.sitT > 0) return;
+    this.host.onTip(p);
+    this.leave(p, null);
+  }
+
+  /** People sitting at the tables of the store now. */
+  get sitting(): number {
+    return this.taken.size;
   }
 
   sendAwayQueue(emote: string | null = null): void {
@@ -514,7 +601,26 @@ export class Street {
 
   // ---------- thief (runs on real time so speed-ups don't make it unfair) ----------
   spawnThief(): void {
-    this.thief = { x: CONFIG.SPAWN_LEFT, y: 5.35, t: 0, state: 'run', anim: 0, moving: true, dirX: 1, bag: false, hits: 0, speed: CONFIG.THIEF_SPEED, tx: 0, ty: 0 };
+    this.thief = { x: CONFIG.SPAWN_LEFT, y: 5.35, t: 0, state: 'run', anim: 0, moving: true, dirX: 1, bag: false, hits: 0, speed: CONFIG.THIEF_SPEED, tx: 0, ty: 0, path: [], pathTo: '' };
+  }
+
+  /** The way from one point to another: through the door of the store when its front wall is between them. */
+  private via(from: Vec, to: Vec): Vec[] {
+    if (!this.host.store() || inRoom(from) === inRoom(to)) return [to];
+    return inRoom(from) ? [STORE_IN, STORE_OUT, to] : [STORE_OUT, STORE_IN, to];
+  }
+
+  /** Moves the fox towards a point along its way (through the door when needed). True when he is there. */
+  private follow(mover: { x: number; y: number; vx: number; vy: number; speed: number; moving: boolean }, th: Thief, tx: number, ty: number, dt: number): boolean {
+    const key = `${tx},${ty}`;
+    if (th.pathTo !== key) {
+      th.path = this.via(mover, { x: tx, y: ty });
+      th.pathTo = key;
+    }
+    const w = th.path[0];
+    if (!w) return true;
+    if (this.moveTo(mover, w.x, w.y, dt)) th.path.shift();
+    return th.path.length === 0;
   }
 
   /** Returns 'steal' at the moment the thief grabs the money. */
@@ -525,13 +631,13 @@ export class Street {
     let result: 'steal' | null = null;
     const mover = { x: th.x, y: th.y, vx: 0, vy: 0, speed: th.speed, moving: false };
     if (th.state === 'run') {
-      if (this.moveTo(mover, CONFIG.STAND.x - 1.05, CONFIG.STAND.y + 0.8, rdt)) {
+      if (this.follow(mover, th, CONFIG.STAND.x - 1.05, CONFIG.STAND.y + 0.8, rdt)) {
         th.state = 'grab';
         th.t = 0;
       }
     } else if (th.state === 'dodge') {
       // ran off after a hit; then he tries the till again
-      if (this.moveTo(mover, th.tx, th.ty, rdt)) th.state = 'run';
+      if (this.follow(mover, th, th.tx, th.ty, rdt)) th.state = 'run';
     } else if (th.state === 'grab') {
       mover.moving = false;
       if (th.t >= CONFIG.THIEF_WINDOW) {
@@ -542,7 +648,7 @@ export class Street {
     } else {
       mover.speed = th.state === 'flee' ? Math.max(3.2, th.speed) : 1.2;
       if (th.state === 'caught' && th.t < 1.3) mover.speed = 0;
-      if (mover.speed > 0 && this.moveTo(mover, CONFIG.SPAWN_LEFT - 0.6, 5.6, rdt)) {
+      if (mover.speed > 0 && this.follow(mover, th, CONFIG.SPAWN_LEFT - 0.6, 5.6, rdt)) {
         this.thief = null;
         return result;
       }
@@ -575,8 +681,9 @@ export class Street {
     // a new spot far from where he is (the dice here are cosmetic, so they do not touch the game RNG)
     let best = { x: 2, y: 8 };
     let bestD = -1;
+    const y0 = this.host.store() ? ROOM_D + 0.4 : 4.6;
     for (let i = 0; i < 6; i++) {
-      const c = { x: 0.8 + Math.random() * 10.4, y: 4.6 + Math.random() * 4.8 };
+      const c = { x: 0.8 + Math.random() * 10.4, y: y0 + Math.random() * (9.4 - y0) };
       const d = Math.hypot(c.x - th.x, c.y - th.y);
       if (d > bestD) {
         best = c;

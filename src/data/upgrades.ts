@@ -1,6 +1,6 @@
 import type { UpgradeId } from '../core/types';
 
-export type UpgradeCat = 'ads' | 'comfort' | 'production' | 'protection';
+export type UpgradeCat = 'ads' | 'comfort' | 'production' | 'protection' | 'store';
 
 export interface UpgradeDef {
   id: UpgradeId;
@@ -52,6 +52,16 @@ export interface UpgradeDef {
   /** A part of the stand itself: in the own store (level 4) the store's counter and awning take its place, so it
    * stays at home there (no effect, no wear). */
   standOnly?: boolean;
+  /** Equipment of the own store (level 4): it works only there, and is sold once a store is open. */
+  storeOnly?: boolean;
+  /** Electricity it uses: added to the store's utilities every day it works. */
+  utilities?: number;
+  /** Multiplier for the stop chance on sunny and hot days. */
+  hotComfort?: number;
+  /** Customers accept a price this much higher. */
+  walletMult?: number;
+  /** Customers sitting at the tables of the store stay this much longer. */
+  sitMult?: number;
   /** Mixing in the kitchen is always perfect. */
   perfectMix?: boolean;
   /** Market prices markup when the goods are delivered (no trip). */
@@ -88,6 +98,11 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   // protection
   cash_lock: { id: 'cash_lock', icon: '🔒', price: 120, cat: 'protection', lockCash: true },
   toolkit: { id: 'toolkit', icon: '🧰', price: 300, cat: 'protection', minRep: 2, wearMult: 0.5, repairMult: 0.6 },
+  // the own store (level 4): they work only in the store
+  store_tables: { id: 'store_tables', icon: '🪑', price: 600, cat: 'store', minRep: 4, storeOnly: true },
+  store_ac: { id: 'store_ac', icon: '🌬️', price: 900, cat: 'store', minRep: 4, storeOnly: true, hotComfort: 1.15, sitMult: 1.3, utilities: 20 },
+  store_neon: { id: 'store_neon', icon: '💡', price: 700, cat: 'store', minRep: 4, storeOnly: true, ads: 0.15, radius: 0.8 },
+  store_terminal: { id: 'store_terminal', icon: '💳', price: 500, cat: 'store', minRep: 4, storeOnly: true, serveMult: 0.8, walletMult: 1.05 },
 };
 
 /** Display order in the shop, grouped by category (cheaper and earlier first). */
@@ -114,6 +129,10 @@ export const UPGRADE_ORDER: UpgradeId[] = [
   'juicer_lever',
   'cash_lock',
   'toolkit',
+  'store_terminal',
+  'store_tables',
+  'store_neon',
+  'store_ac',
 ];
 
-export const UPGRADE_CATS: UpgradeCat[] = ['ads', 'comfort', 'production', 'protection'];
+export const UPGRADE_CATS: UpgradeCat[] = ['ads', 'comfort', 'production', 'protection', 'store'];

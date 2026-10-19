@@ -18,8 +18,9 @@
    (напис гра пише сама): окремо, пізніше.
 6. ~~Лист 23: автобусна зупинка~~ — готово (автобус, навіс, знак).
 7. ~~Лист 24: лід для кухні~~ — готово.
-8. **Свій магазин (рівень 4, етап A):** лист 25 (стіни магазину в розрізі, за шаблоном), 26 (прилавок), 28 (столики й
-   буфет), 27 (ратуша), 12г (іконки). Поки їх немає, гра малює все це кодом.
+8. **Свій магазин (рівень 4, етап A):** лист 25 (стіни магазину в розрізі, за шаблоном), 26 (прилавок), 28 (столики,
+   стільці окремо, буфет), 27 (ратуша), 12г (іконки місць і апгрейдів магазину). Поки їх немає, гра малює все це кодом.
+   Низькі передні стіни й скляні двері гра малює сама: для них картинок не треба.
 9. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
 
@@ -243,19 +244,22 @@ NO people, NO objects on the top, NO ground shadow, NO text, letters or numbers.
 
 Ім'я: `stand_store_counter`.
 
-## Лист 28. Меблі магазину (3×1, ISO)
+## Лист 28. Меблі магазину (3×2, ISO)
 
-Столики для покупців і буфет біля задньої стіни, за прилавком. Стільці стоять зліва й справа від столика (так, як
-вони стоятимуть у магазині).
+Столики для покупців, стільці й буфет біля задньої стіни, за прилавком. Стільці — **окремі** картинки: на них сідають
+покупці (гра садить людину між стільцем і столиком). Стілець 4 стоїть ліворуч від столика (спинка вгорі зліва, хто
+сидить, дивиться на нас), стілець 5 — праворуч (спинка внизу справа, людину видно зі спини).
 
-СІТКА 3 / 3×1 / 75% + ISO +
+СІТКА 6 / 3×2 / 72% + ISO +
 
 ```
 Each item is one piece of furniture of a cozy lemonade café, a cute toy-like 3D object with chunky rounded shapes, no text, letters or numbers anywhere. All at the same scale and the same camera.
-1) a small round café table with a white top on one dark grey leg, with two turquoise wooden chairs: one on the upper-left side of the table and one on the lower-right side, both facing the table; a small vase with a pink flower and a glass of lemonade on the table; 2) exactly the same table and chairs, with a plate with a slice of lemon cake and a cup on the table instead; 3) a long low wooden back-bar cabinet with a cream top, its long side facing the LOWER-LEFT, about three times longer than deep; on top: a silver coffee machine, a big glass jar of yellow lemonade with a little tap, and a cake on a stand under a glass dome.
+Row 1: 1) a small round café table WITHOUT chairs: a white round top on one dark grey leg with a round foot; on it a small vase with a pink flower and a tall glass of lemonade; 2) exactly the same table WITHOUT chairs, with a small plate with a slice of lemon cake and a cup on it instead; 3) a long low wooden back-bar cabinet with a cream top, its long side facing the LOWER-LEFT, about three times longer than deep; on top: a silver coffee machine, a big glass jar of yellow lemonade with a little tap, and a cake on a stand under a glass dome.
+Row 2: 4) one turquoise wooden café chair with four thin dark legs, its backrest on the UPPER-LEFT side, so the empty seat faces the LOWER-RIGHT; 5) exactly the same chair turned around: its backrest on the LOWER-RIGHT side, the seat faces the UPPER-LEFT; 6) a tall green leafy plant in a round terracotta pot.
 ```
 
-Імена: `prop_cafe_table, prop_cafe_table_b, prop_store_backbar`
+Імена: `prop_cafe_table, prop_cafe_table_b, prop_store_backbar, prop_cafe_chair_l, prop_cafe_chair_r, prop_plant`
+(вазон уже є; шостий можна просто викинути, якщо старий подобається).
 
 ## Лист 27. Ратуша (одна велика картинка, ISO)
 
@@ -268,17 +272,18 @@ NO ground plate, NO ground shadow, NO people, NO text, letters or numbers anywhe
 
 Ім'я: `bld_townhall`.
 
-## Лист 12г. Іконки магазину (3×2, FLAT)
+## Лист 12г. Іконки магазину й його апгрейдів (5×2, FLAT)
 
-СІТКА 6 / 3×2 / 78% + FLAT +
+СІТКА 10 / 5×2 / 78% + FLAT +
 
 ```
 Each item is a single ICON object (no background, no frame, no button shape behind it), readable when shrunk to 48 pixels.
-Row 1: 1) a town hall building with white columns and a small clock tower, 2) a small shop with a yellow-white striped awning next to a round green tree, 3) a shop front with a striped awning and a big lemon on its signboard.
-Row 2: 4) a paper receipt with a big percent sign on it (a tax), 5) a glowing yellow light bulb with a blue water drop next to it (electricity and water bills), 6) a simple balance scale with a gold coin on one pan and a cup of lemonade on the other.
+Row 1: 1) a town hall building with white columns and a small clock tower, 2) a small shop with a yellow-white striped awning next to a round green tree, 3) a shop front with a striped awning and a big lemon on its signboard, 4) a paper receipt with a big percent sign on it (a tax), 5) a yellow light bulb with a blue water drop next to it (electricity and water bills).
+Row 2: 6) a simple balance scale with a gold coin on one pan and a cup of lemonade on the other, 7) a small round café table with two turquoise chairs, 8) a white wall air conditioner with three light blue curved wind lines, 9) a dark rounded sign with a pink neon border and a small lemon on it, no letters, 10) a small card payment terminal with a bank card sticking out of its top.
 ```
 
-Імена: `ui_loc_townhall, ui_loc_parkside, ui_store, ui_tax, ui_utilities, ui_breakeven`
+Імена: `ui_loc_townhall, ui_loc_parkside, ui_store, ui_tax, ui_utilities, ui_breakeven, ui_up_store_tables,
+ui_up_store_ac, ui_up_store_neon, ui_up_store_terminal`
 
 ## Лист 23. Автобусна зупинка (2×2, ISO) — ГОТОВО
 

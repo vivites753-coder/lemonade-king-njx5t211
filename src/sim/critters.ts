@@ -39,6 +39,8 @@ const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 export class Critters {
   readonly list: Critter[] = [];
   private nextId = 1;
+  /** The dogs, the cat and the finds keep to y ≥ minY (outside the walls of the store; 0: anywhere). */
+  minY = 0;
 
   clear(): void {
     this.list.length = 0;
@@ -70,7 +72,7 @@ export class Critters {
   dogs(n = 3): void {
     for (let i = 0; i < n; i++) {
       const left = Math.random() < 0.5;
-      const d = this.add({ kind: 'dog', x: left ? CONFIG.SPAWN_LEFT : CONFIG.SPAWN_RIGHT, y: rnd(4.8, 6.2), speed: rnd(2.0, 2.8), color: ['#a0522d', '#e9c46a', '#495057'][i % 3] });
+      const d = this.add({ kind: 'dog', x: left ? CONFIG.SPAWN_LEFT : CONFIG.SPAWN_RIGHT, y: Math.max(this.minY, rnd(4.8, 6.2)), speed: rnd(2.0, 2.8), color: ['#a0522d', '#e9c46a', '#495057'][i % 3] });
       this.wander(d);
     }
   }
@@ -90,16 +92,16 @@ export class Critters {
   }
 
   wallet(life: number): void {
-    this.add({ kind: 'wallet', x: rnd(1.5, 10.5), y: rnd(4.9, 5.2), bonus: true, life });
+    this.add({ kind: 'wallet', x: rnd(1.5, 10.5), y: Math.max(this.minY, rnd(4.9, 5.2)), bonus: true, life });
   }
 
   coin(life: number): void {
-    this.add({ kind: 'coin', x: rnd(1.5, 10.5), y: rnd(4.9, 6.1), bonus: true, life });
+    this.add({ kind: 'coin', x: rnd(1.5, 10.5), y: Math.max(this.minY, rnd(4.9, 6.1)), bonus: true, life });
   }
 
   balloon(life: number): void {
     const s = CONFIG.STAND;
-    this.add({ kind: 'balloon', x: s.x + rnd(-2, 3), y: s.y + rnd(1.5, 2.5), z: 30, bonus: true, life, color: ['#ff6b6b', '#4dabf7', '#da77f2', '#69db7c'][Math.floor(Math.random() * 4)] });
+    this.add({ kind: 'balloon', x: s.x + rnd(-2, 3), y: Math.max(this.minY, s.y + rnd(1.5, 2.5)), z: 30, bonus: true, life, color: ['#ff6b6b', '#4dabf7', '#da77f2', '#69db7c'][Math.floor(Math.random() * 4)] });
   }
 
   remove(id: number): Critter | null {
@@ -110,7 +112,7 @@ export class Critters {
 
   private wander(c: Critter): void {
     c.tx = rnd(3.2, 9.2);
-    c.ty = rnd(4.6, 6.4);
+    c.ty = Math.max(this.minY, rnd(4.6, 6.4));
   }
 
   private moveTo(c: Critter, dt: number): boolean {

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../src/core/config';
 import { LOCATIONS, storeSetupCost } from '../src/data/locations';
+import { DOOR, ROOM_D } from '../src/data/storeRoom';
 import { breakEvenCups, costPerCup, storeTax } from '../src/sim/economy';
 import { Game } from '../src/sim/game';
 import { freePlaces } from '../src/sim/points';
@@ -95,7 +96,8 @@ describe('the own store (level 4)', () => {
     const st = r.store!;
     expect(st).toBeTruthy();
     // the tax is 10 % of the profit of the day (the takings minus the costs), not of the takings
-    expect(st.taxBase).toBe(r.sales - (r.expenses - r.tax!));
+    // (tips are takings of the store too)
+    expect(st.taxBase).toBe(r.sales + (r.tips ?? 0) - (r.expenses - r.tax!));
     expect(st.taxBase).toBeGreaterThan(0);
     expect(r.tax).toBe(Math.round(st.taxBase * CONFIG.STORE_TAX));
     expect(r.tax).toBeLessThan(Math.round(r.sales * CONFIG.STORE_TAX));
@@ -175,6 +177,113 @@ describe('the own store (level 4)', () => {
     expect(g2.S.stores).toEqual({});
     expect(g2.D.expenses.utilities).toBe(0);
     expect(g2.D.expenses.tax).toBe(0);
+  });
+});
+
+describe('inside the store', () => {
+  /** Plays a store day and checks every step: nobody walks through the walls, only through the door. */
+  function storeDay(seed: number, check: (g: Game) => void): Game {
+    const g = level4(seed, 9000);
+    for (const id of ['dispenser', 'tv'] as const) {
+      g.S.upgrades[id] = true;
+      g.S.condition[id] = 100;
+    }
+    expect(g.openStore('townhall')).toBe(true);
+    g.D.weather = 'sunny';
+    toSelling(g, 8);
+    g.setSpeed(4);
+    for (let i = 0; i < 200000 && g.phase === 'sell'; i++) {
+      g.update(0.05);
+      if (!g.serving && !g.making) g.serve();
+      check(g);
+    }
+    return g;
+  }
+
+  it('people come in and go out only through the door, and some sit down at the tables for a while', () => {
+    const last = new Map<number, { x: number; y: number }>();
+    let wrong = 0;
+    let crossings = 0;
+    let maxSitting = 0;
+    const g = storeDay(51, (g) => {
+      for (const p of g.street.peds) {
+        const before = last.get(p.id);
+        if (before && (before.y < ROOM_D) !== (p.y < ROOM_D)) {
+          crossings++;
+          // the moment of crossing the front wall: within the doorway
+          const x = before.x + ((p.x - before.x) * (ROOM_D - before.y)) / (p.y - before.y || 1e-9);
+          if (x < DOOR.x0 - 0.05 || x > DOOR.x1 + 0.05) wrong++;
+        }
+        last.set(p.id, { x: p.x, y: p.y });
+        if (p.state === 'sit') {
+          expect(p.seat).not.toBeNull();
+          expect(p.y).toBeLessThan(ROOM_D);
+        }
+      }
+      maxSitting = Math.max(maxSitting, g.street.sitting);
+    });
+    expect(crossings).toBeGreaterThan(20);
+    expect(wrong).toBe(0);
+    expect(maxSitting).toBeGreaterThan(0);
+    expect(maxSitting).toBeLessThanOrEqual(g.storeSeats().length);
+    expect(g.D.report!.tips).toBeGreaterThanOrEqual(0);
+  });
+
+  it('the seated customers leave tips now and then (income of the day)', () => {
+    let tips = 0;
+    for (const seed of [52, 53, 54]) tips += storeDay(seed, () => undefined).D.report!.tips ?? 0;
+    expect(tips).toBeGreaterThan(0);
+  });
+
+  it('the fox runs in and out through the door too', () => {
+    const g = level4(55, 9000);
+    expect(g.openStore('parkside')).toBe(true);
+    toSelling(g, 2);
+    g.street.spawnThief();
+    let prev = { x: g.street.thief!.x, y: g.street.thief!.y };
+    let wrong = 0;
+    for (let i = 0; i < 4000 && g.street.thief; i++) {
+      g.street.updateThief(0.02);
+      const th = g.street.thief;
+      if (!th) break;
+      if ((prev.y < ROOM_D) !== (th.y < ROOM_D)) {
+        const x = prev.x + ((th.x - prev.x) * (ROOM_D - prev.y)) / (th.y - prev.y || 1e-9);
+        if (x < DOOR.x0 - 0.05 || x > DOOR.x1 + 0.05) wrong++;
+      }
+      // a hit now and then: he runs off and comes back
+      if (i % 700 === 300) g.street.hitThief();
+      prev = { x: th.x, y: th.y };
+    }
+    expect(wrong).toBe(0);
+  });
+
+  it('its upgrades need a store, work only there, and show in it', () => {
+    const g = level4(56, 20000);
+    expect(g.canBuy('store_ac').reason).toBe('store');
+    expect(g.openStore('townhall')).toBe(true);
+    const seats = g.storeSeats().length;
+    const util = g.storeUtilities();
+    // bought in the evening shop, they work from the next morning
+    g.restDay();
+    g.openShop();
+    for (const id of ['store_tables', 'store_ac', 'store_neon', 'store_terminal'] as const) expect(g.buyUpgrade(id)).toBe(true);
+    g.sleep();
+    expect(g.chooseLocation('townhall')).toBe(true);
+    expect(g.storeSeats().length).toBe(seats + 4);
+    expect(g.storeUtilities()).toBe(util + 20);
+    expect(g.active().store_neon).toBe(true);
+    // in the sun the air conditioner brings more people in
+    g.D.weather = 'hot';
+    const hot = g.calcInterest().raw;
+    delete g.S.upgrades.store_ac;
+    expect(g.calcInterest().raw).toBeLessThan(hot);
+    g.S.upgrades.store_ac = true;
+    // anywhere else they do nothing
+    g.chooseLocation('park');
+    const up = g.active();
+    expect(up.store_ac || up.store_neon || up.store_terminal || up.store_tables).toBeFalsy();
+    expect(g.storeUtilities()).toBe(0);
+    expect(g.storeSeats()).toEqual([]);
   });
 });
 

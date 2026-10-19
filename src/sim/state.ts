@@ -203,6 +203,8 @@ export interface DayReport {
   pointsProfit: number;
   /** Tonight the reputation first reached the level for extra stands. */
   pointsUnlocked: boolean;
+  /** Tips at the tables of the store (older reports: none). */
+  tips?: number;
   /** The own store (level 4): electricity and water, and the tax on the profit (older reports: none). */
   utilities?: number;
   tax?: number;
@@ -241,6 +243,8 @@ export interface DayState {
   cookieSales: number;
   cookiesSold: number;
   bonus: number;
+  /** Tips left by the customers who sat at the tables of the store. */
+  tips: number;
   /** utilities and tax: the own store only (level 4). */
   expenses: { ingredients: number; rent: number; flyers: number; onlineAds: number; stolen: number; wages: number; repairs: number; training: number; utilities: number; tax: number };
   flyers: boolean;
@@ -351,6 +355,7 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     cookieSales: 0,
     cookiesSold: 0,
     bonus: 0,
+    tips: 0,
     expenses: { ingredients: 0, rent: 0, flyers: 0, onlineAds: 0, stolen: 0, wages: 0, repairs: 0, training: 0, utilities: 0, tax: 0 },
     flyers: false,
     onlineAds: false,

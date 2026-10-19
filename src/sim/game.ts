@@ -9,6 +9,7 @@ import { BAD_LEMONS_SHARE, LOC_EVENTS, type DayEventId } from '../data/events';
 import { COOKIES, COOKIE_TASTE, GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
 import { TIP_GLOSSARY } from '../data/glossary';
 import { LOCATIONS, LOCATION_IDS, locationUnlocked, storeSetupCost } from '../data/locations';
+import { ROOM_D, type Seat } from '../data/storeRoom';
 import { PED_TYPES } from '../data/pedTypes';
 import { UPGRADES } from '../data/upgrades';
 import { WEATHER, WEATHER_ORDER } from '../data/weather';
@@ -265,6 +266,10 @@ export class Game {
       },
       onInRange: (p) => this.onInRange(p),
       onImpatient: (p) => this.onImpatient(p),
+      store: () => this.atStore(),
+      seats: () => this.storeSeats(),
+      sitMult: () => this.upgradeMult('sitMult'),
+      onTip: (p) => this.tipFrom(p),
     };
   }
 
@@ -326,12 +331,18 @@ export class Game {
     this.rng.state = snap.rng;
     this.refreshInterest();
     if (this.phase === 'sell') this.D.funnel.passed += this.street.markAllCounted();
+    this.critters.minY = this.atStore() ? ROOM_D + 0.3 : 0;
     this.bus.emit('phase', { phase: this.phase });
   }
 
   private save(): void {
     if (this.phase === 'title') return;
     this.bus.emit('save', this.snapshot());
+  }
+
+  /** Saves the game as it is now, in the middle of the day too (the game goes to the background). */
+  saveNow(): void {
+    this.save();
   }
 
   private setPhase(p: Phase): void {
@@ -496,6 +507,47 @@ export class Game {
   /** Today the player works at an own store (not at the stand). */
   atStore(): boolean {
     return !!LOCATIONS[this.S.location].store;
+  }
+
+  /** The chairs of the store here where served customers may sit down (the extra tables only with their upgrade). */
+  storeSeats(): Seat[] {
+    const loc = LOCATIONS[this.S.location];
+    if (!loc.store) return [];
+    const up = this.active();
+    const out: Seat[] = [];
+    for (const d of loc.decor) {
+      if (d.needs && !up[d.needs]) continue;
+      if (d.id === 'prop_cafe_chair_l') out.push({ x: d.x, y: d.y, side: -1 });
+      else if (d.id === 'prop_cafe_chair_r') out.push({ x: d.x, y: d.y, side: 1 });
+    }
+    return out;
+  }
+
+  /** Electricity and water of the store here today: the premises, and what its equipment uses (the air conditioner). */
+  storeUtilities(): number {
+    const st = LOCATIONS[this.S.location].store;
+    if (!st) return 0;
+    let n = st.utilities;
+    for (const id of Object.keys(this.active()) as UpgradeId[]) n += UPGRADES[id].utilities ?? 0;
+    return n;
+  }
+
+  /** The product of one multiplier of the upgrades that work now (1 when none has it). */
+  private upgradeMult(field: 'walletMult' | 'sitMult'): number {
+    let m = 1;
+    for (const id of Object.keys(this.active()) as UpgradeId[]) m *= UPGRADES[id][field] ?? 1;
+    return m;
+  }
+
+  /** A customer leaves the table of the store: a tip now and then (only while the store is open). */
+  private tipFrom(p: Ped): void {
+    if (this.phase !== 'sell' || !this.rng.chance(CONFIG.TIP_CHANCE)) return;
+    const n = this.rng.int(CONFIG.TIP[0], CONFIG.TIP[1]);
+    this.S.coins += n;
+    this.D.tips += n;
+    this.S.totals.earned += n;
+    this.bus.emit('found', { x: p.x, y: p.y, amount: n, icon: '💛' });
+    this.sfx('coin');
   }
 
   /** A place without a store, or one whose store is open (its renovation and equipment are paid). */
@@ -1063,7 +1115,7 @@ export class Game {
   /** Coins needed today before opening (rent, flyers, online ads, the helper's wage). */
   openingCosts(): number {
     const D = this.D;
-    return LOCATIONS[this.S.location].rent + (LOCATIONS[this.S.location].store?.utilities ?? 0) + (D.flyers ? CONFIG.FLYERS_COST : 0) + (D.onlineAds ? CONFIG.ONLINE_ADS_COST : 0) + D.helpers * CONFIG.HELPER_WAGE;
+    return LOCATIONS[this.S.location].rent + this.storeUtilities() + (D.flyers ? CONFIG.FLYERS_COST : 0) + (D.onlineAds ? CONFIG.ONLINE_ADS_COST : 0) + D.helpers * CONFIG.HELPER_WAGE;
   }
 
   canStartSelling(): { ok: boolean; reason?: string } {
@@ -1092,7 +1144,7 @@ export class Game {
       D.expenses.rent += rent;
     }
     // a store pays for electricity and water too
-    const utilities = LOCATIONS[this.S.location].store?.utilities ?? 0;
+    const utilities = this.storeUtilities();
     if (utilities) {
       this.S.coins -= utilities;
       D.expenses.utilities += utilities;
@@ -1119,6 +1171,8 @@ export class Game {
     this.speed = 1;
     this.refreshInterest();
     D.funnel.passed += this.street.markAllCounted();
+    // the dogs, the cat and the finds stay outside the walls of the store
+    this.critters.minY = this.atStore() ? ROOM_D + 0.3 : 0;
     this.openStands();
     this.setPhase('sell');
     this.tip('sell_start');
@@ -1242,6 +1296,7 @@ export class Game {
     }
     if (this.street.thief && this.street.updateThief(rdt) === 'steal') this.thiefSteals();
     this.stepIncidents(rdt);
+    if (this.street.sitting > 0) this.tip('tables');
 
     // a worn item may break during the day (about once per game hour we roll the dice)
     if (Math.floor(D.hour) > D.lastRiskHour) {
@@ -1284,7 +1339,7 @@ export class Game {
     if (this.isSoldOut()) {
       f.soldOut++;
       this.street.setEmote(p, '😢', 2);
-    } else if (this.S.price > p.maxPrice) {
+    } else if (this.S.price > p.maxPrice * this.upgradeMult('walletMult')) {
       f.tooExpensive++;
       this.street.setEmote(p, '💸', 2.4);
       this.tip('expensive');
@@ -1495,7 +1550,7 @@ export class Game {
     D.sales += paid;
     S.totals.earned += paid;
     const q = quality(D.recipeUsed) * D.mixQuality;
-    let sat = satisfaction(q, paid, p.maxPrice, p.waited, p.patienceMax);
+    let sat = satisfaction(q, paid, p.maxPrice * this.upgradeMult('walletMult'), p.waited, p.patienceMax);
     // a cup poured just right pleases a little more, a cup not full pleases less
     if (fill === 'perfect') sat = Math.min(1, sat + CONFIG.PERFECT_POUR_BONUS);
     else if (fill === 'under') sat = Math.max(0, sat - CONFIG.UNDERFILL_PENALTY);
@@ -1679,7 +1734,7 @@ export class Game {
     // the rent and the wages were paid in the morning; the takings minus the goods (and a theft) come in now
     S.coins += pointsProfit + prepaid;
     const store = this.storeDay();
-    const income = D.sales + D.bonus + pointsIncome;
+    const income = D.sales + D.bonus + D.tips + pointsIncome;
     const expenses = dayExpenses(D) + pointsCosts;
     const f = { ...D.funnel };
     const report: DayReport = {
@@ -1719,6 +1774,7 @@ export class Game {
       pointsUnlocked: false,
       utilities: D.expenses.utilities,
       tax: D.expenses.tax,
+      tips: D.tips,
       store,
     };
     // reputation milestones open new places for good
@@ -1755,7 +1811,7 @@ export class Game {
     if (!this.atStore() || !D.opened || !st) return undefined;
     const e = D.expenses;
     // (training belongs to the sellers of the other stands, not to the store)
-    const taxBase = D.sales - (dayExpenses(D) - e.training);
+    const taxBase = D.sales + D.tips - (dayExpenses(D) - e.training);
     const tax = Math.min(S.coins, storeTax(taxBase));
     S.coins -= tax;
     e.tax += tax;
@@ -1855,7 +1911,8 @@ export class Game {
     if (def.outdoorOnly && LOCATIONS[this.S.location].indoor) return;
     switch (id) {
       case 'runner': {
-        if (D.cupsReady <= 0) return;
+        // (a boy running along the street runs into a stand, not into a store behind its walls)
+        if (D.cupsReady <= 0 || this.atStore()) return;
         const n = Math.min(D.cupsReady, this.rng.int(4, 8));
         D.cupsReady -= n;
         D.spilled += n;
@@ -2298,10 +2355,11 @@ export class Game {
     if (Object.values(this.S.condition).some((c) => (c ?? 100) < 60)) this.tip('maintenance');
   }
 
-  canBuy(id: UpgradeId): { ok: boolean; reason?: 'owned' | 'rep' | 'requires' | 'money' } {
+  canBuy(id: UpgradeId): { ok: boolean; reason?: 'owned' | 'rep' | 'store' | 'requires' | 'money' } {
     const u = UPGRADES[id];
     if (this.S.upgrades[id]) return { ok: false, reason: 'owned' };
     if (u.minRep && this.S.bestRep < u.minRep - 1e-9) return { ok: false, reason: 'rep' };
+    if (u.storeOnly && !Object.keys(this.S.stores).length) return { ok: false, reason: 'store' };
     if (u.requires && !this.S.upgrades[u.requires]) return { ok: false, reason: 'requires' };
     if (this.S.coins < u.price) return { ok: false, reason: 'money' };
     return { ok: true };

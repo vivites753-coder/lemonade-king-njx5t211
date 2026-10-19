@@ -84,6 +84,10 @@ export class PointScene implements SceneSource {
       onSpawnCounted: () => undefined,
       onInRange: (p) => this.onInRange(p),
       onImpatient: (p) => this.street.leave(p, '😠'),
+      store: () => false,
+      seats: () => [],
+      sitMult: () => 1,
+      onTip: () => undefined,
     };
     this.street = new Street(host);
     this.street.reset(true);

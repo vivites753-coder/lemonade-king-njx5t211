@@ -11,6 +11,7 @@ import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text,
 import { drawCharacter, standSpriteId } from './people';
 import { brokenMark } from './standExtras';
 import { TRUCK_SKINS } from '../../data/truck';
+import { DOOR, ROOM_D } from '../../data/storeRoom';
 import { drawTruckBistro, drawTruckStools, TRUCK_BISTRO, TRUCK_STOOLS, truckRoofSpot, type TruckWorker } from './truck';
 
 const SX = CONFIG.STAND.x;
@@ -293,6 +294,12 @@ function soldOutPlate(ctx: Ctx): void {
 registerProcs({
   stand_table: (ctx) => table(ctx),
   stand_store_counter: (ctx) => storeCounter(ctx),
+  stand_store_terminal: (ctx) => {
+    const [x, y] = P(SX + 0.55, SY + 0.22, TABLE_H);
+    rrect(ctx, x - 5, y - 11, 10, 11, 2, '#343a40');
+    rrect(ctx, x - 3.5, y - 9.5, 7, 4, 1, '#74c0fc');
+    for (let i = 0; i < 3; i++) circle(ctx, x - 2.5 + i * 2.5, y - 3, 0.9, '#ced4da');
+  },
   stand_chair: (ctx) => chair(ctx),
   stand_banner: (ctx) => banner(ctx),
   stand_sign: (ctx, c) => sign(ctx, (c as StandCall).price ?? 0),
@@ -427,6 +434,14 @@ function shifted(ctx: Ctx, on: boolean, dx: number, dy: number, draw: () => void
   ctx.restore();
 }
 
+/** Where the price sign stands, from its place in front of a small table: beside a wide stand, beside the truck, or
+ * outside the store at its door (inside it would stand in the way of the queue). */
+function signShift(g: SceneSource): [number, number] {
+  if (LOCATIONS[g.S.location].store) return [DOOR.x0 - 0.75 - (SX - 0.9), ROOM_D + 0.85 - (SY + 1.0)];
+  if (g.counters() < 2) return [0, 0];
+  return g.active().truck ? [-2.3, 0.5] : [-1.9, -0.2];
+}
+
 /** Where people stand at a stand with two counters (0: right counter, 1: left counter, back: the player when two helpers work). */
 const SPOTS = {
   single: { player: [SX - 0.1, SY - 0.85], playerWithHelper: [SX + 0.28, SY - 0.85], helper: [SX - 0.48, SY - 0.85] },
@@ -445,7 +460,10 @@ export function standSideParts(g: SceneSource): { part: StandPart; x: number; y:
   const store = !!LOCATIONS[g.S.location].store;
   const out: { part: StandPart; x: number; y: number }[] = [];
   // the sign stands in front of the left end of the table: it is drawn after the table
-  if (up.sign) out.push({ part: 'sign', x: SX - 0.9 + (wide ? (isTruck ? -2.3 : -1.9) : 0), y: SY + 1.0 + (wide ? (isTruck ? 0.5 : -0.2) : 0) });
+  if (up.sign) {
+    const [dx, dy] = signShift(g);
+    out.push({ part: 'sign', x: SX - 0.9 + dx, y: SY + 1.0 + dy });
+  }
   if (up.mascot) out.push({ part: 'mascot', x: SX - 1.55 + (wide ? -0.3 : 0), y: SY + 1.25 + (wide ? 1.0 : 0) });
   // next to the table, in front of the speaker and the scooter
   // next to a truck the TV moves further right, behind the bar stools
@@ -509,7 +527,7 @@ export function drawStandShadows(ctx: Ctx, g: SceneSource): void {
   }
   // the parts that stand apart (next to the truck too): where drawStandPart draws them
   if (up.tv) shifted(ctx, isTruck, 0.8, 0, () => spriteShadow(ctx, 'stand_tv', sx, sy));
-  if (up.sign) shifted(ctx, wide, isTruck ? -2.3 : -1.9, isTruck ? 0.5 : -0.2, () => spriteShadow(ctx, 'stand_sign', sx, sy));
+  if (up.sign) shifted(ctx, true, ...signShift(g), () => spriteShadow(ctx, 'stand_sign', sx, sy));
   if (up.mascot) shifted(ctx, wide, -0.3, 1.0, () => spriteShadow(ctx, 'stand_mascot', sx, sy));
 }
 
@@ -539,7 +557,7 @@ export function drawStandPart(ctx: Ctx, g: SceneSource, part: StandPart): void {
   const isTruck = !!g.active().truck;
   if (part === 'sign') {
     // the price sign stands at the side when the second queue needs the space in front
-    shifted(ctx, wide, isTruck ? -2.3 : -1.9, isTruck ? 0.5 : -0.2, () => {
+    shifted(ctx, true, ...signShift(g), () => {
       drawSprite(ctx, 'stand_sign', call({ price: S.price }));
       if (hasImage('stand_sign')) {
         // the picture has a blank board: the game writes the price on it
@@ -679,6 +697,8 @@ export function drawStand(ctx: Ctx, g: SceneSource, playing: boolean): void {
     else drawSprite(ctx, 'item_pitcher', call({ level: Math.min(1, level) }));
     if (up.juicer_lever) drawSprite(ctx, 'stand_juicer_lever', call());
     else if (up.juicer_hand) drawSprite(ctx, 'stand_juicer_hand', call());
+    // the card terminal of the store (an upgrade), at the front of the counter
+    if (store && g.active().store_terminal) drawSprite(ctx, 'stand_store_terminal', call());
     if (up.cash_lock) drawSprite(ctx, 'stand_cashbox', call());
     else if (hasImage('item_coin_jar')) drawSprite(ctx, 'item_coin_jar', call());
     else coinJar(ctx, playing ? g.D.sales : 0);

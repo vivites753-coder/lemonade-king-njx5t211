@@ -1,6 +1,7 @@
 import './styles.css';
 import { musicFor, playMusic } from './audio/music';
 import { initAudio } from './audio/sfx';
+import { installErrorLog, logError } from './core/errors';
 import { readSave, wipeOnUpdate, writeSave } from './core/save';
 import { asLang, setLang, t } from './i18n';
 import { loadAssets } from './render/assets';
@@ -12,6 +13,7 @@ import { updatePhoneClass } from './ui/dom';
 import { initFullscreen } from './ui/fullscreen';
 import { UI } from './ui/ui';
 
+installErrorLog();
 // a published update starts with clean saves (the dev server keeps them)
 const wiped = import.meta.env.PROD && wipeOnUpdate(__BUILD_ID__);
 updatePhoneClass();
@@ -44,18 +46,34 @@ window.addEventListener('resize', () => {
   ui.layout();
 });
 
+/** One part of a frame: an error in it is noted, and the game goes on (it used to stop the frames for good). */
+function step(where: string, fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    logError(where, e);
+  }
+}
+
 let last = performance.now();
 function frame(now: number): void {
+  // the next frame is asked for first, whatever goes wrong below
+  requestAnimationFrame(frame);
   const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
   last = now;
-  ui.update();
-  playMusic(musicFor(game));
-  game.update(dt);
-  renderer.render(dt);
-  debug.update(dt);
-  requestAnimationFrame(frame);
+  step('ui', () => ui.update());
+  step('music', () => playMusic(musicFor(game)));
+  step('game', () => game.update(dt));
+  step('render', () => renderer.render(dt));
+  step('debug', () => debug.update(dt));
 }
 requestAnimationFrame(frame);
+
+// The game goes to the background (another app, a locked screen, a hidden tab): save it as it is now. Android may
+// end the page there to free memory; the game then starts again from this save (see MainActivity).
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) step('save', () => game.saveNow());
+});
 
 // A published update is noticed even when the game stays open (a home-screen app is rarely restarted):
 // compare the script this page runs with the one the server has now.

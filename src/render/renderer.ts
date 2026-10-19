@@ -17,7 +17,8 @@ import { pedFacing } from './facing';
 import { drawCharacter, drawCup, pedCupSpriteId, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
 import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
-import { drawStoreRoom } from './proc/store';
+import { drawStorePiece, drawStoreRoom, STORE_PIECES, type StorePiece } from './proc/store';
+import { DOOR, ROOM_D } from '../data/storeRoom';
 import { drawKey } from './depth';
 import { drawCritter } from './proc/critters';
 import { drawStand, drawStandPart, drawStandShadows, standSideParts, type StandPart } from './proc/stand';
@@ -36,7 +37,7 @@ const PINCH_MAX = 4;
 /** The stand in world pixels (the phone camera leans towards it). */
 const STAND_PX = P(CONFIG.STAND.x, CONFIG.STAND.y);
 
-type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6; // decor, ped, car, stand, thief, critter, a side part of the stand
+type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; // decor, ped, car, stand, thief, critter, a side part of the stand, a low wall of the store
 interface Item {
   /** The sort key (see drawKey). */
   d: number;
@@ -95,6 +96,8 @@ export class Renderer {
   private centres = new WeakMap<DecorDef, [number, number]>();
   private bubbles: Bubble[] = [];
   private t = 0;
+  /** How far the glass door of the store is open (0..1): it opens when somebody comes to it. */
+  private doorOpen = 0;
   /** A copy of the frame for the heat haze. */
   private haze: HTMLCanvasElement | null = null;
   /** Another stand of the player's that the scene shows now (null: the player's own). */
@@ -242,6 +245,18 @@ export class Renderer {
   }
 
   render(dt: number): void {
+    try {
+      this.draw(dt);
+    } catch (e) {
+      // a picture that failed half-way leaves its saved states and clips on the canvas: the next frame starts clean
+      const ctx = this.ctx as Ctx & { reset?: () => void };
+      if (typeof ctx.reset === 'function') ctx.reset();
+      else this.canvas.width = this.canvas.width;
+      throw e;
+    }
+  }
+
+  private draw(dt: number): void {
     this.syncView(dt);
     const g = this.src;
     const ctx = this.ctx;
@@ -288,6 +303,8 @@ export class Renderer {
     ctx.restore();
     // a hot day: the picture trembles in the rising hot air (more near the ground, most at midday)
     if (g.D.weather === 'hot' && !reduce && !ENV.indoor && g.phase !== 'title') this.heatHaze(hour);
+    // its copy of the screen is big on a phone (8-16 MB): let it go on other days
+    else this.haze = null;
 
     this.fx.drawOverlay(ctx, this.w, this.h, g.D.weather, hour, this.t, reduce, ENV.indoor);
   }
@@ -339,6 +356,8 @@ export class Renderer {
     const g = this.src;
     const loc = g.S.location;
     const selling = g.phase === 'sell';
+    const up = g.active();
+    const store = !!LOCATIONS[loc].store;
     if (!this.ground || this.ground.loc !== loc) {
       this.ground = { loc, canvas: buildGround(loc) };
       this.water = waterTiles(loc);
@@ -350,7 +369,7 @@ export class Renderer {
     const walls = LOCATIONS[loc].walls;
     if (walls) drawWalls(ctx, walls, LOCATIONS[loc].doors);
     // the own store: its room in a cut (the menu on its wall shows today's prices)
-    if (LOCATIONS[loc].store) drawStoreRoom(ctx, g.S.price, (g.S.stock.cookies ?? 0) > 0 ? g.S.cookiePrice : null);
+    if (store) drawStoreRoom(ctx, g.S.price, (g.S.stock.cookies ?? 0) > 0 ? g.S.cookiePrice : null, !!up.store_ac);
 
     if (selling && g.S.settings.showZone) {
       groundCircle(ctx, CONFIG.STAND.x, CONFIG.STAND.y, g.radius);
@@ -377,15 +396,18 @@ export class Renderer {
       if (!c) this.centres.set(d, (c = [d.w ? d.x + d.w / 2 : d.x, d.d ? d.y + d.d / 2 : d.y]));
       return c;
     };
+    // what an upgrade brings (the extra tables of the store) shows only when it works
+    const shown = (d: DecorDef) => !d.needs || !!up[d.needs];
     // shadows lie on the ground, under everything that stands on it
     for (const d of decor) {
+      if (!shown(d)) continue;
       const [cx, cy] = decorCentre(d);
       if (!seen(cx, cy)) continue;
       const [sx, sy] = P(cx, cy);
       spriteShadow(ctx, d.id, sx, sy, d.s ?? 1);
     }
     drawStandShadows(ctx, g);
-    for (const d of decor) if (d.back) this.drawDecor(ctx, d);
+    for (const d of decor) if (d.back && shown(d)) this.drawDecor(ctx, d);
 
     const items = this.items;
     items.length = 0;
@@ -393,11 +415,22 @@ export class Renderer {
     const road = LOCATIONS[loc].cars;
     const key = (depth: number, y: number) => drawKey(depth, y, road);
     for (const d of decor) {
-      if (d.back) continue;
+      if (d.back || !shown(d)) continue;
       const [cx, cy] = decorCentre(d);
       if (seen(cx, cy)) items.push({ d: key(cx + cy, cy), k: 0, o: d });
     }
-    for (const p of g.street.peds) if (seen(p.x, p.y)) items.push({ d: key(p.x + p.y, p.y), k: 1, o: p });
+    // somebody sitting at a table is between the chair and the table (on the left chair: in front of the chair,
+    // behind the table; on the right one: in front of the table, behind the chair's back)
+    for (const p of g.street.peds) {
+      if (!seen(p.x, p.y)) continue;
+      const sit = p.state === 'sit' && p.seat ? (p.seat.side < 0 ? 0.01 : -0.01) : 0;
+      items.push({ d: key(p.x + p.y + sit, p.y), k: 1, o: p });
+    }
+    // the low walls of the store and its door, piece by piece among the people
+    if (store) {
+      this.updateDoor(g, dt);
+      for (const s of STORE_PIECES) items.push({ d: key(s.cx + s.cy, s.cy), k: 7, o: s });
+    }
     for (const c of g.street.cars) if (seen(c.x, c.y)) items.push({ d: key(c.x + c.y, c.y), k: 2, o: c });
     // a truck is long: its depth is that of its front left corner, so people walking past in front of it (and the lamp,
     // the mailbox, the bin there) are drawn over it; nothing behind it reaches into its picture
@@ -441,6 +474,9 @@ export class Renderer {
         case 6:
           drawStandPart(ctx, g, it.o as StandPart);
           break;
+        case 7:
+          drawStorePiece(ctx, it.o as StorePiece, this.doorOpen, !!up.store_neon);
+          break;
         case 4:
           this.drawThief(ctx);
           break;
@@ -472,6 +508,14 @@ export class Renderer {
     this.drawFloats(ctx, dt);
   }
 
+  /** The glass door of the store slides open while somebody is at it. */
+  private updateDoor(g: SceneSource, dt: number): void {
+    const at = (x: number, y: number) => Math.abs(x - DOOR.x) < 0.55 && Math.abs(y - ROOM_D) < 0.75;
+    const th = g.street.thief;
+    const someone = g.street.peds.some((p) => at(p.x, p.y)) || (!!th && at(th.x, th.y));
+    this.doorOpen += ((someone ? 1 : 0) - this.doorOpen) * Math.min(1, dt * 8);
+  }
+
   private drawDecor(ctx: Ctx, d: DecorDef): void {
     const cx = d.w ? d.x + d.w / 2 : d.x;
     const cy = d.d ? d.y + d.d / 2 : d.y;
@@ -488,6 +532,10 @@ export class Renderer {
   }
 
   private drawPedInner(ctx: Ctx, p: Ped): void {
+    if (p.state === 'sit' && p.seat) {
+      this.drawSitter(ctx, p, p.seat.side);
+      return;
+    }
     const [sx, sy] = P(p.x, p.y);
     const inQueue = p.state === 'queue' || p.state === 'toQueue';
     const { facingCam, dirX } = pedFacing(p);
@@ -513,6 +561,38 @@ export class Renderer {
     if (p.emote || p.state === 'queue') {
       this.bubbles.push({ sx, sy: headY, emote: p.emote, patience: p.state === 'queue' ? p.patience / Math.max(1, p.patienceMax) : -1 });
     }
+  }
+
+  /**
+   * Somebody sitting on a chair of the store, with the cup: the standing picture is lowered so that the hips are on the
+   * seat and cut below it (the table and the chair hide the legs). On the left chair they face the table and us; on
+   * the right one they turn their back to us.
+   */
+  private drawSitter(ctx: Ctx, p: Ped, side: -1 | 1): void {
+    const [sx, sy] = P(p.x, p.y);
+    const type = PED_TYPES[p.type];
+    const front = side < 0;
+    const id = pedCupSpriteId(p.type, p.look.variant, front) ?? pedSpriteId(p.type, p.look.variant, front);
+    const seat = 15;
+    // a kid lowered as much would hide behind the table: kids sit up on their knees
+    const drop = p.type === 'kid' ? 4 : 13 * type.scale;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(sx - 60, sy - 220, 120, 220 - seat);
+    ctx.clip();
+    const headY = drawCharacter(ctx, id, p.x, p.y, sx, sy + drop, {
+      kind: p.type,
+      look: p.look,
+      scale: type.scale,
+      moving: false,
+      anim: p.anim,
+      facingCam: front,
+      dirX: front ? 1 : -1,
+      hasCup: false,
+      umbrella: false,
+    });
+    ctx.restore();
+    if (p.emote) this.bubbles.push({ sx, sy: headY, emote: p.emote, patience: -1 });
   }
 
   private drawThief(ctx: Ctx): void {

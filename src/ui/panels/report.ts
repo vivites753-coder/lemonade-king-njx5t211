@@ -95,6 +95,7 @@ export const reportPanel: Panel = {
           <div class="kv"><span>🥤 ${t('report.sales')}</span><span>${coin(r.sales - (r.cookieSales ?? 0))}</span></div>
           ${r.cookieSales ? `<div class="kv"><span>🍪 ${t('report.cookies', { n: r.cookiesSold })}</span><span>${coin(r.cookieSales)}</span></div>` : ''}
           ${r.bonus ? `<div class="kv"><span>🎁 ${t('report.bonus')}</span><span>${coin(r.bonus)}</span></div>` : ''}
+          ${r.tips ? `<div class="kv"><span>💛 ${t('report.tips')}</span><span>${coin(r.tips)}</span></div>` : ''}
           ${pointsIncome ? `<div class="kv"><span>${ico('pt_stand', '🏪')} ${t('report.pointsIncome')}</span><span>${coin(pointsIncome)}</span></div>` : ''}
           ${expenseRows.filter(([, v]) => v > 0).map(([k, v]) => `<div class="kv"><span>${k}</span><span class="neg">${coin('−' + v, 'neg')}</span></div>`).join('')}
         </div>`}

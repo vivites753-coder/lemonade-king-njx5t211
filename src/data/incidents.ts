@@ -57,4 +57,4 @@ export const INCIDENT = {
 } as const;
 
 /** Upgrades that need electricity (they stop during a blackout). */
-export const ELECTRIC = ['speaker', 'dispenser', 'tv'] as const;
+export const ELECTRIC = ['speaker', 'dispenser', 'tv', 'store_ac', 'store_neon', 'store_terminal'] as const;

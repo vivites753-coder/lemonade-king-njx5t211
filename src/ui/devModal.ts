@@ -1,12 +1,13 @@
 // Developer mode for testing on a phone: coins, reputation, weather, events, speed.
 // Switched on by tapping the biggest text size in the settings 6 times; remembered on this device only.
+import { clearErrors, errorLog } from '../core/errors';
 import type { WeatherId } from '../core/types';
 import { DAY_EVENTS, type DayEventId } from '../data/events';
 import { ACCIDENTS, BONUSES } from '../data/incidents';
 import { WEATHER, WEATHER_IDS } from '../data/weather';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { coin } from './dom';
+import { coin, esc } from './dom';
 import type { ModalSpec } from './overlays';
 
 const KEY = 'lemonadeKing.dev';
@@ -32,6 +33,29 @@ export interface DevHooks {
   disable(): void;
   debugPanel(): void;
   toast(text: string): void;
+}
+
+/** The kept errors as text, to send to the developer. */
+function errorsText(): string {
+  return errorLog()
+    .map((e) => `[${e.where}] ×${e.n} ${new Date(e.at).toISOString()}\n${e.msg}\n${e.stack}`)
+    .join('\n\n');
+}
+
+/** The errors of the game on this device, the newest first. */
+function errorsHtml(): string {
+  const list = errorLog();
+  if (!list.length) return `<h3>🐞 ${t('dev.errors')}</h3><p class="note">${t('dev.noErrors')}</p>`;
+  const rows = [...list]
+    .reverse()
+    .slice(0, 6)
+    .map((e) => `<div class="dev-err"><b>${esc(e.where)}</b> ×${e.n} · ${new Date(e.at).toLocaleString()}<br><code>${esc(e.msg)}</code></div>`)
+    .join('');
+  return `<h3>🐞 ${t('dev.errors')} · ${list.length}</h3>${rows}
+    <div class="dev-row">
+      <button class="btn btn-sm" data-act="errCopy">📋 ${t('dev.errCopy')}</button>
+      <button class="btn btn-sm" data-act="errClear">🧹 ${t('dev.errClear')}</button>
+    </div>`;
 }
 
 export function devModal(g: Game, hooks: DevHooks): ModalSpec {
@@ -64,6 +88,7 @@ export function devModal(g: Game, hooks: DevHooks): ModalSpec {
           <button class="btn btn-sm" data-act="end" ${sell ? '' : 'disabled'}>🌙 ${t('dev.endDay')}</button>
           <button class="btn btn-sm" data-act="panel">📊 ${t('dev.panel')}</button>
         </div>
+        ${errorsHtml()}
         <div class="modal-actions">
           <button class="btn btn-r" data-act="off">${t('dev.disable')}</button>
           <button class="btn btn-y" data-act="close">${t('btn.close')}</button>
@@ -91,6 +116,13 @@ export function devModal(g: Game, hooks: DevHooks): ModalSpec {
       if (act === 'panel') {
         hooks.debugPanel();
         return true;
+      }
+      if (act === 'errClear') clearErrors();
+      if (act === 'errCopy') {
+        void navigator.clipboard
+          ?.writeText(errorsText())
+          .then(() => hooks.toast(t('dev.errCopied')))
+          .catch(() => hooks.toast('⚠️'));
       }
       if (act === 'off') {
         hooks.disable();

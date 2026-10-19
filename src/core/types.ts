@@ -23,7 +23,12 @@ export type UpgradeId =
   | 'tv'
   | 'big_stand'
   | 'truck'
-  | 'freezer';
+  | 'freezer'
+  // the own store (level 4)
+  | 'store_tables'
+  | 'store_ac'
+  | 'store_neon'
+  | 'store_terminal';
 /** Equipment that wears out and can break. The mixer is owned from the start. */
 export type EquipId = 'mixer' | 'umbrella' | 'tent' | 'juicer_hand' | 'juicer_lever' | 'speaker' | 'bike' | 'scooter' | 'dispenser' | 'tv' | 'freezer';
 export type GoodId = 'lemon' | 'lemon_cheap' | 'water' | 'sugar' | 'cups' | 'cups_super' | 'cookies' | 'lemon_bulk' | 'water_bulk' | 'sugar_bulk' | 'cups_bulk';

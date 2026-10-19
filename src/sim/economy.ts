@@ -163,6 +163,8 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
   let comfort = 1;
   for (const id of Object.keys(i.upgrades) as UpgradeId[]) if (!(indoor && UPGRADES[id].outdoorOnly)) comfort *= UPGRADES[id].comfort ?? 1;
   if (i.store) comfort *= CONFIG.STORE_COMFORT;
+  // the air conditioner of the store: people come in to cool down on sunny and hot days
+  if (i.weather === 'sunny' || i.weather === 'hot') for (const id of Object.keys(i.upgrades) as UpgradeId[]) comfort *= UPGRADES[id].hotComfort ?? 1;
   if (comfort !== 1) parts.push({ key: 'why.comfort', kind: 'mul', value: comfort });
   const repF = 0.85 + 0.06 * i.rep;
   parts.push({ key: 'why.rep', kind: 'mul', value: repF });

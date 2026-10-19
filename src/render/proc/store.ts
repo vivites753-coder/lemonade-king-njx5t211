@@ -1,15 +1,14 @@
 // The own store (level 4) seen in a cut, like a doll's house: the floor of the room, its two back walls (windows,
-// shelves, the name board, the menu with today's prices), the bar behind the counter and the tables of the customers.
-// The front of the room is open to the street, where the people walk past.
+// shelves, the name board, the menu with today's prices), low cut walls on the street sides with a glass door, the
+// bar behind the counter, the tables and chairs of the customers.
 import { CONFIG } from '../../core/config';
+import { DOOR, ROOM_D } from '../../data/storeRoom';
 import { t } from '../../i18n';
 import { getImage, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
 import { clock, clockHands, glassShine, outside, WALL_H } from './indoor';
 
-/** The room: x from 0 to 12 along the back wall, y from 0 to ROOM_D along the left wall; its front is open. */
-export const ROOM_D = 5;
 const N = CONFIG.MAP_SIZE;
 const LEN = N * 32;
 /** In the wall pictures the left wall runs from the front corner of the island (u = 0) to the back one (u = 384);
@@ -118,6 +117,25 @@ function leftWallDrawn(ctx: Ctx): void {
   ellipse(ctx, 142, -68, 6, 5, '#ffd43b', '#e8b500', 1);
 }
 
+/** The air conditioner (an upgrade) high on the left wall, over the window; it blows when it is warm outside. */
+function airConditioner(ctx: Ctx): void {
+  const u = 44;
+  const v = -101;
+  rrect(ctx, u, v, 56, 12, 4, '#ffffff', '#adb5bd', 1.2);
+  for (let i = 0; i < 4; i++) line(ctx, u + 6, v + 6 + i * 1.6, u + 50, v + 6 + i * 1.6, '#ced4da', 0.8);
+  circle(ctx, u + 50, v + 3.5, 1.4, '#40c057');
+  if (ENV.reduceMotion || (ENV.weather !== 'sunny' && ENV.weather !== 'hot')) return;
+  for (let i = 0; i < 3; i++) {
+    const k = (ENV.t * 0.8 + i / 3) % 1;
+    ctx.strokeStyle = `rgba(116,192,252,${0.7 * (1 - k)})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(u + 12 + i * 15, v + 13 + k * 14);
+    ctx.quadraticCurveTo(u + 18 + i * 15, v + 18 + k * 14, u + 12 + i * 15, v + 23 + k * 14);
+    ctx.stroke();
+  }
+}
+
 /** The tops of the walls and their cut ends: the room is shown in a cut. */
 function wallTops(ctx: Ctx): void {
   const top = '#e9dcc3';
@@ -133,7 +151,7 @@ function wallTops(ctx: Ctx): void {
  * The room of the store, drawn right after the ground: the generated wall pictures when they are there
  * (wall_store_left / wall_store_right, see tools/make_walls.py), else the walls drawn here.
  */
-export function drawStoreRoom(ctx: Ctx, price: number, cookiePrice: number | null): void {
+export function drawStoreRoom(ctx: Ctx, price: number, cookiePrice: number | null, ac: boolean): void {
   const left = getImage('wall_store_left');
   const right = getImage('wall_store_right');
   if (left && right) {
@@ -158,7 +176,125 @@ export function drawStoreRoom(ctx: Ctx, price: number, cookiePrice: number | nul
     faceX(ctx, 0, ROOM_D, 0, () => leftWallDrawn(ctx));
     faceY(ctx, 0, 0, 0, () => backWallDrawn(ctx, price, cookiePrice));
   }
+  if (ac) faceX(ctx, 0, ROOM_D, 0, () => airConditioner(ctx));
   wallTops(ctx);
+}
+
+// ---------------------------------------------------------------- the low walls on the street sides, the door
+
+/** Height of the cut walls on the street sides (the back walls are WALL_H), of the door and its frame, and the
+ * thickness of the walls (tiles). */
+const LOW_H = 30;
+const DOOR_H = 62;
+const LOW_T = 0.16;
+
+/** A piece of the low walls (sorted among the people by its own depth): of the front wall (x from a to b), of the
+ * side wall at x = 12 (y from a to b), or the door. */
+export interface StorePiece {
+  kind: 'front' | 'side' | 'door';
+  a: number;
+  b: number;
+  /** Its middle (tiles), for the depth. */
+  cx: number;
+  cy: number;
+}
+
+function pieces(): StorePiece[] {
+  const out: StorePiece[] = [];
+  // the front wall tile by tile, with the doorway cut out of it
+  for (let x = 0; x < N; x++) {
+    for (const [a, b] of [
+      [x, Math.min(x + 1, DOOR.x0)],
+      [Math.max(x, DOOR.x1), x + 1],
+    ]) {
+      if (b - a > 1e-6 && (b <= DOOR.x0 || a >= DOOR.x1)) out.push({ kind: 'front', a, b, cx: (a + b) / 2, cy: ROOM_D });
+    }
+  }
+  out.push({ kind: 'door', a: DOOR.x0, b: DOOR.x1, cx: DOOR.x, cy: ROOM_D });
+  for (let y = 0; y < ROOM_D; y++) out.push({ kind: 'side', a: y, b: y + 1, cx: N, cy: y + 0.5 });
+  return out;
+}
+
+/** All the pieces of the low walls of the store. */
+export const STORE_PIECES: StorePiece[] = pieces();
+
+const LOW = { top: '#fff6dc', left: '#ffe3a0', right: '#efc979', base: '#2bb3a3', edge: '#c9a25c' };
+
+/** One piece of the low walls; `open` (0..1) slides the glass door open; `neon`: the lit sign over the door (upgrade). */
+export function drawStorePiece(ctx: Ctx, p: StorePiece, open: number, neon: boolean): void {
+  if (p.kind === 'door') {
+    door(ctx, p.a, p.b, open, neon);
+    return;
+  }
+  if (p.kind === 'front') {
+    const y0 = ROOM_D - LOW_T / 2;
+    // the corner with the side wall reaches over the end of the front wall
+    const b = p.b >= N ? N + LOW_T / 2 : p.b;
+    box(ctx, p.a, y0, b - p.a, LOW_T, LOW_H, 0, LOW.left, LOW);
+    faceY(ctx, p.a, y0 + LOW_T, 0, () => {
+      ctx.fillStyle = LOW.base;
+      ctx.fillRect(0, -8, (b - p.a) * 32, 8);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, -10, (b - p.a) * 32, 2);
+    });
+  } else {
+    const x0 = N - LOW_T / 2;
+    box(ctx, x0, p.a, LOW_T, p.b - p.a, LOW_H, 0, LOW.left, LOW);
+    faceX(ctx, x0 + LOW_T, p.b, 0, () => {
+      ctx.fillStyle = LOW.base;
+      ctx.fillRect(0, -8, (p.b - p.a) * 32, 8);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, -10, (p.b - p.a) * 32, 2);
+    });
+  }
+  // the cut: a darker line along the top shows that the wall goes on upwards
+  const [ax, ay] = p.kind === 'front' ? P(p.a, ROOM_D + LOW_T / 2, LOW_H) : P(N + LOW_T / 2, p.a, LOW_H);
+  const [bx, by] = p.kind === 'front' ? P(Math.min(p.b, N + LOW_T / 2), ROOM_D + LOW_T / 2, LOW_H) : P(N + LOW_T / 2, p.b, LOW_H);
+  line(ctx, ax, ay, bx, by, LOW.edge, 1.2);
+}
+
+/** The door: a wooden frame higher than the cut walls, two glass panels that slide apart when somebody comes. */
+function door(ctx: Ctx, a: number, b: number, open: number, neon: boolean): void {
+  const y = ROOM_D;
+  const w = (b - a) * 32;
+  // the threshold, the posts and the beam over them
+  poly(ctx, [P(a, y - LOW_T / 2), P(b, y - LOW_T / 2), P(b, y + LOW_T / 2), P(a, y + LOW_T / 2)], '#a0714a');
+  box(ctx, a - 0.05, y - LOW_T / 2, 0.07, LOW_T, DOOR_H, 0, '#8a5a35');
+  faceY(ctx, a, y, 0, () => {
+    // two glass panels; open, each one slides behind its post
+    const pw = (w / 2) * (1 - 0.85 * open);
+    for (const [u, side] of [
+      [0, 0],
+      [w - pw, 1],
+    ] as [number, number][]) {
+      ctx.fillStyle = 'rgba(190,228,255,0.35)';
+      ctx.fillRect(u, -DOOR_H + 6, pw, DOOR_H - 6);
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(u, -DOOR_H + 6, pw, DOOR_H - 6);
+      if (pw > 6) line(ctx, u + pw * 0.3, -DOOR_H + 14, u + pw * 0.3 + 6, -DOOR_H + 30, 'rgba(255,255,255,0.8)', 2);
+      // a little lemon on the glass, and the handle
+      if (pw > 10) {
+        circle(ctx, u + pw / 2, -DOOR_H / 2, 3, 'rgba(255,212,59,0.85)');
+        line(ctx, side ? u + 3 : u + pw - 3, -34, side ? u + 3 : u + pw - 3, -24, '#868e96', 2);
+      }
+    }
+  });
+  box(ctx, b - 0.02, y - LOW_T / 2, 0.07, LOW_T, DOOR_H, 0, '#8a5a35');
+  box(ctx, a - 0.05, y - LOW_T / 2, b - a + 0.12, LOW_T, 7, DOOR_H - 7, '#a0714a');
+  if (!neon) return;
+  // the lit sign over the door: it glows (more at dusk)
+  faceY(ctx, a - 0.25, y + LOW_T / 2, DOOR_H + 2, () => {
+    const len = (b - a + 0.5) * 32;
+    rrect(ctx, 0, -16, len, 15, 4, '#2b2140', '#ff7aa8', 1.2);
+    const pulse = ENV.reduceMotion ? 1 : 0.85 + Math.sin(ENV.t * 3) * 0.15;
+    ctx.globalAlpha *= 0.35 + 0.35 * ENV.dusk;
+    text(ctx, t('world.open'), len / 2, -8.5, 8, '#ff7aa8', 'center', 900, 'rgba(255,122,168,0.6)');
+    ctx.globalAlpha /= 0.35 + 0.35 * ENV.dusk;
+    ctx.globalAlpha *= pulse;
+    text(ctx, t('world.open'), len / 2, -8.5, 8, '#ffe3ef', 'center', 900);
+    ctx.globalAlpha /= pulse;
+  });
 }
 
 // ---------------------------------------------------------------- the furniture
@@ -177,12 +313,11 @@ function chair(ctx: Ctx, x: number, y: number, side: -1 | 1): void {
   box(ctx, side < 0 ? x - 0.16 : x + 0.12, y - 0.14, 0.04, 0.28, 17, 16, c);
 }
 
-/** A round table for the customers, with a chair on each side: a vase and a glass of lemonade on it, or (`cake`) a
- * slice of cake and a cup. */
+/** A round table for the customers (its chairs are their own pictures: people sit on them): a vase and a glass of
+ * lemonade on it, or (`cake`) a slice of cake and a cup. */
 function cafeTable(ctx: Ctx, c: SpriteCall, cake: boolean): void {
-  const { x, y, sx, sy } = c;
-  shadow(ctx, sx, sy, 26, 0.12);
-  chair(ctx, x - 0.42, y, -1);
+  const { sx, sy } = c;
+  shadow(ctx, sx, sy, 18, 0.12);
   ellipse(ctx, sx, sy - 1, 7, 3.2, '#868e96');
   line(ctx, sx, sy - 1, sx, sy - 24, '#868e96', 3);
   ellipse(ctx, sx, sy - 25, 15, 7.5, '#fffaf0', '#e9c46a', 1.5);
@@ -195,7 +330,6 @@ function cafeTable(ctx: Ctx, c: SpriteCall, cake: boolean): void {
     circle(ctx, sx - 5, sy - 38, 3, '#ff7aa8');
     rrect(ctx, sx + 3, sy - 32, 5, 7, 1.5, 'rgba(255,224,102,0.95)', '#ced4da', 0.8);
   }
-  chair(ctx, x + 0.42, y, 1);
 }
 
 /** The bar along the back wall behind the counter: a coffee machine, a big jar of lemonade, a cake under a dome. */
@@ -236,5 +370,13 @@ function backBar(ctx: Ctx, c: SpriteCall): void {
 registerProcs({
   prop_cafe_table: (ctx, c) => cafeTable(ctx, c, false),
   prop_cafe_table_b: (ctx, c) => cafeTable(ctx, c, true),
+  prop_cafe_chair_l: (ctx, c) => {
+    shadow(ctx, c.sx, c.sy, 8, 0.1);
+    chair(ctx, c.x, c.y, -1);
+  },
+  prop_cafe_chair_r: (ctx, c) => {
+    shadow(ctx, c.sx, c.sy, 8, 0.1);
+    chair(ctx, c.x, c.y, 1);
+  },
   prop_store_backbar: backBar,
 });

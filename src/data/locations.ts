@@ -1,4 +1,5 @@
-import type { LocationId, PedTypeId } from '../core/types';
+import type { LocationId, PedTypeId, UpgradeId } from '../core/types';
+import { CHAIR_DX } from './storeRoom';
 
 /** A static object placed in a location. `id` is the sprite / asset id. */
 export interface DecorDef {
@@ -12,6 +13,8 @@ export interface DecorDef {
   d?: number;
   /** Drawn before everything else (big buildings at the back). */
   back?: boolean;
+  /** Shown only when this upgrade works (the extra tables of the store). */
+  needs?: UpgradeId;
 }
 
 export type WallStyle = 'station' | 'mall';
@@ -80,6 +83,15 @@ function fence(y: number, x0: number, x1: number): DecorDef[] {
 }
 
 const G12 = 'gggggggggggg';
+
+/** A table of the store with a chair on its left and one on its right (the people who sit down use the chairs). */
+function cafeTable(x: number, y: number, cake = false, needs?: UpgradeId): DecorDef[] {
+  return [
+    { id: 'prop_cafe_chair_l', x: x - CHAIR_DX, y, needs },
+    { id: cake ? 'prop_cafe_table_b' : 'prop_cafe_table', x, y, needs },
+    { id: 'prop_cafe_chair_r', x: x + CHAIR_DX, y, needs },
+  ];
+}
 
 export const LOCATIONS: Record<LocationId, LocationDef> = {
   yard: {
@@ -462,10 +474,13 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       // inside: the bar along the back wall behind the counter, tables for the customers (away from the queues at
       // y = 4.25), plants in the corners
       { id: 'prop_store_backbar', x: 5.0, y: 0.6 },
-      { id: 'prop_cafe_table', x: 1.4, y: 1.6 },
-      { id: 'prop_cafe_table_b', x: 1.5, y: 3.2 },
-      { id: 'prop_cafe_table', x: 8.6, y: 1.5 },
-      { id: 'prop_cafe_table_b', x: 10.3, y: 2.8 },
+      ...cafeTable(1.4, 1.6),
+      ...cafeTable(1.5, 3.2, true),
+      ...cafeTable(8.6, 1.5),
+      ...cafeTable(10.3, 2.8, true),
+      // two more with the upgrade
+      ...cafeTable(2.75, 1.3, false, 'store_tables'),
+      ...cafeTable(11.0, 1.35, true, 'store_tables'),
       { id: 'prop_plant', x: 0.45, y: 0.45, s: 0.9 },
       { id: 'prop_plant', x: 11.55, y: 0.5, s: 0.9 },
       // the square: the fountain between the two walks (y = 5.5 and 8.5), benches and lamps there too
@@ -520,9 +535,12 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     decor: [
       // inside: the bar along the back wall behind the counter, tables for the customers, plants
       { id: 'prop_store_backbar', x: 5.0, y: 0.6 },
-      { id: 'prop_cafe_table', x: 1.4, y: 1.7 },
-      { id: 'prop_cafe_table_b', x: 1.6, y: 3.3 },
-      { id: 'prop_cafe_table', x: 9.0, y: 1.8 },
+      ...cafeTable(1.4, 1.7),
+      ...cafeTable(1.6, 3.3, true),
+      ...cafeTable(9.0, 1.8),
+      // two more with the upgrade
+      ...cafeTable(2.75, 1.35, true, 'store_tables'),
+      ...cafeTable(7.8, 2.6, false, 'store_tables'),
       { id: 'prop_plant', x: 0.45, y: 0.45, s: 0.9 },
       { id: 'prop_plant', x: 11.55, y: 0.5, s: 0.9 },
       { id: 'prop_plant', x: 11.45, y: 3.3, s: 0.8 },
