@@ -60,7 +60,7 @@ export class PointScene implements SceneSource {
       broken: {},
       price: loc.fairPrice,
       speakerOn: true,
-      stock: { lemons: [{ n: 12, age: 0 }], water: 10, sugar: 10, cups: 30, cookies: 0 },
+      stock: { lemons: [{ n: 12, age: 0 }], water: 10, sugar: 10, cups: 30, cookies: 0, oranges: 0, juice: 0, pastries: 0 },
     });
     this.S = S;
     const D = Object.create(g.D) as DayState;

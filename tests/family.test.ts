@@ -8,7 +8,7 @@ function morningWith(coins: number, day = 4, mode: 'pro' | 'kid' = 'pro'): { g: 
   const g = new Game(14);
   g.newGame({ ageMode: mode, avatar: 'girl', lang: 'uk', seed: 14 });
   g.S.day = day;
-  g.S.stock = { lemons: [{ n: 12, age: 0 }], water: 10, sugar: 10, cups: 50, cookies: 0 };
+  g.S.stock = { lemons: [{ n: 12, age: 0 }], water: 10, sugar: 10, cups: 50, cookies: 0, oranges: 0, juice: 0, pastries: 0 };
   g.S.coins = coins;
   const cards: string[] = [];
   const gifts: number[] = [];
@@ -58,7 +58,7 @@ describe('help from the family', () => {
     g.newGame({ ageMode: 'pro', avatar: 'girl', lang: 'uk', seed: 15 });
     g.S.day = 4;
     g.S.coins = 35;
-    g.S.stock = { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0 };
+    g.S.stock = { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0, oranges: 0, juice: 0, pastries: 0 };
     g.restDay();
     g.openShop();
     g.sleep();

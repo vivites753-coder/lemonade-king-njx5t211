@@ -1,5 +1,6 @@
 import { CONFIG } from '../core/config';
 import type { AgeMode, Avatar, EquipId, Lang, LocationId, MixResult, Params, UpgradeId, WeatherId } from '../core/types';
+import type { ExtraId } from '../data/menu';
 import type { Point, PointDay } from './points';
 
 export interface LemonBatch {
@@ -15,6 +16,10 @@ export interface Stock {
   sugar: number;
   cups: number;
   cookies: number;
+  /** The menu of the own store: oranges, glasses of multifruit juice, pastries. */
+  oranges: number;
+  juice: number;
+  pastries: number;
   /** Trays of ice in the freezer (older saves: none). */
   ice?: number;
 }
@@ -96,6 +101,8 @@ export interface GameState {
   price: number;
   /** Price of one cookie (cookies are sold together with lemonade). */
   cookiePrice: number;
+  /** Prices of the menu of the own store: a glass of fresh orange juice, of multifruit juice, a pastry. */
+  extraPrices: Record<ExtraId, number>;
   recipe: Recipe;
   speakerOn: boolean;
   seenTips: Record<string, true>;
@@ -167,6 +174,8 @@ export interface DayReport {
   sales: number;
   cookieSales: number;
   cookiesSold: number;
+  /** The menu of the own store: what was sold of each and for how much (also in `sales`). */
+  extras?: Record<ExtraId, { sold: number; sales: number }>;
   bonus: number;
   income: number;
   expenses: number;
@@ -242,6 +251,9 @@ export interface DayState {
   /** Part of `sales` that came from cookies. */
   cookieSales: number;
   cookiesSold: number;
+  /** Parts of `sales` that came from the menu of the store, and how many were sold. */
+  extraSales: Record<ExtraId, number>;
+  extraSold: Record<ExtraId, number>;
   bonus: number;
   /** Tips left by the customers who sat at the tables of the store. */
   tips: number;
@@ -315,7 +327,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     coins: CONFIG.START_COINS,
     rep: CONFIG.START_REP,
     bestRep: CONFIG.START_REP,
-    stock: { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0, ice: 0 },
+    stock: { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0, oranges: 0, juice: 0, pastries: 0, ice: 0 },
     upgrades: {},
     condition: { mixer: 100 },
     broken: {},
@@ -327,6 +339,7 @@ export function newGameState(seed: number, o: { ageMode: AgeMode; avatar: Avatar
     location: 'yard',
     price: 8,
     cookiePrice: 5,
+    extraPrices: { orange: 22, multifruit: 18, pastry: 15 },
     recipe: { lemons: CONFIG.IDEAL_LEMONS, sugar: CONFIG.IDEAL_SUGAR },
     speakerOn: true,
     seenTips: {},
@@ -354,6 +367,8 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     sales: 0,
     cookieSales: 0,
     cookiesSold: 0,
+    extraSales: { orange: 0, multifruit: 0, pastry: 0 },
+    extraSold: { orange: 0, multifruit: 0, pastry: 0 },
     bonus: 0,
     tips: 0,
     expenses: { ingredients: 0, rent: 0, flyers: 0, onlineAds: 0, stolen: 0, wages: 0, repairs: 0, training: 0, utilities: 0, tax: 0 },
@@ -401,7 +416,11 @@ export function normalizeState(S: GameState, D: DayState): void {
   S.settings = { ...fresh.settings, ...S.settings };
   S.bestRep = Math.max(S.bestRep, S.rep);
   S.stock.cookies ??= 0;
+  S.stock.oranges ??= 0;
+  S.stock.juice ??= 0;
+  S.stock.pastries ??= 0;
   S.stock.ice ??= 0;
+  S.extraPrices = { ...fresh.extraPrices, ...S.extraPrices };
   for (const id of Object.keys(S.upgrades)) {
     const eq = id as keyof GameState['condition'];
     if (['umbrella', 'tent', 'juicer_hand', 'juicer_lever', 'speaker', 'bike', 'scooter', 'dispenser', 'tv', 'freezer'].includes(id) && S.condition[eq] === undefined) S.condition[eq] = 100;

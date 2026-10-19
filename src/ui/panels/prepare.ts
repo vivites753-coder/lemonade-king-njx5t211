@@ -2,6 +2,8 @@ import { CONFIG } from '../../core/config';
 import type { LocationId } from '../../core/types';
 import { UNIT_COST } from '../../data/goods';
 import { LOCATIONS } from '../../data/locations';
+import { EXTRAS, EXTRA_IDS, MENU, extraCost, extraFair } from '../../data/menu';
+import type { Game } from '../../sim/game';
 import { t } from '../../i18n';
 import { breakEvenCups, costPerCup, lemonsConsumed, tasteKey } from '../../sim/economy';
 import { coin, fmtDur, fmtHour, ico, round1, toggle } from '../dom';
@@ -26,6 +28,19 @@ function stepper(act: string, value: string, canDec: boolean, canInc: boolean): 
     <b>${value}</b>
     <button class="btn btn-y" data-act="${act}:1" ${canInc ? '' : 'disabled'} aria-label="+">+</button>
   </span>`;
+}
+
+/** The menu of the store: what is in stock for it and the prices (with the fair price here and the cost). */
+function menuCard(g: Game): string {
+  const S = g.S;
+  const fair = LOCATIONS[S.location].fairPrice;
+  const rows = EXTRA_IDS.map((id) => {
+    const p = S.extraPrices[id];
+    return `<div class="kv"><span>${EXTRAS[id].icon} ${t(`extra.${id}`)} <small class="muted">${t('prep.menuHave', { n: g.extraPortions(id) })}</small></span>${stepper(`x${id}`, `<i class="coin"></i>${p}`, p > MENU.PRICE_MIN, p < MENU.PRICE_MAX)}</div>
+          <small class="muted">${t('prep.menuFair', { fair: extraFair(id, fair), cost: round1(extraCost(id)) })}</small>`;
+  }).join('');
+  return `<h3>🧾 ${t('prep.menu')}</h3>
+        <div class="card">${rows}<div class="note">💡 ${t('prep.menuNote')}</div></div>`;
 }
 
 const MIX_KEY: Record<string, string> = { '1': 'kitchen.mixPerfect', '0.93': 'kitchen.mixOver', '0.85': 'kitchen.mixUnder' };
@@ -87,6 +102,7 @@ export const preparePanel: Panel = {
         </div>`
             : ''
         }
+        ${g.extrasHere() ? menuCard(g) : ''}
         ${toggle('flyers', D.flyers, `📄 ${t('prep.flyers', { n: CONFIG.FLYERS_COST })}`, t('prep.flyersDesc'))}
         ${
           g.onlineAdsOpen()
@@ -123,6 +139,7 @@ export const preparePanel: Panel = {
     const d = Number(arg) || 0;
     if (act === 'price') g.setPrice(g.S.price + d);
     if (act === 'cprice') g.setCookiePrice(g.S.cookiePrice + d);
+    for (const id of EXTRA_IDS) if (act === `x${id}`) g.setExtraPrice(id, g.S.extraPrices[id] + d);
     if (act === 'flyers') g.setFlyers(!g.D.flyers);
     if (act === 'onlineAds') g.setOnlineAds(!g.D.onlineAds);
     if (act === 'helper') g.setHelper(!g.D.helper);

@@ -1,4 +1,5 @@
 import { CONFIG } from '../../core/config';
+import { EXTRAS, EXTRA_IDS } from '../../data/menu';
 import { payback } from '../../sim/points';
 import type { DayReport } from '../../sim/state';
 import { t } from '../../i18n';
@@ -55,6 +56,8 @@ export const reportPanel: Panel = {
   dock: true,
   render(g, ui) {
     const r = g.D.report;
+    // (the lemonade alone: the cookies and the menu of the store have their own lines)
+    const extrasSales = r ? EXTRA_IDS.reduce((n, id) => n + (r.extras?.[id]?.sales ?? 0), 0) : 0;
     if (!r) return '';
     const f = r.funnel;
     const pts = r.points ?? [];
@@ -92,8 +95,11 @@ export const reportPanel: Panel = {
           <div class="profit ${r.profit < 0 ? 'neg' : ''}"><small>${t('report.profit')}</small><b>${signedCoin(r.profit)}</b></div>
         </div>
         ${kid ? '' : `<div class="card">
-          <div class="kv"><span>🥤 ${t('report.sales')}</span><span>${coin(r.sales - (r.cookieSales ?? 0))}</span></div>
+          <div class="kv"><span>🥤 ${t('report.sales')}</span><span>${coin(r.sales - (r.cookieSales ?? 0) - extrasSales)}</span></div>
           ${r.cookieSales ? `<div class="kv"><span>🍪 ${t('report.cookies', { n: r.cookiesSold })}</span><span>${coin(r.cookieSales)}</span></div>` : ''}
+          ${EXTRA_IDS.filter((id) => r.extras?.[id]?.sales)
+            .map((id) => `<div class="kv"><span>${EXTRAS[id].icon} ${t('report.extra', { name: t(`extra.${id}`), n: r.extras![id].sold })}</span><span>${coin(r.extras![id].sales)}</span></div>`)
+            .join('')}
           ${r.bonus ? `<div class="kv"><span>🎁 ${t('report.bonus')}</span><span>${coin(r.bonus)}</span></div>` : ''}
           ${r.tips ? `<div class="kv"><span>💛 ${t('report.tips')}</span><span>${coin(r.tips)}</span></div>` : ''}
           ${pointsIncome ? `<div class="kv"><span>${ico('pt_stand', '🏪')} ${t('report.pointsIncome')}</span><span>${coin(pointsIncome)}</span></div>` : ''}

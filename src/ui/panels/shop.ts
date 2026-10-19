@@ -1,4 +1,5 @@
 import type { EquipId, UpgradeId } from '../../core/types';
+import { LOCATIONS } from '../../data/locations';
 import { UPGRADES, UPGRADE_CATS, UPGRADE_ORDER } from '../../data/upgrades';
 import { t } from '../../i18n';
 import { coin, ico } from '../dom';
@@ -26,9 +27,12 @@ export const shopPanel: Panel = {
         <div>${btn}</div>
       </div>`;
     };
+    // an evening in the own store: the things of a stand (the umbrella, the tent, the big stand, the truck) are no use
+    // there, so the shop does not offer them (on an evening at a stand it does)
+    const atStore = !!LOCATIONS[S.location].store;
     const groups = UPGRADE_CATS.map((cat) => {
-      const ids = UPGRADE_ORDER.filter((id) => UPGRADES[id].cat === cat);
-      return `<h3>${t(`shop.cat.${cat}`)}</h3><div class="ups">${ids.map(card).join('')}</div>`;
+      const ids = UPGRADE_ORDER.filter((id) => UPGRADES[id].cat === cat && !(atStore && UPGRADES[id].standOnly));
+      return ids.length ? `<h3>${t(`shop.cat.${cat}`)}</h3><div class="ups">${ids.map(card).join('')}</div>` : '';
     }).join('');
     const hist = S.history.slice(-7);
     const maxAbs = Math.max(1, ...hist.map((h) => Math.abs(h.profit)));
@@ -47,6 +51,7 @@ export const shopPanel: Panel = {
         <h3>🔧 ${t('shop.equipment')}</h3>
         <div class="card">${equipmentRows(g, 'shop')}</div>
         <div class="note">💡 ${t('shop.invest')}</div>
+        ${atStore ? `<div class="note">🏪 ${t('shop.storeHides')}</div>` : ''}
         ${groups}
         ${chart}
       </div>

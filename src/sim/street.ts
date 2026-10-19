@@ -4,6 +4,7 @@ import { RNG } from '../core/rng';
 import type { LocationId, PedTypeId, Vec, WeatherId } from '../core/types';
 import { LOCATIONS, type BusStopDef } from '../data/locations';
 import { AISLE_IN, AISLE_Y, COUNTER_X, counterDy, DOOR as STORE_DOOR, DOOR_IN as STORE_IN, DOOR_OUT as STORE_OUT, inRoom, ROOM_D, seatApproach, type Seat } from '../data/storeRoom';
+import type { Order } from '../data/menu';
 import { PED_TYPES } from '../data/pedTypes';
 import { randomLook, type Look } from './looks';
 import { spawnRatePerHour, type Crowd } from './traffic';
@@ -42,6 +43,8 @@ export interface Ped {
   gone: boolean;
   /** Which counter's queue the person stands in. */
   counter: number;
+  /** In the store: what they ordered at the counter (decided when their cup is poured). */
+  order?: Order;
   /** The chair of the store taken by this customer, and the seconds left to sit there. */
   seat: Seat | null;
   sitT: number;

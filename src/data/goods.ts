@@ -17,6 +17,8 @@ export interface GoodDef {
   onlyWhenCupsSoldOut?: boolean;
   /** Big packs at the wholesale warehouse: cheaper per piece, sold to owners of a stand network. */
   wholesale?: boolean;
+  /** For the menu of the own store (src/data/menu.ts): sold to those who have a store. */
+  needsStore?: boolean;
 }
 
 export const GOODS: Record<GoodId, GoodDef> = {
@@ -27,6 +29,10 @@ export const GOODS: Record<GoodId, GoodDef> = {
   cups: { id: 'cups', icon: '🥤', price: 10, pack: 10, stock: 'cups', vendor: 'milana' },
   cups_super: { id: 'cups_super', icon: '🥤', price: 20, pack: 10, stock: 'cups', vendor: 'super', onlyWhenCupsSoldOut: true },
   cookies: { id: 'cookies', icon: '🍪', price: 20, pack: 10, stock: 'cookies', vendor: 'baker', minRep: 2 },
+  // the menu of the own store: oranges for fresh juice (two a glass), cartons of multifruit juice, boxes of pastries
+  orange: { id: 'orange', icon: '🍊', price: 5, pack: 1, stock: 'oranges', vendor: 'galya', minRep: 4, needsStore: true },
+  juice: { id: 'juice', icon: '🧃', price: 30, pack: 5, stock: 'juice', vendor: 'super', minRep: 4, needsStore: true },
+  pastry: { id: 'pastry', icon: '🍰', price: 48, pack: 6, stock: 'pastries', vendor: 'baker', minRep: 4, needsStore: true },
   // wholesale: a quarter cheaper per piece, but only in big packs (and lemons still spoil)
   lemon_bulk: { id: 'lemon_bulk', icon: '📦', price: 60, pack: 20, stock: 'lemons', vendor: 'wholesale', wholesale: true },
   water_bulk: { id: 'water_bulk', icon: '📦', price: 22, pack: 10, stock: 'water', vendor: 'wholesale', wholesale: true },
@@ -55,6 +61,9 @@ export const UNIT_COST = {
   sugar: GOODS.sugar.price / GOODS.sugar.pack,
   cups: GOODS.cups.price / GOODS.cups.pack,
   cookies: GOODS.cookies.price / GOODS.cookies.pack,
+  oranges: GOODS.orange.price / GOODS.orange.pack,
+  juice: GOODS.juice.price / GOODS.juice.pack,
+  pastries: GOODS.pastry.price / GOODS.pastry.pack,
 };
 
 /** Cost of one unit in the big packs of the wholesale warehouse (what the stands of a chain pay). */

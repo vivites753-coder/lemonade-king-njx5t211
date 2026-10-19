@@ -183,7 +183,7 @@ describe('test profile', () => {
 describe('the set for one pitcher at the market', () => {
   it('adds the lemons, water and cups of a whole pitcher even with some at home', () => {
     const g = newGame(3);
-    g.S.stock = { lemons: [{ n: 3, age: 1 }], water: 6, sugar: 10, cups: 25, cookies: 0 };
+    g.S.stock = { lemons: [{ n: 3, age: 1 }], water: 6, sugar: 10, cups: 25, cookies: 0, oranges: 0, juice: 0, pastries: 0 };
     g.S.recipe = { lemons: 4, sugar: 2 };
     g.goMarket();
     g.addPitcherKit();
@@ -196,7 +196,7 @@ describe('the set for one pitcher at the market', () => {
 
   it('from an empty home: everything, with one pack of sugar for several pitchers', () => {
     const g = newGame(3);
-    g.S.stock = { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0 };
+    g.S.stock = { lemons: [], water: 0, sugar: 0, cups: 0, cookies: 0, oranges: 0, juice: 0, pastries: 0 };
     g.S.recipe = { lemons: 4, sugar: 2 };
     g.goMarket();
     g.addPitcherKit();

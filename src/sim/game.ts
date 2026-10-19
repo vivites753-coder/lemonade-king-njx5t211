@@ -7,6 +7,7 @@ import type { AgeMode, Avatar, EquipId, GoodId, Lang, LocationId, MixResult, Par
 import { EQUIPMENT } from '../data/equipment';
 import { BAD_LEMONS_SHARE, LOC_EVENTS, type DayEventId } from '../data/events';
 import { COOKIES, COOKIE_TASTE, GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
+import { DRINK_IDS, EXTRAS, MENU, extraFair, type DrinkId, type ExtraId, type Order } from '../data/menu';
 import { TIP_GLOSSARY } from '../data/glossary';
 import { LOCATIONS, LOCATION_IDS, locationUnlocked, storeSetupCost } from '../data/locations';
 import { ROOM_D, type Seat } from '../data/storeRoom';
@@ -138,7 +139,7 @@ export type GameEvents = {
   tip: { key: string };
   card: CardInfo;
   toast: { key: string; params?: Params; kind?: 'info' | 'warn' | 'good' };
-  sale: { x: number; y: number; amount: number; sat: number; free: boolean; cookie?: boolean };
+  sale: { x: number; y: number; amount: number; sat: number; free: boolean; cookie?: boolean; icon?: string };
   sfx: { name: SfxName };
   thief: { state: 'appear' | 'hit' | 'caught' | 'stole' | 'locked'; amount?: number };
   changed: Record<string, never>;
@@ -181,6 +182,9 @@ export const emptyCart = (): Cart => ({
   cups: 0,
   cups_super: 0,
   cookies: 0,
+  orange: 0,
+  juice: 0,
+  pastry: 0,
   lemon_bulk: 0,
   water_bulk: 0,
   sugar_bulk: 0,
@@ -634,6 +638,7 @@ export class Game {
     this.setPhase('market');
     this.tip(delivery ? 'delivery' : 'market');
     if (this.goodAvailable('lemon_bulk')) this.tip('wholesale');
+    if (this.extrasOpen()) this.tip('menu');
     if (!this.D.marketCardsShown) {
       this.D.marketCardsShown = true;
       if (this.D.events.sugarHike) this.card('sugarHike', '📈', { price: this.goodPrice('sugar') });
@@ -653,6 +658,8 @@ export class Game {
   goodAvailable(id: GoodId): boolean {
     // the wholesale warehouse sells to owners of a stand network
     if (GOODS[id].wholesale) return this.S.points.length > 0;
+    // the menu of the store: for those who have one
+    if (GOODS[id].needsStore && !Object.keys(this.S.stores).length) return false;
     const minRep = GOODS[id].minRep;
     if (minRep && this.S.bestRep < minRep - 1e-9) return false;
     if (id === 'cups') return !this.D.events.cupsSoldOut;
@@ -684,7 +691,7 @@ export class Game {
     const out = { lemons: lemonsTotal(s), water: s.water, sugar: s.sugar, cups: s.cups };
     for (const id of GOOD_IDS) {
       const g = GOODS[id];
-      if (g.stock !== 'cookies') out[g.stock] += this.cart[id] * g.pack;
+      if (g.stock === 'lemons' || g.stock === 'water' || g.stock === 'sugar' || g.stock === 'cups') out[g.stock] += this.cart[id] * g.pack;
     }
     return out;
   }
@@ -1027,7 +1034,8 @@ export class Game {
 
   /** From the kitchen to the stand (only if there is lemonade). */
   leaveKitchen(): void {
-    if (this.phase === 'kitchen' && this.D.cupsReady > 0) this.goPrepare();
+    // (the store can open with its juices alone)
+    if (this.phase === 'kitchen' && this.anyDrinkLeft()) this.goPrepare();
     else if (this.midKitchen) this.closeKitchen();
   }
 
@@ -1119,7 +1127,7 @@ export class Game {
   }
 
   canStartSelling(): { ok: boolean; reason?: string } {
-    if (this.D.cupsReady < 1) return { ok: false, reason: 'toast.noLemonade' };
+    if (!this.anyDrinkLeft()) return { ok: false, reason: 'toast.noLemonade' };
     if (this.D.hour + this.travelHours() >= CONFIG.DAY_END - 0.5) return { ok: false, reason: 'toast.tooLate' };
     if (this.S.coins < this.openingCosts()) return { ok: false, reason: 'toast.noRent' };
     return { ok: true };
@@ -1268,7 +1276,7 @@ export class Game {
     // helpers serve their counters by themselves; making more lemonade is the player's decision
     for (let c = 0; c < this.counters(); c++) {
       if (!this.autoCounter(c) || this.servings[c] || this.making) continue;
-      if (this.street.frontReady(c) && this.freeCups() > 0) {
+      if (this.street.frontReady(c) && this.anyDrinkLeft()) {
         this.helperIdle[c] += rdt;
         if (this.helperIdle[c] >= CONFIG.HELPER_DELAY) this.serveAt(c, true);
       } else this.helperIdle[c] = 0;
@@ -1327,7 +1335,7 @@ export class Game {
   }
 
   isSoldOut(): boolean {
-    return this.D.cupsReady <= 0 && !this.making && !this.canMakePitcher();
+    return this.D.cupsReady <= 0 && !this.making && !this.canMakePitcher() && !this.extraDrinkLeft();
   }
 
   private onInRange(p: Ped): void {
@@ -1384,6 +1392,132 @@ export class Game {
   /** Cookies can be bought at the market from this reputation. */
   cookiesOpen(): boolean {
     return this.goodAvailable('cookies');
+  }
+
+  // ---------------------------------------------------------------- the menu of the store (fresh, juice, pastries)
+
+  /** The menu of the store is open: the best reputation 4 and a store of one's own. */
+  extrasOpen(): boolean {
+    return this.S.bestRep >= MENU.MIN_REP - 1e-9 && Object.keys(this.S.stores).length > 0;
+  }
+
+  /** It is sold here and now: in the own store. */
+  extrasHere(): boolean {
+    return this.extrasOpen() && this.atStore();
+  }
+
+  setExtraPrice(id: ExtraId, p: number): void {
+    this.S.extraPrices[id] = clamp(Math.round(p), MENU.PRICE_MIN, MENU.PRICE_MAX);
+    this.changed();
+  }
+
+  /** Portions of a product of the menu in the stock (drinks also need a paper cup). */
+  extraPortions(id: ExtraId): number {
+    const e = EXTRAS[id];
+    const n = Math.floor((this.S.stock[e.stock] ?? 0) / e.per);
+    return e.stock === 'pastries' ? n : Math.min(n, this.S.stock.cups);
+  }
+
+  /** A glass of this drink can be poured now (the glasses being poured at the other counter are taken already). */
+  private canPour(o: Order): boolean {
+    if (o === 'lemonade') return this.freeCups() > 0;
+    if (!this.extrasHere()) return false;
+    const pouring = this.servings.filter((s) => s && s.ped.order === o).length;
+    return this.extraPortions(o) > pouring;
+  }
+
+  /** A juice of the menu is left to pour here. */
+  private extraDrinkLeft(): boolean {
+    return DRINK_IDS.some((id) => this.canPour(id));
+  }
+
+  /** Something is left to pour: lemonade, or (in the store) a juice. */
+  anyDrinkLeft(): boolean {
+    return this.freeCups() > 0 || this.extraDrinkLeft();
+  }
+
+  /**
+   * What a customer at the counter orders: lemonade, or in the store a juice of its menu, by their taste and the
+   * prices (a price over the fair one puts people off, under it draws them); null: nothing here for them.
+   */
+  private chooseOrder(p: Ped): Order | null {
+    const lemonade = this.canPour('lemonade');
+    if (!this.extrasHere()) return lemonade ? 'lemonade' : null;
+    const S = this.S;
+    const fair = LOCATIONS[S.location].fairPrice;
+    const wallet = p.maxPrice * this.upgradeMult('walletMult');
+    const opts: [Order, number][] = [];
+    if (lemonade) opts.push(['lemonade', (fair / Math.max(1, S.price)) ** 2]);
+    for (const id of DRINK_IDS) {
+      if (!this.canPour(id)) continue;
+      const price = S.extraPrices[id];
+      // they pay as much more for it as its fair price is above the lemonade's
+      if (price > wallet * EXTRAS[id].fair) continue;
+      opts.push([id, EXTRAS[id].taste[p.type] * (extraFair(id, fair) / Math.max(1, price)) ** 2]);
+    }
+    if (!opts.length) return null;
+    let r = this.rng.range(0, opts.reduce((a, o) => a + o[1], 0));
+    for (const [id, w] of opts) if ((r -= w) <= 0) return id;
+    return opts[opts.length - 1][0];
+  }
+
+  /** The order of the customer at a counter: decided once (shown over their head), again when it ran out. */
+  private orderOf(p: Ped): Order | null {
+    if (p.order && this.canPour(p.order)) return p.order;
+    const o = this.chooseOrder(p);
+    p.order = o ?? undefined;
+    if (o && o !== 'lemonade') this.street.setEmote(p, EXTRAS[o].icon, 3);
+    return o;
+  }
+
+  /** A glass of a juice of the menu is sold (the pour is done). */
+  private sellDrink(p: Ped, id: DrinkId, fill: 'perfect' | 'under' | 'timed'): void {
+    const S = this.S;
+    const D = this.D;
+    const e = EXTRAS[id];
+    // it ran out meanwhile: they choose again at the next pour
+    if (this.extraPortions(id) < 1) {
+      p.order = undefined;
+      return;
+    }
+    S.stock[e.stock] -= e.per;
+    S.stock.cups--;
+    const price = S.extraPrices[id];
+    D.funnel.sold++;
+    S.totals.sold++;
+    S.coins += price;
+    D.sales += price;
+    D.extraSales[id] += price;
+    D.extraSold[id]++;
+    S.totals.earned += price;
+    let sat = satisfaction(e.quality, price, p.maxPrice * this.upgradeMult('walletMult') * e.fair, p.waited, p.patienceMax);
+    if (fill === 'perfect') sat = Math.min(1, sat + CONFIG.PERFECT_POUR_BONUS);
+    else if (fill === 'under') sat = Math.max(0, sat - CONFIG.UNDERFILL_PENALTY);
+    S.rep = clamp(S.rep + repDelta(sat, S.rep, this.active()), 0, 5);
+    const emote = fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : '😐';
+    this.street.serveDone(p, emote);
+    this.bus.emit('sale', { x: p.x, y: p.y, amount: price, sat, free: false, icon: e.icon });
+    this.maybeSellPastry(p);
+    this.maybeSellCookie(p);
+    this.sfx('coin');
+    this.tip('menu_first');
+  }
+
+  /** In the store a customer may also take a pastry, if there are any and the price suits them. */
+  private maybeSellPastry(p: Ped): void {
+    const S = this.S;
+    if (!this.extrasHere() || S.stock.pastries <= 0) return;
+    if (!this.rng.chance(MENU.PASTRY_ATTACH * EXTRAS.pastry.taste[p.type])) return;
+    const wallet = extraFair('pastry', LOCATIONS[S.location].fairPrice) * PED_TYPES[p.type].priceMult * this.rng.range(0.85, 1.35);
+    const price = S.extraPrices.pastry;
+    if (price > wallet) return;
+    S.stock.pastries--;
+    S.coins += price;
+    this.D.sales += price;
+    this.D.extraSales.pastry += price;
+    this.D.extraSold.pastry++;
+    S.totals.earned += price;
+    this.bus.emit('sale', { x: p.x, y: p.y, amount: price, sat: 1, free: false, icon: EXTRAS.pastry.icon });
   }
 
   /** A lemonade customer may also take a cookie, if there are cookies and the price suits them. */
@@ -1476,8 +1610,11 @@ export class Game {
     }
     // the dispenser never spills
     if (level > hi && this.pourDose() === null) {
+      const order = this.servings[c]!.ped.order ?? 'lemonade';
       this.servings[c] = null;
-      if (this.D.cupsReady > 0) this.D.cupsReady--;
+      if (order !== 'lemonade') {
+        if (this.extraPortions(order) > 0) this.S.stock[EXTRAS[order].stock] -= EXTRAS[order].per;
+      } else if (this.D.cupsReady > 0) this.D.cupsReady--;
       this.sfx('spill');
       this.toast('toast.overPoured', undefined, 'warn');
       this.tip('pour_over');
@@ -1503,21 +1640,30 @@ export class Game {
     const p = this.street.frontReady(c);
     if (!p) return 'noCustomer';
     // a cup that is being poured at the other counter is already taken
-    if (this.freeCups() <= 0) {
+    if (!this.anyDrinkLeft()) {
       if (!byHelper) {
         this.toast(this.canMakePitcher() ? 'toast.needPitcher' : 'toast.soldOut', undefined, 'warn');
         this.sfx('buzz');
       }
       return 'noCups';
     }
+    // what they order (in the store: lemonade or a juice); what is left may be too dear for them
+    const order = this.orderOf(p);
+    if (!order) {
+      this.D.funnel.tooExpensive++;
+      this.street.leave(p, '💸', 2.4);
+      return 'noCustomer';
+    }
+    // fresh juice is squeezed for every glass: it takes longer
+    const slow = order === 'lemonade' ? 1 : EXTRAS[order].time;
     this.helperIdle[c] = 0;
     // a counter that a helper looks after pours at the helper's speed
     // the player's pour of the mini-game lasts until the button is let go (its sound is played by the button)
     if (pour) {
-      this.servings[c] = { ped: p, t: 0, dur: Infinity, helper: false, pour: { rate: this.pourRate() } };
+      this.servings[c] = { ped: p, t: 0, dur: Infinity, helper: false, pour: { rate: this.pourRate() / slow } };
       return 'ok';
     }
-    this.servings[c] = { ped: p, t: 0, dur: serveTime(this.active(), byHelper || this.autoCounter(c)), helper: byHelper };
+    this.servings[c] = { ped: p, t: 0, dur: serveTime(this.active(), byHelper || this.autoCounter(c)) * slow, helper: byHelper };
     this.sfx('serve');
     return 'ok';
   }
@@ -1527,6 +1673,11 @@ export class Game {
     const p = this.servings[c]!.ped;
     this.servings[c] = null;
     if (!this.street.inQueue(p)) return;
+    // a juice of the menu of the store
+    if (p.order && p.order !== 'lemonade') {
+      this.sellDrink(p, p.order, fill);
+      return;
+    }
     const S = this.S;
     const D = this.D;
     // the lemonade was spilt meanwhile: the customer keeps waiting for the next pitcher
@@ -1561,6 +1712,7 @@ export class Game {
     const emote = free ? '🎁' : fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
     this.street.serveDone(p, emote);
     this.bus.emit('sale', { x: p.x, y: p.y, amount: paid, sat, free });
+    this.maybeSellPastry(p);
     this.maybeSellCookie(p);
     this.sfx('coin');
     this.tip('first_sale');
@@ -1741,6 +1893,11 @@ export class Game {
       sales: D.sales,
       cookieSales: D.cookieSales,
       cookiesSold: D.cookiesSold,
+      extras: {
+        orange: { sold: D.extraSold.orange, sales: D.extraSales.orange },
+        multifruit: { sold: D.extraSold.multifruit, sales: D.extraSales.multifruit },
+        pastry: { sold: D.extraSold.pastry, sales: D.extraSales.pastry },
+      },
       bonus: D.bonus,
       income,
       expenses,
@@ -2393,6 +2550,9 @@ export class Game {
       }
       return b.n > 0;
     });
+    // pastries are fresh: of those left this share goes stale overnight
+    const stale = Math.round(this.S.stock.pastries * MENU.PASTRY_STALE);
+    this.S.stock.pastries -= stale;
     // worn equipment may break overnight; the player finds out in the morning
     const broke = rollBreaks(this.S, this.rng);
     // the freezer makes ice for tomorrow; a broken one makes none, and what was in it melts
@@ -2407,6 +2567,10 @@ export class Game {
     this.startMorning(spoiled, broke);
     const iceMade = (this.S.stock.ice ?? 0) - iceBefore;
     if (iceMade > 0) this.toast('toast.iceMade', { n: iceMade, total: this.S.stock.ice ?? 0, max: CONFIG.FREEZER_ICE_MAX }, 'good');
+    if (stale > 0) {
+      this.toast('toast.pastryStale', { n: stale }, 'warn');
+      this.tip('pastry_stale');
+    }
   }
 
   /** Back to the main menu (the game stays saved at its last phase). */

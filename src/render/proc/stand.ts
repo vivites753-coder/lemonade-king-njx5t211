@@ -421,6 +421,34 @@ function table2Items(ctx: Ctx, level: number): void {
   for (let i = 0; i < 3; i++) rrect(ctx, cx - 4, cy - 3 - i * 3, 8, 3, 1, i === 2 ? '#ffffff' : '#f1f3f5', '#ced4da', 0.6);
 }
 
+/** The menu of the store on its counter: a basket of oranges, cartons of juice, pastries on a plate. */
+function menuItems(ctx: Ctx, S: SceneSource['S']): void {
+  if (S.stock.oranges > 0) {
+    const [x, y] = P(SX - 1.78, SY - 0.1, TABLE_H);
+    ellipse(ctx, x, y - 1.5, 9, 4, '#c58b4f', '#8a5a35', 1);
+    const n = Math.min(6, Math.ceil(S.stock.oranges / 2));
+    for (let i = 0; i < n; i++) circle(ctx, x - 5 + (i % 3) * 5, y - 4 - Math.floor(i / 3) * 4, 2.7, '#ff922b', '#e8590c', 0.6);
+  }
+  if (S.stock.juice > 0) {
+    const [x, y] = P(SX - 1.6, SY + 0.25, TABLE_H);
+    const n = Math.min(3, Math.ceil(S.stock.juice / 5));
+    for (let i = 0; i < n; i++) {
+      rrect(ctx, x - 7 + i * 5, y - 12, 4.5, 11, 1, '#fff3bf', '#e8590c', 0.6);
+      rrect(ctx, x - 7 + i * 5, y - 8, 4.5, 3.5, 0.5, '#ff922b');
+      circle(ctx, x - 4.75 + i * 5, y - 11, 0.9, '#ff6b6b');
+    }
+  }
+  if (S.stock.pastries > 0) {
+    const [x, y] = P(SX - 0.62, SY + 0.3, TABLE_H);
+    ellipse(ctx, x, y - 1, 8.5, 3.2, '#ffffff', '#ced4da', 0.8);
+    const n = Math.min(3, S.stock.pastries);
+    for (let i = 0; i < n; i++) {
+      poly(ctx, [[x - 6 + i * 4.2, y - 2], [x - 2.2 + i * 4.2, y - 2], [x - 2.6 + i * 4.2, y - 6], [x - 6 + i * 4.2, y - 5.5]], '#ffe8a3', '#e9c46a', 0.6);
+      ellipse(ctx, x - 4.2 + i * 4.2, y - 6, 1.8, 0.9, '#ff8787');
+    }
+  }
+}
+
 /** Draws something moved by (dx, dy) tiles: equipment makes room for a wide stand. */
 function shifted(ctx: Ctx, on: boolean, dx: number, dy: number, draw: () => void): void {
   if (!on) {
@@ -555,8 +583,8 @@ function drawTableShadows(ctx: Ctx, g: SceneSource, sx: number, sy: number, wide
     if (wide) spriteShadow(ctx, 'stand_table_blue', sx, sy);
     spriteShadow(ctx, 'stand_table', sx, sy);
   }
-  if (up.scooter) spriteShadow(ctx, 'stand_scooter', sx, sy);
-  else if (up.bike) spriteShadow(ctx, 'stand_bike', sx, sy);
+  if (!store && up.scooter) spriteShadow(ctx, 'stand_scooter', sx, sy);
+  else if (!store && up.bike) spriteShadow(ctx, 'stand_bike', sx, sy);
   if (up.speaker) spriteShadow(ctx, 'stand_speaker', sx, sy);
   if (up.cooler) spriteShadow(ctx, 'stand_cooler', sx, sy);
 }
@@ -628,10 +656,12 @@ function drawStandHere(ctx: Ctx, g: SceneSource, playing: boolean): void {
   const store = !!LOCATIONS[S.location].store;
   // under a roof the umbrella and the tent stay folded; the truck and the store have their own awnings
   const outdoor = !LOCATIONS[S.location].indoor && !isTruck && !store;
-  // the fastest vehicle is parked at the stand; boxes and vehicles make room for a wide stand
+  // the fastest vehicle is parked at the stand (not in the store); boxes and vehicles make room for a wide stand
   // the fastest vehicle is parked on the right of the table (on the left it would hang over the house)
-  if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
-  else if (up.bike) drawSprite(ctx, 'stand_bike', call());
+  if (!LOCATIONS[S.location].store) {
+    if (up.scooter) drawSprite(ctx, 'stand_scooter', call());
+    else if (up.bike) drawSprite(ctx, 'stand_bike', call());
+  }
   shifted(ctx, wide, -0.35, -1.0, () => {
     if (up.toolkit) drawSprite(ctx, 'stand_toolkit', call());
     if (up.cooler) drawSprite(ctx, 'stand_cooler', call());
@@ -729,8 +759,11 @@ function drawStandHere(ctx: Ctx, g: SceneSource, playing: boolean): void {
     drawSprite(ctx, up.branded_cups ? 'item_cups_branded' : 'item_cups_pack', call());
     if ((S.stock.cookies ?? 0) > 0) drawSprite(ctx, 'item_cookies', call({ level: S.stock.cookies }));
     if (playing && g.D.flyers) drawSprite(ctx, 'stand_flyers', call());
-    // the second place of the store's counter has its own pitcher and cups
-    if (store) table2Items(ctx, level);
+    // the second place of the store's counter has its own pitcher and cups; the menu of the store is on its left end
+    if (store) {
+      table2Items(ctx, level);
+      menuItems(ctx, S);
+    }
     // the canopy of the umbrella is over the heads of the sellers (its pole stays behind the table)
     if (!up.tent && up.umbrella && outdoor) umbrellaCanopy(ctx, sx, sy, wide, br.umbrella ? 0.5 : 1);
   }

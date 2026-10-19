@@ -2,8 +2,10 @@
 import { CONFIG } from '../core/config';
 import type { EquipId, Phase } from '../core/types';
 import { EQUIPMENT } from '../data/equipment';
+import { GOODS } from '../data/goods';
+import { LOCATIONS } from '../data/locations';
 import { t } from '../i18n';
-import { inUseEquipment } from '../sim/equipment';
+import { inUseEquipment, unusedHere } from '../sim/equipment';
 import type { Game } from '../sim/game';
 import { lemonsTotal } from '../sim/state';
 import { coin, ico } from './dom';
@@ -15,6 +17,9 @@ const ROWS: { key: string; icon: string; img: string; label: string }[] = [
   { key: 'sugar', icon: '🍬', img: 'gd_sugar', label: 'res.sugar' },
   { key: 'cups', icon: '🥤', img: 'gd_cups', label: 'res.cups' },
   { key: 'cookies', icon: '🍪', img: 'gd_cookie', label: 'res.cookies' },
+  { key: 'oranges', icon: '🍊', img: 'gd_orange', label: 'res.oranges' },
+  { key: 'juice', icon: '🧃', img: 'gd_juice', label: 'res.juice' },
+  { key: 'pastries', icon: '🍰', img: 'gd_pastry', label: 'res.pastries' },
   { key: 'ice', icon: '❄️', img: 'gd_ice', label: 'res.ice' },
   { key: 'ready', icon: '🥛', img: 'gd_ready', label: 'res.ready' },
   { key: 'cooler', icon: '🧊', img: 'gd_ice', label: 'res.cooler' },
@@ -87,6 +92,19 @@ export class ResourceBar {
     const cookiesAfter = market ? cookies + g.cart.cookies * 10 : cookies;
     this.set('cookies', `${cookies}${plus(cookies, cookiesAfter)}`);
     this.show('cookies', cookiesAfter > 0 || g.cookiesOpen());
+    // the menu of the store: oranges, glasses of juice, pastries
+    const menuOpen = g.extrasOpen();
+    for (const [key, good] of [
+      ['oranges', 'orange'],
+      ['juice', 'juice'],
+      ['pastries', 'pastry'],
+    ] as const) {
+      const now = st[key];
+      const after = market ? now + g.cart[good] * GOODS[good].pack : now;
+      this.set(key, `${now}${plus(now, after)}`);
+      this.show(key, after > 0 || menuOpen);
+      this.tip(key, `${GOODS[good].icon} ${t(`res.${key}`)}: ${now}`);
+    }
     // the trays of ice of the freezer (in the kitchen: what is left after the jug)
     const ice = kitchen ? g.kitchenIceLeft() : (st.ice ?? 0);
     this.set('ice', String(ice));
@@ -127,7 +145,10 @@ function condBar(c: number, broken: boolean): string {
 }
 
 export function equipmentRows(g: Game, mode: 'repair' | 'shop'): string {
+  // in the store the stand's own things (the umbrella, the tent) stay at home: they are not listed there
+  const store = !!LOCATIONS[g.S.location].store;
   return inUseEquipment(g.S)
+    .filter((id) => !store || !unusedHere(g.S, id))
     .map((id) => {
       const broken = !!g.S.broken[id];
       const c = g.S.condition[id] ?? 100;

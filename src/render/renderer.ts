@@ -17,7 +17,8 @@ import { pedFacing } from './facing';
 import { drawCharacter, drawCup, pedCupSpriteId, pedSitSpriteId, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
 import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
-import { drawStorePiece, drawStoreRoom, STORE_PIECES, type StorePiece } from './proc/store';
+import { drawStorePiece, drawStoreRoom, STORE_PIECES, type MenuLine, type StorePiece } from './proc/store';
+import { EXTRAS, EXTRA_IDS } from '../data/menu';
 import { DOOR, ROOM_D, SEAT_H } from '../data/storeRoom';
 import { drawKey } from './depth';
 import { drawCritter } from './proc/critters';
@@ -115,7 +116,13 @@ export class Renderer {
       if (id.startsWith('tile_')) this.ground = null;
     });
     game.bus.on('found', (e) => !this.view && this.floats.push({ x: e.x, y: e.y, text: `+${e.amount} ${e.icon}`, color: '#2b8a3e', t: 0 }));
-    game.bus.on('sale', (e) => !this.view && this.floats.push({ x: e.x, y: e.y - (e.cookie ? 0.35 : 0), text: `+${e.amount}${e.cookie ? ' 🍪' : ''}`, color: e.cookie ? '#a0612b' : '#2b8a3e', t: 0 }));
+    // (a cookie or a pastry is bought with the drink: its coins float a little higher)
+    game.bus.on('sale', (e) => {
+      if (this.view) return;
+      const extra = e.cookie || e.icon === EXTRAS.pastry.icon;
+      const icon = e.cookie ? '🍪' : e.icon;
+      this.floats.push({ x: e.x, y: e.y - (extra ? 0.35 : 0), text: `+${e.amount}${icon ? ' ' + icon : ''}`, color: extra ? '#a0612b' : '#2b8a3e', t: 0 });
+    });
     game.bus.on('thief', (e) => {
       if (this.view) return;
       const y = CONFIG.STAND.y + standDy(game);
@@ -369,7 +376,7 @@ export class Renderer {
     const walls = LOCATIONS[loc].walls;
     if (walls) drawWalls(ctx, walls, LOCATIONS[loc].doors);
     // the own store: its room in a cut (the menu on its wall shows today's prices)
-    if (store) drawStoreRoom(ctx, g.S.price, (g.S.stock.cookies ?? 0) > 0 ? g.S.cookiePrice : null, !!up.store_ac);
+    if (store) drawStoreRoom(ctx, this.menuLines(), !!up.store_ac);
 
     if (selling && g.S.settings.showZone) {
       groundCircle(ctx, CONFIG.STAND.x, CONFIG.STAND.y, g.radius);
@@ -508,6 +515,15 @@ export class Renderer {
     this.drawBubbles(ctx);
     if (selling) this.drawWorkIndicators(ctx);
     this.drawFloats(ctx, dt);
+  }
+
+  /** What the menu board of the store says today: lemonade, cookies and the menu of the store that is in stock. */
+  private menuLines(): MenuLine[] {
+    const g = this.game;
+    const out: MenuLine[] = [['🍋', g.S.price]];
+    if ((g.S.stock.cookies ?? 0) > 0) out.push(['🍪', g.S.cookiePrice]);
+    if (g.extrasHere()) for (const id of EXTRA_IDS) if (g.extraPortions(id) > 0) out.push([EXTRAS[id].icon, g.S.extraPrices[id]]);
+    return out;
   }
 
   /** The glass door of the store slides open while somebody is at it. */

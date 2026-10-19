@@ -49,16 +49,29 @@ interface Rect {
   v1: number;
 }
 
-/** What the menu board says: today's prices (laid out for the height of the board). */
-function menuText(ctx: Ctx, m: Rect, price: number, cookiePrice: number | null): void {
+/** A line of the menu board: what and for how much. */
+export type MenuLine = [string, number];
+
+/** What the menu board says: today's prices (laid out for the height of the board; two columns for a long menu). */
+function menuText(ctx: Ctx, m: Rect, lines: MenuLine[]): void {
   const cx = (m.u0 + m.u1) / 2;
+  const w = m.u1 - m.u0;
   const k = (m.v1 - m.v0) / 50;
   const big = Math.min(1, k + 0.1);
-  const pad = Math.min(8, (m.u1 - m.u0) * 0.15);
+  const pad = Math.min(8, w * 0.15);
   text(ctx, t('world.menu'), cx, m.v0 + 8 * k, 7 * big, '#fff3bf', 'center', 900);
   line(ctx, m.u0 + pad, m.v0 + 14 * k, m.u1 - pad, m.v0 + 14 * k, 'rgba(255,255,255,0.5)', 1);
-  text(ctx, `🍋 ${price}`, cx, m.v0 + 24 * k, 8 * big, '#ffffff', 'center', 900);
-  if (cookiePrice !== null) text(ctx, `🍪 ${cookiePrice}`, cx, m.v0 + 37 * k, 8 * big, '#ffffff', 'center', 900);
+  const cols = lines.length > 3 ? 2 : 1;
+  const rows = Math.ceil(lines.length / cols);
+  const top = m.v0 + 18 * k;
+  const step = Math.min(13 * k, (m.v1 - 3 * k - top) / Math.max(1, rows));
+  // (an emoji is wider than a digit: two columns need a smaller font)
+  const size = Math.min(8 * big, step * 0.9, cols > 1 ? w * 0.15 : 99);
+  lines.forEach(([icon, price], i) => {
+    const col = cols > 1 ? Math.floor(i / rows) : 0;
+    const x = cols > 1 ? m.u0 + w * (col ? 0.75 : 0.26) : cx;
+    text(ctx, `${icon} ${price}`, x, top + step * ((i % rows) + 0.5), size, '#ffffff', 'center', 900);
+  });
 }
 
 /** The name of the store on its board, as big as the board allows. */
@@ -101,7 +114,7 @@ function plaster(ctx: Ctx, len: number, shade: number): void {
   }
 }
 
-function backWallDrawn(ctx: Ctx, price: number, cookiePrice: number | null): void {
+function backWallDrawn(ctx: Ctx, menu: MenuLine[]): void {
   plaster(ctx, LEN, 0);
   for (const [u0, u1] of STORE_WALL.windows) windowPane(ctx, u0, u1);
   // shelves with jars of lemonade and lemons, behind the counter
@@ -121,7 +134,7 @@ function backWallDrawn(ctx: Ctx, price: number, cookiePrice: number | null): voi
   const m = STORE_WALL.menu;
   rrect(ctx, m.u0 - 3, m.v0 - 3, m.u1 - m.u0 + 6, m.v1 - m.v0 + 6, 3, '#8a5a35');
   rrect(ctx, m.u0, m.v0, m.u1 - m.u0, m.v1 - m.v0, 2, '#2f4f3f');
-  menuText(ctx, m, price, cookiePrice);
+  menuText(ctx, m, menu);
   // a garland of little lights along the top of the wall
   for (let i = 0; i < 24; i++) {
     const u = 8 + i * 16;
@@ -175,7 +188,7 @@ function wallTops(ctx: Ctx): void {
  * The room of the store, drawn right after the ground: the generated wall pictures when they are there
  * (wall_store_left / wall_store_right, see tools/make_walls.py), else the walls drawn here.
  */
-export function drawStoreRoom(ctx: Ctx, price: number, cookiePrice: number | null, ac: boolean): void {
+export function drawStoreRoom(ctx: Ctx, menu: MenuLine[], ac: boolean): void {
   const left = getImage('wall_store_left');
   const right = getImage('wall_store_right');
   if (left && right) {
@@ -195,11 +208,11 @@ export function drawStoreRoom(ctx: Ctx, price: number, cookiePrice: number | nul
       const a = WALL_ART;
       signText(ctx, a.sign);
       clockHands(ctx, a.clock.u, a.clock.v, a.clock.rx, a.clock.ry);
-      menuText(ctx, a.menu, price, cookiePrice);
+      menuText(ctx, a.menu, menu);
     });
   } else {
     faceX(ctx, 0, ROOM_D, 0, () => leftWallDrawn(ctx));
-    faceY(ctx, 0, 0, 0, () => backWallDrawn(ctx, price, cookiePrice));
+    faceY(ctx, 0, 0, 0, () => backWallDrawn(ctx, menu));
   }
   if (ac) faceX(ctx, 0, ROOM_D, 0, () => airConditioner(ctx));
   wallTops(ctx);

@@ -643,7 +643,7 @@ export const kitchenPanel: Panel = {
     const pourBtn = q<HTMLButtonElement>(el, '[data-k="pourbtn"]');
     pourBtn.disabled = k.mix === 'none' || max < 1;
     pourBtn.classList.toggle('ready', !pourBtn.disabled);
-    q<HTMLButtonElement>(el, '[data-k="standbtn"]').classList.toggle('hidden', !mid && g.D.cupsReady < 1);
+    q<HTMLButtonElement>(el, '[data-k="standbtn"]').classList.toggle('hidden', !mid && !g.anyDrinkLeft());
     const market = el.querySelector<HTMLButtonElement>('[data-kact="market"]');
     if (market) market.disabled = !g.canGoMarket();
   },

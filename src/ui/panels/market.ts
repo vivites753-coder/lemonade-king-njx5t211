@@ -14,6 +14,9 @@ const UNIT: Record<GoodId, string> = {
   cups: 'unit.pack',
   cups_super: 'unit.pack',
   cookies: 'unit.pack',
+  orange: 'unit.pc',
+  juice: 'unit.carton',
+  pastry: 'unit.cakebox',
   lemon_bulk: 'unit.box',
   water_bulk: 'unit.box',
   sugar_bulk: 'unit.bag',
@@ -44,7 +47,7 @@ export const marketPanel: Panel = {
   render(g) {
     const S = g.S;
     const st = S.stock;
-    const have: Record<string, number> = { lemons: lemonsTotal(st), water: st.water, sugar: st.sugar, cups: st.cups, cookies: st.cookies ?? 0 };
+    const have: Record<string, number> = { lemons: lemonsTotal(st), water: st.water, sugar: st.sugar, cups: st.cups, cookies: st.cookies ?? 0, oranges: st.oranges, juice: st.juice, pastries: st.pastries };
     // goods for a higher reputation (cookies) appear once they are open; the wholesale packs have their own part
     const row = (id: GoodId) => {
         const gd = GOODS[id];

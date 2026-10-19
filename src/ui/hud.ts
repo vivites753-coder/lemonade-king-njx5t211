@@ -231,7 +231,7 @@ export class Hud {
     const front = counters.some((c) => !!g.street.frontReady(c));
     const free = counters.some((c) => !!g.street.frontReady(c) && !g.servings[c]);
     const serveBtn = this.els.serve as HTMLButtonElement;
-    const canServe = free && !g.making && D.cupsReady > 0;
+    const canServe = free && !g.making && g.anyDrinkLeft();
     serveBtn.disabled = !front || !!g.making;
     serveBtn.classList.toggle('ready', canServe);
     // the ring shows the player's own pour (helpers' pours have their own rings over the stand)
