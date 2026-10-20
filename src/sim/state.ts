@@ -1,6 +1,7 @@
 import { CONFIG } from '../core/config';
 import type { AgeMode, Avatar, EquipId, Lang, LocationId, MixResult, Params, UpgradeId, WeatherId } from '../core/types';
 import type { ExtraId } from '../data/menu';
+import { STORE_GEAR } from '../data/staff';
 import type { Point, PointDay } from './points';
 
 export interface LemonBatch {
@@ -52,7 +53,14 @@ export interface DayHistory {
   weather: WeatherId;
 }
 
-/** An own store (level 4). */
+/** A stain on the floor of the store (tiles; k: 0 spilt lemonade, 1 muddy shoes, 2 crumbs). */
+export interface Stain {
+  x: number;
+  y: number;
+  k: 0 | 1 | 2;
+}
+
+/** An own store (level 4). Its staff, its days and its payback are in its point of "My stands" (Point.store). */
 export interface StoreState {
   /** The day it opened. */
   opened: number;
@@ -60,8 +68,14 @@ export interface StoreState {
   invested: number;
   /** Profit (after the tax) of all the days the player worked there: the payback of `invested`. */
   earned: number;
-  /** Days the player worked there. */
+  /** Days it was open (the player worked there, or its staff did). */
   days: number;
+  /** Stains on its floor: they stay, overnight too, until somebody wipes them off (src/sim/cleaning.ts). */
+  stains?: Stain[];
+  /** How much of the next stain has gathered (0–1). */
+  dirt?: number;
+  /** A cleaner is hired: she works every day the store is open (CONFIG.CLEANER_WAGE a day). */
+  cleaner?: boolean;
 }
 
 /** Everything that survives between days. */
@@ -217,6 +231,9 @@ export interface DayReport {
   /** The own store (level 4): electricity and water, and the tax on the profit (older reports: none). */
   utilities?: number;
   tax?: number;
+  /** The own store: the cleaner's wage, and how clean its floor is in the evening (per cent). */
+  cleaning?: number;
+  clean?: number;
   /** A day at the own store: its numbers for the lessons and the payback. */
   store?: StoreDay;
 }
@@ -257,8 +274,8 @@ export interface DayState {
   bonus: number;
   /** Tips left by the customers who sat at the tables of the store. */
   tips: number;
-  /** utilities and tax: the own store only (level 4). */
-  expenses: { ingredients: number; rent: number; flyers: number; onlineAds: number; stolen: number; wages: number; repairs: number; training: number; utilities: number; tax: number };
+  /** utilities, tax and cleaning (the cleaner's wage): the own store only (level 4). */
+  expenses: { ingredients: number; rent: number; flyers: number; onlineAds: number; stolen: number; wages: number; repairs: number; training: number; utilities: number; tax: number; cleaning: number };
   flyers: boolean;
   /** Online ads are on today (they cost CONFIG.ONLINE_ADS_COST when the selling starts). */
   onlineAds: boolean;
@@ -371,7 +388,7 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     extraSold: { orange: 0, multifruit: 0, pastry: 0 },
     bonus: 0,
     tips: 0,
-    expenses: { ingredients: 0, rent: 0, flyers: 0, onlineAds: 0, stolen: 0, wages: 0, repairs: 0, training: 0, utilities: 0, tax: 0 },
+    expenses: { ingredients: 0, rent: 0, flyers: 0, onlineAds: 0, stolen: 0, wages: 0, repairs: 0, training: 0, utilities: 0, tax: 0, cleaning: 0 },
     flyers: false,
     onlineAds: false,
     helper: false,
@@ -434,6 +451,27 @@ export function normalizeState(S: GameState, D: DayState): void {
   D.events = { ...emptyEvents(), ...D.events };
   S.truck = Object.assign({ skin: 0, logo: 0, text: '' }, S.truck);
   if (D.helpers === undefined || (D.helper && !D.helpers)) D.helpers = D.helper ? 1 : 0;
+  // stores from before they were among "My stands": each one gets its point (its staff, its days, its payback)
+  for (const [loc, st] of Object.entries(S.stores) as [LocationId, StoreState][]) {
+    st.stains ??= [];
+    st.dirt ??= 0;
+    if (S.points.some((p) => p.store && p.loc === loc)) continue;
+    S.points.push({
+      id: S.nextPointId++,
+      loc,
+      store: true,
+      opened: st.opened,
+      seller: null,
+      helper: null,
+      issue: null,
+      last: null,
+      history: [],
+      total: st.earned,
+      upgrades: { ...STORE_GEAR },
+      invested: st.invested,
+      away: null,
+    });
+  }
   // stands from before they had their own equipment: a sign, and what they cost then
   for (const p of S.points) {
     p.upgrades ??= { sign: true };
@@ -449,5 +487,5 @@ export function lemonsTotal(stock: Stock): number {
 
 export function dayExpenses(d: DayState): number {
   const e = d.expenses;
-  return e.ingredients + e.rent + e.flyers + e.onlineAds + e.stolen + e.wages + e.repairs + e.training + (e.utilities ?? 0) + (e.tax ?? 0);
+  return e.ingredients + e.rent + e.flyers + e.onlineAds + e.stolen + e.wages + e.repairs + e.training + (e.utilities ?? 0) + (e.tax ?? 0) + (e.cleaning ?? 0);
 }

@@ -2,7 +2,7 @@
 // something in the scene (the fox, a customer, a lucky find).
 
 /** A spot in the scene the arrow can point at. */
-export type WorldTarget = 'thief' | 'queue' | 'queue2' | 'critter' | 'stand';
+export type WorldTarget = 'thief' | 'queue' | 'queue2' | 'critter' | 'stand' | 'stain';
 
 /** For every tip: CSS selectors to try in order (the first visible one wins), or a spot in the scene. */
 const TARGETS: Record<string, string[] | WorldTarget> = {
@@ -46,6 +46,11 @@ const TARGETS: Record<string, string[] | WorldTarget> = {
   points: ['[data-hud="points"]'],
   hire: ['[data-hud="points"]'],
   view: ['[data-el="pointinfo"]'],
+  // the own store: its staff at the counter, a stain on its floor, the clean button, the cleaner
+  store_staff: 'stand',
+  dirty: 'stain',
+  cleaned: ['[data-hud="clean"]'],
+  cleaner: ['#panel [data-act="cleaner"]', '#modal [data-act^="cleaner"]'],
 };
 
 function visible(el: Element): DOMRect | null {

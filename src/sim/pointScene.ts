@@ -4,12 +4,13 @@
 import { CONFIG } from '../core/config';
 import { RNG } from '../core/rng';
 import type { Phase } from '../core/types';
-import { LOCATIONS } from '../data/locations';
+import { LOCATIONS, storeSeats } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
+import { dirtShare } from './cleaning';
 import type { Critter } from './critters';
 import { attentionRadius, interestChance, serveTime, type Owned } from './economy';
 import type { Game, Serving } from './game';
-import { isGirl, pointOpensAt, pointUps, pointWorkers, type Point } from './points';
+import { isGirl, pointGear, pointHasRoomFor2, pointOpensAt, pointUps, pointWorkers, type Point } from './points';
 import type { DayState, GameState } from './state';
 import { Street, type Ped, type StreetHost } from './street';
 
@@ -30,6 +31,8 @@ export interface SceneSource {
   seller?: { girl: boolean } | null;
   /** The second worker of that stand. */
   helper2?: { girl: boolean } | null;
+  /** The staff of the own store who work with the player there: girls or boys (for their pictures). */
+  helperGirls?: boolean[];
 }
 
 export class PointScene implements SceneSource {
@@ -45,6 +48,8 @@ export class PointScene implements SceneSource {
   onSale: ((x: number, y: number, amount: number) => void) | null = null;
   private rng: RNG;
   private wait = [0, 0];
+  /** What works at the point (worked out again in refresh, every frame the view is on screen). */
+  private gear: Owned = {};
 
   constructor(
     private g: Game,
@@ -56,7 +61,7 @@ export class PointScene implements SceneSource {
     const S = Object.create(g.S) as GameState;
     Object.assign(S, {
       location: point.loc,
-      upgrades: pointUps(point),
+      upgrades: pointGear(g.S, point),
       broken: {},
       price: loc.fairPrice,
       speakerOn: true,
@@ -84,8 +89,9 @@ export class PointScene implements SceneSource {
       onSpawnCounted: () => undefined,
       onInRange: (p) => this.onInRange(p),
       onImpatient: (p) => this.street.leave(p, '😠'),
-      store: () => false,
-      seats: () => [],
+      // a store: people come in through its door and may sit down at its tables
+      store: () => !!point.store,
+      seats: () => storeSeats(point.loc, this.active()),
       sitMult: () => 1,
       onTip: () => undefined,
     };
@@ -96,7 +102,8 @@ export class PointScene implements SceneSource {
   /** A new upgrade or another seller at the stand shows at once. */
   refresh(): void {
     const p = this.point;
-    this.S.upgrades = pointUps(p);
+    this.gear = pointGear(this.g.S, p);
+    this.S.upgrades = this.gear;
     // the first worker of today stands where the seller does (the second worker when the seller is ill)
     const [a, b] = pointWorkers(p);
     const look = (w: typeof a | undefined, cur: { girl: boolean } | null) => {
@@ -118,16 +125,15 @@ export class PointScene implements SceneSource {
   }
 
   get radius(): number {
-    return attentionRadius(pointUps(this.point), true);
+    return attentionRadius(this.active(), true);
   }
 
   active(): Owned {
-    return pointUps(this.point);
+    return this.gear;
   }
 
   counters(): number {
-    const up = pointUps(this.point);
-    return up.big_stand || up.truck ? 2 : 1;
+    return pointHasRoomFor2(this.point) ? 2 : 1;
   }
 
   isSoldOut(): boolean {
@@ -175,13 +181,15 @@ export class PointScene implements SceneSource {
     const loc = LOCATIONS[this.point.loc];
     const ev = this.g.D.events;
     const raw = interestChance({
-      upgrades: pointUps(this.point),
+      upgrades: this.active(),
       speakerOn: true,
       flyers: false,
       weather: this.g.D.weather,
       rep: this.g.S.rep,
       festival: ev.festival && !loc.indoor,
       location: this.point.loc,
+      store: !!this.point.store,
+      dirt: this.point.store ? dirtShare(this.g.S.stores[this.point.loc]) : 0,
     }).raw;
     if (!this.rng.chance(Math.min(CONFIG.MAX_STOP_CHANCE, raw * PED_TYPES[p.type].interest))) return;
     if (this.S.price > p.maxPrice) {

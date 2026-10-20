@@ -210,6 +210,10 @@ export class UI implements UIApi {
     this.overlays.modal(pointsModal(this.g, this.pointsHooks));
   }
 
+  openHire(pointId: number, role: 'seller' | 'helper' = 'seller'): void {
+    this.pointsHooks.hire(pointId, role);
+  }
+
   openRoadmap(): void {
     this.overlays.modal(roadmapModal(this.g));
   }
@@ -478,6 +482,10 @@ export class UI implements UIApi {
       const c = g.critters.list.find((x) => x.bonus) ?? null;
       return c ? at(c.x, c.y, 30) : null;
     }
+    if (w === 'stain') {
+      const s = g.storeHere()?.stains?.[0];
+      return s ? at(s.x, s.y, 4) : null;
+    }
     return at(CONFIG.STAND.x, CONFIG.STAND.y + counterDy(g.atStore()), 100);
   }
 
@@ -486,10 +494,11 @@ export class UI implements UIApi {
     this.g.goTitle();
   }
 
-  /** The arrangement of the selling buttons the player saved (an empty one is none), or the standard one. */
+  /** The arrangement of the selling buttons the player saved (an empty one is none), or the standard one; a button that
+   * came later than the saved arrangement stands where it stands by default. */
   private layoutOf(kind: 'phone' | 'pc'): Record<string, [number, number]> {
     const own = this.g.S.settings.hudLayout?.[kind];
-    return own && Object.keys(own).length ? own : HUD_DEFAULT_LAYOUT;
+    return own && Object.keys(own).length ? { ...HUD_DEFAULT_LAYOUT, ...own } : HUD_DEFAULT_LAYOUT;
   }
 
   private applySettings(): void {
@@ -544,6 +553,9 @@ export class UI implements UIApi {
         break;
       case 'pshop':
         this.pointsHooks.shop(Number(arg));
+        break;
+      case 'clean':
+        g.cleanStain();
         break;
       case 'roadmap':
         this.openRoadmap();
@@ -603,17 +615,26 @@ export class UI implements UIApi {
   private onTap(x: number, y: number): void {
     const g = this.g;
     // taps on another stand do not serve the own customers
-    if (g.phase !== 'sell' || g.paused || g.viewPoint !== null) return;
-    // only a tap right on the fox counts
-    const th = this.r.thiefScreen;
-    if (th && g.street.thiefCatchable() && Math.hypot(th.x - x, th.y - y) < th.r) {
-      g.hitThief();
-      return;
+    if (g.viewPoint !== null) return;
+    if (g.phase === 'sell' && !g.paused) {
+      // only a tap right on the fox counts
+      const th = this.r.thiefScreen;
+      if (th && g.street.thiefCatchable() && Math.hypot(th.x - x, th.y - y) < th.r) {
+        g.hitThief();
+        return;
+      }
+      // a lucky find (a cat, a wallet, a balloon, a coin)
+      for (const tt of this.r.tapTargets) {
+        if (Math.hypot(tt.x - x, tt.y - y) < tt.r && g.tapCritter(tt.id)) return;
+      }
     }
-    // a lucky find (a cat, a wallet, a balloon, a coin)
-    for (const tt of this.r.tapTargets) {
-      if (Math.hypot(tt.x - x, tt.y - y) < tt.r && g.tapCritter(tt.id)) return;
+    // a stain on the floor of the store (before and after the selling too): the nearest one under the finger
+    let best: (typeof this.r.stainTargets)[number] | null = null;
+    for (const s of this.r.stainTargets) {
+      const d = Math.hypot(s.x - x, s.y - y);
+      if (d < s.r && (!best || d < Math.hypot(best.x - x, best.y - y))) best = s;
     }
+    if (best) g.cleanStain(best.s);
     // pouring is only by holding the "Pour" button (the pouring mini-game), not by a tap on the field
   }
 

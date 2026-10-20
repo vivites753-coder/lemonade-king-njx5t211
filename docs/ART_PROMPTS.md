@@ -23,6 +23,7 @@
    Поки їх немає, гра малює все це кодом. Низькі передні стіни й скляні двері гра малює сама.
 9. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
+10. За бажанням: лист 30 — прибиральниця магазину (поки гра малює її бабусею з листа 06, швабру й відро — кодом).
 
 ## СІТКА (підстав стовпці, рядки, кількість, % заповнення)
 
@@ -291,6 +292,23 @@ adult_c, granny_a, granny_b, sport_a, sport_b, tourist_a, tourist_b`. Поки �
 Як вийшло (встановлено): генератор повернув вигляди ззаду вліво — це якраз те, що треба для правого стільця, який
 стоїть перед столиком спинкою до нас (лист 28: його другий стілець намальовано ззаду). На лівому стільці людина сидить
 обличчям до нас (вигляд спереду), на правому — спиною (вигляд ззаду), обидва без дзеркала.
+
+## Лист 30. Прибиральниця магазину (1 пара, ISO) — за бажанням
+
+Вона ходить магазином і витирає плями. Швабру й відро гра малює сама (швабра рухається по плямі), тому на картинці
+їх немає, а руки тримають уявну ручку швабри. Пара: ліворуч вигляд спереду, праворуч ззаду, обидва повернуті праворуч,
+як пішоходи на листі 06 (прикріпіть його першим, щоб розмір і пропорції були ті самі, потім референс стилю). До
+негативного промпта додайте `mop, broom, bucket, tools`.
+
+```
+A character sprite sheet with ONE character shown twice side by side on a perfectly flat solid magenta background (#FF00FF): on the left a FRONT view, on the right a BACK view, with a clear magenta gap between the two and a wide empty magenta margin around them (at least 12% of the canvas), no overlap, no grid lines, no labels, no numbers, no text, no watermark.
+The character: a friendly plump cleaning lady of about fifty, the same chibi proportions and the same size as the adults in the first attached image: a light-blue work overall dress with short sleeves, a white apron with a pocket, a turquoise headscarf tied at the back, yellow rubber gloves, comfortable grey shoes, rosy cheeks and a kind smile. Both hands are held together in front of the body at chest height, as if holding the handle of a mop, but NO mop, NO broom, NO bucket and NO tools are drawn.
+FRONT view (left): three-quarter isometric view, FACING THE VIEWER and turned toward the RIGHT side of the image, standing, ready to walk.
+BACK view (right): the same pose seen from BEHIND, turned toward the RIGHT: the back of the head, the knot of the headscarf and the bow of the apron visible.
+Use the second attached image as the exact style reference: isometric 3D render, cute stylized soft clay / toy-like look, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft studio lighting from the top-left, gentle ambient occlusion, 2:1 dimetric isometric camera (about 30 degrees elevation, rotated 45 degrees), clean readable silhouette, kid-friendly mobile game art. NO ground shadows, NO cast shadows, NO glow, NO halo, NO light rays, NO text, letters or numbers.
+```
+
+Імена (наріжу з `--pairs`): `char_cleaner_front, char_cleaner_back`. Гра бере їх сама, щойно вони з'являться.
 
 ## Лист 12д. Товари меню магазину (3×1, FLAT) — за бажанням
 

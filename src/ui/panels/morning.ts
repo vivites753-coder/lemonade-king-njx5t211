@@ -39,7 +39,10 @@ export function locationCards(g: Game): string {
   return LOCATION_IDS.map((id) => {
       const l = LOCATIONS[id];
       const repLock = !g.unlocked(id);
-      const own = S.points.find((p) => p.loc === id);
+      const own = S.points.find((p) => p.loc === id && !p.store);
+      // the staff of an own store run it while the player is elsewhere
+      const staff = S.points.find((p) => p.loc === id && p.store);
+      const staffN = staff ? Number(!!staff.seller) + Number(!!staff.helper) : 0;
       const locked = repLock || !!own || (S.day === 1 && id !== 'yard');
       const travel = g.travelHours(id);
       const ev = repLock ? undefined : LOC_EVENTS.find((e) => e.loc === id && D.events[e.id]);
@@ -58,6 +61,7 @@ export function locationCards(g: Game): string {
           ${ev ? `<span class="loc-ev">${t(`loc.ev.${ev.id}`)}</span>` : ''}
           ${own ? `<span class="loc-own">${ico('pt_stand', '🏪')} ${t('loc.ownPoint')}</span>` : ''}
           ${storeLine}
+          ${staffN ? `<span class="loc-own">👥 ${t('loc.storeStaff', { n: staffN })}</span>` : ''}
           <small>${t(`loc.${id}.desc`)}</small>
           <span class="loc-meta">
             <span>👥 ${dots(l.trafficStars)}</span>

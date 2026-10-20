@@ -110,6 +110,8 @@ export interface InterestInput {
   scare?: { key: string; mult: number };
   /** The own store of level 4: its shop window, comfort and awning. */
   store?: boolean;
+  /** The own store: the share of its floor that is dirty (0–1). */
+  dirt?: number;
 }
 
 /** Indoors the weather changes thirst this much less (no sun, no rain on your head). */
@@ -177,7 +179,10 @@ export function interestChance(i: InterestInput): { chance: number; raw: number;
   if (i.event) parts.push({ key: i.event.key, kind: 'mul', value: ev });
   const scare = i.scare?.mult ?? 1;
   if (i.scare) parts.push({ key: i.scare.key, kind: 'mul', value: scare });
-  const raw = CONFIG.BASE_STOP_CHANCE * (1 + ads) * w.thirst * comfort * repF * fest * ev * scare;
+  // a dirty floor puts people off
+  const dirt = i.dirt ? 1 - CONFIG.DIRT_STOP * Math.min(1, i.dirt) : 1;
+  if (dirt !== 1) parts.push({ key: 'why.dirty', kind: 'mul', value: dirt });
+  const raw = CONFIG.BASE_STOP_CHANCE * (1 + ads) * w.thirst * comfort * repF * fest * ev * scare * dirt;
   return { chance: Math.min(CONFIG.MAX_STOP_CHANCE, raw), raw, parts };
 }
 

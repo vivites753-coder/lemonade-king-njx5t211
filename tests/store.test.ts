@@ -6,7 +6,7 @@ import type { UpgradeId } from '../src/core/types';
 import { COUNTER_X, DOOR, ROOM_D, STORE_COUNTER_DY } from '../src/data/storeRoom';
 import { breakEvenCups, costPerCup, storeTax } from '../src/sim/economy';
 import { Game } from '../src/sim/game';
-import { freePlaces } from '../src/sim/points';
+import { freePlaces, storePointAt } from '../src/sim/points';
 import { cook } from './bot';
 
 /** A player of level 4 on a morning, with the money for a store. */
@@ -32,11 +32,13 @@ function toSelling(g: Game, jugs = 4, price?: number): void {
   expect(g.startSelling()).toBe(true);
 }
 
-function sellAllDay(g: Game): void {
+/** Sells all day; a careful player also wipes the stains off the floor of the store. */
+function sellAllDay(g: Game, clean = false): void {
   g.setSpeed(4);
   for (let i = 0; i < 200000 && g.phase === 'sell'; i++) {
     g.update(0.05);
     if (!g.serving && !g.making) g.serve();
+    if (clean && i % 20 === 0) g.cleanStain();
   }
 }
 
@@ -60,7 +62,7 @@ describe('the own store (level 4)', () => {
     expect(g.openStore('townhall')).toBe(true);
     expect(g.S.coins).toBe(coins - 5000);
     expect(g.S.location).toBe('townhall');
-    expect(g.S.stores.townhall).toEqual({ opened: 6, invested: 5000, earned: 0, days: 0 });
+    expect(g.S.stores.townhall).toMatchObject({ opened: 6, invested: 5000, earned: 0, days: 0 });
     expect(cards).toContain('storeOpened');
     // once is enough
     expect(g.openStore('townhall')).toBe(false);
@@ -335,12 +337,16 @@ describe('the numbers of a business', () => {
       let earned = 0;
       for (const seed of [41, 42, 43]) {
         const g = level4(seed, 9000);
-        // what a player of level 4 usually has: a scooter, advertising, the dispenser, the TV, two helpers
+        // what a player of level 4 usually has: a scooter, advertising, the dispenser, the TV, two people at the counter
         for (const id of ['sign', 'banner', 'speaker', 'dispenser', 'tv', 'loyalty', 'scooter', 'juicer_hand', 'mixer_pro'] as const) {
           g.S.upgrades[id] = true;
           if (id === 'speaker' || id === 'dispenser' || id === 'tv' || id === 'scooter' || id === 'juicer_hand') g.S.condition[id] = 100;
         }
         expect(g.openStore(loc)).toBe(true);
+        // at the store the helpers are its staff (and the player keeps its floor clean)
+        const p = storePointAt(g.S, loc)!;
+        expect(g.hireSeller(p.id, 0)).toBe(true);
+        expect(g.hireSeller(p.id, 1, 'helper')).toBe(true);
         g.D.weather = 'sunny';
         g.D.events.busy = {};
         expect(g.goMarket()).toBe(true);
@@ -350,9 +356,9 @@ describe('the numbers of a business', () => {
         expect(g.pay()).toBe(true);
         cook(g, jugs);
         g.setPrice(LOCATIONS[loc].fairPrice);
-        g.setHelpers(2);
         expect(g.startSelling()).toBe(true);
-        sellAllDay(g);
+        expect(g.D.helpers).toBe(2);
+        sellAllDay(g, true);
         earned += g.D.report!.store!.earned;
       }
       const perDay = earned / 3;

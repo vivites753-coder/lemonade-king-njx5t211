@@ -94,6 +94,7 @@ export class Hud {
         <button class="serve-btn" data-hud="serve" data-el="serve" data-move="serve">${ico('gd_ready', '🥛')}<small>${t('hud.serve')}</small>
           <span class="pour-gauge" data-el="gauge" aria-hidden="true"><i class="pg-zone"></i><i class="pg-fill"></i><i class="pg-needle"></i></span></button>
         <div class="hb-right">
+          <button class="btn btn-sm clean-btn hidden" data-hud="clean" data-el="clean" data-move="clean" aria-label="${t('hud.clean')}" title="${t('hud.cleanTip')}"></button>
           <span class="chip cups-chip" data-el="cups" data-move="cups"></span>
           <button class="btn btn-y" data-hud="make" data-el="make" data-move="make"></button>
           <button class="btn btn-sm" data-hud="end" data-move="end">${ico('btn_sleep', '🌙')}<span class="lbl"> ${t('hud.end')}</span></button>
@@ -194,8 +195,9 @@ export class Hud {
     this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">${ico('star_full', '⭐')}</span> ${S.rep.toFixed(1)}`);
     this.set('sound', S.settings.sound ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇'));
     this.show('points', g.pointsOpen() || S.points.length > 0);
-    // the other stands: a switch, and a card about the one shown (the controls of the own stand step aside)
-    const views = S.points.length > 0 && VIEW_PHASES.includes(this.phase);
+    // the other stands: a switch, and a card about the one shown (the controls of the own stand step aside); the store
+    // where the player works is the own scene
+    const views = S.points.some((p) => p.loc !== S.location) && VIEW_PHASES.includes(this.phase);
     this.show('views', views);
     if (views) this.set('views', this.viewButtons());
     const vp = g.viewPoint !== null ? g.pointById(g.viewPoint) : undefined;
@@ -244,6 +246,16 @@ export class Hud {
     makeBtn.disabled = !!g.making;
     this.set('make', g.making ? `🍋 ${Math.round(Math.min(1, g.making.t / g.making.dur) * 100)}%<span class="lbl"> ${t('hud.making')}</span>` : `🍳<span class="lbl"> ${t('hud.make')}</span><span class="sm">+</span>`);
     makeBtn.classList.toggle('btn-y', D.cupsReady === 0);
+    // the own store: how clean the floor is; a tap wipes a stain off (so does a tap on the stain itself)
+    const store = !!g.storeHere();
+    this.show('clean', store);
+    if (store) {
+      const pct = g.cleanliness();
+      const cleanBtn = this.els.clean as HTMLButtonElement;
+      cleanBtn.disabled = pct >= 100;
+      cleanBtn.classList.toggle('btn-y', pct < 70);
+      this.set('clean', `🧹 <b>${pct}%</b>`);
+    }
   }
 
   private viewButtons(): string {
@@ -251,6 +263,7 @@ export class Hud {
     const btn = (id: string, icon: string, label: string, on: boolean) =>
       `<button class="hv-btn${on ? ' on' : ''}" data-hud="view:${id}" title="${label}" aria-label="${label}">${icon}<span class="lbl"> ${label}</span></button>`;
     return `<span class="hv-eye">${ico('pt_look', '👀')}</span>${btn('own', '🍋', t('points.home'), g.viewPoint === null)}${g.S.points
+      .filter((p) => p.loc !== g.S.location)
       .map((p) => btn(String(p.id), locIco(p.loc), t(`loc.${p.loc}.name`), g.viewPoint === p.id))
       .join('')}`;
   }
@@ -262,7 +275,7 @@ export class Hud {
     const workers = pointWorkers(p);
     const person = (w: (typeof workers)[number]) => `<b>${t(`staff.name${w.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(w.skill))}</span>`;
     let who: string;
-    if (!workers.length) who = `${ico('pt_closed', '🤒')} ${t(p.away || p.issue === 'sick' ? 'points.closedIll' : 'points.noSeller')}`;
+    if (!workers.length) who = `${ico('pt_closed', '🤒')} ${t(p.away || p.issue === 'sick' ? 'points.closedIll' : p.store ? 'points.storeNoStaff' : 'points.noSeller')}`;
     else if (p.today?.status === 'nomoney') who = `💸 ${t('points.status.nomoney')}`;
     else who = `${workers.length > 1 ? ico('pt_team', '👥') : ico('pt_seller', '👤')} ${workers.map(person).join(' · ')}${!p.seller || p.issue === 'sick' ? `<br><small class="muted">${t('points.aloneToday')}</small>` : ''}`;
     let today = '';
@@ -279,7 +292,11 @@ export class Hud {
       ${today ? `<div>${today}</div>` : ''}
       <div class="hp-pb"><span>${ico('pt_payback', '💹')} ${t('points.payback')}: <b>${pct}%</b></span><div class="bar pb-bar"><i style="width:${pct}%"></i></div></div>
       ${sell ? `<small class="muted">🍋 ${t('points.ownQueue', { n: g.street.queued })}</small>` : ''}
-      <div class="hp-btns"><button class="btn btn-sm btn-y" data-hud="pshop:${p.id}">${ico('pt_upgrades', '🛠️')} ${t('points.upgrades')}</button>
+      <div class="hp-btns">${
+        p.store
+          ? `<button class="btn btn-sm btn-y" data-hud="points">${ico('pt_stand', '🏪')} ${t('points.title')}</button>`
+          : `<button class="btn btn-sm btn-y" data-hud="pshop:${p.id}">${ico('pt_upgrades', '🛠️')} ${t('points.upgrades')}</button>`
+      }
         <button class="btn btn-sm btn-g" data-hud="view:own">↩ ${t('points.backHome')}</button></div>`;
   }
 

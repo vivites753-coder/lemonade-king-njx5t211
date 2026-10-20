@@ -228,12 +228,12 @@ describe('a second worker at a stand', () => {
     expect(p.helper).toBeNull();
     g.buyPointUpgrade(p.id, 'big_stand');
     const one = pointCapacity(p);
-    const fixedOne = pointFixedCosts(p);
+    const fixedOne = pointFixedCosts(g.S, p);
     expect(g.hireSeller(p.id, 1, 'helper')).toBe(true);
     const h = p.helper!;
     expect(h.nameId).not.toBe(p.seller!.nameId);
     expect(pointCapacity(p)).toBeGreaterThan(one * 1.5);
-    expect(pointFixedCosts(p)).toBe(fixedOne + h.wage);
+    expect(pointFixedCosts(g.S, p)).toBe(fixedOne + h.wage);
     // the people who work there are not offered again
     expect(g.candidates(p.id).some((c) => c.nameId === h.nameId || c.nameId === p.seller!.nameId)).toBe(false);
     // the seller is ill today: the second worker runs the stand alone

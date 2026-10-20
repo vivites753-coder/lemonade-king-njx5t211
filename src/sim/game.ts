@@ -9,7 +9,7 @@ import { BAD_LEMONS_SHARE, LOC_EVENTS, type DayEventId } from '../data/events';
 import { COOKIES, COOKIE_TASTE, GOODS, GOOD_IDS, SUGAR_HIKE } from '../data/goods';
 import { DRINK_IDS, EXTRAS, MENU, extraFair, type DrinkId, type ExtraId, type Order } from '../data/menu';
 import { TIP_GLOSSARY } from '../data/glossary';
-import { LOCATIONS, LOCATION_IDS, locationUnlocked, storeSetupCost } from '../data/locations';
+import { LOCATIONS, LOCATION_IDS, locationUnlocked, storeSeats, storeSetupCost } from '../data/locations';
 import { ROOM_D, type Seat } from '../data/storeRoom';
 import { PED_TYPES } from '../data/pedTypes';
 import { UPGRADES } from '../data/upgrades';
@@ -47,28 +47,36 @@ import {
   type DayState,
   type StoreDay,
   type PointReport,
+  type Stain,
+  type StoreState,
   type TruckLook,
   type GameState,
   type Recipe,
 } from './state';
+import { addDirt, cleanPct, dirtPerCustomer, dirtShare, wipeStain } from './cleaning';
 import { ACCIDENTS, BONUSES, ELECTRIC, INCIDENT, type AccidentId, type BonusId } from '../data/incidents';
-import { POINTS, type WorkerIssue } from '../data/staff';
+import { POINTS, STORE_GEAR, type WorkerIssue } from '../data/staff';
 import { TRUCK_LOGOS, TRUCK_SKINS, TRUCK_TEXT_MAX } from '../data/truck';
 import {
   candidates,
   freePlaces,
+  isGirl,
   pointAt,
   pointsOpen,
   pointFixedCosts,
   pointHasRoomFor2,
   pointUps,
+  pointWorkers,
   POINT_START,
   POINT_UPGRADE_IDS,
   recordDay,
   rollMorningIssue,
   rollTheft,
   simulatePoint,
+  standCount,
+  storePointAt,
   type Point,
+  type PointDay,
   type Seller,
 } from './points';
 import { Critters } from './critters';
@@ -152,7 +160,31 @@ export type GameEvents = {
   hire: { point: number };
   /** The scene shows another stand of the player's (null: the player's own). */
   view: { point: number | null };
+  /** A stain was wiped off the floor of the store (by the player or by the cleaner). */
+  wiped: { x: number; y: number };
 };
+
+/** The cleaner of the store at work while the player sells there: only the show of her (where she is, what she mops). */
+export interface Cleaner {
+  x: number;
+  y: number;
+  /** The stain she goes to (or mops). */
+  to: Stain | null;
+  /** How long she has mopped it (simulation seconds). */
+  mop: number;
+  dirX: number;
+  /** Walking down the screen (her face to us). */
+  front: boolean;
+  moving: boolean;
+  anim: number;
+}
+
+/** Where the cleaner waits when the floor is clean: by the right end of the counter. */
+const CLEANER_HOME = { x: 10.9, y: 2.55 };
+/** She stands beside the stain she mops, the mop on it. */
+const MOP_DX = 0.34;
+/** Phases in which the floor of the store is in view and a stain can be wiped off with a tap. */
+const CLEAN_PHASES: Phase[] = ['morning', 'prepare', 'sell', 'report', 'shop'];
 
 export interface Serving {
   ped: Ped;
@@ -222,6 +254,8 @@ export class Game {
   private helperIdle = [0, 0];
   /** The scene shows this stand of the player's (null: the player's own). Not saved. */
   viewPoint: number | null = null;
+  /** The cleaner of the store here at work (while selling; null when none is hired). Not saved. */
+  cleaner: Cleaner | null = null;
 
   /** The first counter's pour (the player's usual counter). */
   get serving(): Serving | null {
@@ -336,6 +370,7 @@ export class Game {
     this.refreshInterest();
     if (this.phase === 'sell') this.D.funnel.passed += this.street.markAllCounted();
     this.critters.minY = this.atStore() ? ROOM_D + 0.3 : 0;
+    this.placeCleaner();
     this.bus.emit('phase', { phase: this.phase });
   }
 
@@ -357,9 +392,10 @@ export class Game {
     this.bus.emit('phase', { phase: p });
   }
 
-  /** Look at another stand of the player's (null: back to the own one). */
+  /** Look at another stand of the player's (null: back to the own one; the store where the player is, is the own one). */
   setView(id: number | null): void {
-    const next = id !== null && this.pointById(id) ? id : null;
+    const p = id !== null ? this.pointById(id) : undefined;
+    const next = p && p.loc !== this.S.location ? p.id : null;
     if (next === this.viewPoint) return;
     this.viewPoint = next;
     if (next !== null) this.tip('view');
@@ -497,6 +533,8 @@ export class Game {
     }
     if (this.S.location === id) return true;
     this.S.location = id;
+    // the store the player was looking at is the own scene now
+    if (this.viewPoint !== null && this.pointById(this.viewPoint)?.loc === id) this.setView(null);
     if (LOCATIONS[id].indoor) this.tip('indoor');
     if (LOCATIONS[id].bus) this.tip('busstop');
     this.street.reset(true);
@@ -515,16 +553,7 @@ export class Game {
 
   /** The chairs of the store here where served customers may sit down (the extra tables only with their upgrade). */
   storeSeats(): Seat[] {
-    const loc = LOCATIONS[this.S.location];
-    if (!loc.store) return [];
-    const up = this.active();
-    const out: Seat[] = [];
-    for (const d of loc.decor) {
-      if (d.needs && !up[d.needs]) continue;
-      if (d.id === 'prop_cafe_chair_l') out.push({ x: d.x, y: d.y, side: -1 });
-      else if (d.id === 'prop_cafe_chair_r') out.push({ x: d.x, y: d.y, side: 1 });
-    }
-    return out;
+    return storeSeats(this.S.location, this.active());
   }
 
   /** Electricity and water of the store here today: the premises, and what its equipment uses (the air conditioner). */
@@ -545,13 +574,144 @@ export class Game {
 
   /** A customer leaves the table of the store: a tip now and then (only while the store is open). */
   private tipFrom(p: Ped): void {
-    if (this.phase !== 'sell' || !this.rng.chance(CONFIG.TIP_CHANCE)) return;
+    if (this.phase !== 'sell' || !this.rng.chance(CONFIG.TIP_CHANCE * (1 - CONFIG.DIRT_TIPS * this.dirt()))) return;
     const n = this.rng.int(CONFIG.TIP[0], CONFIG.TIP[1]);
     this.S.coins += n;
     this.D.tips += n;
     this.S.totals.earned += n;
     this.bus.emit('found', { x: p.x, y: p.y, amount: n, icon: '💛' });
     this.sfx('coin');
+  }
+
+  /** The point of the store where the player works today (its staff work with the player there). */
+  storePoint(): Point | undefined {
+    return this.atStore() ? storePointAt(this.S, this.S.location) : undefined;
+  }
+
+  /** The staff of the store here who work with the player today: one at each place of its counter. */
+  storeStaff(): Seller[] {
+    const p = this.storePoint();
+    return p ? pointWorkers(p).slice(0, 2) : [];
+  }
+
+  /** Who of the store's staff stands at the counter with the player: girls or boys (for their pictures). */
+  get helperGirls(): boolean[] | undefined {
+    const staff = this.storeStaff();
+    return staff.length ? staff.map((s) => isGirl(s.nameId)) : undefined;
+  }
+
+  /** The store here (its floor and its cleaner), when the player works at one. */
+  storeHere(): StoreState | undefined {
+    return this.atStore() ? this.S.stores[this.S.location] : undefined;
+  }
+
+  /** The share of the floor of the store here that is dirty (0: clean, and anywhere else). */
+  dirt(): number {
+    return dirtShare(this.storeHere());
+  }
+
+  /** How clean the floor of the store here is (per cent). */
+  cleanliness(): number {
+    return cleanPct(this.storeHere());
+  }
+
+  /** The cleaner's wage today: at the store here, when she is hired. */
+  cleanerWage(): number {
+    return this.storeHere()?.cleaner ? CONFIG.CLEANER_WAGE : 0;
+  }
+
+  /** Hire (or let go) the cleaner of a store: any time except while selling. She works every day the store is open. */
+  setCleaner(loc: LocationId, on: boolean): boolean {
+    const st = this.S.stores[loc];
+    if (!st || !this.canManageStaff() || !!st.cleaner === on) return false;
+    st.cleaner = on;
+    if (on) this.tip('cleaner');
+    else this.toast('toast.cleanerGone');
+    this.sfx(on ? 'pop' : 'click');
+    this.save();
+    this.changed();
+    return true;
+  }
+
+  /** The player wipes a stain off the floor of the store here (a tap on it; without one, the first stain). */
+  cleanStain(s?: Stain): boolean {
+    const st = this.storeHere();
+    if (!st || !CLEAN_PHASES.includes(this.phase) || this.viewPoint !== null || (this.phase === 'sell' && (this.paused || this.midKitchen))) return false;
+    const target = s ?? st.stains?.[0];
+    if (!target || !wipeStain(st, target)) return false;
+    // the cleaner was going to this one: she takes another
+    if (this.cleaner?.to === target) {
+      this.cleaner.to = null;
+      this.cleaner.mop = 0;
+    }
+    this.bus.emit('wiped', { x: target.x, y: target.y });
+    this.sfx('water');
+    this.tip('cleaned');
+    this.changed();
+    return true;
+  }
+
+  /** A served customer of the store brings some dirt in (more on a rainy day). */
+  private soil(): void {
+    if (!this.atStore()) return;
+    if (addDirt(this.S, this.S.location, dirtPerCustomer(this.D.weather), this.D.weather) > 0 && this.dirt() >= 0.25) this.tip('dirty');
+  }
+
+  /** The cleaner comes to work with the selling (when she is hired for the store here). */
+  private placeCleaner(): void {
+    this.cleaner = this.phase === 'sell' && this.storeHere()?.cleaner ? { ...CLEANER_HOME, to: null, mop: 0, dirX: -1, front: true, moving: false, anim: 0 } : null;
+  }
+
+  /** The cleaner walks to the nearest stain and mops it; with a clean floor she waits by the counter. */
+  private stepCleaner(dt: number): void {
+    const c = this.cleaner;
+    const st = this.storeHere();
+    if (!c || !st) return;
+    const stains = st.stains ?? [];
+    if (c.to && !stains.includes(c.to)) {
+      c.to = null;
+      c.mop = 0;
+    }
+    if (!c.to) {
+      let best = Infinity;
+      for (const s of stains) {
+        const d = Math.hypot(s.x + MOP_DX - c.x, s.y - c.y);
+        if (d < best) {
+          best = d;
+          c.to = s;
+        }
+      }
+    }
+    const goal = c.to ? { x: c.to.x + MOP_DX, y: c.to.y } : CLEANER_HOME;
+    const dx = goal.x - c.x;
+    const dy = goal.y - c.y;
+    const d = Math.hypot(dx, dy);
+    const step = CONFIG.CLEANER_SPEED * dt;
+    if (d > 0.04) {
+      const k = Math.min(1, step / d);
+      c.x += dx * k;
+      c.y += dy * k;
+      c.moving = true;
+      c.anim += dt * 9;
+      // (on the screen: x − y is to the right, x + y is down)
+      if (Math.abs(dx - dy) > 0.01) c.dirX = dx - dy > 0 ? 1 : -1;
+      c.front = dx + dy >= 0;
+      return;
+    }
+    c.moving = false;
+    c.front = true;
+    if (!c.to) {
+      c.dirX = -1;
+      return;
+    }
+    // the mop is on her left: she turns to the stain
+    c.dirX = -1;
+    c.mop += dt;
+    if (c.mop < CONFIG.CLEANER_MOP) return;
+    const s = c.to;
+    c.to = null;
+    c.mop = 0;
+    if (wipeStain(st, s)) this.bus.emit('wiped', { x: s.x, y: s.y });
   }
 
   /** A place without a store, or one whose store is open (its renovation and equipment are paid). */
@@ -581,7 +741,23 @@ export class Game {
     }
     const cost = storeSetupCost(id);
     this.S.coins -= cost;
-    this.S.stores[id] = { opened: this.S.day, invested: cost, earned: 0, days: 0 };
+    this.S.stores[id] = { opened: this.S.day, invested: cost, earned: 0, days: 0, stains: [], dirt: 0 };
+    // it is among "My stands" too: staff hired for it run it while the player works elsewhere
+    this.S.points.push({
+      id: this.S.nextPointId++,
+      loc: id,
+      store: true,
+      opened: this.S.day,
+      seller: null,
+      helper: null,
+      issue: null,
+      last: null,
+      history: [],
+      total: 0,
+      upgrades: { ...STORE_GEAR },
+      invested: cost,
+      away: null,
+    });
     this.sfx('buy');
     this.chooseLocation(id);
     this.card('storeOpened', '🏪', { place: `@loc.${id}.name`, n: cost, rent: LOCATIONS[id].rent, util: LOCATIONS[id].store!.utilities, tax: Math.round(CONFIG.STORE_TAX * 100) });
@@ -656,8 +832,8 @@ export class Game {
   }
 
   goodAvailable(id: GoodId): boolean {
-    // the wholesale warehouse sells to owners of a stand network
-    if (GOODS[id].wholesale) return this.S.points.length > 0;
+    // the wholesale warehouse sells to owners of a stand network (a store of one's own is not a network of stands)
+    if (GOODS[id].wholesale) return standCount(this.S) > 0;
     // the menu of the store: for those who have one
     if (GOODS[id].needsStore && !Object.keys(this.S.stores).length) return false;
     const minRep = GOODS[id].minRep;
@@ -1093,7 +1269,8 @@ export class Game {
   }
 
   setHelpers(n: number): void {
-    if (this.phase !== 'prepare') return;
+    // at the own store the helpers are its staff (hired in "My stands")
+    if (this.phase !== 'prepare' || this.storePoint()) return;
     this.D.helpers = clamp(Math.round(n), 0, this.helperCap());
     this.D.helper = this.D.helpers > 0;
     this.changed();
@@ -1120,10 +1297,23 @@ export class Game {
     return c === 1 || h >= 2;
   }
 
-  /** Coins needed today before opening (rent, flyers, online ads, the helper's wage). */
+  /** The wages of today's helpers: the staff of the store here (their own wages), or the helpers hired for the day. */
+  helperWages(): number {
+    if (this.storePoint()) return this.storeStaff().reduce((n, w) => n + w.wage, 0);
+    return this.D.helpers * CONFIG.HELPER_WAGE;
+  }
+
+  /** Coins needed today before opening (rent, utilities, flyers, online ads, the helpers' wages, the cleaner). */
   openingCosts(): number {
     const D = this.D;
-    return LOCATIONS[this.S.location].rent + this.storeUtilities() + (D.flyers ? CONFIG.FLYERS_COST : 0) + (D.onlineAds ? CONFIG.ONLINE_ADS_COST : 0) + D.helpers * CONFIG.HELPER_WAGE;
+    return (
+      LOCATIONS[this.S.location].rent +
+      this.storeUtilities() +
+      (D.flyers ? CONFIG.FLYERS_COST : 0) +
+      (D.onlineAds ? CONFIG.ONLINE_ADS_COST : 0) +
+      this.helperWages() +
+      this.cleanerWage()
+    );
   }
 
   canStartSelling(): { ok: boolean; reason?: string } {
@@ -1165,12 +1355,18 @@ export class Game {
       this.S.coins -= CONFIG.ONLINE_ADS_COST;
       D.expenses.onlineAds += CONFIG.ONLINE_ADS_COST;
     }
-    // the helpers' wages (a stand with one counter has room for one helper)
-    D.helpers = Math.min(D.helpers, this.helperCap());
+    // the helpers' wages (a stand with one counter has room for one helper; at the store its staff work with the player)
+    D.helpers = this.storePoint() ? this.storeStaff().length : Math.min(D.helpers, this.helperCap());
     D.helper = D.helpers > 0;
-    if (D.helpers > 0) {
-      this.S.coins -= CONFIG.HELPER_WAGE * D.helpers;
-      D.expenses.wages += CONFIG.HELPER_WAGE * D.helpers;
+    const wages = this.helperWages();
+    if (wages > 0) {
+      this.S.coins -= wages;
+      D.expenses.wages += wages;
+    }
+    const cleaning = this.cleanerWage();
+    if (cleaning > 0) {
+      this.S.coins -= cleaning;
+      D.expenses.cleaning += cleaning;
     }
     if (D.events.thiefAt !== null) D.events.thiefAt = Math.max(D.events.thiefAt, D.startHour + 1);
     this.servings = [null, null];
@@ -1183,7 +1379,9 @@ export class Game {
     this.critters.minY = this.atStore() ? ROOM_D + 0.3 : 0;
     this.openStands();
     this.setPhase('sell');
+    this.placeCleaner();
     this.tip('sell_start');
+    if (D.helpers > 0 && this.storePoint()) this.tip('store_staff');
     if (D.weather === 'rain') this.tip('rain');
     if (this.S.location === 'school') this.tip('school');
     return true;
@@ -1227,6 +1425,7 @@ export class Game {
       event: placeEventStop(this.S.location, this.D.events),
       scare: this.D.dogsUntil > this.D.hour ? { key: 'why.dogs', mult: INCIDENT.DOGS_STOP } : undefined,
       store: this.atStore(),
+      dirt: this.dirt(),
     });
   }
 
@@ -1304,6 +1503,7 @@ export class Game {
     }
     if (this.street.thief && this.street.updateThief(rdt) === 'steal') this.thiefSteals();
     this.stepIncidents(rdt);
+    this.stepCleaner(dt);
     if (this.street.sitting > 0) this.tip('tables');
 
     // a worn item may break during the day (about once per game hour we roll the dice)
@@ -1493,12 +1693,15 @@ export class Game {
     let sat = satisfaction(e.quality, price, p.maxPrice * this.upgradeMult('walletMult') * e.fair, p.waited, p.patienceMax);
     if (fill === 'perfect') sat = Math.min(1, sat + CONFIG.PERFECT_POUR_BONUS);
     else if (fill === 'under') sat = Math.max(0, sat - CONFIG.UNDERFILL_PENALTY);
+    // a dirty floor pleases nobody
+    sat = Math.max(0, sat - CONFIG.DIRT_SAT * this.dirt());
     S.rep = clamp(S.rep + repDelta(sat, S.rep, this.active()), 0, 5);
     const emote = fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : '😐';
     this.street.serveDone(p, emote);
     this.bus.emit('sale', { x: p.x, y: p.y, amount: price, sat, free: false, icon: e.icon });
     this.maybeSellPastry(p);
     this.maybeSellCookie(p);
+    this.soil();
     this.sfx('coin');
     this.tip('menu_first');
   }
@@ -1707,6 +1910,8 @@ export class Game {
     else if (fill === 'under') sat = Math.max(0, sat - CONFIG.UNDERFILL_PENALTY);
     // an iced cup is a cold drink: the customer is happier, and the reputation grows faster
     if (cold) sat = Math.min(1, sat + iceBonus(D.weather, LOCATIONS[S.location].indoor));
+    // a dirty floor pleases nobody
+    sat = Math.max(0, sat - CONFIG.DIRT_SAT * this.dirt());
     S.rep = clamp(S.rep + repDelta(sat, S.rep, up), 0, 5);
     const bal = tasteBalance(D.recipeUsed);
     const emote = free ? '🎁' : fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
@@ -1714,6 +1919,7 @@ export class Game {
     this.bus.emit('sale', { x: p.x, y: p.y, amount: paid, sat, free });
     this.maybeSellPastry(p);
     this.maybeSellCookie(p);
+    this.soil();
     this.sfx('coin');
     this.tip('first_sale');
     if (free) this.tip('loyalty');
@@ -1860,6 +2066,7 @@ export class Game {
     const D = this.D;
     this.servings = [null, null];
     this.making = null;
+    this.cleaner = null;
     this.critters.clear();
     if (this.midKitchen) this.closeKitchen();
     this.street.sendAwayQueue();
@@ -1881,7 +2088,7 @@ export class Game {
     const prepaid = S.points.reduce((n, p) => n + (p.paid ?? 0), 0);
     const points = this.eveningPoints();
     const pointsIncome = points.reduce((n, p) => n + p.revenue, 0);
-    const pointsCosts = points.reduce((n, p) => n + p.ingredients + p.rent + p.wage + p.stolen, 0);
+    const pointsCosts = points.reduce((n, p) => n + p.ingredients + p.rent + p.wage + p.stolen + (p.utilities ?? 0) + (p.cleaning ?? 0) + (p.tax ?? 0), 0);
     const pointsProfit = pointsIncome - pointsCosts;
     // the rent and the wages were paid in the morning; the takings minus the goods (and a theft) come in now
     S.coins += pointsProfit + prepaid;
@@ -1931,6 +2138,8 @@ export class Game {
       pointsUnlocked: false,
       utilities: D.expenses.utilities,
       tax: D.expenses.tax,
+      cleaning: D.expenses.cleaning,
+      clean: store ? this.cleanliness() : undefined,
       tips: D.tips,
       store,
     };
@@ -1974,7 +2183,28 @@ export class Game {
     e.tax += tax;
     st.earned += taxBase - tax;
     st.days++;
-    const fixed = e.rent + e.utilities + e.flyers + e.onlineAds + e.wages;
+    // the day is in the history and the payback of the store's point too ("My stands")
+    const p = storePointAt(S, S.location);
+    if (p) {
+      recordDay(p, {
+        day: S.day,
+        status: 'owner',
+        sold: D.funnel.sold,
+        revenue: D.sales + D.tips,
+        ingredients: e.ingredients,
+        rent: e.rent,
+        wage: e.wages,
+        stolen: e.stolen,
+        profit: taxBase - tax,
+        utilities: e.utilities,
+        cleaning: e.cleaning,
+        tax,
+        clean: this.cleanliness(),
+      });
+      p.today = null;
+      p.paid = 0;
+    }
+    const fixed = e.rent + e.utilities + e.flyers + e.onlineAds + e.wages + e.cleaning;
     return {
       loc: S.location,
       taxBase,
@@ -2174,7 +2404,7 @@ export class Game {
   canOpenPoint(loc: LocationId): { ok: boolean; reason?: 'locked' | 'taken' | 'max' | 'evening' | 'money' } {
     if (!pointsOpen(this.S)) return { ok: false, reason: 'locked' };
     if (!freePlaces(this.S).includes(loc)) return { ok: false, reason: 'taken' };
-    if (this.S.points.length >= POINTS.MAX) return { ok: false, reason: 'max' };
+    if (standCount(this.S) >= POINTS.MAX) return { ok: false, reason: 'max' };
     if (this.phase !== 'shop') return { ok: false, reason: 'evening' };
     if (this.S.coins < POINTS.COST) return { ok: false, reason: 'money' };
     return { ok: true };
@@ -2215,7 +2445,8 @@ export class Game {
 
   closePoint(id: number): boolean {
     const i = this.S.points.findIndex((p) => p.id === id);
-    if (i < 0 || this.phase !== 'shop') return false;
+    // (a store is not sold: it is the player's own premises)
+    if (i < 0 || this.phase !== 'shop' || this.S.points[i].store) return false;
     const refund = this.pointRefund(this.S.points[i]);
     if (this.viewPoint === id) this.setView(null);
     this.S.points.splice(i, 1);
@@ -2229,7 +2460,8 @@ export class Game {
   /** Can this stand get this upgrade now? Bought in the evening, like the player's own upgrades. */
   canBuyPointUpgrade(pointId: number, id: UpgradeId): { ok: boolean; reason?: 'na' | 'owned' | 'rep' | 'requires' | 'money' | 'evening' } {
     const p = this.pointById(pointId);
-    if (!p || !POINT_UPGRADE_IDS.includes(id)) return { ok: false, reason: 'na' };
+    // (the things of a store are bought in the evening shop: they work for all the stores)
+    if (!p || p.store || !POINT_UPGRADE_IDS.includes(id)) return { ok: false, reason: 'na' };
     const up = pointUps(p);
     const u = UPGRADES[id];
     if (up[id]) return { ok: false, reason: 'owned' };
@@ -2361,7 +2593,12 @@ export class Game {
   private openStands(): void {
     for (const p of this.S.points) {
       p.paid = 0;
-      const fixed = pointFixedCosts(p);
+      // the player opens this store today: its staff work with the player (their wages are the player's own costs)
+      if (p.store && p.loc === this.S.location && this.D.opened) {
+        p.today = { day: this.S.day, status: 'owner', sold: 0, revenue: 0, ingredients: 0, rent: 0, wage: 0, stolen: 0, profit: 0 };
+        continue;
+      }
+      const fixed = pointFixedCosts(this.S, p);
       if (fixed > 0 && this.S.coins < fixed) {
         p.today = { day: this.S.day, status: 'nomoney', sold: 0, revenue: 0, ingredients: 0, rent: 0, wage: 0, stolen: 0, profit: 0 };
         this.toast('toast.standNoMoney', { place: `@loc.${p.loc}.name`, n: fixed }, 'warn');
@@ -2377,14 +2614,33 @@ export class Game {
   private eveningPoints(): PointReport[] {
     const out: PointReport[] = [];
     for (const p of this.S.points) {
+      // the player worked at this store today: its day is the player's own (see storeDay)
+      if (p.today?.status === 'owner') continue;
       const d = p.today ?? simulatePoint(this.S, p, this.D.weather, this.D.events, this.rng);
       p.today = null;
       p.paid = 0;
       p.issue = rollTheft(p, d, this.rng) > 0 ? 'stole' : null;
+      if (p.store) this.storeEvening(p, d);
       recordDay(p, d);
       out.push({ ...d, id: p.id, loc: p.loc, nameId: p.seller?.nameId ?? null });
     }
     return out;
+  }
+
+  /** The evening of a store its staff ran: the dirt of the day stays on the floor (a cleaner wipes it all off), and the
+   * payback of the store. */
+  private storeEvening(p: Point, d: PointDay): void {
+    const st = this.S.stores[p.loc];
+    if (!st) return;
+    if (d.status !== 'empty' && d.status !== 'sick' && d.status !== 'nomoney') {
+      if (st.cleaner) {
+        st.stains = [];
+        st.dirt = 0;
+      } else addDirt(this.S, p.loc, d.dirt ?? 0, this.D.weather);
+      st.days++;
+    }
+    st.earned += d.profit;
+    d.clean = cleanPct(st);
   }
 
   /** A card about a problem with a seller, with the choices the player has. */
@@ -2576,6 +2832,7 @@ export class Game {
   /** Back to the main menu (the game stays saved at its last phase). */
   goTitle(): void {
     this.viewPoint = null;
+    this.cleaner = null;
     this.phase = 'title';
     this.paused = false;
     this.midKitchen = false;

@@ -48,7 +48,16 @@ let onLoadCb: ((id: string) => void) | null = null;
 const loopCache = new Map<string, LoopInfo>();
 const walkCache = new Map<string, WalkInfo>();
 
+/** The size and anchor of every picture, worked out once (they are asked for many times in every frame). */
+const metaCache = new Map<string, SpriteMeta>();
+
 export function metaFor(id: string): SpriteMeta {
+  let m = metaCache.get(id);
+  if (!m) metaCache.set(id, (m = findMeta(id)));
+  return m;
+}
+
+function findMeta(id: string): SpriteMeta {
   const own = SPRITE_META[id];
   if (own) return own;
   // a picture cut from a walking strip (the person with an umbrella): its size follows from the strip
@@ -153,6 +162,16 @@ export function loadAssets(): void {
 
 /** Pictures that cast no shadow of their own here: ground tiles, people and cars (they draw theirs), things on a table or on water. */
 const NO_SHADOW = /^(tile_|char_|item_|prop_(car|van)_|prop_(flowers|duck|boat|cloud))/;
+/** The shadow of each picture: [share of its width, colour], or null for none (worked out once per picture). */
+const shadowCache = new Map<string, [number, string] | null>();
+function shadowOf(id: string): [number, string] | null {
+  let s = shadowCache.get(id);
+  if (s === undefined) {
+    const [share, alpha] = shadowLook(id);
+    shadowCache.set(id, (s = NO_SHADOW.test(id) ? null : [share, `rgba(30,40,20,${alpha})`]));
+  }
+  return s;
+}
 /** [share of the picture width the shadow spans, darkness] for kinds of pictures. */
 function shadowLook(id: string): [number, number] {
   if (id.startsWith('bld_')) return [0.4, 0.16];
@@ -169,17 +188,17 @@ function shadowLook(id: string): [number, number] {
  */
 export function spriteShadow(ctx: Ctx, id: string, sx: number, sy: number, s = 1): void {
   const img = images.get(id);
-  if (!img || NO_SHADOW.test(id)) return;
+  const look = img ? shadowOf(id) : null;
+  if (!img || !look) return;
   const m = metaFor(id);
   const h = m.h * s;
   const w = (h * img.naturalWidth) / img.naturalHeight;
-  const [look, alpha] = shadowLook(id);
-  const share = m.shadow?.share ?? look;
+  const share = m.shadow?.share ?? look[0];
   const rx = Math.max(7 * s, w * share);
   const ry = rx * 0.42;
   const cx = sx + (m.dx ?? 0) * s + rx * 0.22;
   const cy = sy + ((m.dy ?? 0) + (m.shadow?.dy ?? 0)) * s + ry * 0.18;
-  ctx.fillStyle = `rgba(30,40,20,${alpha})`;
+  ctx.fillStyle = look[1];
   ctx.beginPath();
   ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
   ctx.fill();

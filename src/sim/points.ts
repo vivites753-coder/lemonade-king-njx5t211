@@ -1,6 +1,7 @@
-// "My stands": extra stands at other places, run by hired sellers. Each day of a stand is worked out in one step
-// (when the selling starts, or in the evening): only the numbers count. The player can look at a stand while it
-// works (see pointScene.ts), but what they see there is only the show.
+// "My stands": extra stands at other places, run by hired sellers, and the own stores (level 4), which their staff run
+// while the player works elsewhere (and where the staff help the player when the player works there). Each day of a
+// point the player is not at is worked out in one step (when the selling starts, or in the evening): only the numbers
+// count. The player can look at a point while it works (see pointScene.ts), but what they see there is only the show.
 import { CONFIG } from '../core/config';
 import { RNG } from '../core/rng';
 import type { LocationId, UpgradeId, WeatherId } from '../core/types';
@@ -8,7 +9,8 @@ import { LOCATIONS, LOCATION_IDS, locationUnlocked } from '../data/locations';
 import { POINTS, SELLER_NAMES, type WorkerIssue } from '../data/staff';
 import { UPGRADES } from '../data/upgrades';
 import { WHOLESALE_UNIT_COST } from '../data/goods';
-import { expectedDay, lemonsConsumed, type Owned } from './economy';
+import { dirtPerCustomer, dirtShare } from './cleaning';
+import { expectedDay, lemonsConsumed, storeTax, type Owned } from './economy';
 import type { GameState } from './state';
 import type { Crowd } from './traffic';
 
@@ -25,7 +27,8 @@ export interface Seller {
   hiredDay: number;
 }
 
-export type PointStatus = 'ok' | 'late' | 'rude' | 'sick' | 'empty' | 'nomoney';
+/** owner: the player worked at this store that day (its numbers are the player's own day). */
+export type PointStatus = 'ok' | 'late' | 'rude' | 'sick' | 'empty' | 'nomoney' | 'owner';
 
 export interface PointDay {
   day: number;
@@ -37,6 +40,13 @@ export interface PointDay {
   wage: number;
   stolen: number;
   profit: number;
+  /** A store: electricity and water, its cleaner, the tax on the profit; the dirt its customers brought in (stains'
+   * worth) and how clean the floor was in the evening (per cent). */
+  utilities?: number;
+  cleaning?: number;
+  tax?: number;
+  dirt?: number;
+  clean?: number;
 }
 
 export interface Point {
@@ -62,6 +72,9 @@ export interface Point {
   today?: PointDay | null;
   /** Rent and wage of today, paid in the morning when the stand opened (the evening books the rest). */
   paid?: number;
+  /** The own store of its place (level 4), not a stand: its staff run it while the player works elsewhere. It cannot be
+   * sold, and its things are the store's own (STORE_GEAR) and the store equipment of the evening shop. */
+  store?: boolean;
 }
 
 /** A new stand comes fully set up: the table, the pitcher, a sign, an umbrella and a hand juicer. */
@@ -98,13 +111,44 @@ export function pointsOpen(S: GameState): boolean {
   return S.bestRep >= POINTS.MIN_REP - 1e-9;
 }
 
+/** The stand of the player's at this place (not the own store, where the player may work too). */
 export function pointAt(S: GameState, loc: LocationId): Point | undefined {
-  return S.points.find((p) => p.loc === loc);
+  return S.points.find((p) => p.loc === loc && !p.store);
+}
+
+/** The point of the own store of this place: its staff, its days and its payback. */
+export function storePointAt(S: GameState, loc: LocationId): Point | undefined {
+  return S.points.find((p) => p.loc === loc && !!p.store);
+}
+
+/** Stands the player has (the stores do not count against POINTS.MAX). */
+export function standCount(S: GameState): number {
+  return S.points.filter((p) => !p.store).length;
 }
 
 /** The equipment of a stand (older saves: only the sign). */
 export function pointUps(p: Point): Owned {
   return p.upgrades ?? { sign: true };
+}
+
+/**
+ * What works at a point: the equipment of a stand; at a store its own things (STORE_GEAR) and the store equipment the
+ * player has bought in the evening shop (the air conditioner, the neon sign, the terminal, more tables).
+ */
+export function pointGear(S: GameState, p: Point): Owned {
+  if (!p.store) return pointUps(p);
+  const out: Owned = { ...pointUps(p) };
+  for (const id of Object.keys(S.upgrades) as UpgradeId[]) if (UPGRADES[id].storeOnly) out[id] = true;
+  return out;
+}
+
+/** Electricity and water of a store its staff run: the premises and what its equipment uses (0 for a stand). */
+export function pointUtilities(S: GameState, p: Point): number {
+  const st = LOCATIONS[p.loc].store;
+  if (!p.store || !st) return 0;
+  let n = st.utilities;
+  for (const id of Object.keys(pointGear(S, p)) as UpgradeId[]) n += UPGRADES[id].utilities ?? 0;
+  return n;
 }
 
 /** Places where a new stand can go: open for the player, not home (home is always yours), not taken. */
@@ -157,10 +201,10 @@ export function rollMorningIssue(S: GameState, p: Point, rng: RNG): WorkerIssue 
   return null;
 }
 
-/** A second worker needs a counter of their own: the big stand or the truck. */
+/** A second worker needs a counter of their own: the big stand, the truck, the counter of a store. */
 export function pointHasRoomFor2(p: Point): boolean {
   const up = pointUps(p);
-  return !!(up.big_stand || up.truck);
+  return !!(p.store || up.big_stand || up.truck);
 }
 
 /** Who works at the stand today: the seller (unless ill today) and the second worker. */
@@ -176,15 +220,15 @@ export function pointOpensAt(p: Point): number {
   return p.issue === 'late' && !p.helper ? POINTS.LATE_OPEN_H : POINTS.OPEN_H;
 }
 
-/** Cups the workers can pour in a day: a wide counter, a second worker and a dispenser let them pour more. */
-export function pointCapacity(p: Point): number {
+/** Cups the workers can pour in a day: a wide counter, a second worker and quick things (a dispenser, the terminal of a
+ * store) let them pour more. */
+export function pointCapacity(p: Point, up: Owned = pointUps(p)): number {
   const [first, second] = pointWorkers(p);
   if (!first) return 0;
-  const up = pointUps(p);
-  const wide = !!(up.big_stand || up.truck);
+  const wide = pointHasRoomFor2(p);
   let cap = POINTS.CAPACITY * first.skill * (wide ? POINTS.WIDE_CAPACITY : 1);
   if (second && wide) cap += POINTS.CAPACITY * second.skill;
-  if (up.dispenser) cap /= UPGRADES.dispenser.serveMult ?? 1;
+  for (const id of Object.keys(up) as UpgradeId[]) cap /= UPGRADES[id].serveMult ?? 1;
   return Math.round(cap);
 }
 
@@ -205,17 +249,26 @@ export function simulatePoint(S: GameState, p: Point, weather: WeatherId, ev: Cr
   const lead = workers[0];
   const sellerHere = !!p.seller && p.issue !== 'sick';
   const loc = LOCATIONS[p.loc];
-  const up = pointUps(p);
+  const up = pointGear(S, p);
   const price = loc.fairPrice;
   const from = pointOpensAt(p);
   const e = expectedDay({ loc: p.loc, weather, price, upgrades: up, rep: S.rep, from, events: ev, recipe: RECIPE });
   const mood = sellerHere && p.issue === 'rude' ? 0.65 : 1;
-  // a good seller keeps the queue; a TV, shade and a second worker keep people waiting less; a perfect mix tastes better
-  const shade = !loc.indoor && (up.umbrella || up.tent) ? POINTS.SHADE_SERVICE : 0;
+  // a good seller keeps the queue; a TV, shade (the roof of a store) and a second worker keep people waiting less; a
+  // perfect mix tastes better
+  const shade = loc.store || (!loc.indoor && (up.umbrella || up.tent)) ? POINTS.SHADE_SERVICE : 0;
   const two = workers.length > 1 ? POINTS.SECOND_SERVICE : 0;
   const service = Math.min(1, 0.55 + 0.45 * lead.skill + (up.tv ? POINTS.TV_SERVICE : 0) + shade + two);
   const taste = up.mixer_pro ? POINTS.PRO_MIX : 1;
-  const sold = Math.min(Math.round(e.buyers * service * mood * taste * rng.range(0.85, 1.15)), pointCapacity(p));
+  // a store: the stains on its floor and those its customers bring in put people off (a cleaner keeps it clean)
+  const st = p.store ? S.stores[p.loc] : undefined;
+  let dirty = 1;
+  if (st && !st.cleaner) {
+    const start = dirtShare(st);
+    const end = Math.min(1, start + (e.buyers * dirtPerCustomer(weather)) / CONFIG.STAINS_MAX);
+    dirty = 1 - CONFIG.DIRT_STOP * ((start + end) / 2);
+  }
+  const sold = Math.min(Math.round(e.buyers * service * mood * taste * dirty * rng.range(0.85, 1.15)), pointCapacity(p, up));
   // the loyalty card gives every 10th cup for free
   const free = up.loyalty ? Math.floor(sold / 10) : 0;
   const revenue = (sold - free) * price;
@@ -223,7 +276,14 @@ export function simulatePoint(S: GameState, p: Point, weather: WeatherId, ev: Cr
   const ingredients = Math.round(sold * (1 + waste) * pointCupCost(p));
   const status: PointStatus = from > POINTS.OPEN_H ? 'late' : sellerHere && p.issue === 'rude' ? 'rude' : 'ok';
   const wage = workers.reduce((n, w) => n + w.wage, 0);
-  return { ...day, status, sold, revenue, ingredients, rent: loc.rent, wage, profit: revenue - ingredients - loc.rent - wage };
+  const out: PointDay = { ...day, status, sold, revenue, ingredients, rent: loc.rent, wage, profit: revenue - ingredients - loc.rent - wage };
+  if (!st) return out;
+  // a store also pays for electricity and water, its cleaner and the tax on the profit of the day
+  const utilities = pointUtilities(S, p);
+  const cleaning = st.cleaner ? CONFIG.CLEANER_WAGE : 0;
+  const before = out.profit - utilities - cleaning;
+  const tax = storeTax(before);
+  return { ...out, utilities, cleaning, tax, profit: before - tax, dirt: sold * dirtPerCustomer(weather) };
 }
 
 /** Evening count: a dishonest seller may take money from the till (a locked cash box makes it harder). */
@@ -241,11 +301,13 @@ export function rollTheft(p: Point, d: PointDay, rng: RNG): number {
   return n;
 }
 
-/** Rent and wage a stand needs for today (nothing when it is closed anyway). */
-export function pointFixedCosts(p: Point): number {
+/** Rent and wages a point needs for today (a store: its utilities and its cleaner too); nothing when it is closed. */
+export function pointFixedCosts(S: GameState, p: Point): number {
   const workers = pointWorkers(p);
   if (!workers.length) return 0;
-  return LOCATIONS[p.loc].rent + workers.reduce((n, w) => n + w.wage, 0);
+  let n = LOCATIONS[p.loc].rent + workers.reduce((a, w) => a + w.wage, 0);
+  if (p.store) n += pointUtilities(S, p) + (S.stores[p.loc]?.cleaner ? CONFIG.CLEANER_WAGE : 0);
+  return n;
 }
 
 /** Book a finished day into the stand's history. */

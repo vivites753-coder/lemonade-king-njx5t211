@@ -2004,6 +2004,34 @@ html.phone .lemi-bubble::before {
     font-size: calc(12px * var(--fs, 1));
   }
 }
+/* big screens: the stock bar a third bigger again */
+@media (min-width: 1400px) and (min-height: 860px) {
+  .res-bar {
+    width: 130px;
+    padding: 13px 10px;
+    gap: 7px;
+    border-radius: 26px;
+  }
+  .res-head {
+    font-size: calc(16px * var(--fs, 1));
+  }
+  .res-row {
+    font-size: calc(26px * var(--fs, 1));
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 11px;
+  }
+  .res-row .ri {
+    font-size: calc(35px * var(--fs, 1));
+    width: 40px;
+  }
+  .res-row .ri .ico-img {
+    height: 30px;
+  }
+  .res-row small {
+    font-size: calc(16px * var(--fs, 1));
+  }
+}
 
 /* market: the clear-cart label hides on small screens */
 .lbl-m {
@@ -4183,6 +4211,10 @@ html.phone .hud-bottom .hb-right .btn .sm {
 html.phone .hud-bottom .hb-right .btn .ico-img {
   height: 28px;
 }
+/* the clean button of the store is only an icon and a number: it stays narrow */
+html.phone .hud-bottom .hb-right .clean-btn {
+  padding: 6px 10px;
+}
 
 /* phones: the kitchen controls stand at the bottom of the window, right over "Pour the jug" */
 html.phone .kitchen .k-main {
@@ -4483,9 +4515,22 @@ html.hud-editing #hud [data-move].dragging {
 }
 
 /* the own store (level 4): its tag on the place card and the line about opening it */
-.loc .tag-store {
+.loc .tag-store,
+.pt-head .tag-store {
   color: #9c36b5;
   background: #f8f0fc;
+}
+/* the own store among "My stands": its card stands out a little */
+.pt-card.pt-store {
+  box-shadow: 0 3px 0 #e5c7f0;
+  border: 2px solid #f3d9fa;
+}
+/* the own store while selling: how clean its floor is (a tap wipes a stain off) */
+.clean-btn b {
+  margin-left: 3px;
+}
+.clean-bar i {
+  background: linear-gradient(90deg, #ff922b, #4dabf7);
 }
 .loc-store {
   display: block;

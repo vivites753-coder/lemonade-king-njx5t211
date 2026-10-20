@@ -42,6 +42,10 @@ export const POINTS = {
   SECOND_CHANCE_HONESTY: 0.1,
 } as const;
 
+/** What comes with the own store (level 4) for its staff: the cold display (it keeps the lemonade like a cooler) and a
+ * hand juicer. Its counter has two places, its shop window and signboard bring people in (CONFIG.STORE_ADS). */
+export const STORE_GEAR = { cooler: true, juicer_hand: true } as const;
+
 /** Problems with workers. Morning ones are known before the day, a theft is found at the evening count. */
 export const WORKER_ISSUES = ['sick', 'late', 'rude', 'raise', 'stole'] as const;
 export type WorkerIssue = (typeof WORKER_ISSUES)[number];

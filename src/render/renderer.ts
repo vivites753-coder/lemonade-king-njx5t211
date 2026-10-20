@@ -3,7 +3,8 @@ import { CONFIG, queueSpot } from '../core/config';
 import type { LocationId } from '../core/types';
 import { LOCATIONS, type DecorDef } from '../data/locations';
 import { PED_TYPES } from '../data/pedTypes';
-import type { Game } from '../sim/game';
+import type { Cleaner, Game } from '../sim/game';
+import type { Stain } from '../sim/state';
 import { PointScene, type SceneSource } from '../sim/pointScene';
 import { FOX_LOOK } from '../sim/looks';
 import type { Critter } from '../sim/critters';
@@ -19,9 +20,10 @@ import { drawCarArt } from './proc/props';
 import { drawWalls } from './proc/indoor';
 import { drawStorePiece, drawStoreRoom, STORE_PIECES, type MenuLine, type StorePiece } from './proc/store';
 import { EXTRAS, EXTRA_IDS } from '../data/menu';
-import { DOOR, ROOM_D, SEAT_H } from '../data/storeRoom';
+import { DOOR, inRoom, ROOM_D, SEAT_H, throughDoor } from '../data/storeRoom';
 import { drawKey } from './depth';
 import { drawCritter } from './proc/critters';
+import { drawBucket, drawCleaner, drawStain } from './proc/cleaning';
 import { drawStand, drawStandPart, drawStandShadows, standDy, standSideParts, type StandPart } from './proc/stand';
 import { TRUCK } from './proc/truck';
 import './proc/buildings';
@@ -36,7 +38,7 @@ const PHONE_SELL_ZOOM = 1.5;
 /** Two fingers zoom the field between "everything fits" and this many times that. */
 const PINCH_MAX = 4;
 
-type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; // decor, ped, car, stand, thief, critter, a side part of the stand, a low wall of the store
+type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; // decor, ped, car, stand, thief, critter, a side part of the stand, a low wall of the store, the cleaner
 interface Item {
   /** The sort key (see drawKey). */
   d: number;
@@ -105,6 +107,8 @@ export class Renderer {
   tapTargets: { id: number; x: number; y: number; r: number }[] = [];
   /** The fox on screen: centre of his body and the tap radius (only a tap on him counts). */
   thiefScreen: { x: number; y: number; r: number } | null = null;
+  /** The stains on the floor of the store on screen this frame (CSS px), for wiping them off with a tap. */
+  stainTargets: { s: Stain; x: number; y: number; r: number }[] = [];
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -116,6 +120,7 @@ export class Renderer {
       if (id.startsWith('tile_')) this.ground = null;
     });
     game.bus.on('found', (e) => !this.view && this.floats.push({ x: e.x, y: e.y, text: `+${e.amount} ${e.icon}`, color: '#2b8a3e', t: 0 }));
+    game.bus.on('wiped', (e) => !this.view && this.floats.push({ x: e.x, y: e.y - 0.2, text: '✨', color: '#1c7ed6', t: 0 }));
     // (a cookie or a pastry is bought with the drink: its coins float a little higher)
     game.bus.on('sale', (e) => {
       if (this.view) return;
@@ -313,7 +318,7 @@ export class Renderer {
     // its copy of the screen is big on a phone (8-16 MB): let it go on other days
     else this.haze = null;
 
-    this.fx.drawOverlay(ctx, this.w, this.h, g.D.weather, hour, this.t, reduce, ENV.indoor);
+    this.fx.drawOverlay(ctx, this.w, this.h, g.D.weather, hour, ENV.indoor);
   }
 
   /**
@@ -389,6 +394,11 @@ export class Renderer {
       ctx.stroke();
       ctx.setLineDash([]);
     }
+    // the stains on the floor of the store (a tap wipes one off); the cleaner's bucket by the counter
+    this.stainTargets = [];
+    const cleaner = store && !this.view ? this.game.cleaner : null;
+    if (store) this.drawStains(ctx, g);
+    if (cleaner) drawBucket(ctx, 11.4, 2.2);
 
     const decor = LOCATIONS[loc].decor;
     // what is far outside the screen is not drawn (on phones the field is zoomed in and much of it is off screen);
@@ -455,6 +465,7 @@ export class Renderer {
     const th = g.street.thief;
     if (th) items.push({ d: key(th.x + th.y, th.y), k: 4, o: th });
     for (const c of g.critters.list) items.push({ d: key(c.x + c.y + (c.kind === 'splash' ? 0.3 : 0), c.y), k: 5, o: c });
+    if (cleaner) items.push({ d: key(cleaner.x + cleaner.y, cleaner.y), k: 8, o: cleaner });
     this.tapTargets = [];
     items.sort((a, b) => a.d - b.d);
 
@@ -489,6 +500,9 @@ export class Renderer {
         case 4:
           this.drawThief(ctx);
           break;
+        case 8:
+          drawCleaner(ctx, it.o as Cleaner, this.t);
+          break;
         case 5: {
           const c = it.o as Critter;
           const tap = drawCritter(ctx, c, this.t);
@@ -517,8 +531,23 @@ export class Renderer {
     this.drawFloats(ctx, dt);
   }
 
+  /** Stains on the floor of the store: where they are on screen is kept for taps (only in the player's own scene). */
+  private drawStains(ctx: Ctx, g: SceneSource): void {
+    const stains = g.S.stores[g.S.location]?.stains;
+    if (!stains?.length) return;
+    const own = !this.view;
+    const r = Math.max(20, 24 * this.cam.s);
+    for (const s of stains) {
+      const [sx, sy] = P(s.x, s.y);
+      drawStain(ctx, s, sx, sy);
+      if (own) this.stainTargets.push({ s, x: this.cam.ox + sx * this.cam.s, y: this.cam.oy + sy * this.cam.s, r });
+    }
+  }
+
   /** What the menu board of the store says today: lemonade, cookies and the menu of the store that is in stock. */
   private menuLines(): MenuLine[] {
+    // another store of the player's: its staff sell lemonade at the fair price of the place
+    if (this.view) return [['🍋', this.view.S.price]];
     const g = this.game;
     const out: MenuLine[] = [['🍋', g.S.price]];
     if ((g.S.stock.cookies ?? 0) > 0) out.push(['🍪', g.S.cookiePrice]);
@@ -526,11 +555,11 @@ export class Renderer {
     return out;
   }
 
-  /** The glass door of the store slides open while somebody is at it. */
+  /** The glass door of the store slides open while somebody going in or out is at it (not for passers-by). */
   private updateDoor(g: SceneSource, dt: number): void {
-    const at = (x: number, y: number) => Math.abs(x - DOOR.x) < 0.55 && Math.abs(y - ROOM_D) < 0.75;
+    const at = (x: number, y: number) => Math.abs(x - DOOR.x) < 0.6 && Math.abs(y - ROOM_D) < 0.75;
     const th = g.street.thief;
-    const someone = g.street.peds.some((p) => at(p.x, p.y)) || (!!th && at(th.x, th.y));
+    const someone = g.street.peds.some((p) => at(p.x, p.y) && throughDoor(p.path)) || (!!th && at(th.x, th.y) && throughDoor(th.path));
     this.doorOpen += ((someone ? 1 : 0) - this.doorOpen) * Math.min(1, dt * 8);
   }
 
@@ -558,7 +587,9 @@ export class Renderer {
     const inQueue = p.state === 'queue' || p.state === 'toQueue';
     const { facingCam, dirX } = pedFacing(p);
     const type = PED_TYPES[p.type];
-    const wantUmbrella = this.src.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !inQueue;
+    // at a stand the umbrella is closed in the queue; at the store it is closed inside (at the door) and open outside
+    const sheltered = LOCATIONS[this.src.S.location].store ? inRoom(p) : inQueue;
+    const wantUmbrella = this.src.D.weather === 'rain' && !ENV.indoor && p.id % 3 !== 0 && !sheltered;
     // a drawn picture of the person with an umbrella, if there is one; otherwise the umbrella is drawn over the plain picture
     const umbId = wantUmbrella ? pedUmbrellaSpriteId(p.type, p.look.variant, facingCam) : undefined;
     // someone who has bought lemonade walks away with the cup in the hand

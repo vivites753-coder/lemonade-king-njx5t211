@@ -698,6 +698,8 @@ function drawStandHere(ctx: Ctx, g: SceneSource, playing: boolean): void {
       ctx.restore();
     }
     const people: { id: string; kind: 'player' | 'helper'; x: number; y: number; serving: boolean; juicing: boolean }[] = [];
+    // a helper hired for the day is a girl for a boy and a boy for a girl; the staff of a store are who they are
+    const helperId = (i: number) => `char_helper_${(g.helperGirls?.[i] ?? S.avatar === 'boy') ? 'girl' : 'boy'}`;
     if (g.seller !== undefined) {
       // another stand of the player's: its hired seller stands where the player would (nobody when it is closed),
       // a second worker beside them (at the second counter of a wide stand)
@@ -709,19 +711,19 @@ function drawStandHere(ctx: Ctx, g: SceneSource, playing: boolean): void {
         people.push({ id: `char_helper_${g.helper2.girl ? 'girl' : 'boy'}`, kind: 'helper', x: s2[0], y: s2[1], serving: pouring(1), juicing: false });
       }
     } else if (!wide) {
-      if (helpers > 0) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
+      if (helpers > 0) people.push({ id: helperId(0), kind: 'helper', x: SPOTS.single.helper[0], y: SPOTS.single.helper[1], serving: pouring(0), juicing: false });
       people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: (helpers > 0 ? SPOTS.single.playerWithHelper : SPOTS.single.player)[0], y: SPOTS.single.player[1], serving: pouring(0) && helpers === 0, juicing: making });
     } else if (helpers >= 2) {
       people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: SPOTS.wide.back[0], y: SPOTS.wide.back[1], serving: false, juicing: making });
-      people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
-      people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0), juicing: false });
+      people.push({ id: helperId(1), kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
+      people.push({ id: helperId(0), kind: 'helper', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0), juicing: false });
     } else {
-      if (helpers === 1) people.push({ id: `char_helper_${S.avatar === 'boy' ? 'girl' : 'boy'}`, kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
+      if (helpers === 1) people.push({ id: helperId(0), kind: 'helper', x: SPOTS.wide.c1[0], y: SPOTS.wide.c1[1], serving: pouring(1), juicing: false });
       people.push({ id: `char_player_${S.avatar}`, kind: 'player', x: SPOTS.wide.c0[0], y: SPOTS.wide.c0[1], serving: pouring(0) || (helpers === 0 && pouring(1)), juicing: making });
     }
     for (const p of people) {
       const [px, py] = P(p.x, p.y);
-      const helperGirl = g.seller ? g.seller.girl : S.avatar === 'boy';
+      const helperGirl = p.id.startsWith('char_helper_girl');
       const helperLook = { ...playerLook(helperGirl ? 'girl' : 'boy'), shirt: '#51cf66', hair: '#3b2a20' };
       const pick = standSpriteId(p.id, p.serving, p.juicing);
       drawCharacter(ctx, pick.id, p.x, p.y, px, py, {

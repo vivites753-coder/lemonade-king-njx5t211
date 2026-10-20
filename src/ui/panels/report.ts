@@ -1,6 +1,7 @@
 import { CONFIG } from '../../core/config';
 import { EXTRAS, EXTRA_IDS } from '../../data/menu';
 import { payback } from '../../sim/points';
+import { statusText } from '../points';
 import type { DayReport } from '../../sim/state';
 import { t } from '../../i18n';
 import { coin, ico, lemiFace, locIco, signedCoin, stars, type LemiMood } from '../dom';
@@ -37,10 +38,11 @@ function storeBox(r: DayReport): string {
   </div>`;
 }
 
-/** Payback of every stand: how much of what it cost has come back. */
-function paybackRows(g: Parameters<Panel['render']>[0]): string {
-  if (!g.S.points.length) return '';
-  return `<div class="pt-payback-list"><b>${ico('pt_payback', '💹')} ${t('points.payback')}</b>${g.S.points
+/** Payback of every stand (the store the player worked at has its own box above). */
+function paybackRows(g: Parameters<Panel['render']>[0], r: DayReport): string {
+  const list = g.S.points.filter((p) => !(p.store && p.loc === r.store?.loc));
+  if (!list.length) return '';
+  return `<div class="pt-payback-list"><b>${ico('pt_payback', '💹')} ${t('points.payback')}</b>${list
     .map((p) => {
       const pb = payback(p);
       const pct = Math.max(0, Math.min(100, Math.round(pb.share * 100)));
@@ -79,10 +81,14 @@ export const reportPanel: Panel = {
       [`${ico('btn_onlineads', '📱')} ${t('report.onlineAds')}`, r.onlineAds ?? 0],
       [`🦊 ${t('report.stolen')}`, r.stolen],
       [`🍳 ${t('report.wages')}`, r.wages ?? 0],
+      [`🧹 ${t('report.cleaning')}`, r.cleaning ?? 0],
       [`🔧 ${t('report.repairs')}`, r.repairs ?? 0],
       [`🎓 ${t('report.training')}`, r.training ?? 0],
       [`${ico('tax', '🧾')} ${t('report.tax', { n: Math.round(CONFIG.STORE_TAX * 100) })}`, r.tax ?? 0],
-      [`${ico('pt_stand', '🏪')} ${t('report.pointsCosts')}`, pts.reduce((n, p) => n + p.ingredients + p.rent + p.wage + p.stolen, 0)],
+      [
+        `${ico('pt_stand', '🏪')} ${t('report.pointsCosts')}`,
+        pts.reduce((n, p) => n + p.ingredients + p.rent + p.wage + p.stolen + (p.utilities ?? 0) + (p.cleaning ?? 0) + (p.tax ?? 0), 0),
+      ],
     ];
     const pointsIncome = pts.reduce((n, p) => n + p.revenue, 0);
     void ui;
@@ -107,13 +113,14 @@ export const reportPanel: Panel = {
         </div>`}
         <div class="lesson">${lemiFace(true, r.lesson.key === 'lesson.profit' ? (r.profit >= 0 ? 'happy' : 'sad') : (LESSON_MOOD[r.lesson.key] ?? 'think'))}<div><b>💡 ${t('report.lesson')}</b>${lessonText}</div></div>
         ${storeBox(r)}
+        ${r.clean !== undefined ? `<div class="${r.clean < 60 ? 'warn-box' : 'note'}">🧹 ${t(r.clean < 60 ? 'report.dirty' : 'report.clean', { n: r.clean })}</div>` : ''}
         ${pts.length
           ? `<h3>${ico('pt_stand', '🏪')} ${t('points.title')} · ${signedCoin(r.pointsProfit)}</h3>
         <div class="card">${pts
           .map(
-            (p) => `<div class="kv"><span>${locIco(p.loc)} ${t(`loc.${p.loc}.name`)} <small class="muted">${t(`points.status.${p.status}`)}${p.stolen ? ` · 💸 −${p.stolen}` : ''}</small></span><b>${signedCoin(p.profit)}</b></div>`,
+            (p) => `<div class="kv"><span>${locIco(p.loc)} ${t(`loc.${p.loc}.name`)} <small class="muted">${statusText(p.loc, p.status)}${p.stolen ? ` · 💸 −${p.stolen}` : ''}</small></span><b>${signedCoin(p.profit)}</b></div>`,
           )
-          .join('')}${paybackRows(g)}</div>`
+          .join('')}${paybackRows(g, r)}</div>`
           : ''}
         ${r.pointsUnlocked ? `<div class="good-box">${ico('pt_stand', '🏪')} ${t('report.pointsUnlocked')}</div>` : ''}
         ${f.passed > 0 ? `<h3>🚶 ${t('report.funnel')} · ${t('report.sold', { n: r.sold })}</h3>

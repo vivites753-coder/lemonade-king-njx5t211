@@ -1,11 +1,28 @@
-// "My stands": the player's other stands, their sellers, results and payback, their own upgrades, and hiring.
+// "My stands": the player's other stands and own stores, their staff, results and payback, the upgrades of the stands,
+// the cleaners of the stores, and hiring.
+import { CONFIG } from '../core/config';
 import type { LocationId, UpgradeId } from '../core/types';
 import { LOCATIONS } from '../data/locations';
 import { POINTS } from '../data/staff';
 import { UPGRADES } from '../data/upgrades';
 import { t } from '../i18n';
+import { cleanPct } from '../sim/cleaning';
 import type { Game } from '../sim/game';
-import { freePlaces, isGirl, payback, pointCapacity, pointHasRoomFor2, pointUps, POINT_UPGRADE_IDS, skillStars, type Point, type Seller } from '../sim/points';
+import {
+  freePlaces,
+  isGirl,
+  payback,
+  pointCapacity,
+  pointGear,
+  pointHasRoomFor2,
+  pointUps,
+  POINT_UPGRADE_IDS,
+  skillStars,
+  standCount,
+  type Point,
+  type PointStatus,
+  type Seller,
+} from '../sim/points';
 import { coin, ico, locIco, signedCoin } from './dom';
 import type { ModalSpec } from './overlays';
 
@@ -21,6 +38,11 @@ export interface PointsHooks {
 }
 
 const face = (s: Seller) => (isGirl(s.nameId) ? '👩' : '👨');
+
+/** How a day of a point went, in words (a store has words of its own where they differ). */
+export function statusText(loc: LocationId, status: PointStatus): string {
+  return t(LOCATIONS[loc].store && (status === 'ok' || status === 'empty') ? `points.status.store_${status}` : `points.status.${status}`);
+}
 const skill = (s: Seller) => {
   const n = skillStars(s.skill);
   return `<span class="skill" title="${t('points.skill')}">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>`;
@@ -53,10 +75,26 @@ export function paybackBox(p: Point): string {
   </div>`;
 }
 
+/** A store: its cleaner (hired or not) and how clean its floor is. */
+function cleanerRow(g: Game, p: Point): string {
+  const st = g.S.stores[p.loc];
+  if (!p.store || !st) return '';
+  const pct = cleanPct(st);
+  return `<div class="pt-seller pt-cleaner">
+    <span class="pt-face">🧹</span>
+    <span class="grow"><b>${t(st.cleaner ? 'points.cleanerOn' : 'points.cleanerOff')}</b>
+      <small>${t('points.wage', { n: CONFIG.CLEANER_WAGE })} · <span class="${pct < 60 ? 'neg' : ''}">${t('points.clean', { n: pct })}</span></small></span>
+    <button class="btn btn-sm ${st.cleaner ? 'btn-r' : 'btn-g'}" data-act="cleaner:${p.id}" ${g.canManageStaff() ? '' : 'disabled'}>${t(st.cleaner ? 'staff.act.fire' : 'points.take')}</button>
+  </div>`;
+}
+
 function pointCard(g: Game, p: Point): string {
   const kid = g.S.ageMode === 'kid';
   const s = p.seller;
   const manage = g.canManageStaff();
+  const store = !!p.store;
+  // the store where the player is today is the own scene: nothing to look at
+  const here = p.loc === g.S.location;
   const today = p.issue && p.issue !== 'stole' ? `<span class="chip warn-chip">${t(`points.issue.${p.issue}`)}</span>` : '';
   const away = p.away
     ? `<div class="warn-box">🤒 ${t('points.away', { name: t(`staff.name${p.away.seller.nameId}`), n: p.away.days })}${s ? ` ${t('points.standin')}` : ''}</div>`
@@ -68,24 +106,29 @@ function pointCard(g: Game, p: Point): string {
           <small>${t('points.wage', { n: s.wage })} · ${s.refs ? `✅ ${t('points.refs')}` : `❓ ${t('points.noRefs')}`}${s.warnings ? ` · ⚠️ ${t('points.warnings', { n: s.warnings })}` : ''}</small></span>
         <button class="btn btn-sm btn-r" data-act="fire:${p.id}" ${manage ? '' : 'disabled'}>${t('staff.act.fire')}</button>
       </div>`
-    : `<div class="warn-box">${t(p.away ? 'points.closedIll' : 'points.noSeller')}</div>
-      <button class="btn btn-g btn-sm" data-act="hire:${p.id}" ${manage ? '' : 'disabled'}>${ico('pt_hire', '👤')} ${t(p.away ? 'staff.act.standin' : 'points.hire')}</button>`;
+    : `<div class="${store ? 'note' : 'warn-box'}">${t(p.away ? 'points.closedIll' : store ? 'points.storeNoStaff' : 'points.noSeller')}</div>
+      <button class="btn btn-g btn-sm" data-act="hire:${p.id}" ${manage ? '' : 'disabled'}>${ico('pt_hire', '👤')} ${t(p.away ? 'staff.act.standin' : store ? 'points.hireStaff' : 'points.hire')}</button>`;
   const d = p.last;
+  const minus = (key: string, n: number | undefined) => (n ? `<div class="kv"><span>${t(key)}</span><span>${coin('−' + n, 'neg')}</span></div>` : '');
+  // (a day the player worked at the store: its whole numbers are in the report of that day)
   const lastDay = d
     ? `<div class="pt-last">
-        <div class="kv"><b>${t('points.lastDay', { n: d.day })}</b><span class="muted">${t(`points.status.${d.status}`)}${d.sold ? ` · 🥤 ${d.sold}` : ''}</span></div>
+        <div class="kv"><b>${t('points.lastDay', { n: d.day })}</b><span class="muted">${statusText(p.loc, d.status)}${d.sold ? ` · 🥤 ${d.sold}` : ''}${d.clean !== undefined ? ` · 🧹 ${d.clean}%` : ''}</span></div>
         ${
-          kid
+          kid || d.status === 'owner'
             ? ''
             : `<div class="kv"><span>${t('report.sales')}</span><span>${coin(d.revenue)}</span></div>
         <div class="kv"><span>${t('report.ingredients')}</span><span>${coin('−' + d.ingredients, 'neg')}</span></div>
         <div class="kv"><span>${t('report.rent')}</span><span>${coin('−' + d.rent, 'neg')}</span></div>
+        ${minus('report.utilities', d.utilities)}
         <div class="kv"><span>${t('points.salary')}</span><span>${coin('−' + d.wage, 'neg')}</span></div>
+        ${minus('report.cleaning', d.cleaning)}
+        ${d.tax ? `<div class="kv"><span>${t('report.tax', { n: Math.round(CONFIG.STORE_TAX * 100) })}</span><span>${coin('−' + d.tax, 'neg')}</span></div>` : ''}
         ${d.stolen ? `<div class="kv"><span>💸 ${t('points.stolen')}</span><span>${coin('−' + d.stolen, 'neg')}</span></div>` : ''}`
         }
         <div class="kv"><span><b>${t('report.profit')}</b></span><b>${signedCoin(d.profit)}</b></div>
       </div>`
-    : `<small class="muted">${t('points.noDays')}</small>`;
+    : `<small class="muted">${t(store ? 'points.storeNoDays' : 'points.noDays')}</small>`;
   // the second worker: their row, or the offer to hire one (when the stand has a seller)
   const h = p.helper;
   const helper = h
@@ -99,24 +142,32 @@ function pointCard(g: Game, p: Point): string {
       ? ''
       : pointHasRoomFor2(p)
         ? `<div class="pt-hire2"><button class="btn btn-sm" data-act="hire2:${p.id}" ${manage ? '' : 'disabled'}>${ico('pt_hire', '👥')} ${t('points.hire2')}</button>
-        <small class="muted">${t('points.hire2Note')}</small></div>`
+        <small class="muted">${t(store ? 'points.hire2StoreNote' : 'points.hire2Note')}</small></div>`
         : `<div class="pt-hire2"><small class="muted">${ico('pt_team', '👥')} ${t('points.hire2Wide')}</small></div>`;
-  const ups = POINT_UPGRADE_IDS.filter((id) => pointUps(p)[id]);
-  return `<div class="pt-card">
-    <div class="pt-head"><span class="pt-ico">${locIco(p.loc)}</span><b class="grow">${t(`loc.${p.loc}.name`)}</b>${today}</div>
+  const gear = pointGear(g.S, p);
+  const ups = store ? (Object.keys(gear) as UpgradeId[]) : POINT_UPGRADE_IDS.filter((id) => gear[id]);
+  return `<div class="pt-card${store ? ' pt-store' : ''}">
+    <div class="pt-head"><span class="pt-ico">${locIco(p.loc)}</span><b class="grow">${t(`loc.${p.loc}.name`)}</b>${store ? `<span class="tag tag-store">${ico('store', '🏪')} ${t('loc.store')}</span>` : ''}${today}</div>
+    ${store ? `<small class="muted">${t(here ? 'points.storeHere' : 'points.storeAway')}</small>` : ''}
     ${away}
     ${seller}
     ${helper}
+    ${cleanerRow(g, p)}
     <div class="pt-ups" title="${t('points.equipment')}">${ups.map((id) => `<span class="pt-up">${ico(`up_${id}`, UPGRADES[id].icon)}</span>`).join('')}</div>
-    <div class="row pt-btns">
+    ${
+      store
+        ? `${here ? '' : `<div class="row pt-btns"><button class="btn btn-sm btn-b" data-act="view:${p.id}">${ico('pt_look', '👀')} ${t('points.look')}</button></div>`}
+    <div><small class="muted">${t('points.storeUps')}</small></div>`
+        : `<div class="row pt-btns">
       <button class="btn btn-sm btn-b" data-act="view:${p.id}">${ico('pt_look', '👀')} ${t('points.look')}</button>
       <button class="btn btn-sm btn-y" data-act="shop:${p.id}">${ico('pt_upgrades', '🛠️')} ${t('points.upgrades')}</button>
-    </div>
+    </div>`
+    }
     ${lastDay}
     ${bars(p.history)}
     ${paybackBox(p)}
     <div class="pt-foot"><small class="muted">${t('points.total', { n: p.total })}</small>
-      <button class="btn btn-sm" data-act="sell:${p.id}" ${g.phase === 'shop' ? '' : 'disabled'}>${t('points.sell', { n: g.pointRefund(p) })}</button></div>
+      ${store ? '' : `<button class="btn btn-sm" data-act="sell:${p.id}" ${g.phase === 'shop' ? '' : 'disabled'}>${t('points.sell', { n: g.pointRefund(p) })}</button>`}</div>
   </div>`;
 }
 
@@ -135,8 +186,10 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
       const yesterday = S.points.reduce((n, p) => n + (p.last?.profit ?? 0), 0);
       const total = S.points.reduce((n, p) => n + p.total, 0);
       const free = freePlaces(S);
+      const stands = standCount(S);
+      const stores = S.points.filter((p) => p.store);
       const newOnes =
-        S.points.length >= POINTS.MAX
+        stands >= POINTS.MAX
           ? `<p class="note">${t('points.max', { n: POINTS.MAX })}</p>`
           : free.length
             ? free
@@ -158,10 +211,13 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
           <div class="kv"><span>${t('points.allTime')}</span><b>${signedCoin(total)}</b></div></div>`
             : ''
         }
-        ${S.points.map((p) => pointCard(g, p)).join('')}
+        ${stores.length ? `<h3>${ico('store', '🏪')} ${t('points.stores')}</h3><p class="note">${t('points.storesIntro')}</p>` : ''}
+        ${stores.map((p) => pointCard(g, p)).join('')}
+        ${stores.length && stands ? `<h3>${ico('pt_stand', '🏪')} ${t('points.stands')}</h3>` : ''}
+        ${S.points.filter((p) => !p.store).map((p) => pointCard(g, p)).join('')}
         <h3>➕ ${t('points.new')}</h3>
         <p class="note">${ico('pt_wholesale', '📦')} ${t('points.kit')}</p>
-        ${!evening && S.points.length < POINTS.MAX ? `<div class="note">🌙 ${t('points.eveningOnly')}</div>` : ''}
+        ${!evening && stands < POINTS.MAX ? `<div class="note">🌙 ${t('points.eveningOnly')}</div>` : ''}
         ${newOnes}
         <div class="modal-actions"><button class="btn btn-y" data-act="close">${t('btn.close')}</button></div>`;
     },
@@ -187,6 +243,10 @@ export function pointsModal(g: Game, hooks: PointsHooks): ModalSpec {
       if (act === 'fire2') {
         const h = g.pointById(id)?.helper;
         if (h) hooks.confirm(t('points.fireConfirm', { name: t(`staff.name${h.nameId}`) }), () => g.fireHelper(id));
+      }
+      if (act === 'cleaner') {
+        const p = g.pointById(id);
+        if (p) g.setCleaner(p.loc, !g.S.stores[p.loc]?.cleaner);
       }
       if (act === 'view') {
         hooks.view(id);
@@ -273,9 +333,12 @@ export function hireModal(g: Game, pointId: number, hooks: PointsHooks, role: 's
       const list = g.candidates(pointId);
       const second = role === 'helper';
       const standin = !second && !!p?.away;
+      const store = !!p?.store;
       const place = p ? t(`loc.${p.loc}.name`) : '';
-      const title = second ? t('points.hire2Title', { place }) : t(standin ? 'points.standinTitle' : 'points.hireTitle', { place });
-      const tip = second ? t('points.hire2Tip') : t(standin ? 'points.standinTip' : 'points.hireTip', { name: p?.away ? t(`staff.name${p.away.seller.nameId}`) : '' });
+      const title = second ? t('points.hire2Title', { place }) : t(standin ? 'points.standinTitle' : store ? 'points.hireStaffTitle' : 'points.hireTitle', { place });
+      const tip = second
+        ? t(store ? 'points.hire2StoreTip' : 'points.hire2Tip')
+        : t(standin ? 'points.standinTip' : store ? 'points.hireStaffTip' : 'points.hireTip', { name: p?.away ? t(`staff.name${p.away.seller.nameId}`) : '' });
       return `<h2>${second ? ico('pt_team', '👥') : ico('pt_hire', '👤')} ${title}</h2>
         <p class="note">💡 ${tip}</p>
         ${list

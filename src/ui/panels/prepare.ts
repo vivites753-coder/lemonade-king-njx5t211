@@ -4,6 +4,7 @@ import { UNIT_COST } from '../../data/goods';
 import { LOCATIONS } from '../../data/locations';
 import { EXTRAS, EXTRA_IDS, MENU, extraCost, extraFair } from '../../data/menu';
 import type { Game } from '../../sim/game';
+import { skillStars } from '../../sim/points';
 import { t } from '../../i18n';
 import { breakEvenCups, costPerCup, lemonsConsumed, tasteKey } from '../../sim/economy';
 import { coin, fmtDur, fmtHour, ico, round1, toggle } from '../dom';
@@ -41,6 +42,34 @@ function menuCard(g: Game): string {
   }).join('');
   return `<h3>🧾 ${t('prep.menu')}</h3>
         <div class="card">${rows}<div class="note">💡 ${t('prep.menuNote')}</div></div>`;
+}
+
+/** The store: who of its staff works with the player today (hired in "My stands"), and its floor and its cleaner. */
+function storeCard(g: Game): string {
+  const p = g.storePoint();
+  const st = g.storeHere();
+  if (!p || !st) return '';
+  const staff = g.storeStaff();
+  const who = staff.length
+    ? staff
+        .map((s) => `<div class="kv"><span>👤 <b>${t(`staff.name${s.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(s.skill))}</span></span><small class="muted">${t('points.wage', { n: s.wage })}</small></div>`)
+        .join('')
+    : `<div class="note">${t('prep.staffNone')}</div>`;
+  const away = p.away ? `<small class="muted">🤒 ${t('points.away', { name: t(`staff.name${p.away.seller.nameId}`), n: p.away.days })}</small>` : '';
+  const free = !p.seller || !p.helper;
+  const pct = g.cleanliness();
+  return `<h3>👥 ${t('prep.staff')}</h3>
+        <div class="card">${who}${away}
+          <small class="muted">${t('prep.staffNote')}</small>
+          ${free ? `<div style="margin-top:6px"><button class="btn btn-sm btn-g" data-act="hireStaff">${ico('pt_hire', '👤')} ${t('points.hireStaff')}</button></div>` : ''}
+        </div>
+        <h3>🧹 ${t('prep.clean')}</h3>
+        <div class="card">
+          <div class="kv"><span>${t('prep.cleanNow')}</span><b class="${pct < 60 ? 'neg' : ''}">${pct}%</b></div>
+          <div class="bar pb-bar clean-bar"><i style="width:${pct}%"></i></div>
+          ${toggle('cleaner', !!st.cleaner, `🧹 ${t('prep.cleaner', { n: CONFIG.CLEANER_WAGE })}`, t('prep.cleanerDesc'))}
+          <small class="muted">💡 ${t('prep.cleanTip')}</small>
+        </div>`;
 }
 
 const MIX_KEY: Record<string, string> = { '1': 'kitchen.mixPerfect', '0.93': 'kitchen.mixOver', '0.85': 'kitchen.mixUnder' };
@@ -112,14 +141,16 @@ export const preparePanel: Panel = {
               : ''
         }
         ${
-          g.helperCap() >= 2
-            ? `<div class="card"><div class="kv"><span>🍳 ${t('prep.helpers', { n: CONFIG.HELPER_WAGE })}</span>${stepper('helpers', String(D.helpers), D.helpers > 0, D.helpers < 2)}</div>
+          g.storePoint()
+            ? storeCard(g)
+            : g.helperCap() >= 2
+              ? `<div class="card"><div class="kv"><span>🍳 ${t('prep.helpers', { n: CONFIG.HELPER_WAGE })}</span>${stepper('helpers', String(D.helpers), D.helpers > 0, D.helpers < 2)}</div>
           <small class="muted">${t('prep.helpersDesc')}</small></div>`
-            : g.helperOpen()
-              ? toggle('helper', D.helper, `🍳 ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t(g.counters() >= 2 ? 'prep.helperDesc2' : 'prep.helperDesc'))
-              : `<div class="note">🔒 🍳 ${t('prep.helperLocked', { n: CONFIG.HELPER_MIN_REP })}</div>`
+              : g.helperOpen()
+                ? toggle('helper', D.helper, `🍳 ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t(g.counters() >= 2 ? 'prep.helperDesc2' : 'prep.helperDesc'))
+                : `<div class="note">🔒 🍳 ${t('prep.helperLocked', { n: CONFIG.HELPER_MIN_REP })}</div>`
         }
-        ${g.counters() >= 2 && g.helperCap() < 2 && g.helperOpen() ? `<div class="note">🔒 ${t('prep.helper2Locked', { n: CONFIG.HELPER2_MIN_REP })}</div>` : ''}
+        ${!g.storePoint() && g.counters() >= 2 && g.helperCap() < 2 && g.helperOpen() ? `<div class="note">🔒 ${t('prep.helper2Locked', { n: CONFIG.HELPER2_MIN_REP })}</div>` : ''}
 
         <h3>📍 ${t(`loc.${S.location}.name`)}</h3>
         <div class="good-box">🕐 ${t('prep.open', { a: fmtHour(g.openingHour(false)), b: fmtHour(CONFIG.DAY_END) })}${loc.rent ? ` · ${t('prep.rent', { n: coin(loc.rent) })}` : ''}${loc.store ? ` · ${t('prep.utilities', { n: coin(loc.store.utilities) })}` : ''}</div>
@@ -144,6 +175,11 @@ export const preparePanel: Panel = {
     if (act === 'onlineAds') g.setOnlineAds(!g.D.onlineAds);
     if (act === 'helper') g.setHelper(!g.D.helper);
     if (act === 'helpers') g.setHelpers(g.D.helpers + d);
+    if (act === 'cleaner') g.setCleaner(g.S.location, !g.storeHere()?.cleaner);
+    if (act === 'hireStaff') {
+      const p = g.storePoint();
+      if (p) ui.openHire(p.id, p.seller ? 'helper' : 'seller');
+    }
     if (act === 'kitchen') g.goKitchen();
     if (act === 'place') {
       placeList = !placeList;

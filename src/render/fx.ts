@@ -22,6 +22,14 @@ interface Cloud {
   v: number;
 }
 
+/** The tint of the whole picture in some weathers (none indoors). */
+const TINT: Partial<Record<WeatherId, string>> = {
+  cloudy: 'rgba(60,70,90,0.10)',
+  rain: 'rgba(40,55,80,0.22)',
+  cold: 'rgba(160,190,230,0.16)',
+  hot: 'rgba(255,170,60,0.07)',
+};
+
 const SKY: Record<WeatherId, [string, string]> = {
   sunny: ['#8fd3ff', '#e3f6ff'],
   hot: ['#7cc8ff', '#fff1c9'],
@@ -35,17 +43,23 @@ export class WeatherFx {
   private drops: Drop[] = [];
   private leaves: Leaf[] = [];
   private clouds: Cloud[] = [];
+  /** The sky gradient is made again only when the weather or the height of the screen changes. */
+  private sky: { key: string; grad: CanvasGradient } | null = null;
 
   constructor() {
     for (let i = 0; i < 6; i++) this.clouds.push({ x: Math.random(), y: 0.05 + Math.random() * 0.22, s: 0.6 + Math.random() * 0.8, v: 0.004 + Math.random() * 0.006 });
   }
 
   drawSky(ctx: Ctx, w: number, h: number, weather: WeatherId, hour: number): void {
-    const [top, bottom] = SKY[weather];
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, top);
-    g.addColorStop(1, bottom);
-    ctx.fillStyle = g;
+    const key = `${weather}|${h}`;
+    if (!this.sky || this.sky.key !== key) {
+      const [top, bottom] = SKY[weather];
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, top);
+      grad.addColorStop(1, bottom);
+      this.sky = { key, grad };
+    }
+    ctx.fillStyle = this.sky.grad;
     ctx.fillRect(0, 0, w, h);
     // evening glow
     const dusk = smooth(17, 20, hour);
@@ -109,16 +123,11 @@ export class WeatherFx {
     }
   }
 
-  drawOverlay(ctx: Ctx, w: number, h: number, weather: WeatherId, hour: number, t: number, reduceMotion: boolean, indoor = false): void {
+  drawOverlay(ctx: Ctx, w: number, h: number, weather: WeatherId, hour: number, indoor = false): void {
     // weather tint
-    const tint: Partial<Record<WeatherId, string>> = {
-      cloudy: 'rgba(60,70,90,0.10)',
-      rain: 'rgba(40,55,80,0.22)',
-      cold: 'rgba(160,190,230,0.16)',
-      hot: 'rgba(255,170,60,0.07)',
-    };
-    if (tint[weather] && !indoor) {
-      ctx.fillStyle = tint[weather]!;
+    const tint = TINT[weather];
+    if (tint && !indoor) {
+      ctx.fillStyle = tint;
       ctx.fillRect(0, 0, w, h);
     }
     if (this.drops.length) {

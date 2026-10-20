@@ -55,6 +55,11 @@ export function counterDy(store: boolean): number {
   return store ? STORE_COUNTER_DY : 0;
 }
 
+/** This way goes through the door of the store (in or out); people only walking past it do not. */
+export function throughDoor(path: readonly Vec[]): boolean {
+  return path.includes(DOOR_IN) || path.includes(DOOR_OUT);
+}
+
 /** Inside the room (behind its front wall). */
 export function inRoom(p: Vec): boolean {
   return p.y < ROOM_D;

@@ -5,12 +5,13 @@ import { describe, expect, it } from 'vitest';
 import type { GoodId, LocationId, UpgradeId } from '../src/core/types';
 import { GOODS, GOOD_IDS } from '../src/data/goods';
 import { LOCATION_IDS, LOCATIONS } from '../src/data/locations';
+import { CONFIG } from '../src/core/config';
 import { POINTS } from '../src/data/staff';
 import { UPGRADES } from '../src/data/upgrades';
 import type { CardInfo } from '../src/sim/game';
 import { Game } from '../src/sim/game';
 import { PointScene } from '../src/sim/pointScene';
-import { freePlaces, payback, POINT_UPGRADE_IDS, pointUps } from '../src/sim/points';
+import { freePlaces, payback, POINT_UPGRADE_IDS, pointHasRoomFor2, pointUps, standCount } from '../src/sim/points';
 import { lemonsTotal } from '../src/sim/state';
 
 function lcg(seed: number): () => number {
@@ -34,7 +35,7 @@ function check(g: Game, where: string): void {
   for (const b of S.stock.lemons) expect(Number.isInteger(b.n) && b.n > 0, `${ctx} lemon batch`).toBe(true);
   expect(g.D.cupsReady, `${ctx} cups`).toBeGreaterThanOrEqual(0);
   if (g.phase === 'kitchen' || g.midKitchen) for (const v of Object.values(g.kitchenLeft())) expect(v, `${ctx} kitchen shelf`).toBeGreaterThanOrEqual(0);
-  expect(S.points.length, ctx).toBeLessThanOrEqual(POINTS.MAX);
+  expect(standCount(S), ctx).toBeLessThanOrEqual(POINTS.MAX);
   const locs = new Set<string>();
   for (const p of S.points) {
     expect(locs.has(p.loc), `${ctx} two stands at one place`).toBe(false);
@@ -45,7 +46,7 @@ function check(g: Game, where: string): void {
     expect(p.history.length, ctx).toBeLessThanOrEqual(7);
     if (p.helper) {
       expect(p.helper.nameId === p.seller?.nameId, `${ctx} one person twice`).toBe(false);
-      expect(!!(pointUps(p).big_stand || pointUps(p).truck), `${ctx} a second worker at a small table`).toBe(true);
+      expect(pointHasRoomFor2(p), `${ctx} a second worker at a small table`).toBe(true);
     }
     if (p.away) {
       expect(p.away.days, `${ctx} ill days`).toBeGreaterThanOrEqual(0);
@@ -55,8 +56,11 @@ function check(g: Game, where: string): void {
     const pb = payback(p);
     expect(Number.isFinite(pb.share), ctx).toBe(true);
   }
-  // the player never sells where a stand of theirs works
-  if (g.phase === 'sell') expect(S.points.some((p) => p.loc === S.location), ctx).toBe(false);
+  // the player never sells where a stand of theirs works (at an own store the staff work with the player)
+  if (g.phase === 'sell') expect(S.points.some((p) => p.loc === S.location && !p.store), ctx).toBe(false);
+  // every store is among the points, once; a store's floor has room for so many stains
+  for (const loc of Object.keys(S.stores)) expect(S.points.filter((p) => p.store && p.loc === loc).length, `${ctx} store point`).toBe(1);
+  for (const st of Object.values(S.stores)) expect(st!.stains?.length ?? 0, ctx).toBeLessThanOrEqual(CONFIG.STAINS_MAX);
   if (g.viewPoint !== null) expect(g.pointById(g.viewPoint), `${ctx} view of a closed stand`).toBeTruthy();
 }
 
@@ -72,6 +76,8 @@ describe('random play with a chain of stands', () => {
     let watched = 0;
     let standins = 0;
     let bulk = 0;
+    let stores = 0;
+    let wiped = 0;
     for (let seed = 1; seed <= 24; seed++) {
       Math.random = lcg(seed * 7727);
       const rnd = lcg(seed * 3571);
@@ -98,7 +104,9 @@ describe('random play with a chain of stands', () => {
       for (let d = 0; d < 30 && g.phase === 'morning'; d++) {
         answer();
         check(g, 'morning');
-        const open = LOCATION_IDS.filter((id) => g.unlocked(id) && !g.S.points.some((p) => p.loc === id));
+        // level 4: now and then a store of one's own (its staff and its cleaner are hired in the evening)
+        for (const id of LOCATION_IDS) if (g.canOpenStore(id).ok && rnd() < 0.1 && g.openStore(id)) stores++;
+        const open = LOCATION_IDS.filter((id) => g.unlocked(id) && !g.S.points.some((p) => p.loc === id && !p.store));
         g.chooseLocation(pick(open.length ? open : (['yard'] as LocationId[])));
         if (g.goMarket()) {
           for (let i = 0; i < 1 + Math.floor(rnd() * 3); i++) g.addPitcherKit();
@@ -149,6 +157,7 @@ describe('random play with a chain of stands', () => {
             else g.serve();
           }
           if (g.street.thief && rnd() < 0.05) g.catchThief();
+          if (rnd() < 0.01 && g.cleanStain()) wiped++;
           if (rnd() < 0.0015) roundTrip(g);
           if (guard % 500 === 0) check(g, 'selling');
           answer();
@@ -173,6 +182,7 @@ describe('random play with a chain of stands', () => {
           }
           if (rnd() < 0.05) g.fireSeller(p.id);
           if (rnd() < 0.04) g.closePoint(p.id);
+          if (p.store && rnd() < 0.2) g.setCleaner(p.loc, rnd() < 0.6);
         }
         for (let i = 0; i < 2; i++) {
           const id = pick(Object.keys(UPGRADES) as UpgradeId[]);
@@ -189,5 +199,7 @@ describe('random play with a chain of stands', () => {
     expect(watched).toBeGreaterThan(10);
     expect(bulk).toBeGreaterThan(10);
     expect(standins).toBeGreaterThan(0);
+    expect(stores).toBeGreaterThan(5);
+    expect(wiped).toBeGreaterThan(5);
   }, 180000);
 });

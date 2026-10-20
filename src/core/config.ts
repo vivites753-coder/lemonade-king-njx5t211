@@ -164,6 +164,19 @@ export const CONFIG = {
   SIT_TIME: [8, 16] as [number, number],
   TIP_CHANCE: 0.5,
   TIP: [1, 3] as [number, number],
+  /** The floor of the store gets dirty (src/sim/cleaning.ts): every served customer brings this share of a stain (more
+   * on a rainy day) and the floor has room for STAINS_MAX of them. A floor full of stains takes these shares off the
+   * stop chance, the satisfaction of the customers and the chance of a tip. A hired cleaner works every day the store
+   * is open (her wage a day): she walks to the nearest stain (tiles a simulation second) and mops it for a while. */
+  DIRT_PER_CUSTOMER: 0.1,
+  DIRT_RAIN: 1.75,
+  STAINS_MAX: 12,
+  DIRT_STOP: 0.3,
+  DIRT_SAT: 0.15,
+  DIRT_TIPS: 0.5,
+  CLEANER_WAGE: 25,
+  CLEANER_SPEED: 1.4,
+  CLEANER_MOP: 2.2,
 } as const;
 
 /**
@@ -177,6 +190,8 @@ export const HUD_DEFAULT_LAYOUT: Record<string, [number, number]> = {
   cups: [0.505, 0.938],
   make: [0.634, 0.925],
   end: [0.813, 0.923],
+  // the own store: how clean its floor is (a tap wipes a stain off)
+  clean: [0.36, 0.925],
 };
 
 /** Place number i in the queue of a counter (0: to the right of the stand, 1: to the left); dy: the stand stands that

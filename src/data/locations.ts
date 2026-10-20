@@ -1,5 +1,5 @@
 import type { LocationId, PedTypeId, UpgradeId } from '../core/types';
-import { CHAIR_DX } from './storeRoom';
+import { CHAIR_DX, type Seat } from './storeRoom';
 
 /** A static object placed in a location. `id` is the sprite / asset id. */
 export interface DecorDef {
@@ -557,6 +557,19 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
 };
 
 export const LOCATION_IDS = Object.keys(LOCATIONS) as LocationId[];
+
+/** The chairs of the store of a place where served customers may sit down (the extra tables only with their upgrade). */
+export function storeSeats(id: LocationId, up: Partial<Record<UpgradeId, true>>): Seat[] {
+  const loc = LOCATIONS[id];
+  if (!loc.store) return [];
+  const out: Seat[] = [];
+  for (const d of loc.decor) {
+    if (d.needs && !up[d.needs]) continue;
+    if (d.id === 'prop_cafe_chair_l') out.push({ x: d.x, y: d.y, side: -1 });
+    else if (d.id === 'prop_cafe_chair_r') out.push({ x: d.x, y: d.y, side: 1 });
+  }
+  return out;
+}
 
 /** What opening the store of a place costs once (0 where there is no store). */
 export function storeSetupCost(id: LocationId): number {

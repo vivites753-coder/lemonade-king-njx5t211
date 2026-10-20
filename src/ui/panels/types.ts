@@ -10,6 +10,8 @@ export interface UIApi {
   openRoadmap(): void;
   openTruck(): void;
   openPoints(): void;
+  /** The people who want a job at this point (as its seller, or as its second worker). */
+  openHire(pointId: number, role?: 'seller' | 'helper'): void;
   startNewGame(): void;
   continueGame(): void;
   hasSave(): boolean;

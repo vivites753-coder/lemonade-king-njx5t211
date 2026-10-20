@@ -43,6 +43,10 @@ const TIP_MOOD: Record<string, LemiMood> = {
   menu: 'happy',
   menu_first: 'happy',
   pastry_stale: 'surprised',
+  store_staff: 'happy',
+  dirty: 'surprised',
+  cleaned: 'happy',
+  cleaner: 'think',
 };
 
 /** How Lemi looks under the lesson of an event card (thinking when not listed). */

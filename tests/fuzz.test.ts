@@ -50,7 +50,7 @@ function playRandomDay(g: Game, rnd: () => number): void {
   const pick = <T,>(a: T[]): T => a[Math.floor(rnd() * a.length)];
   // morning (level 4: now and then the player opens a store when the money is there)
   for (const id of LOCATION_IDS) if (g.canOpenStore(id).ok && rnd() < 0.3) g.openStore(id);
-  const open = LOCATION_IDS.filter((id) => g.unlocked(id) && g.storeReady(id) && !g.S.points.some((p) => p.loc === id));
+  const open = LOCATION_IDS.filter((id) => g.unlocked(id) && g.storeReady(id) && !g.S.points.some((p) => p.loc === id && !p.store));
   g.chooseLocation(pick(open.length ? open : (['yard'] as LocationId[])));
   for (const id of Object.keys(g.S.broken) as (keyof typeof g.S.broken)[]) if (rnd() < 0.5) g.repair(id);
   if (rnd() < 0.15) roundTrip(g);
