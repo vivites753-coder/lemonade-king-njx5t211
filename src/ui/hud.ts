@@ -228,10 +228,11 @@ export class Hud {
     this.set('price', String(S.price));
     this.show('speaker', !!S.upgrades.speaker);
     this.set('speaker', `${S.speakerOn ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇')}<span class="lbl"> ${t('hud.speaker')}: ${S.speakerOn ? t('hud.on') : t('hud.off')}</span>`);
-    // the player can pour at any counter with a customer in front and nobody pouring there
-    const counters = [...Array(g.counters()).keys()];
-    const front = counters.some((c) => !!g.street.frontReady(c));
-    const free = counters.some((c) => !!g.street.frontReady(c) && !g.servings[c]);
+    // the player pours only at their own counter (the customers at a helper's counter are the helper's): the button
+    // works while a customer stands there and nobody pours for them yet
+    const own = g.playerCounters();
+    const front = own.some((c) => !!g.street.frontReady(c));
+    const free = own.some((c) => !!g.street.frontReady(c) && !g.servings[c]);
     const serveBtn = this.els.serve as HTMLButtonElement;
     const canServe = free && !g.making && g.anyDrinkLeft();
     serveBtn.disabled = !front || !!g.making;
@@ -254,7 +255,7 @@ export class Hud {
       const cleanBtn = this.els.clean as HTMLButtonElement;
       cleanBtn.disabled = pct >= 100;
       cleanBtn.classList.toggle('btn-y', pct < 70);
-      this.set('clean', `🧹 <b>${pct}%</b>`);
+      this.set('clean', `${ico('btn_clean', '🧹')} <b>${pct}%</b>`);
     }
   }
 

@@ -3,7 +3,7 @@ import { setMusicEnabled } from '../audio/music';
 import { play, playHeld, setSoundEnabled } from '../audio/sfx';
 import { activeProfile, clearSave, createProfile, deleteProfile, listProfiles, parseSave, readSave, serializeSave, setActiveProfile, writeSave } from '../core/save';
 import type { AgeMode, Avatar, Lang, Phase } from '../core/types';
-import { setLang, t } from '../i18n';
+import { setGender, setLang, t } from '../i18n';
 import type { Game } from '../sim/game';
 import type { Renderer } from '../render/renderer';
 import { Hud } from './hud';
@@ -365,6 +365,7 @@ export class UI implements UIApi {
   }
 
   refresh(): void {
+    setGender(this.g.S.avatar);
     if (!this.current) return;
     if (this.current.update) {
       this.current.update(this.panelEl, this.g, this);
@@ -381,6 +382,8 @@ export class UI implements UIApi {
 
   // ---------------------------------------------------------------- phases & layout
   private onPhase(p: Phase): void {
+    // the texts speak to the player as a boy or as a girl
+    setGender(this.g.S.avatar);
     const midKitchen = p === 'sell' && this.g.midKitchen;
     this.hud.setPhase(midKitchen ? 'kitchen' : p);
     const panel = midKitchen ? kitchenPanel : (PANELS[p] ?? null);

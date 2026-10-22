@@ -5,7 +5,7 @@
 
 Негативний для всіх: `shadow, ground, text, letters, numbers, watermark, glow, halo, realistic, scary, transparent glass`.
 
-## Що ще потрібно згенерувати (перевірено 15.10, від важливішого)
+## Що ще потрібно згенерувати (перевірено 22.10, від важливішого)
 
 Перевірено по коду: що гра просить, але малює сама (кодом, CSS або емодзі).
 
@@ -19,8 +19,10 @@
 6. ~~Лист 23: автобусна зупинка~~ — готово (автобус, навіс, знак).
 7. ~~Лист 24: лід для кухні~~ — готово.
 8. **Свій магазин (рівень 4, етап A):** ~~листи 25 (стіни), 28 (столики й стільці), 29 (покупці сидять)~~ — готово;
-   лишились 26 (прилавок), 27 (ратуша), 12г (іконки місць і апгрейдів магазину) і, за бажанням, 12д (товари меню).
-   Поки їх немає, гра малює все це кодом. Низькі передні стіни й скляні двері гра малює сама.
+   лишились 26 (прилавок), 27 (ратуша), 31 (підлога магазину й бруківка площі), 12г (іконки місць і апгрейдів
+   магазину), 30 (прибиральниця), 12е (іконки прибирання), а за бажанням 12д (товари меню) і 26б (банер кіоску й
+   термінал). Поки їх немає, гра малює все це кодом (і емодзі). Низькі передні стіни й скляні двері гра малює сама.
+   Великі суцільні текстури землі й пози «наливає» з листа 07 гра зараз не використовує: їх не треба.
 9. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
    (знімки екрана для Play зроблю з гри сам).
 10. За бажанням: лист 30 — прибиральниця магазину (поки гра малює її бабусею з листа 06, швабру й відро — кодом).
@@ -309,6 +311,44 @@ Use the second attached image as the exact style reference: isometric 3D render,
 ```
 
 Імена (наріжу з `--pairs`): `char_cleaner_front, char_cleaner_back`. Гра бере їх сама, щойно вони з'являться.
+
+## Лист 31. Підлога магазину й бруківка площі (3×1, плитки)
+
+Плитки землі гра робить сама з квадратних зразків (як лист 02): ріже, повертає на 45° і сплющує в ромб. Поки їх немає,
+підлогу й площу малює код.
+
+```
+A sheet of 3 square ground texture swatches arranged in a strict 3-column by 1-row grid on a perfectly flat solid magenta background (#FF00FF). Each swatch is one perfectly square flat texture seen strictly from straight above (orthographic, no perspective, no horizon), filling about 80% of its cell, with a wide empty magenta margin around it (at least 10% of the cell), no borders, no frames, no shadows, no objects, no text, no watermark. Every swatch is seamlessly tileable, with even flat lighting (no gradients, no vignette, no dark or bright patches) and small soft detail evenly spread. Cute stylized soft clay / toy-like look, bright cheerful saturated colors, matching the attached style reference.
+1) a warm honey-coloured wooden floor of a cosy café: straight planks running from the top to the bottom of the square, parallel to its sides, soft wood grain, thin darker joints; 2) light warm beige stone paving of a town square: small square cobblestones in neat straight rows with thin light-grey joints; 3) a slightly darker warm grey-beige stone walkway: bigger rectangular slabs in straight rows with thin joints.
+```
+
+Імена: `tile_store_floor, tile_plaza, tile_plaza_walk` (наріжу `tools/make_tiles.py`, додам режим для 3 зразків).
+
+## Лист 12е. Іконки прибирання (3×1, FLAT)
+
+Поки гра показує 🧹: кнопка чистоти внизу екрана, прибиральниця в «Моїх точках» і в підготовці, рядок у звіті.
+
+СІТКА 3 / 3×1 / 78% + FLAT +
+
+```
+Each item is a single ICON object (no background, no frame, no button shape behind it), readable when shrunk to 48 pixels.
+1) a wooden broom and a blue bucket with a mop in it, with three small white sparkles (cleaning); 2) the head and shoulders of a friendly cleaning lady with rosy cheeks, a turquoise headscarf and a light-blue work dress, smiling; 3) a small yellow puddle of spilt lemonade with a muddy brown footprint next to it (a dirty floor).
+```
+
+Імена: `ui_btn_clean, ui_cleaner, ui_dirty`
+
+## Лист 26б. Банер кіоску й термінал (2×1, ISO) — за бажанням
+
+Банер вішається на кіоск з покращенням «Банер», термінал стоїть на прилавку магазину з покращенням «Оплата карткою».
+Напис на банері гра пише сама, тож він порожній.
+
+СІТКА 2 / 2×1 / 72% + ISO +
+
+```
+1) a long empty yellow cloth banner with an orange border and two orange round buttons at its ends, hanging straight and a little wavy at the bottom, its long front side facing the LOWER-LEFT of the image, NOTHING written on it; 2) a small dark grey card payment terminal standing upright with a light blue screen and three round grey keys, a white bank card sticking out of its top.
+```
+
+Імена: `stand_banner, stand_store_terminal`
 
 ## Лист 12д. Товари меню магазину (3×1, FLAT) — за бажанням
 

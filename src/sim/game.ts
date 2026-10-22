@@ -1289,6 +1289,13 @@ export class Game {
     return this.counters() >= 2 && this.D.helpers >= 1 ? 2 : 1;
   }
 
+  /** The counters where the player pours: those no helper looks after (none when the helpers take them all). */
+  playerCounters(): number[] {
+    const out: number[] = [];
+    for (let c = 0; c < this.counters(); c++) if (!this.autoCounter(c)) out.push(c);
+    return out;
+  }
+
   /** A helper serves this counter by himself. One helper takes the second counter, two helpers take both. */
   autoCounter(c: number): boolean {
     const h = this.D.helpers;
@@ -1745,14 +1752,13 @@ export class Game {
   }
 
   /**
-   * The player taps to pour a cup. They take a counter no helper looks after first; if every customer
-   * in front is at a helper's counter, the player helps there.
+   * The player taps to pour a cup at their own counter (one no helper looks after). The customers at a helper's
+   * counter are the helper's: the player does not pour there.
    */
   serve(): 'ok' | 'busy' | 'making' | 'noCustomer' | 'noCups' | 'no' {
     if (this.phase !== 'sell' || this.paused) return 'no';
-    const order = [...Array(this.counters()).keys()].sort((a, b) => Number(this.autoCounter(a)) - Number(this.autoCounter(b)));
     let last: ReturnType<Game['serve']> = 'noCustomer';
-    for (const c of order) {
+    for (const c of this.playerCounters()) {
       const r = this.serveAt(c, false);
       if (r === 'ok' || r === 'noCups' || r === 'making') return r;
       if (r === 'busy') last = 'busy';
@@ -1782,15 +1788,14 @@ export class Game {
   }
 
   /**
-   * The pouring mini-game: the player holds "Pour" and a cup starts filling at a counter (chosen like `serve`
-   * does); it is finished by `pourEnd` when the button is let go.
+   * The pouring mini-game: the player holds "Pour" and a cup starts filling at the player's own counter (as `serve`
+   * chooses it); it is finished by `pourEnd` when the button is let go.
    */
   pourStart(): ReturnType<Game['serve']> {
     if (this.phase !== 'sell' || this.paused) return 'no';
     if (this.pouringAt() >= 0) return 'busy';
-    const order = [...Array(this.counters()).keys()].sort((a, b) => Number(this.autoCounter(a)) - Number(this.autoCounter(b)));
     let last: ReturnType<Game['serve']> = 'noCustomer';
-    for (const c of order) {
+    for (const c of this.playerCounters()) {
       const r = this.serveAt(c, false, true);
       if (r === 'ok' || r === 'noCups' || r === 'making') return r;
       if (r === 'busy') last = 'busy';

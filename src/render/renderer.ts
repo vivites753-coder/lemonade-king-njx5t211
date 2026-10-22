@@ -21,7 +21,7 @@ import { drawWalls } from './proc/indoor';
 import { drawStorePiece, drawStoreRoom, STORE_PIECES, type MenuLine, type StorePiece } from './proc/store';
 import { EXTRAS, EXTRA_IDS } from '../data/menu';
 import { DOOR, inRoom, ROOM_D, SEAT_H, throughDoor } from '../data/storeRoom';
-import { drawKey } from './depth';
+import { drawKey, storeKey, STORE_WALLS } from './depth';
 import { drawCritter } from './proc/critters';
 import { drawBucket, drawCleaner, drawStain } from './proc/cleaning';
 import { drawStand, drawStandPart, drawStandShadows, standDy, standSideParts, type StandPart } from './proc/stand';
@@ -428,9 +428,10 @@ export class Renderer {
 
     const items = this.items;
     items.length = 0;
-    // on a street with cars the road is a layer of its own between what is behind it and what is in front of it
+    // on a street with cars the road is a layer of its own between what is behind it and what is in front of it; at
+    // the own store its room, its low walls and the outside are layers too (see storeKey)
     const road = LOCATIONS[loc].cars;
-    const key = (depth: number, y: number) => drawKey(depth, y, road);
+    const key = (depth: number, y: number) => (store ? storeKey(depth, y, road) : drawKey(depth, y, road));
     for (const d of decor) {
       if (d.back || !shown(d)) continue;
       const [cx, cy] = decorCentre(d);
@@ -446,7 +447,7 @@ export class Renderer {
     // the low walls of the store and its door, piece by piece among the people
     if (store) {
       this.updateDoor(g, dt);
-      for (const s of STORE_PIECES) items.push({ d: key(s.cx + s.cy, s.cy), k: 7, o: s });
+      for (const s of STORE_PIECES) items.push({ d: STORE_WALLS + s.cx + s.cy, k: 7, o: s });
     }
     for (const c of g.street.cars) if (seen(c.x, c.y)) items.push({ d: key(c.x + c.y, c.y), k: 2, o: c });
     // a truck is long: its depth is that of its front left corner, so people walking past in front of it (and the lamp,

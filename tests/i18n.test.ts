@@ -108,3 +108,35 @@ describe('numbers in the texts', () => {
     expect(agree('1 bani, 5 bani, 20 bani, 101 bani, 120 bani', 'ro')).toBe('1 ban, 5 bani, 20 de bani, 101 bani, 120 de bani');
   });
 });
+
+describe('texts that speak to the player', () => {
+  it('a boy and a girl get their own words', async () => {
+    const { setGender, setLang, t } = await import('../src/i18n');
+    setLang('uk');
+    setGender('girl');
+    expect(t('card.thiefCaught.title')).toBe('Ти впіймала лиса! 🦊');
+    expect(t('roadmap.max')).toContain('справжня підприємиця');
+    expect(t('bonus.cat.found', { n: 5 })).toBe('Ти знайшла кота Мурчика! Господиня дякує: +5 монет.');
+    setGender('boy');
+    expect(t('card.thiefCaught.title')).toBe('Ти впіймав лиса! 🦊');
+    expect(t('roadmap.max')).toContain('справжній підприємець');
+    setLang('ro');
+    setGender('girl');
+    expect(t('roadmap.max')).toContain('o antreprenoare adevărată');
+    setLang('uk');
+    setGender('boy');
+  });
+
+  it('every "{boy|girl}" pair is whole: two words, nothing left for the player to see', () => {
+    for (const [lang, dict] of [['uk', uk], ['en', en], ['ro', ro]] as const) {
+      for (const [k, v] of Object.entries(dict)) {
+        for (const m of v.matchAll(/\{([^{}]*)\}/g)) {
+          if (!m[1].includes('|')) continue;
+          const parts = m[1].split('|');
+          expect(parts.length, `${lang} ${k}`).toBe(2);
+          for (const p of parts) expect(p.trim().length, `${lang} ${k}`).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+});

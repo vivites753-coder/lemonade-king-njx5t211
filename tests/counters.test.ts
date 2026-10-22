@@ -82,6 +82,57 @@ describe('stands with two counters', () => {
     expect(g.D.report!.sold).toBeGreaterThan(5);
   });
 
+  it("the player pours only at their own counter: the customers of a helper are the helper's", () => {
+    // a wide stand with one helper: the player has the first counter, the helper the second
+    const g = standGame({ up: 'big_stand', rep: 3, seed: 14 });
+    g.setHelpers(1);
+    g.startSelling();
+    expect(g.playerCounters()).toEqual([0]);
+    g.setSpeed(4);
+    // somebody waits at the helper's counter only (the helper is held back meanwhile)
+    let atHelper = false;
+    for (let i = 0; i < 40000 && g.phase === 'sell'; i++) {
+      g.update(0.05);
+      g.servings[1] = null;
+      if (g.street.frontReady(0)) g.street.leave(g.street.frontReady(0)!, null);
+      if (g.street.frontReady(1) && !g.street.frontReady(0) && !g.making) {
+        atHelper = true;
+        break;
+      }
+    }
+    expect(atHelper).toBe(true);
+    expect(g.serve()).toBe('noCustomer');
+    expect(g.pourStart()).toBe('noCustomer');
+    expect(g.servings[0]).toBeNull();
+  });
+
+  it('with helpers at every counter the player has no counter to pour at', () => {
+    // one counter and one helper, a wide stand and two helpers
+    const one = standGame({ up: null, rep: 3, seed: 15 });
+    one.setHelpers(1);
+    one.startSelling();
+    expect(one.playerCounters()).toEqual([]);
+    const two = standGame({ up: 'truck', rep: 3, seed: 16 });
+    two.setHelpers(2);
+    two.startSelling();
+    expect(two.playerCounters()).toEqual([]);
+    // the helpers serve; the player's taps do nothing
+    for (const g of [one, two]) {
+      g.setSpeed(4);
+      for (let i = 0; i < 4000 && g.phase === 'sell'; i++) {
+        g.update(0.05);
+        // ('no' once the day is over)
+        expect(['noCustomer', 'making', 'noCups', 'no']).toContain(g.serve());
+      }
+      expect(g.D.funnel.sold).toBeGreaterThan(0);
+      expect(g.servings.every((s) => !s || s.helper)).toBe(true);
+    }
+    // alone at a wide stand the player has both counters
+    const alone = standGame({ up: 'big_stand', rep: 3, seed: 17 });
+    alone.startSelling();
+    expect(alone.playerCounters()).toEqual([0, 1]);
+  });
+
   it('the last cup cannot be poured at both counters at once', () => {
     const g = standGame({ up: 'big_stand', rep: 3, seed: 12 });
     g.setHelpers(1);

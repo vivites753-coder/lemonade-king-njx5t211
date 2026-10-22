@@ -81,7 +81,7 @@ export const reportPanel: Panel = {
       [`${ico('btn_onlineads', '📱')} ${t('report.onlineAds')}`, r.onlineAds ?? 0],
       [`🦊 ${t('report.stolen')}`, r.stolen],
       [`🍳 ${t('report.wages')}`, r.wages ?? 0],
-      [`🧹 ${t('report.cleaning')}`, r.cleaning ?? 0],
+      [`${ico('cleaner', '🧹')} ${t('report.cleaning')}`, r.cleaning ?? 0],
       [`🔧 ${t('report.repairs')}`, r.repairs ?? 0],
       [`🎓 ${t('report.training')}`, r.training ?? 0],
       [`${ico('tax', '🧾')} ${t('report.tax', { n: Math.round(CONFIG.STORE_TAX * 100) })}`, r.tax ?? 0],
@@ -113,7 +113,7 @@ export const reportPanel: Panel = {
         </div>`}
         <div class="lesson">${lemiFace(true, r.lesson.key === 'lesson.profit' ? (r.profit >= 0 ? 'happy' : 'sad') : (LESSON_MOOD[r.lesson.key] ?? 'think'))}<div><b>💡 ${t('report.lesson')}</b>${lessonText}</div></div>
         ${storeBox(r)}
-        ${r.clean !== undefined ? `<div class="${r.clean < 60 ? 'warn-box' : 'note'}">🧹 ${t(r.clean < 60 ? 'report.dirty' : 'report.clean', { n: r.clean })}</div>` : ''}
+        ${r.clean !== undefined ? `<div class="${r.clean < 60 ? 'warn-box' : 'note'}">${r.clean < 60 ? ico('dirty', '🧹') : ico('btn_clean', '🧹')} ${t(r.clean < 60 ? 'report.dirty' : 'report.clean', { n: r.clean })}</div>` : ''}
         ${pts.length
           ? `<h3>${ico('pt_stand', '🏪')} ${t('points.title')} · ${signedCoin(r.pointsProfit)}</h3>
         <div class="card">${pts

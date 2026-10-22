@@ -5,6 +5,10 @@ import { uk } from './uk';
 
 const DICTS: Record<Lang, Record<string, string>> = { uk, en, ro };
 let current: Lang = 'uk';
+/** The player is a boy or a girl (see setGender). */
+let gender: 'm' | 'f' = 'm';
+/** "{впіймав|впіймала}": the word for a boy, then for a girl (a text that speaks to the player). */
+const GENDER_RE = /\{([^{}|]*)\|([^{}|]*)\}/g;
 
 /** Language buttons, in the order they are shown. */
 export const LANGS: { id: Lang; name: string }[] = [
@@ -23,16 +27,22 @@ export function setLang(l: Lang): void {
   if (typeof document !== 'undefined') document.documentElement.lang = current;
 }
 
+/** Who plays: the texts that speak to the player take the forms for a boy or for a girl ("{впіймав|впіймала}"). */
+export function setGender(avatar: 'boy' | 'girl'): void {
+  gender = avatar === 'girl' ? 'f' : 'm';
+}
+
 export function has(key: string): boolean {
   return key in DICTS[current] || key in uk;
 }
 
 /**
  * Translate a key. Params like {n} are replaced; a param value starting with "@" is itself translated
- * (a list "@a, @b" translates each part).
+ * (a list "@a, @b" translates each part); "{a boy's word|a girl's word}" takes the form for the player.
  */
 export function t(key: string, params?: Params): string {
   let s = DICTS[current][key] ?? (uk as Record<string, string>)[key] ?? key;
+  if (s.includes('|')) s = s.replace(GENDER_RE, (_m, boy: string, girl: string) => (gender === 'f' ? girl : boy));
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       const val =

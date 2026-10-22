@@ -81,7 +81,7 @@ function cleanerRow(g: Game, p: Point): string {
   if (!p.store || !st) return '';
   const pct = cleanPct(st);
   return `<div class="pt-seller pt-cleaner">
-    <span class="pt-face">🧹</span>
+    <span class="pt-face">${ico('cleaner', '🧹')}</span>
     <span class="grow"><b>${t(st.cleaner ? 'points.cleanerOn' : 'points.cleanerOff')}</b>
       <small>${t('points.wage', { n: CONFIG.CLEANER_WAGE })} · <span class="${pct < 60 ? 'neg' : ''}">${t('points.clean', { n: pct })}</span></small></span>
     <button class="btn btn-sm ${st.cleaner ? 'btn-r' : 'btn-g'}" data-act="cleaner:${p.id}" ${g.canManageStaff() ? '' : 'disabled'}>${t(st.cleaner ? 'staff.act.fire' : 'points.take')}</button>

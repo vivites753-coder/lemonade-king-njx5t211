@@ -2,7 +2,7 @@ import { CONFIG } from '../../core/config';
 import type { LocationId } from '../../core/types';
 import { UNIT_COST } from '../../data/goods';
 import { LOCATIONS } from '../../data/locations';
-import { EXTRAS, EXTRA_IDS, MENU, extraCost, extraFair } from '../../data/menu';
+import { EXTRAS, EXTRA_IDS, MENU, extraCost, extraFair, type ExtraId } from '../../data/menu';
 import type { Game } from '../../sim/game';
 import { skillStars } from '../../sim/points';
 import { t } from '../../i18n';
@@ -31,13 +31,16 @@ function stepper(act: string, value: string, canDec: boolean, canInc: boolean): 
   </span>`;
 }
 
+/** The pictures of the menu of the store (lists 12d; emoji until they are installed). */
+const EXTRA_IMG: Record<ExtraId, string> = { orange: 'gd_orange', multifruit: 'gd_juice', pastry: 'gd_pastry' };
+
 /** The menu of the store: what is in stock for it and the prices (with the fair price here and the cost). */
 function menuCard(g: Game): string {
   const S = g.S;
   const fair = LOCATIONS[S.location].fairPrice;
   const rows = EXTRA_IDS.map((id) => {
     const p = S.extraPrices[id];
-    return `<div class="kv"><span>${EXTRAS[id].icon} ${t(`extra.${id}`)} <small class="muted">${t('prep.menuHave', { n: g.extraPortions(id) })}</small></span>${stepper(`x${id}`, `<i class="coin"></i>${p}`, p > MENU.PRICE_MIN, p < MENU.PRICE_MAX)}</div>
+    return `<div class="kv"><span>${ico(EXTRA_IMG[id], EXTRAS[id].icon)} ${t(`extra.${id}`)} <small class="muted">${t('prep.menuHave', { n: g.extraPortions(id) })}</small></span>${stepper(`x${id}`, `<i class="coin"></i>${p}`, p > MENU.PRICE_MIN, p < MENU.PRICE_MAX)}</div>
           <small class="muted">${t('prep.menuFair', { fair: extraFair(id, fair), cost: round1(extraCost(id)) })}</small>`;
   }).join('');
   return `<h3>🧾 ${t('prep.menu')}</h3>
@@ -63,11 +66,11 @@ function storeCard(g: Game): string {
           <small class="muted">${t('prep.staffNote')}</small>
           ${free ? `<div style="margin-top:6px"><button class="btn btn-sm btn-g" data-act="hireStaff">${ico('pt_hire', '👤')} ${t('points.hireStaff')}</button></div>` : ''}
         </div>
-        <h3>🧹 ${t('prep.clean')}</h3>
+        <h3>${ico('btn_clean', '🧹')} ${t('prep.clean')}</h3>
         <div class="card">
           <div class="kv"><span>${t('prep.cleanNow')}</span><b class="${pct < 60 ? 'neg' : ''}">${pct}%</b></div>
           <div class="bar pb-bar clean-bar"><i style="width:${pct}%"></i></div>
-          ${toggle('cleaner', !!st.cleaner, `🧹 ${t('prep.cleaner', { n: CONFIG.CLEANER_WAGE })}`, t('prep.cleanerDesc'))}
+          ${toggle('cleaner', !!st.cleaner, `${ico('cleaner', '🧹')} ${t('prep.cleaner', { n: CONFIG.CLEANER_WAGE })}`, t('prep.cleanerDesc'))}
           <small class="muted">💡 ${t('prep.cleanTip')}</small>
         </div>`;
 }
