@@ -75,6 +75,8 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   bld_school: { h: 288, anchor: [0.5, 0.66] },
   bld_fountain: { h: 56, anchor: [0.5, 0.71] },
   bld_lifeguard: { h: 135, anchor: [0.5, 0.84] },
+  // the town hall (sheet 27): the anchor is the middle of its foot (3.3 x 1.5 tiles, see the place townhall)
+  bld_townhall: { h: 180.8, anchor: [0.493, 0.784] },
   // stand layers: every picture sits at its own spot around the table (dx, dy from the stand centre)
   // behind the table
   stand_cooler: { h: 26, anchor: [0.5, 0.9], dx: -24, dy: -18 },
@@ -107,6 +109,11 @@ export const SPRITE_META: Record<string, SpriteMeta> = {
   stand_juicer_lever: { h: 30, anchor: [0.5, 0.9], dx: 17, dy: -19 },
   // measured on the picture: the long side is 1.6 tiles, the top 22 px above the floor
   stand_table: { h: 76, anchor: [0.5, 0.66] },
+  // the counter of the store (sheet 26, made one door longer with tools/extend_iso.py): 2.8 x 0.55 tiles, the top
+  // STORE_TOP above the floor; the anchor is the middle of its foot, its front in line with the front of the table
+  stand_store_counter: { h: 79.9, anchor: [0.501, 0.651], dx: -25.1, dy: -7.0 },
+  // the card terminal on the counter (sheet 26b), on the right of the cups
+  stand_store_terminal: { h: 15, anchor: [0.5, 0.84], dx: 10.6, dy: -9.7 },
   // indoor places: the wall image covers both back walls; its anchor is the back corner on the floor
   wall_mall: { h: 311, anchor: [0.5, 0.383] },
   wall_station: { h: 311, anchor: [0.5, 0.383] },

@@ -7,6 +7,7 @@ import { MENU } from '../data/menu';
 import { POINTS } from '../data/staff';
 import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades';
 import { t } from '../i18n';
+import { repLevel } from '../sim/economy';
 import type { Game } from '../sim/game';
 import { coin, ico, locIco, stars } from './dom';
 import type { ModalSpec } from './overlays';
@@ -51,8 +52,9 @@ export function roadmapModal(g: Game): ModalSpec {
       const rep = g.S.rep;
       const best = g.S.bestRep;
       const next = LEVELS.find((l) => best < l - 1e-9);
-      const prev = next ? next - 1 : 4;
-      const k = next ? Math.max(0, Math.min(1, (rep - prev) / (next - prev))) : 1;
+      // the reputation is shown as a whole level and the green bar to the next one
+      const now = repLevel(rep);
+      const pct = Math.round(now.bar * 100);
       const levels = LEVELS.map((level) => {
         const reached = best >= level - 1e-9;
         const isNext = level === next;
@@ -66,7 +68,7 @@ export function roadmapModal(g: Game): ModalSpec {
           .join('');
         const state = reached
           ? `<span class="chip rm-chip ok">✅ ${t('roadmap.open')}</span>`
-          : `<span class="chip rm-chip">🔒 ${t('roadmap.left', { d: (level - rep).toFixed(1) })}</span>`;
+          : `<span class="chip rm-chip">🔒${level === now.level + 1 ? ` ${t('roadmap.left', { p: pct })}` : ''}</span>`;
         return `<div class="rm-level${reached ? ' reached' : ''}${isNext ? ' next' : ''}">
           <div class="rm-node">${'⭐'.repeat(level)}</div>
           <div class="rm-card">
@@ -77,9 +79,9 @@ export function roadmapModal(g: Game): ModalSpec {
       });
       return `<h2>🗺️ ${t('roadmap.title')}</h2>
         <div class="card rm-now">
-          <div class="kv"><span>${t('roadmap.now')}</span><b>${stars(rep)} ${rep.toFixed(2)}</b></div>
-          <div class="rm-bar"><i style="width:${Math.round(k * 100)}%"></i></div>
-          <small class="muted">${next ? t('roadmap.next', { n: next, d: Math.max(0, next - rep).toFixed(2) }) : t('roadmap.max')}</small>
+          <div class="kv"><span>${t('roadmap.now')}</span><b>${stars(now.level)} ${t('roadmap.level', { n: now.level })}</b></div>
+          <div class="rm-bar"><i style="width:${pct}%"></i></div>
+          <small class="muted">${next ? t('roadmap.next', { n: now.level + 1, p: pct }) : now.level < 5 ? `${t('roadmap.max')} · ${t('roadmap.next', { n: now.level + 1, p: pct })}` : t('roadmap.max')}</small>
         </div>
         <p class="note">💡 ${t('roadmap.how')}</p>
         <div class="rm-road">${levels.join('')}</div>

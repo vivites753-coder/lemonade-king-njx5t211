@@ -1,6 +1,7 @@
 """Turns a 5x4 sheet of flat top-down ground swatches (on magenta) into isometric 2:1 diamond tiles.
 
-Usage: python tools/make_tiles.py <sheet.jpg> <out_dir> [preview.png]
+Usage: python tools/make_tiles.py <sheet.jpg> <out_dir> [preview.png] [--store]
+  --store  the sheet is the 3x1 one of sheet 31: the floor of the store, the paving of the town square and its walk.
 
 Pipeline per swatch: cut -> (noise-like textures) remove baked lighting + make seamless by cross-fading the seams
 -> project to a 128x64 diamond (rotate 45 deg, squash 2:1) with 4x supersampling and a 3% overlap, so that
@@ -51,14 +52,19 @@ def runs(mask1d, min_len=100):
     return out
 
 
-def find_grid(img):
+# sheet 31 (--store): structured textures, only cropped (the planks and the stones keep their joints)
+STORE_SHEET = [('store_floor', 'keep'), ('plaza', 'keep'), ('plaza_walk', 'keep')]
+STORE_NAME = {'store_floor': 'tile_store_floor', 'plaza': 'tile_plaza', 'plaza_walk': 'tile_plaza_walk'}
+
+
+def find_grid(img, ncols=5, nrows=4):
     a = np.asarray(img).astype(np.float32)
     bg = np.median(np.concatenate([a[:6].reshape(-1, 3), a[-6:].reshape(-1, 3)]), axis=0)
     m = np.minimum(a[..., 0], a[..., 2]) - a[..., 1]
     solid = m < (np.minimum(bg[0], bg[2]) - bg[1]) * 0.5
     cols = runs(solid.mean(axis=0) > 0.25)
     rows = runs(solid.mean(axis=1) > 0.25)
-    assert len(cols) == 5 and len(rows) == 4, f'unexpected grid {len(cols)}x{len(rows)}'
+    assert len(cols) == ncols and len(rows) == nrows, f'unexpected grid {len(cols)}x{len(rows)}'
     return cols, rows
 
 
@@ -205,11 +211,43 @@ def to_diamond(tex):
     return out
 
 
+def store_tiles(img, out_dir, preview):
+    """Sheet 31: three square swatches in a row; each becomes one diamond tile (cropped, not blended)."""
+    cols, rows = find_grid(img, 3, 1)
+    tiles = {}
+    for i, (name, _mode) in enumerate(STORE_SHEET):
+        (x0, x1), (y0, y1) = cols[i], rows[0]
+        inset = int((x1 - x0) * 0.02)
+        sq = img.crop((x0 + inset, y0 + inset, x1 - inset, y1 - inset))
+        side = min(sq.size)
+        sq = sq.crop((0, 0, side, side)).resize((S, S), Image.LANCZOS)
+        # only the broad baked light is removed (a wide radius keeps the joints), else the floor shows a checkerboard
+        tiles[name] = to_diamond(flatten(sq, S / 3))
+        tiles[name].save(os.path.join(out_dir, STORE_NAME[name] + '.png'))
+        print(STORE_NAME[name])
+    if preview:  # the floor of the store behind the paving of the square and its walk
+        rows_map = ['ffffffff', 'ffffffff', 'ffffffff', 'cccccccc', 'CCCCCCCC', 'cccccccc']
+        pick = {'f': 'store_floor', 'c': 'plaza', 'C': 'plaza_walk'}
+        n = len(rows_map[0])
+        canvas = Image.new('RGBA', (TW * n + 40, TH * n + 40), (120, 170, 220, 255))
+        for y, row in enumerate(rows_map):
+            for x, ch in enumerate(row):
+                t = tiles[pick[ch]]
+                canvas.alpha_composite(t, ((x - y) * TW // 2 + n * TW // 2 + 20 - TW // 2, (x + y) * TH // 2 + 20))
+        canvas.save(preview)
+        print('preview', preview)
+
+
 def main():
-    sheet, out_dir = sys.argv[1], sys.argv[2]
-    preview = sys.argv[3] if len(sys.argv) > 3 else None
+    store = '--store' in sys.argv
+    args = [a for a in sys.argv[1:] if a != '--store']
+    sheet, out_dir = args[0], args[1]
+    preview = args[2] if len(args) > 2 else None
     os.makedirs(out_dir, exist_ok=True)
     img = Image.open(sheet).convert('RGB')
+    if store:
+        store_tiles(img, out_dir, preview)
+        return
     cols, rows = find_grid(img)
     tex = {}
     for i, (name, mode) in enumerate(SHEET):

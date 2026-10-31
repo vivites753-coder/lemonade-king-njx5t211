@@ -1,10 +1,11 @@
 import { CONFIG } from '../../core/config';
 import { EXTRAS, EXTRA_IDS } from '../../data/menu';
+import { repLevel } from '../../sim/economy';
 import { payback } from '../../sim/points';
 import { statusText } from '../points';
 import type { DayReport } from '../../sim/state';
 import { t } from '../../i18n';
-import { coin, ico, lemiFace, locIco, signedCoin, stars, type LemiMood } from '../dom';
+import { coin, ico, lemiFace, locIco, repBar, signedCoin, stars, type LemiMood } from '../dom';
 
 /** How Lemi looks telling the lesson of the day (thinking when not listed). */
 const LESSON_MOOD: Record<string, LemiMood> = {
@@ -19,6 +20,15 @@ const LESSON_MOOD: Record<string, LemiMood> = {
   'lesson.storePaid': 'happy',
 };
 import type { Panel } from './types';
+
+/** How the reputation changed over the day: a new whole level, or how much of the bar filled (or emptied). */
+function repChange(start: number, end: number): string {
+  const a = repLevel(start);
+  const b = repLevel(end);
+  if (b.level > a.level) return t('report.repLevelUp', { n: b.level });
+  if (b.level < a.level) return t('report.repLevelDown', { n: b.level });
+  return `${Math.round(Math.abs(b.bar - a.bar) * 100)}%`;
+}
 
 function fbar(label: string, n: number, max: number): string {
   const w = max > 0 ? Math.max(2, Math.round((n / max) * 100)) : 0;
@@ -139,9 +149,9 @@ export const reportPanel: Panel = {
         ${r.unlocked?.length ? `<div class="good-box">🔓 ${t('report.unlocked', { list: r.unlocked.map((id) => t(`loc.${id}.name`)).join(', ') })}</div>` : ''}
         ${r.broke?.length ? `<div class="warn-box">🔧 ${t('report.broke', { list: r.broke.map((id) => t(`equip.${id}`)).join(', ') })}</div>` : ''}
         ${r.spoilTomorrow ? `<div class="warn-box">⚠️ ${t('report.spoilTomorrow', { n: r.spoilTomorrow })}</div>` : ''}
-        <div class="card row"><span class="grow"><b>⭐ ${t('report.rep')}</b><br>${stars(r.repEnd)} ${r.repEnd.toFixed(1)}
+        <div class="card row"><span class="grow"><b>⭐ ${t('report.rep')}</b><br>${stars(repLevel(r.repEnd).level)} <b>${t('roadmap.level', { n: repLevel(r.repEnd).level })}</b> ${repBar(r.repEnd, 'wide')}
           <button class="link-btn" data-act="roadmap">🗺️ ${t('roadmap.title')}</button></span>
-          <b class="${r.repEnd >= r.repStart ? 'pos' : 'neg'}">${r.repEnd >= r.repStart ? ico('profit_up', '▲') : ico('profit_down', '▼')} ${Math.abs(r.repEnd - r.repStart).toFixed(2)}</b></div>
+          <b class="${r.repEnd >= r.repStart ? 'pos' : 'neg'}">${r.repEnd >= r.repStart ? ico('profit_up', '▲') : ico('profit_down', '▼')} ${repChange(r.repStart, r.repEnd)}</b></div>
         ${r.stockValue ? `<div class="note">📦 ${t('report.stock', { n: r.stockValue })}</div>` : ''}
       </div>
       <div class="panel-foot">

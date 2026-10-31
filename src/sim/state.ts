@@ -41,6 +41,8 @@ export interface Settings {
   reduceMotion: boolean;
   dyslexia: boolean;
   showZone: boolean;
+  /** Fewer frames and pixels, no heat haze: the phone stays cooler and the battery lasts longer. */
+  batterySaver?: boolean;
   /** Where the player put the selling buttons: the centre of each as shares of the screen, per kind of screen. */
   hudLayout: { phone?: Record<string, [number, number]>; pc?: Record<string, [number, number]> };
 }
@@ -304,6 +306,8 @@ export interface DayState {
   funnel: Funnel;
   freeCups: number;
   repStart: number;
+  /** The best reputation in the morning: what opened today is announced in the evening report. */
+  bestRepStart: number;
   coinsStart: number;
   spoiledOvernight: number;
   rottenToday: number;
@@ -407,6 +411,7 @@ export function newDayState(s: GameState, weather: WeatherId, forecast: WeatherI
     funnel: emptyFunnel(),
     freeCups: 0,
     repStart: s.rep,
+    bestRepStart: s.bestRep,
     coinsStart: s.coins,
     spoiledOvernight: 0,
     rottenToday: 0,

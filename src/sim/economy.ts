@@ -220,12 +220,51 @@ export function satisfaction(q: number, price: number, maxPrice: number, waited:
 }
 
 /** Reputation grows slowly (harder near 5 stars) and falls quickly. Branded cups speed up the growth. */
-export function repDelta(sat: number, rep: number, up: Owned = {}): number {
+export function repDelta(sat: number, up: Owned = {}): number {
   const d = (sat - CONFIG.REP_SAT_PIVOT) * CONFIG.REP_SAT_SCALE;
   if (d <= 0) return d;
-  let mult = 1;
+  let mult = CONFIG.REP_GAIN;
   for (const id of Object.keys(up) as UpgradeId[]) mult *= UPGRADES[id].repMult ?? 1;
-  return d * mult * Math.max(0, (5 - rep) / 4);
+  return d * mult;
+}
+
+/** How long the bar of a reputation level is, in bars of level 1: every level takes REP_LEVEL_GROWTH times longer
+ * than the one before (below level 1 the bar is as long as level 1's). */
+export function repLevelCost(level: number): number {
+  return CONFIG.REP_LEVEL_GROWTH ** (Math.max(1, Math.min(4, level)) - 1);
+}
+
+/**
+ * The reputation after a change of `delta` bars of level 1 (what repDelta gives for a sale, a find, an angry
+ * customer). Its whole part is the level, the rest is how far the bar to the next level is filled: the longer bar of a
+ * higher level fills (and empties) more slowly. A change can cross whole levels, up or down; it stays within 0..5.
+ */
+export function addRep(rep: number, delta: number): number {
+  let r = clamp(rep, 0, 5);
+  let left = delta;
+  while (left > 1e-12 && r < 5) {
+    const level = Math.floor(r + 1e-9);
+    const cost = repLevelCost(level);
+    const room = (level + 1 - r) * cost;
+    if (left < room) return r + left / cost;
+    left -= room;
+    r = level + 1;
+  }
+  while (left < -1e-12 && r > 0) {
+    const level = Math.ceil(r - 1e-9) - 1;
+    const cost = repLevelCost(level);
+    const room = (r - level) * cost;
+    if (-left < room) return r + left / cost;
+    left += room;
+    r = level;
+  }
+  return r;
+}
+
+/** The whole level of a reputation (0..5) and how far the bar to the next level is filled (0..1; full at 5). */
+export function repLevel(rep: number): { level: number; bar: number } {
+  const level = Math.min(5, Math.floor(rep + 1e-9));
+  return { level, bar: level >= 5 ? 1 : clamp(rep - level, 0, 1) };
 }
 
 /** Seconds (simulation) to pour one cup. */

@@ -490,7 +490,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
       { id: 'prop_lamp', x: 1.4, y: 7.0 },
       { id: 'prop_lamp', x: 11.0, y: 7.0 },
       // the town hall at the front corner of the square, behind the walk
-      { id: 'bld_townhall', x: 0.2, y: 9.15, w: 3.3, d: 2.7 },
+      { id: 'bld_townhall', x: 0.2, y: 9.7, w: 3.3, d: 1.5 },
       { id: 'prop_lamp', x: 4.6, y: 9.35 },
       { id: 'prop_flowers', x: 5.6, y: 10.2 },
       { id: 'prop_bench', x: 6.9, y: 9.6 },

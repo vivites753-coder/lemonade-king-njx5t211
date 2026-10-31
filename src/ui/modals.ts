@@ -109,6 +109,7 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         ${toggle('set:music', s.music, `🎵 ${t('settings.music')}`)}
         ${toggle('set:showZone', s.showZone, `🟡 ${t('settings.showZone')}`)}
         ${toggle('set:reduceMotion', s.reduceMotion, `🐢 ${t('settings.reduceMotion')}`)}
+        ${toggle('set:batterySaver', !!s.batterySaver, `🔋 ${t('settings.batterySaver')}`)}
         ${toggle('set:dyslexia', s.dyslexia, `🔤 ${t('settings.dyslexia')}`)}
         <h3>🔠 ${t('settings.fontSize')}</h3>
         <div class="row font-sizes">

@@ -38,9 +38,11 @@ const BALLOON_ART: Record<string, string> = { '#ff6b6b': 'item_balloon_red', '#4
 function dog(ctx: Ctx, c: Critter, sx: number, sy: number): void {
   const art = DOG_ART[c.color ?? '#a0522d'] ?? 'char_dog_brown';
   if (getImage(art)) {
+    // the dogs and the cat look to the left in their pictures (dirX 1 = going to the right of the screen); the ones
+    // drawn below look to the right
     shadow(ctx, sx, sy, 12, 0.18);
     const hop = c.moving ? Math.abs(Math.sin(c.anim * 1.5)) * 2.5 : 0;
-    pic(ctx, art, sx, sy - hop, { w: 31 }, { flip: c.dirX < 0, ay: 0.9 });
+    pic(ctx, art, sx, sy - hop, { w: 31 }, { flip: c.dirX > 0, ay: 0.9 });
     return;
   }
   const step = c.moving ? Math.sin(c.anim) * 2.5 : 0;
@@ -65,7 +67,7 @@ function cat(ctx: Ctx, c: Critter, sx: number, sy: number): void {
   if (getImage('char_cat_walk')) {
     shadow(ctx, sx, sy, 10, 0.18);
     const hop = c.moving ? Math.abs(Math.sin(c.anim * 0.9)) * 1.5 : 0;
-    pic(ctx, c.moving ? 'char_cat_walk' : 'char_cat_sit', sx, sy - hop, { h: 31 }, { flip: c.dirX < 0, ay: 0.92 });
+    pic(ctx, c.moving ? 'char_cat_walk' : 'char_cat_sit', sx, sy - hop, { h: 31 }, { flip: c.dirX > 0, ay: 0.92 });
     return;
   }
   const step = c.moving ? Math.sin(c.anim * 0.6) * 1.8 : 0;

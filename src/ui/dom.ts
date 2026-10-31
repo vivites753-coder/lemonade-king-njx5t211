@@ -3,6 +3,7 @@ import type { LocationId, WeatherId } from '../core/types';
 import { LOCATIONS } from '../data/locations';
 import { WEATHER } from '../data/weather';
 import { t } from '../i18n';
+import { repLevel } from '../sim/economy';
 export { fmtHour } from '../sim/lessons';
 
 /** A phone, found in index.html before the first layout: there the whole page is drawn at 60 %. */
@@ -88,6 +89,12 @@ export function stars(rep: number): string {
         : '<span class="off">★</span>';
   }
   return s + '</span>';
+}
+
+/** The green bar of the reputation: how far it is to the next whole level (full at the top level). */
+export function repBar(rep: number, cls = ''): string {
+  const { bar } = repLevel(rep);
+  return `<span class="rep-bar${cls ? ` ${cls}` : ''}"><i style="width:${Math.round(bar * 100)}%"></i></span>`;
 }
 
 export function dots(n: number, max = 5): string {

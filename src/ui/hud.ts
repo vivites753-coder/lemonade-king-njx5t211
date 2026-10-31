@@ -1,9 +1,11 @@
 // Heads-up display: top bar (always), funnel card and selling controls (only while selling).
 import type { Phase } from '../core/types';
 import { t } from '../i18n';
+import { repLevel } from '../sim/economy';
 import type { Game } from '../sim/game';
 import { payback, pointOpensAt, pointProgress, pointWorkers, skillStars, type Point } from '../sim/points';
-import { fmtHour, ico, locIco, round1, signedCoin, stars, weatherIco } from './dom';
+import { dayPart } from './dayPath';
+import { fmtHour, ico, locIco, repBar, round1, signedCoin, stars, weatherIco } from './dom';
 
 /** Phases in which the scene is in view and the player may look at their other stands. */
 const VIEW_PHASES: Phase[] = ['morning', 'prepare', 'sell', 'report', 'shop'];
@@ -52,7 +54,7 @@ export class Hud {
       <div class="hud-top" data-el="top">
         <span class="chip coins" title="coins"><i class="coin"></i><b data-el="coins"></b></span>
         <span class="chip">${ico('day', '📅')} <b data-el="day"></b></span>
-        <span class="chip">${ico('clock', '🕐')} <b data-el="clock"></b></span>
+        <span class="chip tod" data-el="tod">${ico('clock', '🕐')} <b data-el="clock"></b><span class="tod-nm" data-el="todName"></span></span>
         <span class="chip" data-el="weather"></span>
         <span class="chip" data-el="loc"></span>
         <button class="chip chip-btn" data-hud="roadmap" data-el="rep" aria-label="${t('roadmap.title')}" title="${t('roadmap.title')}"></button>
@@ -189,10 +191,17 @@ export class Hud {
     // on small screens only the number (the word is hidden like the other labels)
     this.set('day', `<span class="lbl">${t('hud.day', { n: '' }).trim()} </span>${S.day}`);
     this.set('clock', fmtHour(D.hour));
+    // the clock takes the colour of the part of the day: the morning, the day (selling) or the evening
+    const part = dayPart(g.phase);
+    const tod = this.els.tod;
+    if (tod && part && tod.dataset.tod !== part) tod.dataset.tod = part;
+    this.set('todName', part ? t(`day.${part}`) : '');
     // .lbl parts are hidden on small screens, .sm parts are shown only there
     this.set('weather', `${weatherIco(D.weather)}<span class="lbl"> ${t(`weather.${D.weather}`)}</span>`);
     this.set('loc', `${locIco(S.location)}<span class="lbl"> ${t(`loc.${S.location}.name`)}</span>`);
-    this.set('rep', `<span class="lbl">${stars(S.rep)}</span><span class="sm">${ico('star_full', '⭐')}</span> ${S.rep.toFixed(1)}`);
+    // the reputation: its whole level (as stars and a number) and the green bar to the next one
+    const lv = repLevel(S.rep);
+    this.set('rep', `<span class="rep-stack"><span><span class="lbl">${stars(lv.level)}</span><span class="sm">${ico('star_full', '⭐')}</span> <b>${lv.level}</b></span>${repBar(S.rep)}</span>`);
     this.set('sound', S.settings.sound ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇'));
     this.show('points', g.pointsOpen() || S.points.length > 0);
     // the other stands: a switch, and a card about the one shown (the controls of the own stand step aside); the store

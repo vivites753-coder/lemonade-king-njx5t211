@@ -2,6 +2,7 @@ import './styles.css';
 import { musicFor, playMusic } from './audio/music';
 import { initAudio } from './audio/sfx';
 import { installErrorLog, logError } from './core/errors';
+import { paceFrame } from './core/pacing';
 import { readSave, wipeOnUpdate, writeSave } from './core/save';
 import { asLang, setLang, t } from './i18n';
 import { loadAssets } from './render/assets';
@@ -56,9 +57,15 @@ function step(where: string, fn: () => void): void {
 }
 
 let last = performance.now();
+let drawn = -Infinity;
 function frame(now: number): void {
   // the next frame is asked for first, whatever goes wrong below
   requestAnimationFrame(frame);
+  // a phone screen asks for up to 120 frames a second, which only warms the phone up: the game draws as many as it
+  // needs now (ui.fps)
+  const due = paceFrame(now, drawn, ui.fps());
+  if (due === null) return;
+  drawn = due;
   const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
   last = now;
   step('ui', () => ui.update());

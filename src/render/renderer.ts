@@ -37,6 +37,8 @@ const PHONE_ZOOM = 1.4 * 1.4 * 0.6 * 0.85;
 const PHONE_SELL_ZOOM = 1.5;
 /** Two fingers zoom the field between "everything fits" and this many times that. */
 const PINCH_MAX = 4;
+/** A phone or a tablet (index.html marks them): the scene is drawn with fewer pixels there, see resize. */
+const TOUCH_DEVICE = typeof document !== 'undefined' && !!document.documentElement.dataset.phone;
 
 type Kind = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; // decor, ped, car, stand, thief, critter, a side part of the stand, a low wall of the store, the cleaner
 interface Item {
@@ -141,7 +143,10 @@ export class Renderer {
 
   resize(): void {
     const r = this.canvas.getBoundingClientRect();
-    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    // a phone's screen has about three of its pixels per CSS px: 1.25 is sharp enough for this art and fills half as
+    // many pixels in every frame (the phone stays cooler); the battery saver goes down to 1
+    const cap = this.game.S.settings.batterySaver ? 1 : TOUCH_DEVICE ? 1.25 : 2;
+    this.dpr = Math.min(cap, window.devicePixelRatio || 1);
     this.w = Math.max(1, r.width);
     this.h = Math.max(1, r.height);
     this.canvas.width = Math.round(this.w * this.dpr);
@@ -274,7 +279,9 @@ export class Renderer {
     const ctx = this.ctx;
     this.t += dt;
     const reduce = g.S.settings.reduceMotion;
-    const hour = g.phase === 'title' ? 9.5 : g.D.hour;
+    // the evening stages (the report, the shop) look like the evening even after a day that ended early
+    const evening = g.phase === 'report' || g.phase === 'shop';
+    const hour = g.phase === 'title' ? 9.5 : evening ? Math.max(g.D.hour, 19.5) : g.D.hour;
     ENV.t = this.t;
     ENV.hour = hour;
     ENV.weather = g.D.weather;
@@ -313,8 +320,10 @@ export class Renderer {
     ctx.scale(this.cam.s, this.cam.s);
     this.drawWorld(ctx, dt);
     ctx.restore();
-    // a hot day: the picture trembles in the rising hot air (more near the ground, most at midday)
-    if (g.D.weather === 'hot' && !reduce && !ENV.indoor && g.phase !== 'title') this.heatHaze(hour);
+    // a hot day: the picture trembles in the rising hot air (more near the ground, most at midday); it copies the
+    // whole screen twice in every frame, too much for a phone
+    const haze = !TOUCH_DEVICE && !g.S.settings.batterySaver;
+    if (g.D.weather === 'hot' && haze && !reduce && !ENV.indoor && g.phase !== 'title') this.heatHaze(hour);
     // its copy of the screen is big on a phone (8-16 MB): let it go on other days
     else this.haze = null;
 

@@ -23,12 +23,32 @@ interface Cloud {
 }
 
 /** The tint of the whole picture in some weathers (none indoors). */
-const TINT: Partial<Record<WeatherId, string>> = {
-  cloudy: 'rgba(60,70,90,0.10)',
-  rain: 'rgba(40,55,80,0.22)',
-  cold: 'rgba(160,190,230,0.16)',
-  hot: 'rgba(255,170,60,0.07)',
+/** The tint of the weather over the scene: [r, g, b, alpha]. */
+type Rgba = [number, number, number, number];
+const TINT: Partial<Record<WeatherId, Rgba>> = {
+  cloudy: [60, 70, 90, 0.1],
+  rain: [40, 55, 80, 0.22],
+  cold: [160, 190, 230, 0.16],
+  hot: [255, 170, 60, 0.07],
 };
+
+/** See-through colours laid over each other, as the one colour that looks the same (one fill of the screen instead
+ * of several); null when nothing is left to see. */
+function compose(layers: Rgba[]): string | null {
+  // premultiplied by alpha
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let a = 0;
+  for (const [lr, lg, lb, la] of layers) {
+    if (la <= 0) continue;
+    r = lr * la + r * (1 - la);
+    g = lg * la + g * (1 - la);
+    b = lb * la + b * (1 - la);
+    a = la + a * (1 - la);
+  }
+  return a > 0.002 ? `rgba(${Math.round(r / a)},${Math.round(g / a)},${Math.round(b / a)},${a.toFixed(3)})` : null;
+}
 
 const SKY: Record<WeatherId, [string, string]> = {
   sunny: ['#8fd3ff', '#e3f6ff'],
@@ -124,10 +144,16 @@ export class WeatherFx {
   }
 
   drawOverlay(ctx: Ctx, w: number, h: number, weather: WeatherId, hour: number, indoor = false): void {
-    // weather tint
+    // the tint of the weather and the light of the hour (a warm morning, the sunset, the night), in one fill
+    const layers: Rgba[] = [];
     const tint = TINT[weather];
-    if (tint && !indoor) {
-      ctx.fillStyle = tint;
+    if (tint && !indoor) layers.push(tint);
+    if (hour < 9.5) layers.push([255, 200, 120, (0.12 * (9.5 - hour)) / 1.5]);
+    layers.push([255, 130, 50, 0.14 * smooth(17, 19.5, hour)]);
+    layers.push([30, 30, 90, 0.25 * smooth(19, 20.5, hour)]);
+    const fill = compose(layers);
+    if (fill) {
+      ctx.fillStyle = fill;
       ctx.fillRect(0, 0, w, h);
     }
     if (this.drops.length) {
@@ -146,21 +172,6 @@ export class WeatherFx {
       ctx.rotate(l.a);
       ellipse(ctx, 0, 0, 5, 2.5, l.c);
       ctx.restore();
-    }
-    // time of day
-    if (hour < 9.5) {
-      ctx.fillStyle = `rgba(255,200,120,${0.12 * (9.5 - hour) / 1.5})`;
-      ctx.fillRect(0, 0, w, h);
-    }
-    const dusk = smooth(17, 19.5, hour);
-    if (dusk > 0) {
-      ctx.fillStyle = `rgba(255,130,50,${0.14 * dusk})`;
-      ctx.fillRect(0, 0, w, h);
-    }
-    const night = smooth(19, 20.5, hour);
-    if (night > 0) {
-      ctx.fillStyle = `rgba(30,30,90,${0.25 * night})`;
-      ctx.fillRect(0, 0, w, h);
     }
   }
 }

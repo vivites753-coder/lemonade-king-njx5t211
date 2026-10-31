@@ -24,6 +24,7 @@ import {
   maxPitchers,
   pitcherCost,
   quality,
+  addRep,
   repDelta,
   satisfaction,
   iceBonus,
@@ -1577,9 +1578,25 @@ export class Game {
     }
   }
 
+  /**
+   * The reputation changes by `delta` bars of level 1 (see addRep). A new whole level opens what it promises at once,
+   * right when the number is whole (not at the end of the day): the places, the upgrades and the rest.
+   */
+  private changeRep(delta: number): void {
+    const S = this.S;
+    S.rep = addRep(S.rep, delta);
+    if (S.rep <= S.bestRep) return;
+    const before = Math.floor(S.bestRep + 1e-9);
+    S.bestRep = S.rep;
+    const level = Math.floor(S.rep + 1e-9);
+    if (level <= before) return;
+    this.sfx('repUp');
+    this.toast(level >= 5 ? 'toast.repMax' : 'toast.repLevel', { n: level }, 'good');
+  }
+
   private onImpatient(p: Ped): void {
     this.D.funnel.impatient++;
-    this.S.rep = clamp(this.S.rep + CONFIG.REP_ANGRY, 0, 5);
+    this.changeRep(CONFIG.REP_ANGRY);
     this.street.leave(p, '😠');
     this.tip('queue');
   }
@@ -1702,7 +1719,7 @@ export class Game {
     else if (fill === 'under') sat = Math.max(0, sat - CONFIG.UNDERFILL_PENALTY);
     // a dirty floor pleases nobody
     sat = Math.max(0, sat - CONFIG.DIRT_SAT * this.dirt());
-    S.rep = clamp(S.rep + repDelta(sat, S.rep, this.active()), 0, 5);
+    this.changeRep(repDelta(sat, this.active()));
     const emote = fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : '😐';
     this.street.serveDone(p, emote);
     this.bus.emit('sale', { x: p.x, y: p.y, amount: price, sat, free: false, icon: e.icon });
@@ -1917,7 +1934,7 @@ export class Game {
     if (cold) sat = Math.min(1, sat + iceBonus(D.weather, LOCATIONS[S.location].indoor));
     // a dirty floor pleases nobody
     sat = Math.max(0, sat - CONFIG.DIRT_SAT * this.dirt());
-    S.rep = clamp(S.rep + repDelta(sat, S.rep, up), 0, 5);
+    this.changeRep(repDelta(sat, up));
     const bal = tasteBalance(D.recipeUsed);
     const emote = free ? '🎁' : fill === 'under' && sat < 0.75 ? '😕' : sat >= 0.75 ? '😍' : sat >= 0.5 ? '🙂' : bal >= 2 ? '😝' : bal <= -2 ? '🥴' : '😐';
     this.street.serveDone(p, emote);
@@ -2148,8 +2165,9 @@ export class Game {
       tips: D.tips,
       store,
     };
-    // reputation milestones open new places for good
-    const before = S.bestRep;
+    // reputation milestones open new places for good (they opened while selling, see changeRep: the report sums up
+    // the day)
+    const before = D.bestRepStart ?? D.repStart;
     S.bestRep = Math.max(S.bestRep, S.rep);
     report.unlocked = LOCATION_IDS.filter((id) => !locationUnlocked(before, id) && locationUnlocked(S.bestRep, id));
     report.pointsUnlocked = before < POINTS.MIN_REP - 1e-9 && pointsOpen(S);
@@ -2331,7 +2349,7 @@ export class Game {
         if (this.servings[c!]?.ped === p) this.servings[c!] = null;
         this.street.leave(p, '😡', 3);
         this.critters.splash(p.x, p.y);
-        this.S.rep = clamp(this.S.rep - INCIDENT.HELPER_SPILL_REP, 0, 5);
+        this.changeRep(-INCIDENT.HELPER_SPILL_REP);
         this.sfx('splash');
         this.card('acc.helperSpill', def.icon);
         break;
@@ -2386,7 +2404,7 @@ export class Game {
     this.critters.remove(id);
     this.S.coins += def.reward;
     this.D.bonus += def.reward;
-    this.S.rep = clamp(this.S.rep + def.rep, 0, 5);
+    this.changeRep(def.rep);
     this.bus.emit('found', { x: c.x, y: c.y, amount: def.reward, icon: def.icon });
     this.sfx('coin');
     if (c.kind === 'cat') this.sfx('meow');

@@ -6,6 +6,7 @@ import type { AgeMode, Avatar, Lang, Phase } from '../core/types';
 import { setGender, setLang, t } from '../i18n';
 import type { Game } from '../sim/game';
 import type { Renderer } from '../render/renderer';
+import { dayPart, dayPathHtml } from './dayPath';
 import { Hud } from './hud';
 import { confirmModal, gateModal, glossaryModal, infoModal, settingsModal } from './modals';
 import { Overlays } from './overlays';
@@ -58,6 +59,10 @@ export class UI implements UIApi {
   /** The window size the layout was made for. */
   private seenW = 0;
   private seenH = 0;
+  /** When the top bar and the stock column were last updated, and when it was measured whether a window covers the
+   * stock column (performance.now()). */
+  private hudAt = 0;
+  private stockAt = 0;
   /** Phones: the full-screen panel can be hidden to look at the scene. */
   private panelHidden = false;
   private toggleEl: HTMLElement;
@@ -374,6 +379,7 @@ export class UI implements UIApi {
     const body = this.panelEl.querySelector('.panel-body');
     const scroll = body ? body.scrollTop : 0;
     this.panelEl.innerHTML = this.current.render(this.g, this);
+    this.markDay();
     const nb = this.panelEl.querySelector('.panel-body');
     if (nb) nb.scrollTop = scroll;
     // no slide-in animation on re-render
@@ -397,6 +403,7 @@ export class UI implements UIApi {
       this.panelEl.dataset.panel = panel.id;
       if (panel.mount) panel.mount(this.panelEl, this.g, this);
       else this.panelEl.innerHTML = panel.render(this.g, this);
+      this.markDay();
     } else {
       this.panelEl.classList.add('hidden');
       this.panelEl.innerHTML = '';
@@ -406,6 +413,18 @@ export class UI implements UIApi {
     this.panelHidden = false;
     this.toggleEl.classList.toggle('hidden', !panel || p === 'title');
     this.applyPanelHidden();
+  }
+
+  /** The window of a stage shows where in the day the player is (the path of the day under its title) and takes the
+   * colours of that part of the day. */
+  private markDay(): void {
+    const p = this.g.phase;
+    const part = dayPart(p);
+    if (part) this.panelEl.dataset.tod = part;
+    else delete this.panelEl.dataset.tod;
+    const head = this.panelEl.querySelector('.panel-head');
+    if (!part || !head || head.nextElementSibling?.classList.contains('day-path')) return;
+    head.insertAdjacentHTML('afterend', dayPathHtml(p));
   }
 
   private applyPanelHidden(): void {
@@ -455,10 +474,30 @@ export class UI implements UIApi {
     }
     const sell = this.g.phase === 'sell';
     this.g.paused = sell && (this.userPaused || this.overlays.active);
-    this.hud.update(this.userPaused);
-    this.resources.update(this.g.phase);
-    this.hud.showStock(this.stockCovered());
+    // the top bar and the stock column: thirty times a second is plenty (their texts change a few times a second)
+    const now = performance.now();
+    if (now - this.hudAt >= 30) {
+      this.hudAt = now;
+      this.hud.update(this.userPaused);
+      this.resources.update(this.g.phase);
+    }
+    // where the windows lie changes now and then; measuring it makes the page lay out, so four times a second
+    if (now - this.stockAt >= 250) {
+      this.stockAt = now;
+      this.hud.showStock(this.stockCovered());
+    }
     this.arrow.update(this.overlays.tipKey(), (w) => this.worldSpot(w));
+  }
+
+  /**
+   * How many frames a second the game needs now (src/main.ts draws no more): 60 while selling, 30 when the scene is
+   * calm (the stages of the morning and the evening, a pause, the title), 20 behind a big window or a card that
+   * covers it. The battery saver keeps selling at 30 too.
+   */
+  fps(): number {
+    if (this.overlays.active || (!!this.current?.wide && !this.panelHidden)) return 20;
+    const live = this.g.phase === 'sell' && !this.g.paused;
+    return live && !this.g.S.settings.batterySaver ? 60 : 30;
   }
 
   /** A window lies over the stock column on the left (on phones the windows fill the screen). */
@@ -512,6 +551,8 @@ export class UI implements UIApi {
     document.documentElement.style.setProperty('--fs', String(s.fontScale ?? 1));
     this.hud.setLayout(this.layoutOf(isPhone() ? 'phone' : 'pc'));
     document.body.classList.toggle('reduce-motion', s.reduceMotion);
+    // the battery saver draws the scene with fewer pixels
+    this.r.resize();
   }
 
   // ---------------------------------------------------------------- input

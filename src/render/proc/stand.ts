@@ -17,6 +17,18 @@ import { drawTruckBistro, drawTruckStools, TRUCK_BISTRO, TRUCK_STOOLS, truckRoof
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
 const TABLE_H = 22;
+/** The top of the store's counter in its picture (the things on it stand this high; the drawn counter is TABLE_H). */
+const STORE_TOP = 24;
+/**
+ * The banner (an upgrade) with its picture: a tall flag on a pole on the left of the table, its cloth facing the street
+ * (tiles from the stand; further left beside the blue table of a wide stand). Without the picture the banner hangs
+ * on the front of the table.
+ */
+const FLAG = { x: -1.95, xWide: -3.3, y: 0.15, h: 98, w: 0.9 };
+/** The cloth in the picture of the banner: its left and right edges and the top at the left edge (shares of the
+ * picture), and how much its top edge falls to the right (px per px; the picture is drawn on a face that looks to the
+ * lower left). */
+const FLAG_CLOTH = { x0: 0.033, x1: 0.972, y0: 0.0013, slope: 0.46 };
 /** Where the price is written on the picture of the sign, from the picture's anchor point. */
 const SIGN_TEXT = { x: 0, y: -24 };
 /** Height of the truck roof (the speaker stands on it). */
@@ -198,6 +210,48 @@ function banner(ctx: Ctx): void {
   });
 }
 
+/** Where the pole of the banner's flag stands (tile x; its y is SY + FLAG.y). Under the roof of a tent the flag would
+ * be hidden: then it stands outside the tent, on its left. */
+function flagX(wide: boolean, tent: boolean): number {
+  const x = SX + (wide ? FLAG.xWide : FLAG.x);
+  const box = tent ? tentBox(wide) : null;
+  return box ? Math.min(x, (box.left - 3) / 32 + SY + FLAG.y - FLAG.w) : x;
+}
+
+/** The flag of the banner: the foot, the pole and its arm, the cloth of the picture, the word down the cloth. */
+function bannerFlag(ctx: Ctx, x: number): void {
+  const img = getImage('stand_banner');
+  if (!img) return;
+  const y = SY + FLAG.y;
+  const w = FLAG.w * 32;
+  const [bx, by] = P(x, y);
+  ellipse(ctx, bx, by, 6.5, 3.2, '#868e96', '#495057', 0.8);
+  box(ctx, x - 0.025, y - 0.025, 0.05, 0.05, FLAG.h, 0, '#dee2e6');
+  // the cloth sways a little (more in the wind)
+  const sway = ENV.reduceMotion ? 0 : Math.sin(ENV.t * 2.3) * (ENV.weather === 'wind' ? 0.05 : 0.015);
+  faceY(ctx, x, y, FLAG.h - 2, () => {
+    rrect(ctx, -1.5, -2.5, w + 3, 3, 1.5, '#adb5bd');
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    const clothW = (FLAG_CLOTH.x1 - FLAG_CLOTH.x0) * iw;
+    const s = w / clothW;
+    const clothH = (ih * (1 - FLAG_CLOTH.y0) - (FLAG_CLOTH.slope * clothW) / 2) * s;
+    ctx.save();
+    // straighten the picture into this face, then let its lower part swing
+    ctx.transform(1, 0, sway, 1, 0, 0);
+    ctx.transform(1, -FLAG_CLOTH.slope, 0, 1, 0, 0);
+    ctx.drawImage(img, -FLAG_CLOTH.x0 * iw * s, -FLAG_CLOTH.y0 * ih * s, iw * s, ih * s);
+    ctx.restore();
+    // the word, letter under letter
+    const word = [...t('world.banner')];
+    const step = Math.min(7.2, (clothH - 14) / word.length);
+    ctx.save();
+    ctx.transform(1, 0, sway, 1, 0, 0);
+    word.forEach((ch, i) => text(ctx, ch, w / 2, 8.5 + i * step, step * 0.98, '#c92a2a', 'center', 900));
+    ctx.restore();
+  });
+}
+
 function sign(ctx: Ctx, price: number): void {
   const x = SX - 1.62;
   const y = SY + 0.5;
@@ -333,6 +387,11 @@ function tentBox(wide: boolean): { left: number; top: number; w: number; h: numb
   const ax = sx + ox + (m.dx ?? 0);
   const ay = sy + oy + (m.dy ?? 0);
   return { left: ax - w * m.anchor[0], top: ay - h * m.anchor[1], w, h };
+}
+
+/** The tent is up: bought, outdoors, and not over the truck or in the store. */
+function tentUp(g: SceneSource): boolean {
+  return !!g.S.upgrades.tent && !LOCATIONS[g.S.location].indoor && !g.active().truck && !LOCATIONS[g.S.location].store;
 }
 
 /** World px on the ground back to tiles (the inverse of P with z = 0). */
@@ -477,7 +536,7 @@ const SPOTS = {
 };
 
 /** Things of the stand that stand apart from the table: each is sorted among the people by its own depth. */
-export type StandPart = 'sign' | 'mascot' | 'tv' | 'table2' | 'tentleg0' | 'tentleg1' | 'tentleg2' | 'bistro' | 'stools';
+export type StandPart = 'sign' | 'mascot' | 'tv' | 'table2' | 'tentleg0' | 'tentleg1' | 'tentleg2' | 'bistro' | 'stools' | 'flag';
 
 /** How far back the whole stand stands here (tiles): in the own store its counter is at the back wall. */
 export function standDy(g: SceneSource): number {
@@ -501,6 +560,8 @@ export function standSideParts(g: SceneSource): { part: StandPart; x: number; y:
     out.push({ part: 'sign', x: SX - 0.9 + dx, y: SY + 1.0 + dy });
   }
   if (up.mascot) out.push({ part: 'mascot', x: SX - 1.55 + (wide ? -0.3 : 0), y: SY + 1.25 + (wide ? 1.0 : 0) });
+  // the flag of the banner stands on the left of the tables (the truck and the store have their own signs)
+  if (up.banner && hasImage('stand_banner') && !isTruck && !store) out.push({ part: 'flag', x: flagX(wide, tentUp(g)) + FLAG.w / 2, y: SY + FLAG.y });
   // next to the table, in front of the speaker and the scooter
   // next to a truck the TV moves further right, behind the bar stools
   if (up.tv) out.push({ part: 'tv', x: SX + 2.2 + (isTruck ? 0.8 : 0), y: SY + 0.35 });
@@ -627,6 +688,8 @@ function drawPartHere(ctx: Ctx, g: SceneSource, part: StandPart): void {
     drawTruckBistro(ctx, S.truck.skin);
   } else if (part === 'stools') {
     drawTruckStools(ctx, S.truck.skin);
+  } else if (part === 'flag') {
+    bannerFlag(ctx, flagX(wide, tentUp(g)));
   } else if (part === 'table2') {
     table2(ctx, g.phase === 'sell' ? g.D.cupsReady / CONFIG.CUPS_PER_PITCHER : 0.6);
   } else if (part === 'mascot') {
@@ -744,7 +807,12 @@ function drawStandHere(ctx: Ctx, g: SceneSource, playing: boolean): void {
 
     if (up.speaker) drawSprite(ctx, 'stand_speaker', call({ on: S.speakerOn && !br.speaker }));
     drawSprite(ctx, store ? 'stand_store_counter' : 'stand_table', call());
-    if (up.banner) drawSprite(ctx, 'stand_banner', call());
+    // the banner hangs on the front of the table; with its picture it is a flag that stands apart (standSideParts)
+    if (up.banner && !hasImage('stand_banner')) drawSprite(ctx, 'stand_banner', call());
+    // what stands on the counter of the store's picture stands as high as its top
+    const lift = store && hasImage('stand_store_counter') ? STORE_TOP - TABLE_H : 0;
+    ctx.save();
+    ctx.translate(0, -lift);
     // on the table, from the back to the front
     const lemons = playing ? Math.max(lemonsTotal(S.stock), 3) : lemonsTotal(S.stock);
     if (lemons > 0 || !hasImage('item_lemon_pile')) drawSprite(ctx, 'item_lemon_pile', call({ lemons }));
@@ -766,6 +834,7 @@ function drawStandHere(ctx: Ctx, g: SceneSource, playing: boolean): void {
       table2Items(ctx, level);
       menuItems(ctx, S);
     }
+    ctx.restore();
     // the canopy of the umbrella is over the heads of the sellers (its pole stays behind the table)
     if (!up.tent && up.umbrella && outdoor) umbrellaCanopy(ctx, sx, sy, wide, br.umbrella ? 0.5 : 1);
   }

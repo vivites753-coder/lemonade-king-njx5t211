@@ -102,6 +102,10 @@ export const CONFIG = {
   REP_ANGRY: -0.05,
   REP_SAT_PIVOT: 0.55,
   REP_SAT_SCALE: 0.012,
+  /** A happy customer adds this share of REP_SAT_SCALE to the reputation (an unhappy one takes it all away). */
+  REP_GAIN: 0.46,
+  /** Every level of the reputation takes this many times longer than the one before (see addRep). */
+  REP_LEVEL_GROWTH: 1.2,
 
   /** Real seconds the player has to tap the thief. */
   THIEF_WINDOW: 5,

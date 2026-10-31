@@ -2248,8 +2248,52 @@ html.phone .taste-labels {
 .rm-now .rm-bar i {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #ffd43b, #51cf66);
+  background: linear-gradient(90deg, #69db7c, #2f9e44);
   border-radius: 99px;
+}
+/* the green bar of the reputation to its next whole level (src/ui/dom.ts repBar) */
+.rep-bar {
+  display: inline-block;
+  width: 44px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.rep-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #69db7c, #2f9e44);
+  transition: width 0.4s ease-out;
+}
+.rep-bar.wide {
+  width: 90px;
+}
+/* in the top bar the bar lies under the stars and the level */
+.rep-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  line-height: 1;
+}
+.rep-stack .rep-bar {
+  width: auto;
+  height: 6px;
+  margin: 0;
+}
+html.phone .rep-bar {
+  width: 28px;
+  height: 6px;
+  margin-left: 4px;
+}
+html.phone .rep-stack .rep-bar {
+  width: auto;
+  height: 5px;
+  margin: 0;
 }
 .rm-road {
   position: relative;
@@ -4547,4 +4591,140 @@ html.phone .loc-store {
 }
 .store-pb {
   margin-top: 8px;
+}
+
+/* ---------------------------------------------------------------- the parts of the day (src/ui/dayPath.ts) */
+:root {
+  --tod-morning: linear-gradient(135deg, #ffd8a8, #ffc2d1);
+  --tod-day: linear-gradient(135deg, #ffe066, #ffd43b);
+  --tod-evening: linear-gradient(135deg, #7048e8, #4263eb);
+}
+.chip.tod[data-tod='morning'] {
+  background: var(--tod-morning);
+  color: #7a3300;
+}
+.chip.tod[data-tod='day'] {
+  background: var(--tod-day);
+  color: #5c3d00;
+}
+.chip.tod[data-tod='evening'] {
+  background: var(--tod-evening);
+  color: #fff;
+}
+/* the name of the part of the day only where the top bar has room (its colour says it everywhere) */
+.chip.tod .tod-nm {
+  display: none;
+  font-size: 0.8em;
+  opacity: 0.9;
+}
+@media (min-width: 1500px) {
+  .chip.tod .tod-nm {
+    display: inline;
+  }
+}
+#panel[data-tod='morning'] .panel-head {
+  background: linear-gradient(#ffe1c7, var(--cream));
+}
+#panel[data-tod='evening'] .panel-head {
+  background: linear-gradient(#dde1ff, var(--cream));
+}
+#panel[data-tod='evening'] .panel-head h2 {
+  color: #3b2f99;
+}
+.day-path {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  padding: 0 14px 8px;
+  font-size: calc(12px * var(--fs, 1));
+  font-weight: 800;
+}
+.day-path .dp-part {
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(60, 40, 0, 0.07);
+  color: #8a7a5c;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.day-path .dp-part.on {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.day-path .dp-part.on[data-tod='morning'] {
+  background: var(--tod-morning);
+  color: #7a3300;
+}
+.day-path .dp-part.on[data-tod='day'] {
+  background: var(--tod-day);
+  color: #5c3d00;
+}
+.day-path .dp-part.on[data-tod='evening'] {
+  background: var(--tod-evening);
+  color: #fff;
+}
+.day-path .dp-part.done {
+  opacity: 0.6;
+}
+.day-path .dp-part.done::after {
+  content: ' ✓';
+}
+/* the stages of the current part, under the parts */
+.day-path .dp-steps {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 3px 5px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+.day-path .dp-steps[data-tod='morning'] {
+  background: rgba(255, 192, 140, 0.25);
+  color: #7a3300;
+}
+.day-path .dp-steps[data-tod='evening'] {
+  background: rgba(112, 72, 232, 0.12);
+  color: #3b2f99;
+}
+.day-path .dp-steps i {
+  font-style: normal;
+  opacity: 0.5;
+}
+.day-path .dp-step {
+  opacity: 0.65;
+  white-space: nowrap;
+}
+.day-path .dp-step.done {
+  opacity: 0.8;
+}
+.day-path .dp-step.done::before {
+  content: '✓ ';
+}
+.day-path .dp-step.now {
+  opacity: 1;
+  font-weight: 900;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+/* on phones the button that hides the window sits on the right of the title and of the parts */
+html.phone .day-path {
+  padding: 0 52px 4px 10px;
+  gap: 2px 3px;
+  font-size: calc(10px * var(--fs, 1));
+}
+html.phone .day-path .dp-part {
+  padding: 1px 5px;
+}
+html.phone .day-path .dp-steps {
+  padding: 1px 6px;
+}
+html.phone .day-path .dp-step.now {
+  padding: 0 6px;
 }
