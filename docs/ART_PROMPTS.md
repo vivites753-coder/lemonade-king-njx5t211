@@ -22,8 +22,9 @@
    прибирання), 26б (банер і термінал)~~ — готово (31.10). Лишився за бажанням 12д (товари меню: поки емодзі).
    Низькі передні стіни й скляні двері гра малює сама. Великі суцільні текстури землі й пози «наливає» з листа 07 гра
    зараз не використовує: їх не треба.
-9. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі, банер 1024×500 для Google Play
-   (знімки екрана для Play зроблю з гри сам).
+9. **Магазини:** ключові картинки для Steam і Google Play (розділ «Steam і Google Play» нижче: широка, висока й
+   логотип; усі розміри з них наріжу сам). Знімки екрана для Steam уже є (`art/steam/screenshots`).
+10. За бажанням: пози «наливає» з листа 07 (4 шт.), текстури землі.
 
 ## СІТКА (підстав стовпці, рядки, кількість, % заповнення)
 
@@ -353,6 +354,54 @@ Each item is a single ICON object (no background, no frame, no button shape behi
 ```
 
 Імена: `stand_banner, stand_store_terminal`
+
+## Steam і Google Play: картинки для сторінок у магазинах
+
+Генератор не робить точних розмірів Steam (920×430, 462×174, 3840×1240…), тож потрібні лише три великі картинки: усі
+розміри з них наріжу сам і сам покладу логотип на капсули. Правила Steam: на капсулах лише логотип і малюнок, на
+Library hero — малюнок без логотипа.
+
+### А. Широкий ключовий малюнок (16:9)
+
+З нього: Header capsule 920×430 (і Library header), Small capsule 462×174, Main capsule 1232×706, Library hero
+3840×1240, фон сторінки 1438×810, банер Google Play 1024×500.
+
+```
+A wide cinematic key art illustration for a cozy kids' business game called Lemonade King, 16:9, the largest resolution available (4K if possible). Use the attached images as the exact style and character references: cute stylized soft clay / toy-like 3D render, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft warm sunlight from the top-left, gentle ambient occlusion, kid-friendly mobile game art.
+Scene: a sunny park in a small cheerful town. On the RIGHT half: a little lemonade stand, a wooden table with a yellow-and-white striped cloth, a big glass pitcher of lemonade with lemon slices, a stack of paper cups and a pile of lemons, under a big yellow-and-white striped umbrella. Behind the table the girl seller from the attached character sheet (brown hair in a high ponytail, blue T-shirt, yellow apron) happily pours lemonade into a cup; next to her the boy seller (brown hair, blue T-shirt, yellow apron) hands a cup to a smiling kid customer. A short queue of happy customers of different ages (a granny, a dad with a little child, a jogger) waits in front of the table. Lemi, the plump yellow lemon mascot with a golden jeweled crown from the attached emblem, stands on the corner of the table and waves.
+Background: round green trees, a small fountain, little colorful houses, a blue sky with a few soft clouds. The LEFT 40% of the picture is calm and simple (sky above, soft green grass and a path below), with no people and no important details: a title will be placed over it later.
+Keep all the characters and the stand inside the middle 60% of the picture's height: above them only sky and tree tops, below them only the path and grass (the picture will also be cropped into a very wide strip).
+Camera: a friendly three-quarter view, slightly from above, not strictly isometric. NO text, NO letters, NO logo, NO numbers, NO watermark, NO frame.
+```
+
+Прикріпити: `art/style-test/sheet_01.jpg` (стиль), `art/sheets/sheet_hero_v2_clean.jpg` (продавці),
+`art/sheets/emblem.jpg` (Лемі в короні), `art/steam/screenshots/uk/01-park.jpg` (кіоск і парк у грі).
+Назва: `keyart_wide`.
+
+### Б. Високий ключовий малюнок (2:3)
+
+З нього: Vertical capsule 748×896, Library capsule 600×900.
+
+```
+A tall vertical key art illustration, portrait 2:3, for a cozy kids' business game called Lemonade King, the largest resolution available. Use the attached images as the exact style and character references: cute stylized soft clay / toy-like 3D render, rounded chunky shapes, bright cheerful saturated colors (lemon yellow #FFD93B, fresh green #8FD16A, turquoise #2BB3A3, sky blue #7CC8F0, warm orange #FF9F43, pink #FF7AA8, brown #8A5A35, cream #FFF8E1), soft warm sunlight from the top-left, gentle ambient occlusion, kid-friendly mobile game art.
+Scene, seen from the front and slightly from below: the girl seller from the attached character sheet (brown hair in a high ponytail, blue T-shirt, yellow apron) stands behind her lemonade stand, a table with a yellow-and-white striped cloth, a big glass pitcher of lemonade, paper cups and lemons, and proudly holds up a cup of lemonade, smiling. Lemi, the plump yellow lemon mascot with a golden jeweled crown from the attached emblem, stands on the table next to the pitcher and waves. Above the stand a big yellow-and-white striped umbrella. Two happy kid customers in the lower corners reach for cups.
+Background: a sunny park with round green trees. The TOP 30% of the picture is only calm blue sky with a few soft clouds (a title will be placed there later); the characters and the stand fill the lower 70%.
+NO text, NO letters, NO logo, NO numbers, NO watermark, NO frame.
+```
+
+Прикріпити: ті самі чотири картинки. Назва: `keyart_tall`.
+
+### В. Логотип (на маджента-фоні)
+
+З нього: Library logo 1280×720 (PNG з прозорим фоном) і логотип на всіх капсулах і банері Google Play.
+
+```
+A game logo for "Lemonade King" on a perfectly flat solid magenta background (#FF00FF), centered, filling about 80% of the width, with a wide empty magenta margin on all sides, nothing cut off.
+The words "Lemonade King", spelled exactly like this, in two lines: "Lemonade" on top, "King" below and bigger. Chunky rounded bubbly 3D letters in lemon yellow (#FFD93B) with a thick warm orange outline (#FF9F43), a soft white glossy highlight on top of each letter and a darker orange extrusion below, a cute stylized soft clay / toy-like look like the attached references. A small golden crown with red, blue and green gems (like the crown in the attached emblem) sits tilted on top of the letter "K". A few small lemon slices and two green leaves decorate the letters.
+Front view, straight on, no perspective. Everything opaque. NO other text, NO background objects, NO ground shadow, NO glow, NO halo, NO watermark.
+```
+
+Прикріпити: `art/sheets/emblem.jpg`, `art/style-test/sheet_01.jpg`. Назва: `logo`.
 
 ## Лист 12д. Товари меню магазину (3×1, FLAT) — за бажанням
 
