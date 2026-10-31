@@ -321,16 +321,21 @@ function door(ctx: Ctx, a: number, b: number, open: number, neon: boolean): void
   box(ctx, b - 0.02, y - LOW_T / 2, 0.07, LOW_T, DOOR_H, 0, '#8a5a35');
   box(ctx, a - 0.05, y - LOW_T / 2, b - a + 0.12, LOW_T, 7, DOOR_H - 7, '#a0714a');
   if (!neon) return;
-  // the lit sign over the door: it glows (more at dusk)
-  faceY(ctx, a - 0.25, y + LOW_T / 2, DOOR_H + 2, () => {
-    const len = (b - a + 0.5) * 32;
-    rrect(ctx, 0, -16, len, 15, 4, '#2b2140', '#ff7aa8', 1.2);
+  // the lit sign over the door, centred on it: as wide as its word needs («ВІДЧИНЕНО» is long); it glows (more at
+  // dusk)
+  const word = t('world.open');
+  // (the font of text() in iso.ts)
+  ctx.font = `900 8px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
+  const len = Math.max(w + 16, ctx.measureText(word).width + 12);
+  faceY(ctx, a, y + LOW_T / 2, DOOR_H + 2, () => {
+    const u0 = (w - len) / 2;
+    rrect(ctx, u0, -16, len, 15, 4, '#2b2140', '#ff7aa8', 1.2);
     const pulse = ENV.reduceMotion ? 1 : 0.85 + Math.sin(ENV.t * 3) * 0.15;
     ctx.globalAlpha *= 0.35 + 0.35 * ENV.dusk;
-    text(ctx, t('world.open'), len / 2, -8.5, 8, '#ff7aa8', 'center', 900, 'rgba(255,122,168,0.6)');
+    text(ctx, word, w / 2, -8.5, 8, '#ff7aa8', 'center', 900, 'rgba(255,122,168,0.6)');
     ctx.globalAlpha /= 0.35 + 0.35 * ENV.dusk;
     ctx.globalAlpha *= pulse;
-    text(ctx, t('world.open'), len / 2, -8.5, 8, '#ffe3ef', 'center', 900);
+    text(ctx, word, w / 2, -8.5, 8, '#ffe3ef', 'center', 900);
     ctx.globalAlpha /= pulse;
   });
 }
