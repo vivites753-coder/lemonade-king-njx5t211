@@ -2258,7 +2258,9 @@ html.phone .taste-labels {
   height: 8px;
   margin-left: 6px;
   border-radius: 99px;
-  background: rgba(0, 0, 0, 0.12);
+  /* a pale green track: the line is seen even before it starts to fill */
+  background: rgba(47, 158, 68, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(47, 158, 68, 0.35);
   overflow: hidden;
   vertical-align: middle;
 }
@@ -2292,7 +2294,8 @@ html.phone .rep-bar {
 }
 html.phone .rep-stack .rep-bar {
   width: auto;
-  height: 5px;
+  min-width: 56px;
+  height: 8px;
   margin: 0;
 }
 .rm-road {
@@ -4611,11 +4614,15 @@ html.phone .loc-store {
   background: var(--tod-evening);
   color: #fff;
 }
-/* the name of the part of the day only where the top bar has room (its colour says it everywhere) */
+/* the name of the part of the day only where the top bar has room (its colour says it everywhere): on phones (the
+ * page is drawn at 60 %, so the bar is wide) and on wide screens */
 .chip.tod .tod-nm {
   display: none;
   font-size: 0.8em;
   opacity: 0.9;
+}
+html.phone .chip.tod .tod-nm {
+  display: inline;
 }
 @media (min-width: 1500px) {
   .chip.tod .tod-nm {
@@ -4715,16 +4722,16 @@ html.phone .loc-store {
 }
 /* on phones the button that hides the window sits on the right of the title and of the parts */
 html.phone .day-path {
-  padding: 0 52px 4px 10px;
-  gap: 2px 3px;
-  font-size: calc(10px * var(--fs, 1));
+  padding: 0 52px 5px 10px;
+  gap: 3px 4px;
+  font-size: calc(13px * var(--fs, 1));
 }
 html.phone .day-path .dp-part {
-  padding: 1px 5px;
+  padding: 2px 6px;
 }
 html.phone .day-path .dp-steps {
-  padding: 1px 6px;
+  padding: 2px 6px;
 }
 html.phone .day-path .dp-step.now {
-  padding: 0 6px;
+  padding: 0 7px;
 }
