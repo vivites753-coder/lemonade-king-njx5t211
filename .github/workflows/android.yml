@@ -96,6 +96,8 @@ jobs:
         working-directory: desktop
         run: npm ci --omit=dev
       - name: Build the installer and the folder for Steam
+        # (bash: PowerShell would split the "-c.extraMetadata..." argument at its dot)
+        shell: bash
         run: npx electron-builder --win --publish never -c.extraMetadata.version=1.0.${{ github.run_number }}
       - name: The game starts in the built app
         shell: pwsh
