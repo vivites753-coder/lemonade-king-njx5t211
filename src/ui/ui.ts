@@ -499,14 +499,15 @@ export class UI implements UIApi {
   }
 
   /**
-   * How many frames a second the game needs now (src/main.ts draws no more): 60 while selling, 30 when the scene is
-   * calm (the stages of the morning and the evening, a pause, the title), 20 behind a big window or a card that
-   * covers it. The battery saver keeps selling at 30 too.
+   * How many frames a second the game needs now (src/main.ts draws no more, a phone screen would ask for 120): 60
+   * whenever people walk in view (in the morning and the evening too: at 30 their steps judder); 30 when nothing moves
+   * (a pause or a card while selling) or the kitchen covers a phone's screen, and with the battery saver.
    */
   fps(): number {
-    if (this.overlays.active || (!!this.current?.wide && !this.panelHidden)) return 20;
-    const live = this.g.phase === 'sell' && !this.g.paused;
-    return live && !this.g.S.settings.batterySaver ? 60 : 30;
+    if (this.g.S.settings.batterySaver) return 30;
+    const still = this.g.phase === 'sell' && this.g.paused;
+    const covered = isPhone() && !!this.current?.wide && !this.panelHidden;
+    return still || covered ? 30 : 60;
   }
 
   /** A window lies over the stock column on the left (on phones the windows fill the screen). */
