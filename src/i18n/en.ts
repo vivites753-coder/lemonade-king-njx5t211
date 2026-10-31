@@ -386,6 +386,7 @@ export const en: Record<I18nKey, string> = {
   'settings.sound': 'Sound',
   'settings.music': 'Music',
   'settings.fullscreen': 'Full screen (on/off)',
+  'settings.quit': 'Quit the game',
   'settings.reduceMotion': 'Less animation',
   'settings.batterySaver': 'Battery saver (the phone stays cooler)',
   'settings.dyslexia': 'Easier-to-read font',

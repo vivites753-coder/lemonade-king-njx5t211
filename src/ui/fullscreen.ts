@@ -1,5 +1,6 @@
 // Full screen: on phones the first tap makes the game fill the whole screen (where the browser allows it).
 // The player can switch it off in the settings; the choice is remembered on this device.
+import { desktopApp } from '../desktop';
 const OFF_KEY = 'lk.noFullscreen';
 
 function storedOff(): boolean {
@@ -37,8 +38,13 @@ async function enter(): Promise<void> {
   }
 }
 
-/** The settings button: full screen on or off. */
+/** The settings button: full screen on or off (in the Windows app: its window, see desktop/main.cjs). */
 export function toggleFullscreen(): void {
+  const app = desktopApp();
+  if (app) {
+    app.toggleFullscreen();
+    return;
+  }
   if (isFullscreen()) {
     storeOff(true);
     const d = document as FsDoc;

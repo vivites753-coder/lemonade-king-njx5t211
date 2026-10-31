@@ -9,6 +9,7 @@ import { loadAssets } from './render/assets';
 import { Renderer } from './render/renderer';
 import { Game } from './sim/game';
 import { DebugPanel } from './ui/debug';
+import { isDesktopApp, watchDesktopUpdates } from './desktop';
 import { initNativeApp, isNativeApp } from './native';
 import { updatePhoneClass } from './ui/dom';
 import { initFullscreen } from './ui/fullscreen';
@@ -18,8 +19,8 @@ installErrorLog();
 // a published update starts with clean saves (the dev server keeps them)
 const wiped = import.meta.env.PROD && wipeOnUpdate(__BUILD_ID__);
 updatePhoneClass();
-// the app is always full screen (MainActivity); on the website the first tap asks for it
-initFullscreen(!isNativeApp());
+// the apps are full screen by themselves (MainActivity, the Windows window); on the website the first tap asks for it
+initFullscreen(!isNativeApp() && !isDesktopApp());
 
 const game = new Game(1);
 // remember the language of the last session for the title screen
@@ -81,6 +82,8 @@ requestAnimationFrame(frame);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) step('save', () => game.saveNow());
 });
+// the window of the Windows app is closed (a hidden page is not always noticed then)
+window.addEventListener('pagehide', () => step('save', () => game.saveNow()));
 
 // A published update is noticed even when the game stays open (a home-screen app is rarely restarted):
 // compare the script this page runs with the one the server has now.
@@ -113,14 +116,17 @@ async function checkForUpdate(): Promise<void> {
     // offline: try again later
   }
 }
-// (the app carries its game inside: it is updated with a new APK, not from the website)
-if (import.meta.env.PROD && !isNativeApp()) {
+// (the apps carry their game inside: the Android one is updated with a new APK, the Windows one updates itself)
+if (import.meta.env.PROD && !isNativeApp() && !isDesktopApp()) {
   setTimeout(() => void checkForUpdate(), 1500);
   setInterval(() => void checkForUpdate(), 10 * 60 * 1000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void checkForUpdate();
   });
 }
+
+// the Windows app has downloaded a new version: the same bar, its tap installs it and starts the game again
+watchDesktopUpdates((install) => ui.showUpdate(install));
 
 void initNativeApp({
   closeTop: () => ui.closeTop(),

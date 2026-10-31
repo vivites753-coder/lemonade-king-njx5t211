@@ -7,6 +7,7 @@ import type { Game } from '../sim/game';
 import { esc, ico, toggle } from './dom';
 import { toggleFullscreen } from './fullscreen';
 import { isNativeApp } from '../native';
+import { desktopApp, isDesktopApp } from '../desktop';
 import type { ModalSpec } from './overlays';
 
 /** Taps on the biggest text size that switch the developer mode on. */
@@ -118,7 +119,7 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
         ${inGame ? `<h3>🕹️ ${t('settings.hudLayout')}</h3>
         <div class="row"><button class="btn btn-sm" data-act="hudEdit">✋ ${t('settings.hudEdit')}</button></div>
         <p class="note">${t('settings.hudNote')}</p>` : ''}
-        ${isNativeApp() ? '' : `<div class="row" style="margin:6px 0"><button class="btn btn-sm" data-act="fullscreen">⛶ ${t('settings.fullscreen')}</button></div>`}
+        ${isNativeApp() ? '' : `<div class="row" style="margin:6px 0"><button class="btn btn-sm" data-act="fullscreen">⛶ ${t('settings.fullscreen')}</button>${isDesktopApp() ? ` <button class="btn btn-sm" data-act="quit">🚪 ${t('settings.quit')}</button>` : ''}</div>`}
         <h3>🌍 ${t('settings.lang')}</h3>
         <div class="row">
           ${LANGS.map((l) => `<button class="btn btn-sm ${g.S.lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
@@ -167,6 +168,12 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
           taps = 0;
           hooks.enableDev();
         }
+      }
+      if (act === 'quit') {
+        // the Windows app: saved, then closed
+        g.saveNow();
+        desktopApp()?.quit();
+        return true;
       }
       if (act === 'fullscreen') {
         toggleFullscreen();

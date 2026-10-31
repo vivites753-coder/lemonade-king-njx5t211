@@ -244,14 +244,23 @@ export class UI implements UIApi {
   }
 
   /** A new version of the game was published: offer to reload. */
-  showUpdate(): void {
+  /** A new version is out: a bar whose tap loads it (`install`: the Windows app installs its downloaded update). */
+  showUpdate(install?: () => void): void {
     if (document.getElementById('update-bar')) return;
     const bar = document.createElement('button');
     bar.id = 'update-bar';
     bar.className = 'update-bar';
     bar.innerHTML = `🔄 ${esc(t('update.available'))} <b>${esc(t('update.reload'))}</b>`;
-    // a new address, so that the browser does not give back the page it keeps in its cache
-    bar.addEventListener('click', () => location.replace(`${location.pathname}?v=${Date.now()}`));
+    bar.addEventListener('click', () => {
+      if (install) {
+        // the game is saved before the app closes for the update
+        this.g.saveNow();
+        install();
+        return;
+      }
+      // a new address, so that the browser does not give back the page it keeps in its cache
+      location.replace(`${location.pathname}?v=${Date.now()}`);
+    });
     document.getElementById('app')!.appendChild(bar);
   }
 
@@ -629,8 +638,21 @@ export class UI implements UIApi {
     };
     // a finger's tap waits a moment: when a second finger comes, it was the start of a zoom
     let pendingTap = 0;
+    // the mouse button that moves the field now (its pointer id), -1 when none
+    let dragging = -1;
     canvas.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'mouse') return this.onTap(e.clientX, e.clientY);
+      if (e.pointerType === 'mouse') {
+        // the right or the middle button held down moves the field, like two fingers
+        if ((e.button === 1 || e.button === 2) && this.g.phase !== 'title') {
+          e.preventDefault();
+          dragging = e.pointerId;
+          canvas.setPointerCapture(e.pointerId);
+          this.r.pinchStart(e.clientX, e.clientY, 100);
+          return;
+        }
+        if (e.button === 0) this.onTap(e.clientX, e.clientY);
+        return;
+      }
       fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (fingers.size > 1) {
         clearTimeout(pendingTap);
@@ -640,6 +662,7 @@ export class UI implements UIApi {
       pendingTap = window.setTimeout(() => this.onTap(x, y), TAP_WAIT_MS);
     });
     canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerId === dragging) return this.r.pinchMove(e.clientX, e.clientY, 100);
       const f = fingers.get(e.pointerId);
       if (!f) return;
       f.x = e.clientX;
@@ -650,10 +673,27 @@ export class UI implements UIApi {
       }
     });
     const up = (e: PointerEvent) => {
+      if (e.pointerId === dragging) {
+        dragging = -1;
+        return this.r.pinchEnd();
+      }
       if (fingers.delete(e.pointerId)) startPinch();
     };
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', up);
+    // the mouse wheel (or two fingers on a touchpad) zooms the field around the pointer
+    canvas.addEventListener(
+      'wheel',
+      (e) => {
+        if (this.g.phase === 'title') return;
+        e.preventDefault();
+        const step = Math.max(-1, Math.min(1, -e.deltaY / (e.deltaMode === 1 ? 3 : 100)));
+        this.r.zoomAt(e.clientX, e.clientY, 1.15 ** step);
+      },
+      { passive: false },
+    );
+    // the right button moves the field: no menu
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
   private onTap(x: number, y: number): void {

@@ -1,8 +1,11 @@
-name: Android app
+name: Apps (Android, Windows)
 
-# Builds the Android app from the game (Capacitor, see docs/ANDROID.md): the APK to install on a phone and the AAB
-# for Google Play, both signed with the upload key from the repository secrets, and puts them into the
-# "Android (latest)" release. The version code is the run number, so every new APK installs over the old one.
+# Builds the apps from the game.
+# Android (Capacitor, see docs/ANDROID.md): the APK to install on a phone and the AAB for Google Play, both signed with
+# the upload key from the repository secrets, into the "Android (latest)" release. The version code is the run number,
+# so every new APK installs over the old one.
+# Windows (Electron, see docs/DESKTOP.md): the installer (the installed game updates itself from latest.yml) and the
+# folder for Steam (docs/STEAM.md), into the "Windows (latest)" release. Both apps get the version 1.0.<run number>.
 on:
   push:
     branches: [main]
@@ -16,6 +19,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      - 'desktop/**'
+      - 'electron-builder.yml'
+      - 'scripts/desktop-prepare.mjs'
       - '.github/workflows/android.yml'
   workflow_dispatch:
 
@@ -74,3 +80,58 @@ jobs:
           gh release view android-latest >/dev/null 2>&1 || gh release create android-latest --prerelease --title "Android (latest)" --notes "$notes" --target "$GITHUB_SHA"
           gh release edit android-latest --notes "$notes"
           gh release upload android-latest out/lemonade-king.apk out/lemonade-king.aab --clobber
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node scripts/desktop-prepare.mjs
+      - name: The app's own packages (the updater)
+        working-directory: desktop
+        run: npm ci --omit=dev
+      - name: Build the installer and the folder for Steam
+        run: npx electron-builder --win --publish never -c.extraMetadata.version=1.0.${{ github.run_number }}
+      - name: The game starts in the built app
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "release-win/win-unpacked/Lemonade King.exe" -ArgumentList "--smoke" -Wait -PassThru -NoNewWindow -RedirectStandardOutput smoke.txt
+          Get-Content smoke.txt
+          if ($p.ExitCode -ne 0) { exit 1 }
+      - name: Name the files (the Steam copy is updated by Steam, not by the game)
+        shell: pwsh
+        run: |
+          $v = "1.0.${{ github.run_number }}"
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item "release-win/lemonade-king-setup-$v.exe", "release-win/lemonade-king-setup-$v.exe.blockmap", "release-win/latest.yml" out/
+          Copy-Item "release-win/lemonade-king-setup-$v.exe" out/lemonade-king-setup.exe
+          New-Item -ItemType File -Force release-win/win-unpacked/resources/steam | Out-Null
+          Compress-Archive -Path release-win/win-unpacked/* -DestinationPath out/lemonade-king-steam-win64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lemonade-king-windows-${{ github.run_number }}
+          path: out/*
+      - name: Release "Windows (latest)"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=1.0.${{ github.run_number }}
+          notes="Version $v (commit $(git rev-parse --short HEAD)). lemonade-king-setup.exe: install on Windows (the game then updates itself). lemonade-king-steam-win64.zip: the folder for Steam (docs/STEAM.md)."
+          gh release view windows-latest >/dev/null 2>&1 || gh release create windows-latest --prerelease --title "Windows (latest)" --notes "$notes" --target "$GITHUB_SHA"
+          gh release edit windows-latest --notes "$notes"
+          # the new installer first, then latest.yml, which the installed games read: it never names a missing file
+          gh release upload windows-latest "out/lemonade-king-setup-$v.exe" "out/lemonade-king-setup-$v.exe.blockmap" out/lemonade-king-setup.exe out/lemonade-king-steam-win64.zip --clobber
+          gh release upload windows-latest out/latest.yml --clobber
+          # the installers of older versions go
+          for a in $(gh release view windows-latest --json assets --jq '.assets[].name'); do
+            case "$a" in
+              "lemonade-king-setup-$v.exe" | "lemonade-king-setup-$v.exe.blockmap") ;;
+              lemonade-king-setup-1.*) gh release delete-asset windows-latest "$a" -y ;;
+            esac
+          done

@@ -10,11 +10,16 @@
     "build:play": "tsc --noEmit && vite build --mode single --outDir dist-single --emptyOutDir && node scripts/inline-html.mjs",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "desktop": "npm run build && node scripts/desktop-prepare.mjs && electron desktop",
+    "desktop:smoke": "npm run build && node scripts/desktop-prepare.mjs && electron desktop --smoke",
+    "desktop:build": "npm run build && node scripts/desktop-prepare.mjs && electron-builder --win --publish never"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",
     "@types/node": "^26.6.5",
+    "electron": "45.2.1",
+    "electron-builder": "26.18.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.3"

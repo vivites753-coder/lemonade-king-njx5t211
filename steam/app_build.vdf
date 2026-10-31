@@ -1,0 +1,23 @@
+"AppBuild"
+{
+	// Впишіть сюди номер гри (App ID) і номер її депо (Depot ID) зі Steamworks: docs/STEAM.md, крок 3.
+	"AppID" "0000000"
+	"Desc" "Lemonade King for Windows (from GitHub: Windows latest)"
+	// upload.bat кладе сюди останню збірку гри для Steam
+	"ContentRoot" "content\"
+	"BuildOutput" "output\"
+	// робочою збірку робите ви самі на сайті Steamworks (SteamPipe -> Builds)
+	"SetLive" ""
+	"Depots"
+	{
+		"0000001"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+		}
+	}
+}

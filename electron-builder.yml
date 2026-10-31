@@ -1,0 +1,33 @@
+# The Windows app (see docs/DESKTOP.md): the installer, with the latest.yml its updates look for, and the unpacked
+# folder that goes to Steam. The game's files are copied to desktop/game first (scripts/desktop-prepare.mjs); the
+# version comes from the build (-c.extraMetadata.version=1.0.<run>, see .github/workflows/android.yml).
+appId: io.github.vivites753coder.lemonadeking
+productName: Lemonade King
+copyright: © 2026 vivites753
+directories:
+  app: desktop
+  buildResources: desktop/build
+  output: release-win
+files:
+  - main.cjs
+  - preload.cjs
+  - game/**/*
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: dir
+      arch: [x64]
+# one click, for this Windows user only (no administrator), a shortcut on the desktop and in the Start menu
+nsis:
+  oneClick: true
+  perMachine: false
+  artifactName: lemonade-king-setup-${version}.${ext}
+  shortcutName: Lemonade King
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+# where the installed game looks for a new version (the files of the "Windows (latest)" release)
+publish:
+  provider: generic
+  url: https://github.com/vivites753-coder/lemonade-king-njx5t211/releases/download/windows-latest

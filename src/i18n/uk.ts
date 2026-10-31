@@ -385,6 +385,7 @@ export const uk = {
   'settings.sound': 'Звук',
   'settings.music': 'Музика',
   'settings.fullscreen': 'Повний екран (увімк./вимк.)',
+  'settings.quit': 'Вийти з гри',
   'settings.reduceMotion': 'Менше анімацій',
   'settings.batterySaver': 'Економія батареї (телефон менше гріється)',
   'settings.dyslexia': 'Шрифт, легший для читання',

@@ -192,6 +192,13 @@ export class Renderer {
     this.pinch0 = null;
   }
 
+  /** The mouse wheel: zooms by `k` around the pointer, within the same limits as two fingers. */
+  zoomAt(mx: number, my: number, k: number): void {
+    this.pinchStart(mx, my, 100);
+    this.pinchMove(mx, my, 100 * k);
+    this.pinchEnd();
+  }
+
   /** The game's camera; fit: the scale at which the whole island fits. */
   private baseCam(): { s: number; ox: number; oy: number; fit: number } {
     const i = this.insets;

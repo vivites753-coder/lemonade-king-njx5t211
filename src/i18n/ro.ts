@@ -387,6 +387,7 @@ export const ro: Record<I18nKey, string> = {
   'settings.sound': 'Sunet',
   'settings.music': 'Muzică',
   'settings.fullscreen': 'Ecran complet (pornit/oprit)',
+  'settings.quit': 'Ieși din joc',
   'settings.reduceMotion': 'Mai puține animații',
   'settings.batterySaver': 'Economisire baterie (telefonul se încălzește mai puțin)',
   'settings.dyslexia': 'Font mai ușor de citit',

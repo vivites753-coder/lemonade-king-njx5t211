@@ -1,0 +1,12 @@
+{
+  "name": "lemonade-king",
+  "productName": "Lemonade King",
+  "version": "1.0.0",
+  "description": "Стань Королем Лимонаду! Гра-тренажер підприємця для дітей.",
+  "author": "vivites753",
+  "private": true,
+  "main": "main.cjs",
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  }
+}
