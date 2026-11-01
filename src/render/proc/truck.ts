@@ -7,7 +7,8 @@ import artJson from '../../../assets/stand/truck.json';
 import { playerLook } from '../../sim/looks';
 import { drawSprite, getImage, metaFor, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
-import { box, circle, ellipse, emoji, faceX, faceY, line, P, poly, rrect, shadow, type Ctx } from '../iso';
+import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, type Ctx } from '../iso';
+import { picto } from '../pictos';
 import { drawCharacter, standSpriteId } from './people';
 
 const SX = CONFIG.STAND.x;
@@ -134,7 +135,7 @@ export function truckRoofSpot(skin: number, sx: number, sy: number): [number, nu
 }
 
 /** The sign board of the truck: the text (and the chosen logo) glow on the dark board, lying on its surface. */
-function signText(ctx: Ctx, sign: [number, number][], text: string, neon: string): void {
+function signText(ctx: Ctx, sign: [number, number][], text: string, neon: string, logo: string): void {
   const [tl, tr, , bl] = sign;
   const BW = 100;
   const BH = 26;
@@ -147,17 +148,22 @@ function signText(ctx: Ctx, sign: [number, number][], text: string, neon: string
   ctx.globalAlpha = 0.4 + 0.6 * flick;
   let size = 15;
   ctx.font = `900 ${size}px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
-  const wide = ctx.measureText(text).width;
+  // the logo picture goes before the text: it takes about one and a half letters
+  const wide = ctx.measureText(text).width + size * 1.5;
   if (wide > BW - 12) {
     size = Math.max(7, (size * (BW - 12)) / wide);
     ctx.font = `900 ${size}px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
   }
-  ctx.textAlign = 'center';
+  const tw = ctx.measureText(text).width;
+  const left = BW / 2 - (tw + size * 1.5) / 2;
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = neon;
-  ctx.fillText(text, BW / 2, BH / 2 + 0.5);
+  ctx.fillText(text, left + size * 1.5, BH / 2 + 0.5);
   ctx.fillStyle = 'rgba(255,255,255,0.78)';
-  ctx.fillText(text, BW / 2, BH / 2 + 0.5);
+  ctx.fillText(text, left + size * 1.5, BH / 2 + 0.5);
+  ctx.shadowBlur = 0;
+  picto(ctx, logo, left + size * 0.6, BH / 2, size * 1.25);
   ctx.restore();
 }
 
@@ -223,7 +229,7 @@ function truckPicture(ctx: Ctx, c: TruckCall): boolean {
 
   // the text of the neon sign (with the chosen logo in front of it)
   const logo = TRUCK_LOGOS[c.logo] ?? TRUCK_LOGOS[0];
-  signText(ctx, place.sign as [number, number][], `${logo} ${c.label}`, sk.neon);
+  signText(ctx, place.sign as [number, number][], c.label, sk.neon, logo);
   void ys;
   return true;
 }
@@ -269,7 +275,7 @@ function truck(ctx: Ctx, c: TruckCall): void {
     ctx.fillStyle = sk.trim;
     ctx.fillRect(0, -12, D, 6);
     circle(ctx, D / 2, -38, 13, '#ffffff', sk.trim, 2);
-    emoji(ctx, TRUCK_LOGOS[c.logo] ?? TRUCK_LOGOS[0], D / 2, -38, 15);
+    picto(ctx, TRUCK_LOGOS[c.logo] ?? TRUCK_LOGOS[0], D / 2, -38, 18);
     rrect(ctx, 3, -24, D - 6, 4, 2, '#8a5a35');
   });
   wheel(ctx, x0 + w, y0 + 0.3);

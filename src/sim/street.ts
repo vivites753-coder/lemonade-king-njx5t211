@@ -403,7 +403,7 @@ export class Street {
     p.patienceMax = rng.range(CONFIG.PATIENCE_MIN, CONFIG.PATIENCE_MAX) * this.host.patienceMult();
     p.patience = p.patienceMax;
     p.waited = 0;
-    this.setEmote(p, '🍋', 1.4);
+    this.setEmote(p, '💭', 1.4);
   }
 
   leave(p: Ped, emote: string | null, emoteT = 2.5): void {

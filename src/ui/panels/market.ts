@@ -1,9 +1,10 @@
 import type { GoodId } from '../../core/types';
+import { CONFIG } from '../../core/config';
 import { GOODS, GOOD_IDS } from '../../data/goods';
 import { t } from '../../i18n';
 import { lemonsConsumed } from '../../sim/economy';
 import { lemonsTotal } from '../../sim/state';
-import { coin, fmtHour, ico } from '../dom';
+import { coin, fmtHour, gi, ico } from '../dom';
 import type { Panel } from './types';
 
 const UNIT: Record<GoodId, string> = {
@@ -78,27 +79,27 @@ export const marketPanel: Panel = {
       .join('');
     const bulk = GOOD_IDS.filter((id) => GOODS[id].wholesale && g.goodAvailable(id));
     const wholesale = bulk.length
-      ? `<h3 class="wholesale-h">${ico('pt_wholesale', '📦')} ${t('market.wholesale')}</h3><div class="note">${t('market.wholesaleNote')}</div>${bulk.map(row).join('')}`
+      ? `<h3 class="wholesale-h">${ico('pt_wholesale', '')} ${t('market.wholesale')}</h3><div class="note">${t('market.wholesaleNote')}</div>${bulk.map(row).join('')}`
       : '';
     const total = g.cartTotal();
     const tooMuch = total > S.coins;
     const lemonsPer = lemonsConsumed(S.recipe, g.active());
     return `<div class="panel">
-      <div class="panel-head"><h2>${ico('gd_market', '🛒')} ${t('market.title', { time: fmtHour(g.D.hour) })}</h2><span class="chip coins">${coin(S.coins)}</span></div>
+      <div class="panel-head"><h2><span class="ph-ico">${gi('cart')}</span>${t('market.title', { time: fmtHour(g.D.hour) })}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
         ${g.D.delivery ? `<div class="good-box">${t('market.delivery')}</div>` : ''}
-        <div class="note">${t('market.need', { l: lemonsPer, s: S.recipe.sugar })}</div>
+        <div class="note stock-line"><b>${t('market.need')}</b><span class="st">${ico('gd_lemon', '')}${lemonsPer}</span><span class="st">${ico('gd_water', '')}${CONFIG.WATER_PER_PITCHER}</span><span class="st">${ico('gd_sugar', '')}${S.recipe.sugar}</span><span class="st">${ico('gd_cups', '')}10</span></div>
         <div class="row">
           <button class="btn btn-b grow" data-act="kit">${t('market.kit')}</button>
-          <button class="btn" data-act="clear" ${total > 0 ? '' : 'disabled'} title="${t('market.clear')}">🗑️ <span class="lbl-m">${t('market.clear')}</span></button>
+          <button class="btn" data-act="clear" ${total > 0 ? '' : 'disabled'} title="${t('market.clear')}">${gi('trash')} <span class="lbl-m">${t('market.clear')}</span></button>
         </div>
         ${rows}
         ${wholesale}
-        <div class="good-box">🍋 ${t('market.enough', { n: g.pitchersWithCart() })}</div>
+        <div class="good-box">${ico('gd_pitcher', '')} ${t('market.enough', { n: g.pitchersWithCart() })}</div>
       </div>
       <div class="panel-foot">
         <div class="total-line">${t('market.total')}: ${coin(total, tooMuch ? 'neg' : '')} ${tooMuch ? `<small class="neg">${t('market.tooMuch')}</small>` : ''}</div>
-        <button class="btn btn-g btn-big" data-act="pay" ${tooMuch ? 'disabled' : ''}>💳 ${t('market.pay')}</button>
+        <button class="btn btn-g btn-big" data-act="pay" ${tooMuch ? 'disabled' : ''}>${gi('card')} ${t('market.pay')}</button>
         <button class="btn" data-act="leave">${t('market.leave')}</button>
       </div>
     </div>`;

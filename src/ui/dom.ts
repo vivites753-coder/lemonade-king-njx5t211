@@ -4,7 +4,9 @@ import { LOCATIONS } from '../data/locations';
 import { WEATHER } from '../data/weather';
 import { t } from '../i18n';
 import { repLevel } from '../sim/economy';
+import { GLYPHS, type GlyphName } from './glyphs';
 export { fmtHour } from '../sim/lessons';
+export type { GlyphName } from './glyphs';
 
 /** A phone, found in index.html before the first layout: there the whole page is drawn at 60 %. */
 export const PHONE_DEVICE = typeof document !== 'undefined' && !!document.documentElement.dataset.phone;
@@ -51,10 +53,39 @@ export function hasIco(id: string): boolean {
   return `/assets/ui/ui_${id}.png` in iconUrls;
 }
 
+/** The address of the picture assets/ui/ui_<id>.png (for an SVG image). */
+export function icoUrl(id: string): string | undefined {
+  return iconUrls[`/assets/ui/ui_${id}.png`];
+}
+
 /** An interface icon: the picture assets/ui/ui_<id>.png, or the emoji when it has not been drawn yet. */
 export function ico(id: string, fallback: string, cls = ''): string {
   const u = iconUrls[`/assets/ui/ui_${id}.png`];
   return u ? `<img class="ico-img i-${id} ${cls}" src="${u}" alt="" draggable="false">` : fallback;
+}
+
+/** A small interface icon (src/ui/glyphs.ts): a shape in the colour of the text around it, where the game once had
+ * an emoji. */
+export function gi(name: GlyphName, cls = ''): string {
+  return `<svg class="gi${cls ? ` ${cls}` : ''}" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false">${GLYPHS[name]}</svg>`;
+}
+
+const artFiles = import.meta.glob(['/assets/chars/char_*.{png,webp}', '/assets/props/prop_*.{png,webp}', '/assets/items/item_*.{png,webp}'], {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+/** The pictures of the world by their id (char_fox_front, prop_bus_front, item_wallet). */
+const artUrls: Record<string, string> = {};
+for (const [path, url] of Object.entries(artFiles)) {
+  const id = path.split('/').pop()!.replace(/\.(png|webp)$/i, '');
+  if (path.endsWith('.webp') || !artUrls[id]) artUrls[id] = url;
+}
+
+/** A picture of the world (a person, an animal, a thing) for a card or a list: empty when it is missing. */
+export function art(id: string, cls = ''): string {
+  const u = artUrls[id];
+  return u ? `<img class="art-img${cls ? ` ${cls}` : ''}" src="${u}" alt="" draggable="false">` : '';
 }
 
 /** The picture of a place (the emoji from the data when there is none). */

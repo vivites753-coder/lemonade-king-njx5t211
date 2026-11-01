@@ -4924,3 +4924,342 @@ html.phone .day-path .dp-steps {
 html.phone .day-path .dp-step.now {
   padding: 0 7px;
 }
+
+/* ================================================================ icons, no emoji (2026-11)
+ * Glyphs (src/ui/glyphs.ts, gi()) take the colour of their text; the pictures of the world (art()) and the 3D icons
+ * (ico()) carry their own colours. */
+.gi {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  vertical-align: -0.2em;
+}
+.gi.pos {
+  color: var(--green-d);
+}
+.gi.neg {
+  color: var(--red-d);
+}
+.art-img {
+  display: inline-block;
+  height: 1.6em;
+  width: auto;
+  vertical-align: middle;
+  pointer-events: none;
+  user-select: none;
+}
+/* a person's head and shoulders: the top of the full-length picture, in a circle */
+.art-img.avatar {
+  width: 1.9em;
+  height: 1.9em;
+  object-fit: cover;
+  object-position: 50% 0;
+  object-view-box: inset(1% 13% 57% 13%);
+  border-radius: 50%;
+  background: radial-gradient(#fff9db, #ffe8a3);
+  box-shadow: inset 0 0 0 2px #fff, 0 1px 3px rgba(60, 45, 0, 0.2);
+}
+.choice .big .art-img.avatar {
+  width: 1.7em;
+  height: 1.7em;
+}
+.prof-ico .art-img.avatar {
+  width: 1.45em;
+  height: 1.45em;
+}
+.spoon-art {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.12em;
+}
+.truck-sign .truck-logo {
+  height: 1em;
+  margin-right: 0.25em;
+  vertical-align: -0.12em;
+}
+.formula .ico-img {
+  height: 1.05em;
+  vertical-align: -0.18em;
+}
+.toast .gi {
+  margin-right: 6px;
+  color: var(--blue-d);
+}
+.toast-warn .gi {
+  color: var(--red-d);
+}
+.toast-good .gi {
+  color: var(--green-d);
+}
+
+/* the picture of a day card: the game's own art, with a small badge in the corner */
+.ev-art {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  height: 100px;
+  margin: 4px auto 6px;
+}
+.ev-art > .ico-img,
+.ev-art > .art-img {
+  height: 92px;
+  width: auto;
+  max-width: 132px;
+  object-fit: contain;
+  vertical-align: 0;
+  filter: drop-shadow(0 5px 6px rgba(60, 45, 0, 0.22));
+}
+/* two or three places (new places opened) stand a little smaller side by side */
+.ev-art > .ico-img:nth-last-child(n + 3),
+.ev-art > .ico-img:nth-last-child(n + 3) ~ .ico-img {
+  height: 72px;
+}
+.ev-badge {
+  position: absolute;
+  left: calc(50% + 26px);
+  bottom: -4px;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(60, 45, 0, 0.28);
+}
+.ev-badge .ico-img {
+  height: 32px;
+  vertical-align: 0;
+}
+.modal-card.ev-card .ev-title {
+  margin-top: 8px;
+}
+
+/* ================================================================ the stage windows, polished (2026-11) */
+/* the title: an icon on a white tile, the part of the day in its colour */
+.ph-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6em;
+  height: 1.6em;
+  margin-right: 0.45em;
+  vertical-align: -0.38em;
+  border-radius: 0.5em;
+  background: #fff;
+  color: #f08c00;
+  box-shadow: 0 2px 6px rgba(120, 80, 0, 0.18);
+}
+.ph-ico .gi {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: 0;
+}
+#panel[data-tod='morning'] .ph-ico {
+  color: #e8590c;
+}
+#panel[data-tod='evening'] .ph-ico {
+  color: #5f3dc4;
+}
+.panel-head h2 {
+  font-size: calc(21px * var(--fs, 1));
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.panel h3 {
+  font-size: calc(15px * var(--fs, 1));
+  font-weight: 900;
+  color: #4a3b12;
+  margin: 16px 2px 8px;
+}
+.panel h3 .ico-img {
+  height: 1.45em;
+  vertical-align: -0.4em;
+  margin-right: 2px;
+}
+.panel h3 > .gi:first-child {
+  color: var(--orange);
+  margin-right: 2px;
+}
+/* cards, notes and boxes: one soft look */
+.card {
+  border: 1px solid #f1e8cc;
+  box-shadow: 0 2px 0 var(--line), 0 8px 16px -12px rgba(80, 60, 0, 0.35);
+}
+.card.row .big-ico {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(#fffdf5, #fff4d6);
+}
+.card.row .big-ico .ico-img {
+  height: 40px;
+  vertical-align: 0;
+}
+.card.row small {
+  color: var(--muted);
+  font-weight: 700;
+}
+.note {
+  line-height: 1.4;
+  font-weight: 600;
+}
+.note > .gi:first-child,
+.good-box > .gi:first-child,
+.warn-box > .gi:first-child {
+  margin-right: 3px;
+}
+.note > .gi:first-child {
+  color: #c79a2e;
+}
+.good-box,
+.warn-box {
+  font-size: calc(14px * var(--fs, 1));
+  line-height: 1.35;
+  border: 1px solid transparent;
+}
+.good-box {
+  border-color: #c3eccb;
+}
+.warn-box {
+  border-color: #ffd8d8;
+}
+/* what is at home: small pictures with their numbers */
+.stock-line .st {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  font-weight: 900;
+  color: #5c4a1e;
+}
+.stock-line .st .ico-img {
+  height: 1.45em;
+  vertical-align: 0;
+}
+
+/* the place cards */
+.loc {
+  gap: 12px;
+  padding: 10px 12px;
+  border-width: 2px;
+  box-shadow: 0 2px 0 var(--line), 0 8px 16px -12px rgba(80, 60, 0, 0.4);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.loc:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--line), 0 10px 18px -10px rgba(80, 60, 0, 0.45);
+}
+.loc.sel {
+  background: linear-gradient(#fffaf2, #fff1db);
+  box-shadow: 0 0 0 3px rgba(255, 146, 43, 0.2), 0 2px 0 #ffc078;
+}
+.loc-ico {
+  flex: none;
+  align-self: flex-start;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: linear-gradient(#f5fbff, #e3f2ff);
+}
+.loc-ico .ico-img {
+  height: 46px;
+  vertical-align: 0;
+}
+.loc b {
+  font-size: calc(16px * var(--fs, 1));
+  font-weight: 900;
+}
+.loc small {
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.loc-meta {
+  gap: 5px;
+  margin: 7px 0 5px;
+}
+/* (inline blocks, not flex: "20/день" stays one word) */
+.loc-meta > span {
+  display: inline-block;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  background: #f8f2df;
+  color: #5c4a1e;
+  font-size: calc(12px * var(--fs, 1));
+  white-space: nowrap;
+}
+.loc-meta > span > .gi {
+  color: #b5892f;
+  margin-right: 3px;
+}
+.loc small.loc-peak {
+  color: #7d6a45;
+}
+.loc-peak .gi {
+  color: var(--orange);
+}
+.tag .gi {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: -0.22em;
+}
+.tag,
+.loc .tag {
+  padding: 1px 7px 1px 5px;
+  border-radius: 999px;
+}
+
+/* the buttons at the bottom: the main one across, the others share a row, the quiet one is a link */
+.panel-foot .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.panel-foot .btn-big {
+  flex-basis: 100%;
+}
+.btn .gi {
+  width: 1.2em;
+  height: 1.2em;
+}
+.btn-big .ico-img {
+  height: 1.55em;
+  vertical-align: -0.38em;
+}
+.btn .ico-img {
+  height: 1.4em;
+  vertical-align: -0.32em;
+}
+.btn-link,
+.panel-foot .btn-link {
+  flex-basis: 100%;
+  min-height: 34px;
+  padding: 4px 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: calc(14px * var(--fs, 1));
+}
+.btn-link:hover:not(:disabled) {
+  color: #4a3b12;
+  text-decoration: underline;
+}
+.btn-link:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+/* the path of the day: a tick glyph marks the parts done (no text tick after them) */
+.day-path .dp-part.done::after {
+  content: none;
+}
+.day-path .dp-part .gi {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.24em;
+}

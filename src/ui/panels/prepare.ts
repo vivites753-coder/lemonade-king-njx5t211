@@ -7,7 +7,7 @@ import type { Game } from '../../sim/game';
 import { skillStars } from '../../sim/points';
 import { t } from '../../i18n';
 import { breakEvenCups, costPerCup, lemonsConsumed, tasteKey } from '../../sim/economy';
-import { coin, fmtDur, fmtHour, ico, round1, toggle } from '../dom';
+import { coin, fmtDur, fmtHour, gi, ico, locIco, round1, toggle } from '../dom';
 import { locationCards, pickPlace } from './morning';
 import type { Panel } from './types';
 
@@ -40,8 +40,8 @@ function menuCard(g: Game): string {
     return `<div class="kv"><span>${ico(EXTRAS[id].img, EXTRAS[id].icon)} ${t(`extra.${id}`)} <small class="muted">${t('prep.menuHave', { n: g.extraPortions(id) })}</small></span>${stepper(`x${id}`, `<i class="coin"></i>${p}`, p > MENU.PRICE_MIN, p < MENU.PRICE_MAX)}</div>
           <small class="muted">${t('prep.menuFair', { fair: extraFair(id, fair), cost: round1(extraCost(id)) })}</small>`;
   }).join('');
-  return `<h3>🧾 ${t('prep.menu')}</h3>
-        <div class="card">${rows}<div class="note">💡 ${t('prep.menuNote')}</div></div>`;
+  return `<h3>${ico('gd_orange', '')} ${t('prep.menu')}</h3>
+        <div class="card">${rows}<div class="note">${gi('bulb')} ${t('prep.menuNote')}</div></div>`;
 }
 
 /** The store: who of its staff works with the player today (hired in "My stands"), and its floor and its cleaner. */
@@ -52,23 +52,23 @@ function storeCard(g: Game): string {
   const staff = g.storeStaff();
   const who = staff.length
     ? staff
-        .map((s) => `<div class="kv"><span>👤 <b>${t(`staff.name${s.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(s.skill))}</span></span><small class="muted">${t('points.wage', { n: s.wage })}</small></div>`)
+        .map((s) => `<div class="kv"><span>${gi('user')} <b>${t(`staff.name${s.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(s.skill))}</span></span><small class="muted">${t('points.wage', { n: s.wage })}</small></div>`)
         .join('')
     : `<div class="note">${t('prep.staffNone')}</div>`;
-  const away = p.away ? `<small class="muted">🤒 ${t('points.away', { name: t(`staff.name${p.away.seller.nameId}`), n: p.away.days })}</small>` : '';
+  const away = p.away ? `<small class="muted">${gi('thermo')} ${t('points.away', { name: t(`staff.name${p.away.seller.nameId}`), n: p.away.days })}</small>` : '';
   const free = !p.seller || !p.helper;
   const pct = g.cleanliness();
-  return `<h3>👥 ${t('prep.staff')}</h3>
+  return `<h3>${ico('pt_team', '')} ${t('prep.staff')}</h3>
         <div class="card">${who}${away}
           <small class="muted">${t('prep.staffNote')}</small>
-          ${free ? `<div style="margin-top:6px"><button class="btn btn-sm btn-g" data-act="hireStaff">${ico('pt_hire', '👤')} ${t('points.hireStaff')}</button></div>` : ''}
+          ${free ? `<div style="margin-top:6px"><button class="btn btn-sm btn-g" data-act="hireStaff">${ico('pt_hire', '')} ${t('points.hireStaff')}</button></div>` : ''}
         </div>
-        <h3>${ico('btn_clean', '🧹')} ${t('prep.clean')}</h3>
+        <h3>${ico('btn_clean', '')} ${t('prep.clean')}</h3>
         <div class="card">
           <div class="kv"><span>${t('prep.cleanNow')}</span><b class="${pct < 60 ? 'neg' : ''}">${pct}%</b></div>
           <div class="bar pb-bar clean-bar"><i style="width:${pct}%"></i></div>
-          ${toggle('cleaner', !!st.cleaner, `${ico('cleaner', '🧹')} ${t('prep.cleaner', { n: CONFIG.CLEANER_WAGE })}`, t('prep.cleanerDesc'))}
-          <small class="muted">💡 ${t('prep.cleanTip')}</small>
+          ${toggle('cleaner', !!st.cleaner, `${ico('cleaner', '')} ${t('prep.cleaner', { n: CONFIG.CLEANER_WAGE })}`, t('prep.cleanerDesc'))}
+          <small class="muted">${gi('bulb')} ${t('prep.cleanTip')}</small>
         </div>`;
 }
 
@@ -93,30 +93,30 @@ export const preparePanel: Panel = {
     const be = breakEvenCups(fixed, S.price, cost);
     const formula = kid
       ? ''
-      : `<div class="formula">(${used}🍋×${UNIT_COST.lemons} + ${CONFIG.WATER_PER_PITCHER}💧×${UNIT_COST.water} + ${r.sugar}🍬×${UNIT_COST.sugar} + 10🥤×${UNIT_COST.cups}) ÷ 10 = <b>${round1(cost)}</b></div>`;
+      : `<div class="formula">(${used}${ico('gd_lemon', '')}×${UNIT_COST.lemons} + ${CONFIG.WATER_PER_PITCHER}${ico('gd_water', '')}×${UNIT_COST.water} + ${r.sugar}${ico('gd_sugar', '')}×${UNIT_COST.sugar} + 10${ico('gd_cups', '')}×${UNIT_COST.cups}) ÷ 10 = <b>${round1(cost)}</b></div>`;
     return `<div class="panel">
-      <div class="panel-head"><h2>📋 ${t('prep.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
+      <div class="panel-head"><h2><span class="ph-ico">${gi('clipboard')}</span>${t('prep.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
         <div class="card">
-          <div class="kv"><span>${ico('gd_ready', '🥛')} ${t('prep.ready')}</span><b>${t('prep.readyN', { n: D.cupsReady })}</b></div>
-          <small class="muted">🍋 ${r.lemons} · 🍬 ${r.sugar} — ${t(tasteKey(r))} · ${t('prep.mix')}: ${t(MIX_KEY[String(D.mixQuality)] ?? 'kitchen.mixPerfect')}${D.coldCups > 0 ? ` · ❄️ ${t('prep.cold', { n: Math.min(D.coldCups, D.cupsReady) })}` : ''}</small>
-          <div style="margin-top:6px"><button class="btn btn-sm btn-b" data-act="kitchen">🍳 ${t('prep.kitchen')}</button></div>
-          <small class="muted">🕐 ${t('prep.spoils')}</small>
+          <div class="kv"><span>${ico('gd_ready', '')} ${t('prep.ready')}</span><b>${t('prep.readyN', { n: D.cupsReady })}</b></div>
+          <small class="muted recipe">${ico('gd_lemon', '')} ${r.lemons} · ${ico('gd_sugar', '')} ${r.sugar} — ${t(tasteKey(r))} · ${t('prep.mix')}: ${t(MIX_KEY[String(D.mixQuality)] ?? 'kitchen.mixPerfect')}${D.coldCups > 0 ? ` · ${gi('snow')} ${t('prep.cold', { n: Math.min(D.coldCups, D.cupsReady) })}` : ''}</small>
+          <div style="margin-top:6px"><button class="btn btn-sm btn-b" data-act="kitchen">${ico('gd_pitcher', '')} ${t('prep.kitchen')}</button></div>
+          <small class="muted">${gi('clock')} ${t('prep.spoils')}</small>
         </div>
 
-        <h3>💰 ${t('prep.price')}</h3>
+        <h3>${ico('coin_stack', '')} ${t('prep.price')}</h3>
         <div class="card">
           <div class="kv cost-line"><span>${t('prep.cost')}</span><b>${coin(kid ? '≈' + Math.round(cost) : round1(cost))}</b></div>
           <small class="muted">${t('prep.costHelp')}</small>
           ${formula}
           <div class="kv" style="margin-top:8px"><span>${t('prep.price')}</span>${stepper('price', `<i class="coin"></i>${S.price}`, S.price > CONFIG.PRICE_MIN, S.price < CONFIG.PRICE_MAX)}</div>
-          <small class="muted">💡 ${t('prep.fair', { n: loc.fairPrice })}</small>
+          <small class="muted">${gi('bulb')} ${t('prep.fair', { n: loc.fairPrice })}</small>
           <div class="kv"><span>${t('prep.profitCup')}</span><b>${coin((profit >= 0 ? '+' : '') + round1(profit), profit >= 0 ? 'pos' : 'neg')}</b></div>
           ${kid ? '' : `<div class="formula">${S.price} − ${round1(cost)} = <b>${round1(profit)}</b></div>`}
           ${profit < 0 ? `<div class="warn-box">${t('prep.loss')}</div>` : ''}
           ${
             fixed > 0
-              ? `<div class="kv be-line"><span>${ico('breakeven', '⚖️')} ${t('prep.breakEven')}</span><b>${be === null ? '—' : t('prep.breakEvenN', { n: be })}</b></div>
+              ? `<div class="kv be-line"><span>${ico('breakeven', '')} ${t('prep.breakEven')}</span><b>${be === null ? '—' : t('prep.breakEvenN', { n: be })}</b></div>
           <small class="muted">${be === null ? t('prep.breakEvenNever') : t('prep.breakEvenHelp', { cost: fixed })}</small>`
               : ''
           }
@@ -124,7 +124,7 @@ export const preparePanel: Panel = {
 
         ${
           (S.stock.cookies ?? 0) > 0
-            ? `<h3>🍪 ${t('prep.cookies')}</h3>
+            ? `<h3>${ico('gd_cookie', '')} ${t('prep.cookies')}</h3>
         <div class="card">
           <div class="kv"><span>${t('prep.cookiesHave', { n: S.stock.cookies })}</span>${stepper('cprice', `<i class="coin"></i>${S.cookiePrice}`, S.cookiePrice > 1, S.cookiePrice < 20)}</div>
           <small class="muted">${t('prep.cookiesNote', { cost: 2, fair: Math.round(5 * (loc.fairPrice / 10)) })}</small>
@@ -132,37 +132,37 @@ export const preparePanel: Panel = {
             : ''
         }
         ${g.extrasHere() ? menuCard(g) : ''}
-        ${toggle('flyers', D.flyers, `📄 ${t('prep.flyers', { n: CONFIG.FLYERS_COST })}`, t('prep.flyersDesc'))}
+        ${toggle('flyers', D.flyers, `${gi('flyer')} ${t('prep.flyers', { n: CONFIG.FLYERS_COST })}`, t('prep.flyersDesc'))}
         ${
           g.onlineAdsOpen()
-            ? toggle('onlineAds', D.onlineAds, `${ico('btn_onlineads', '📱')} ${t('prep.onlineAds', { n: CONFIG.ONLINE_ADS_COST })}`, t('prep.onlineAdsDesc'))
+            ? toggle('onlineAds', D.onlineAds, `${ico('btn_onlineads', '')} ${t('prep.onlineAds', { n: CONFIG.ONLINE_ADS_COST })}`, t('prep.onlineAdsDesc'))
             : S.bestRep >= CONFIG.ONLINE_ADS_MIN_REP - 1
-              ? `<div class="note">🔒 ${ico('btn_onlineads', '📱')} ${t('prep.onlineAdsLocked', { n: CONFIG.ONLINE_ADS_MIN_REP })}</div>`
+              ? `<div class="note">${gi('lock')} ${t('prep.onlineAdsLocked', { n: CONFIG.ONLINE_ADS_MIN_REP })}</div>`
               : ''
         }
         ${
           g.storePoint()
             ? storeCard(g)
             : g.helperCap() >= 2
-              ? `<div class="card"><div class="kv"><span>🍳 ${t('prep.helpers', { n: CONFIG.HELPER_WAGE })}</span>${stepper('helpers', String(D.helpers), D.helpers > 0, D.helpers < 2)}</div>
+              ? `<div class="card"><div class="kv"><span>${ico('pt_hire', '')} ${t('prep.helpers', { n: CONFIG.HELPER_WAGE })}</span>${stepper('helpers', String(D.helpers), D.helpers > 0, D.helpers < 2)}</div>
           <small class="muted">${t('prep.helpersDesc')}</small></div>`
               : g.helperOpen()
-                ? toggle('helper', D.helper, `🍳 ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t(g.counters() >= 2 ? 'prep.helperDesc2' : 'prep.helperDesc'))
-                : `<div class="note">🔒 🍳 ${t('prep.helperLocked', { n: CONFIG.HELPER_MIN_REP })}</div>`
+                ? toggle('helper', D.helper, `${ico('pt_hire', '')} ${t('prep.helper', { n: CONFIG.HELPER_WAGE })}`, t(g.counters() >= 2 ? 'prep.helperDesc2' : 'prep.helperDesc'))
+                : `<div class="note">${gi('lock')} ${t('prep.helperLocked', { n: CONFIG.HELPER_MIN_REP })}</div>`
         }
-        ${!g.storePoint() && g.counters() >= 2 && g.helperCap() < 2 && g.helperOpen() ? `<div class="note">🔒 ${t('prep.helper2Locked', { n: CONFIG.HELPER2_MIN_REP })}</div>` : ''}
+        ${!g.storePoint() && g.counters() >= 2 && g.helperCap() < 2 && g.helperOpen() ? `<div class="note">${gi('lock')} ${t('prep.helper2Locked', { n: CONFIG.HELPER2_MIN_REP })}</div>` : ''}
 
-        <h3>📍 ${t(`loc.${S.location}.name`)}</h3>
-        <div class="good-box">🕐 ${t('prep.open', { a: fmtHour(g.openingHour(false)), b: fmtHour(CONFIG.DAY_END) })}${loc.rent ? ` · ${t('prep.rent', { n: coin(loc.rent) })}` : ''}${loc.store ? ` · ${t('prep.utilities', { n: coin(loc.store.utilities) })}` : ''}</div>
-        ${loc.store ? `<div class="note">${ico('tax', '🧾')} ${t('prep.tax', { n: Math.round(CONFIG.STORE_TAX * 100) })}</div>` : ''}
-        <button class="btn btn-sm${chk.reason === 'toast.noRent' ? ' btn-y' : ''}" data-act="place">📍 ${t(placeList ? 'prep.placeHide' : 'prep.place')}</button>
+        <h3>${locIco(S.location)} ${t(`loc.${S.location}.name`)}</h3>
+        <div class="good-box">${gi('clock')} ${t('prep.open', { a: fmtHour(g.openingHour(false)), b: fmtHour(CONFIG.DAY_END) })}${loc.rent ? ` · ${t('prep.rent', { n: coin(loc.rent) })}` : ''}${loc.store ? ` · ${t('prep.utilities', { n: coin(loc.store.utilities) })}` : ''}</div>
+        ${loc.store ? `<div class="note">${gi('receipt')} ${t('prep.tax', { n: Math.round(CONFIG.STORE_TAX * 100) })}</div>` : ''}
+        <button class="btn btn-sm${chk.reason === 'toast.noRent' ? ' btn-y' : ''}" data-act="place">${gi('pin')} ${t(placeList ? 'prep.placeHide' : 'prep.place')}</button>
         ${placeList ? `<div class="locs" style="margin-top:8px">${locationCards(g)}</div>` : ''}
         ${!chk.ok && chk.reason ? `<div class="warn-box">${t(chk.reason, { rent: g.openingCosts() })}</div>` : ''}
       </div>
       <div class="panel-foot">
         <button class="btn btn-g btn-big" data-act="start" ${chk.ok ? '' : 'disabled'}>▶ ${t('prep.start')}</button>
-        <button class="btn" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>${ico('gd_market', '🛒')} ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
-        ${!chk.ok ? `<button class="btn btn-sm" data-act="rest">😴 ${t('morning.rest')}</button>` : ''}
+        <button class="btn" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>${ico('gd_market', '')} ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
+        ${!chk.ok ? `<button class="btn btn-sm btn-link" data-act="rest">${gi('bed')} ${t('morning.rest')}</button>` : ''}
       </div>
     </div>`;
   },

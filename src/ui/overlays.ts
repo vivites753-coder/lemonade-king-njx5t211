@@ -2,7 +2,8 @@
 // the game pauses so a child never misses what is happening.
 import { t, tipText } from '../i18n';
 import type { CardInfo, Game } from '../sim/game';
-import { esc, lemiFace, type LemiMood } from './dom';
+import { cardArt } from './cardArt';
+import { esc, gi, lemiFace, type LemiMood } from './dom';
 
 /** How Lemi looks while giving a tip (neutral when not listed). */
 const TIP_MOOD: Record<string, LemiMood> = {
@@ -225,8 +226,8 @@ export class Overlays {
   }
 
   private renderCard(c: CardInfo): void {
-    this.modalEl.innerHTML = `<div class="modal-card">
-      <div class="ev-ico">${c.icon}</div>
+    this.modalEl.innerHTML = `<div class="modal-card ev-card">
+      ${cardArt(c)}
       <h2 class="ev-title">${esc(t(`card.${c.id}.title`, c.params))}</h2>
       <p>${esc(t(`card.${c.id}.text`, c.params))}</p>
       <div class="lesson">${lemiFace(true, CARD_MOOD[c.id] ?? 'think')}<div>${esc(t(`card.${c.id}.lemi`, c.params))}</div></div>
@@ -237,7 +238,7 @@ export class Overlays {
               .join('')
           : c.repair
           ? `<button class="btn" data-act="ok">${t('card.later')}</button>
-             <button class="btn btn-g" data-act="repair" ${this.g.S.coins < this.g.repairCost(c.repair) ? 'disabled' : ''}>🔧 ${t('card.repair', { cost: this.g.repairCost(c.repair) })}</button>`
+             <button class="btn btn-g" data-act="repair" ${this.g.S.coins < this.g.repairCost(c.repair) ? 'disabled' : ''}>${gi('wrench')} ${t('card.repair', { cost: this.g.repairCost(c.repair) })}</button>`
           : `<button class="btn btn-y" data-act="ok">${t('btn.ok')}</button>`}
       </div>
     </div>`;

@@ -13,7 +13,7 @@ import { drawSprite, metaFor, onAssetsChanged, spriteShadow } from './assets';
 import { ENV } from './env';
 import { smooth, WeatherFx } from './fx';
 import { buildGround, GROUND_BOUNDS, waterTiles } from './ground';
-import { circle, emoji, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
+import { circle, ellipse, groundCircle, P, rrect, text, type Ctx } from './iso';
 import { pedFacing } from './facing';
 import { drawCharacter, drawCup, pedCupSpriteId, pedSitSpriteId, pedSpriteId, pedUmbrellaSpriteId } from './proc/people';
 import { drawCarArt } from './proc/props';
@@ -27,6 +27,7 @@ import { drawBucket, drawCleaner, drawStain } from './proc/cleaning';
 import { drawStand, drawStandPart, drawStandShadows, standDy, standSideParts, type StandPart } from './proc/stand';
 import { TRUCK } from './proc/truck';
 import './proc/buildings';
+import { hasPicto, picto } from './pictos';
 
 /** World-pixel area the camera keeps in view (the compact one crops building tops on phones). */
 const VIEW_FULL = { minX: -400, maxX: 400, minY: -175, maxY: 418 };
@@ -52,6 +53,8 @@ interface Float {
   x: number;
   y: number;
   text: string;
+  /** A picture after the text (a key of pictos.ts). */
+  pic?: string;
   color: string;
   t: number;
 }
@@ -121,14 +124,14 @@ export class Renderer {
     onAssetsChanged((id) => {
       if (id.startsWith('tile_')) this.ground = null;
     });
-    game.bus.on('found', (e) => !this.view && this.floats.push({ x: e.x, y: e.y, text: `+${e.amount} ${e.icon}`, color: '#2b8a3e', t: 0 }));
-    game.bus.on('wiped', (e) => !this.view && this.floats.push({ x: e.x, y: e.y - 0.2, text: '✨', color: '#1c7ed6', t: 0 }));
+    game.bus.on('found', (e) => !this.view && this.floats.push({ x: e.x, y: e.y, text: `+${e.amount}`, pic: e.icon, color: '#2b8a3e', t: 0 }));
+    game.bus.on('wiped', (e) => !this.view && this.floats.push({ x: e.x, y: e.y - 0.2, text: '', pic: 'gi:sparkle', color: '#1c7ed6', t: 0 }));
     // (a cookie or a pastry is bought with the drink: its coins float a little higher)
     game.bus.on('sale', (e) => {
       if (this.view) return;
       const extra = e.cookie || e.icon === EXTRAS.pastry.icon;
       const icon = e.cookie ? '🍪' : e.icon;
-      this.floats.push({ x: e.x, y: e.y - (extra ? 0.35 : 0), text: `+${e.amount}${icon ? ' ' + icon : ''}`, color: extra ? '#a0612b' : '#2b8a3e', t: 0 });
+      this.floats.push({ x: e.x, y: e.y - (extra ? 0.35 : 0), text: `+${e.amount}`, pic: icon || undefined, color: extra ? '#a0612b' : '#2b8a3e', t: 0 });
     });
     game.bus.on('thief', (e) => {
       if (this.view) return;
@@ -136,7 +139,7 @@ export class Renderer {
       if (e.state === 'caught') this.floats.push({ x: CONFIG.STAND.x - 1, y: y + 0.8, text: `+${e.amount}`, color: '#2b8a3e', t: 0 });
       if (e.state === 'stole' && e.amount) this.floats.push({ x: CONFIG.STAND.x, y, text: `−${e.amount}`, color: '#e03131', t: 0 });
       const th = game.street.thief;
-      if (e.state === 'hit' && th) this.floats.push({ x: th.x, y: th.y, text: `💥 ${e.amount}/${CONFIG.THIEF_HITS}`, color: '#e8590c', t: 0 });
+      if (e.state === 'hit' && th) this.floats.push({ x: th.x, y: th.y, text: `${e.amount}/${CONFIG.THIEF_HITS}`, pic: '💥', color: '#e8590c', t: 0 });
     });
     this.resize();
   }
@@ -540,7 +543,7 @@ export class Renderer {
       const [bx, by] = P(CONFIG.STAND.x, CONFIG.STAND.y + standDy(g), 120);
       const pulse = ENV.reduceMotion ? 1 : 0.8 + Math.abs(Math.sin(this.t * 4)) * 0.3;
       circle(ctx, bx, by, 13 * pulse, '#fff9db', '#fab005', 2);
-      text(ctx, '⚡', bx, by + 0.5, 14, '#000', 'center', 400);
+      picto(ctx, 'gi:bolt', bx, by, 15, '#f08c00');
     }
 
     this.drawBubbles(ctx);
@@ -718,7 +721,8 @@ export class Renderer {
         ctx.closePath();
         ctx.fillStyle = '#ffffff';
         ctx.fill();
-        emoji(ctx, b.emote, b.sx, y - 11, 14);
+        if (hasPicto(b.emote)) picto(ctx, b.emote, b.sx, y - 12, 19);
+        else text(ctx, b.emote, b.sx, y - 11, 11, '#e8590c', 'center', 900);
       }
     }
   }
@@ -749,7 +753,7 @@ export class Renderer {
       ctx.strokeStyle = '#40c057';
       ctx.lineWidth = 4;
       ctx.stroke();
-      emoji(ctx, '🍋', sx, sy + 1, 15);
+      picto(ctx, '🍋', sx, sy, 17);
     }
   }
 
@@ -783,7 +787,16 @@ export class Renderer {
       }
       const [sx, sy] = P(f.x, f.y, 60 + f.t * 40);
       ctx.globalAlpha = Math.max(0, 1 - f.t / 1.3);
-      text(ctx, f.text, sx, sy, 16, f.color, 'center', 900, '#ffffff');
+      if (!f.pic) text(ctx, f.text, sx, sy, 16, f.color, 'center', 900, '#ffffff');
+      else if (!f.text) picto(ctx, f.pic, sx, sy, 18, f.color);
+      else {
+        // the number and its picture, centred together
+        ctx.font = '900 16px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif';
+        const tw = ctx.measureText(f.text).width;
+        const left = sx - (tw + 20) / 2;
+        text(ctx, f.text, left, sy, 16, f.color, 'left', 900, '#ffffff');
+        picto(ctx, f.pic, left + tw + 11, sy, 18, f.color);
+      }
       ctx.globalAlpha = 1;
     }
   }

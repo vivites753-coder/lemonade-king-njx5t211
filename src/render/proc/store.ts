@@ -7,6 +7,7 @@ import { t } from '../../i18n';
 import { getImage, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
+import { picto } from '../pictos';
 import { clock, clockHands, glassShine, outside, WALL_H } from './indoor';
 
 const N = CONFIG.MAP_SIZE;
@@ -70,20 +71,28 @@ function menuText(ctx: Ctx, m: Rect, lines: MenuLine[]): void {
   lines.forEach(([icon, price], i) => {
     const col = cols > 1 ? Math.floor(i / rows) : 0;
     const x = cols > 1 ? m.u0 + w * (col ? 0.75 : 0.26) : cx;
-    text(ctx, `${icon} ${price}`, x, top + step * ((i % rows) + 0.5), size, '#ffffff', 'center', 900);
+    // the picture of the goods, then its price
+    const y = top + step * ((i % rows) + 0.5);
+    picto(ctx, icon, x - size * 0.55, y, size * 1.15);
+    text(ctx, String(price), x - size * 0.05, y, size, '#ffffff', 'left', 900);
   });
 }
 
 /** The name of the store on its board, as big as the board allows. */
 function signText(ctx: Ctx, s: Rect): void {
-  const str = `🍋 ${t('world.storeSign')}`;
+  const str = t('world.storeSign');
   let size = Math.min(10, (s.v1 - s.v0) * 0.75);
   // (the font of text() in iso.ts)
   ctx.font = `900 ${size}px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
   const room = (s.u1 - s.u0) * 0.92;
   const w = ctx.measureText(str).width;
-  if (w > room) size *= room / w;
-  text(ctx, str, (s.u0 + s.u1) / 2, (s.v0 + s.v1) / 2 + 0.5, size, '#c92a2a', 'center', 900);
+  // room for the lemon before the name
+  if (w + size * 1.3 > room) size *= room / (w + size * 1.3);
+  const cx = (s.u0 + s.u1) / 2 + size * 0.6;
+  const cy = (s.v0 + s.v1) / 2 + 0.5;
+  text(ctx, str, cx, cy, size, '#c92a2a', 'center', 900);
+  ctx.font = `900 ${size}px "Nunito", "Trebuchet MS", "Segoe UI", system-ui, sans-serif`;
+  picto(ctx, '🍋', cx - ctx.measureText(str).width / 2 - size * 0.75, cy, size * 1.2);
 }
 
 /** A window with the weather behind it. */

@@ -9,7 +9,7 @@ import { UPGRADES, UPGRADE_ORDER } from '../data/upgrades';
 import { t } from '../i18n';
 import { repLevel } from '../sim/economy';
 import type { Game } from '../sim/game';
-import { coin, ico, locIco, stars } from './dom';
+import { coin, gi, ico, locIco, stars } from './dom';
 import type { ModalSpec } from './overlays';
 
 /** Every level on the road. The top one opens nothing new: it is the goal. */
@@ -49,13 +49,13 @@ function itemsFor(g: Game, level: number): Item[] {
     const notes = loc.store ? [t('roadmap.storeNote', { n: coin(storeSetupCost(id)) }), rent] : [rent];
     out.push({ icon: locIco(id), name: t(`loc.${id}.name`), kind: 'place', notes, done: !!g.S.stores[id] });
   }
-  feature(CONFIG.HELPER_MIN_REP, ico('pt_hire', '🙋'), t('roadmap.helper'), perDay(CONFIG.HELPER_WAGE));
-  feature(GOODS.cookies.minRep ?? 1, ico('gd_cookie', '🍪'), t('roadmap.cookies'), t('roadmap.cookiesNote', { n: coin(GOODS.cookies.price) }));
-  feature(CONFIG.HELPER2_MIN_REP, ico('pt_team', '👥'), t('roadmap.helper2'), t('roadmap.helper2Note'));
-  feature(CONFIG.ONLINE_ADS_MIN_REP, ico('btn_onlineads', '📱'), t('roadmap.onlineAds'), perDay(CONFIG.ONLINE_ADS_COST));
-  feature(POINTS.MIN_REP, ico('pt_stand', '🏪'), t('roadmap.points'), t('roadmap.pointsNote', { n: coin(POINTS.COST) }));
-  feature(POINTS.MIN_REP, ico('cleaner', '🧹'), t('roadmap.storeStaff'), t('roadmap.storeStaffNote'), t('roadmap.cleanerNote', { n: coin(CONFIG.CLEANER_WAGE) }));
-  feature(MENU.MIN_REP, ico('gd_orange', '🍊'), t('roadmap.menu'), t('roadmap.menuNote'));
+  feature(CONFIG.HELPER_MIN_REP, ico('pt_hire', ''), t('roadmap.helper'), perDay(CONFIG.HELPER_WAGE));
+  feature(GOODS.cookies.minRep ?? 1, ico('gd_cookie', ''), t('roadmap.cookies'), t('roadmap.cookiesNote', { n: coin(GOODS.cookies.price) }));
+  feature(CONFIG.HELPER2_MIN_REP, ico('pt_team', ''), t('roadmap.helper2'), t('roadmap.helper2Note'));
+  feature(CONFIG.ONLINE_ADS_MIN_REP, ico('btn_onlineads', ''), t('roadmap.onlineAds'), perDay(CONFIG.ONLINE_ADS_COST));
+  feature(POINTS.MIN_REP, ico('pt_stand', ''), t('roadmap.points'), t('roadmap.pointsNote', { n: coin(POINTS.COST) }));
+  feature(POINTS.MIN_REP, ico('cleaner', ''), t('roadmap.storeStaff'), t('roadmap.storeStaffNote'), t('roadmap.cleanerNote', { n: coin(CONFIG.CLEANER_WAGE) }));
+  feature(MENU.MIN_REP, ico('gd_orange', ''), t('roadmap.menu'), t('roadmap.menuNote'));
   for (const id of UPGRADE_ORDER) {
     const u = UPGRADES[id];
     if ((u.minRep ?? 1) !== level) continue;
@@ -67,7 +67,7 @@ function itemsFor(g: Game, level: number): Item[] {
 /** One thing a level opens: its picture, its name and the short lines under it (or "bought" once it is bought). */
 function tile(it: Item): string {
   const notes = it.done
-    ? `<small class="ok">✓ ${t(it.kind === 'place' ? 'roadmap.open' : 'roadmap.owned')}</small>`
+    ? `<small class="ok">${gi('tick')} ${t(it.kind === 'place' ? 'roadmap.open' : 'roadmap.owned')}</small>`
     : it.notes.map((n) => `<small>${n}</small>`).join('');
   return `<div class="rm-tile rm-${it.kind}${it.done ? ' done' : ''}">
     <span class="rm-ico">${it.icon}</span>
@@ -77,8 +77,8 @@ function tile(it: Item): string {
 
 /** The star of a level on the road, with its number (a grey star until it is reached; the crown for the top). */
 function node(level: number, reached: boolean): string {
-  if (level === TOP) return `<div class="rm-node top">${ico('emblem', '👑')}</div>`;
-  return `<div class="rm-node">${ico(reached ? 'star_full' : 'star_empty', '⭐')}<b>${level}</b></div>`;
+  if (level === TOP) return `<div class="rm-node top">${ico('emblem', '')}</div>`;
+  return `<div class="rm-node">${ico(reached ? 'star_full' : 'star_empty', '')}<b>${level}</b></div>`;
 }
 
 export function roadmapModal(g: Game): ModalSpec {
@@ -102,10 +102,10 @@ export function roadmapModal(g: Game): ModalSpec {
         // the line down to the next star is green once that star is reached too
         const lineDone = i + 1 < ROAD.length && best >= ROAD[i + 1] - 1e-9;
         const state = reached
-          ? `<span class="rm-state ok">✓ ${t(level === TOP ? 'roadmap.reached' : 'roadmap.open')}</span>`
+          ? `<span class="rm-state ok">${gi('tick')} ${t(level === TOP ? 'roadmap.reached' : 'roadmap.open')}</span>`
           : isNext && level === now.level + 1
             ? `<span class="rm-state next"><i class="rm-mini"><i style="width:${pct}%"></i></i>${t('roadmap.left', { p: pct })}</span>`
-            : `<span class="rm-state">${ico('lock', '🔒')} ${t('roadmap.locked')}</span>`;
+            : `<span class="rm-state">${gi('lock')} ${t('roadmap.locked')}</span>`;
         let body: string;
         if (level === TOP) {
           body = `<div class="rm-goal">${t('roadmap.topNote')}</div>`;
@@ -127,9 +127,9 @@ export function roadmapModal(g: Game): ModalSpec {
           </section>
         </li>`;
       });
-      return `<h2>🗺️ ${t('roadmap.title')}</h2>
+      return `<h2><span class="ph-ico">${gi('map')}</span>${t('roadmap.title')}</h2>
         <div class="rm-hero">
-          <div class="rm-medal">${ico('star_full', '⭐')}<b>${now.level}</b></div>
+          <div class="rm-medal">${ico('star_full', '')}<b>${now.level}</b></div>
           <div class="rm-hero-txt">
             <div class="rm-hero-top"><span>${t('roadmap.now')}</span>${stars(now.level)}</div>
             <div class="rm-hero-level">${t('roadmap.level', { n: now.level })}</div>
@@ -137,7 +137,7 @@ export function roadmapModal(g: Game): ModalSpec {
             <small>${sub}</small>
           </div>
         </div>
-        <div class="rm-how">💡 ${t('roadmap.how')}</div>
+        <div class="rm-how">${gi('bulb')} ${t('roadmap.how')}</div>
         <ol class="rm-road">${levels.join('')}</ol>
         <div class="modal-actions"><button class="btn btn-y" data-act="close">${t('btn.close')}</button></div>`;
     },

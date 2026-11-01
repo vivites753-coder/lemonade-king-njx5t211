@@ -114,11 +114,11 @@ describe('texts that speak to the player', () => {
     const { setGender, setLang, t } = await import('../src/i18n');
     setLang('uk');
     setGender('girl');
-    expect(t('card.thiefCaught.title')).toBe('Ти впіймала лиса! 🦊');
+    expect(t('card.thiefCaught.title')).toBe('Ти впіймала лиса!');
     expect(t('roadmap.max')).toContain('справжня підприємиця');
     expect(t('bonus.cat.found', { n: 5 })).toBe('Ти знайшла кота Мурчика! Господиня дякує: +5 монет.');
     setGender('boy');
-    expect(t('card.thiefCaught.title')).toBe('Ти впіймав лиса! 🦊');
+    expect(t('card.thiefCaught.title')).toBe('Ти впіймав лиса!');
     expect(t('roadmap.max')).toContain('справжній підприємець');
     setLang('ro');
     setGender('girl');

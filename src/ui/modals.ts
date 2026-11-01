@@ -4,7 +4,7 @@ import { GLOSSARY_IDS } from '../data/glossary';
 import { LANGS, asLang, t } from '../i18n';
 import type { Lang } from '../core/types';
 import type { Game } from '../sim/game';
-import { esc, ico, toggle } from './dom';
+import { esc, gi, ico, toggle } from './dom';
 import { toggleFullscreen } from './fullscreen';
 import { isNativeApp } from '../native';
 import { desktopApp, isDesktopApp } from '../desktop';
@@ -57,7 +57,7 @@ export function gateModal(onPass: () => void): ModalSpec {
   const answer = a * b - c;
   let wrong = false;
   return {
-    render: () => `<h2>${ico('lock', '🔒')} ${t('gate.title')}</h2>
+    render: () => `<h2>${ico('lock', '')} ${t('gate.title')}</h2>
       <p>${t('gate.q', { q: `${a} × ${b} − ${c} = ?` })}</p>
       <input id="gate-input" class="input-num" inputmode="numeric" autocomplete="off" />
       ${wrong ? `<div class="warn-box">${t('gate.wrong')}</div>` : ''}
@@ -105,43 +105,43 @@ export function settingsModal(g: Game, hooks: SettingsHooks): ModalSpec {
     render: () => {
       const s = g.S.settings;
       const inGame = g.phase !== 'title';
-      return `<h2>⚙️ ${t('settings.title')}</h2>
-        ${toggle('set:sound', s.sound, `🔊 ${t('settings.sound')}`)}
-        ${toggle('set:music', s.music, `🎵 ${t('settings.music')}`)}
-        ${toggle('set:showZone', s.showZone, `🟡 ${t('settings.showZone')}`)}
-        ${toggle('set:reduceMotion', s.reduceMotion, `🐢 ${t('settings.reduceMotion')}`)}
-        ${toggle('set:batterySaver', !!s.batterySaver, `🔋 ${t('settings.batterySaver')}`)}
-        ${toggle('set:dyslexia', s.dyslexia, `🔤 ${t('settings.dyslexia')}`)}
-        <h3>🔠 ${t('settings.fontSize')}</h3>
+      return `<h2><span class="ph-ico">${gi('gear')}</span>${t('settings.title')}</h2>
+        ${toggle('set:sound', s.sound, `${gi('sound')} ${t('settings.sound')}`)}
+        ${toggle('set:music', s.music, `${gi('music')} ${t('settings.music')}`)}
+        ${toggle('set:showZone', s.showZone, `${gi('radius')} ${t('settings.showZone')}`)}
+        ${toggle('set:reduceMotion', s.reduceMotion, `${gi('gauge')} ${t('settings.reduceMotion')}`)}
+        ${toggle('set:batterySaver', !!s.batterySaver, `${gi('battery')} ${t('settings.batterySaver')}`)}
+        ${toggle('set:dyslexia', s.dyslexia, `${gi('text')} ${t('settings.dyslexia')}`)}
+        <h3>${gi('text')} ${t('settings.fontSize')}</h3>
         <div class="row font-sizes">
           ${FONT_SCALES.map(([k, key]) => `<button class="btn btn-sm ${Math.abs((s.fontScale ?? 1) - k) < 0.01 ? 'btn-y' : ''}" data-act="font:${k}" style="font-size:${Math.round(14 * k)}px">${t(key)}</button>`).join('')}
         </div>
-        ${inGame ? `<h3>🕹️ ${t('settings.hudLayout')}</h3>
-        <div class="row"><button class="btn btn-sm" data-act="hudEdit">✋ ${t('settings.hudEdit')}</button></div>
+        ${inGame ? `<h3>${gi('gamepad')} ${t('settings.hudLayout')}</h3>
+        <div class="row"><button class="btn btn-sm" data-act="hudEdit">${gi('hand')} ${t('settings.hudEdit')}</button></div>
         <p class="note">${t('settings.hudNote')}</p>` : ''}
-        ${isNativeApp() ? '' : `<div class="row" style="margin:6px 0"><button class="btn btn-sm" data-act="fullscreen">⛶ ${t('settings.fullscreen')}</button>${isDesktopApp() ? ` <button class="btn btn-sm" data-act="quit">🚪 ${t('settings.quit')}</button>` : ''}</div>`}
-        <h3>🌍 ${t('settings.lang')}</h3>
+        ${isNativeApp() ? '' : `<div class="row" style="margin:6px 0"><button class="btn btn-sm" data-act="fullscreen">${gi('fullscreen')} ${t('settings.fullscreen')}</button>${isDesktopApp() ? ` <button class="btn btn-sm" data-act="quit">${gi('door')} ${t('settings.quit')}</button>` : ''}</div>`}
+        <h3>${gi('globe')} ${t('settings.lang')}</h3>
         <div class="row">
           ${LANGS.map((l) => `<button class="btn btn-sm ${g.S.lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
         </div>
-        ${inGame && KID_MODE_READY ? `<h3>🎚️ ${t('settings.mode')}</h3>
+        ${inGame && KID_MODE_READY ? `<h3>${gi('sliders')} ${t('settings.mode')}</h3>
         <div class="row">
           <button class="btn btn-sm ${g.S.ageMode === 'kid' ? 'btn-y' : ''}" data-act="mode:kid">${t('mode.kid')}</button>
           <button class="btn btn-sm ${g.S.ageMode === 'pro' ? 'btn-y' : ''}" data-act="mode:pro">${t('mode.pro')}</button>
         </div>` : ''}
-        <h3>💾 ${t('settings.backup')}</h3>
+        <h3>${gi('save')} ${t('settings.backup')}</h3>
         <div class="row" style="flex-wrap:wrap">
-          <button class="btn btn-sm" data-act="export">⬇️ ${t('settings.export')}</button>
-          <button class="btn btn-sm" data-act="import">⬆️ ${t('settings.import')}</button>
+          <button class="btn btn-sm" data-act="export">${gi('download')} ${t('settings.export')}</button>
+          <button class="btn btn-sm" data-act="import">${gi('upload')} ${t('settings.import')}</button>
         </div>
         <p class="note">${t('settings.backupNote')}</p>
-        <h3>👪 ${t('settings.parents')}</h3>
+        <h3>${gi('family')} ${t('settings.parents')}</h3>
         <div class="row" style="flex-wrap:wrap">
-          <button class="btn btn-sm" data-act="full">⭐ ${t('settings.full')}</button>
-          ${inGame ? `<button class="btn btn-sm" data-act="title">🏠 ${t('settings.toTitle')}</button>` : ''}
-          <button class="btn btn-sm btn-r" data-act="reset">🗑️ ${t('settings.reset')}</button>
+          <button class="btn btn-sm" data-act="full">${gi('star')} ${t('settings.full')}</button>
+          ${inGame ? `<button class="btn btn-sm" data-act="title">${gi('home')} ${t('settings.toTitle')}</button>` : ''}
+          <button class="btn btn-sm btn-r" data-act="reset">${gi('trash')} ${t('settings.reset')}</button>
         </div>
-        ${hooks.devMode() ? `<h3>🛠 ${t('dev.title')}</h3><button class="btn btn-sm btn-b" data-act="dev">🛠 ${t('dev.open')}</button>` : ''}
+        ${hooks.devMode() ? `<h3>${gi('bug')} ${t('dev.title')}</h3><button class="btn btn-sm btn-b" data-act="dev">${gi('wrench')} ${t('dev.open')}</button>` : ''}
         <p class="note">${t('settings.edition', { e: EDITION === 'full' ? 'Full' : 'Demo' })} · v0.4</p>
         <div class="modal-actions"><button class="btn btn-y" data-act="close">${t('btn.close')}</button></div>`;
     },
@@ -220,7 +220,7 @@ export function glossaryModal(g: Game): ModalSpec {
       const items = known.length
         ? known.map((id) => `<div class="gl-item"><b>${t(`gl.${id}.term`)}</b> — ${t(`gl.${id}.text`)}</div>`).join('')
         : `<p class="note">${t('glossary.empty')}</p>`;
-      return `<h2>📖 ${t('glossary.title')} <small class="muted">${known.length}/${GLOSSARY_IDS.length}</small></h2>${items}
+      return `<h2><span class="ph-ico">${gi('book')}</span>${t('glossary.title')} <small class="muted">${known.length}/${GLOSSARY_IDS.length}</small></h2>${items}
         <div class="modal-actions"><button class="btn btn-y" data-act="close">${t('btn.close')}</button></div>`;
     },
     act: (act) => act === 'close',

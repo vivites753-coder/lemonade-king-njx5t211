@@ -1,7 +1,8 @@
 // Procedural props: trees, benches, lamps, fences, beach things, cars.
 import { drawSprite, getImage, hasImage, metaFor, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
-import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
+import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, type Ctx } from '../iso';
+import { picto } from '../pictos';
 
 function tree(ctx: Ctx, c: SpriteCall, palette: [string, string, string], tall = 1): void {
   const s = c.s * tall;
@@ -333,7 +334,7 @@ function busShelter(ctx: Ctx, c: SpriteCall): void {
     ctx.strokeRect(L * 32 - 40, 9, 32, 24);
   });
   const [px, py] = P(x0 + L - 0.38, y0 + 0.02, H - 10);
-  text(ctx, '🍋', px, py + 8, 13, '#000', 'center', 400);
+  picto(ctx, '🍋', px, py + 8, 14);
   // the bench
   box(ctx, x0 + 0.16, y0 + 0.07, L - 0.5, 0.16, 3, 10, '#c58b4f');
   box(ctx, x0 + 0.2, y0 + 0.09, 0.05, 0.12, 10, 0, '#495057');

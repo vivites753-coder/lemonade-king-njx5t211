@@ -3,11 +3,20 @@ import artJson from '../../assets/stand/truck.json';
 import { TRUCK_LOGOS, TRUCK_SKINS, TRUCK_TEXT_MAX } from '../data/truck';
 import { t } from '../i18n';
 import type { Game } from '../sim/game';
-import { esc } from './dom';
+import { esc, gi, ico, icoUrl } from './dom';
 import type { ModalSpec } from './overlays';
 
 const truckUrls = import.meta.glob('/assets/stand/stand_truck_*.{png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const TRUCK_ART = artJson as unknown as Record<string, { sign: number[][]; aspect: number }>;
+
+/** The id of a logo for ico() (TRUCK_LOGOS holds the ids of the scene, ui_…). */
+function logoId(logo: number): string {
+  return (TRUCK_LOGOS[logo] ?? TRUCK_LOGOS[0]).replace(/^ui_/, '');
+}
+
+function logoIco(logo: number): string {
+  return ico(logoId(logo), '', 'truck-logo');
+}
 
 /** The picture of the truck with the sign text lying on its board (when the pictures are there). */
 function picturePreview(skin: number, logo: number, label: string): string {
@@ -21,11 +30,10 @@ function picturePreview(skin: number, logo: number, label: string): string {
   const BW = 100;
   const BH = 26;
   const m = [((tr[0] - tl[0]) * Wp) / BW, ((tr[1] - tl[1]) * Hp) / BW, ((bl[0] - tl[0]) * Wp) / BH, ((bl[1] - tl[1]) * Hp) / BH];
-  const text = `${TRUCK_LOGOS[logo] ?? TRUCK_LOGOS[0]} ${label}`;
-  const size = text.length > 12 ? 9 : 15;
+  const size = label.length > 10 ? 9 : 15;
   return `<div class="truck-pic" style="width:${Wp}px;height:${Hp}px">
     <img src="${url}" alt="" draggable="false">
-    <span class="truck-sign" style="left:${tl[0] * Wp}px;top:${tl[1] * Hp}px;width:${BW}px;height:${BH}px;font-size:${size}px;color:${sk.neon};transform:matrix(${m.map((v) => v.toFixed(3)).join(',')},0,0)">${esc(text)}</span>
+    <span class="truck-sign" style="left:${tl[0] * Wp}px;top:${tl[1] * Hp}px;width:${BW}px;height:${BH}px;font-size:${size}px;color:${sk.neon};transform:matrix(${m.map((v) => v.toFixed(3)).join(',')},0,0)">${logoIco(logo)}${esc(label)}</span>
   </div>`;
 }
 
@@ -45,7 +53,7 @@ function preview(skin: number, logo: number, label: string): string {
     <rect x="22" y="92" width="158" height="6" rx="3" fill="${sk.trim}"/>
     <rect x="14" y="110" width="212" height="7" fill="${sk.trim}"/>
     <circle cx="200" cy="74" r="17" fill="#fff" stroke="${sk.trim}" stroke-width="2.5"/>
-    <text x="200" y="81" text-anchor="middle" font-size="19">${TRUCK_LOGOS[logo] ?? TRUCK_LOGOS[0]}</text>
+    <image x="187" y="61" width="26" height="26" href="${icoUrl(logoId(logo)) ?? ''}"/>
     <circle cx="58" cy="130" r="13" fill="#212529"/><circle cx="58" cy="130" r="5" fill="#adb5bd"/>
     <circle cx="182" cy="130" r="13" fill="#212529"/><circle cx="182" cy="130" r="5" fill="#adb5bd"/>
   </svg>`;
@@ -63,20 +71,20 @@ export function truckModal(g: Game): ModalSpec {
     render: () => {
       const look = g.S.truck;
       const label = draft.trim() || t('world.truckDefault');
-      return `<h2>🎨 ${t('truck.title')}</h2>
+      return `<h2><span class="ph-ico">${gi('palette')}</span>${t('truck.title')}</h2>
         <div class="truck-wrap">${preview(look.skin, look.logo, label)}</div>
         <h3>${t('truck.skin')}</h3>
         <div class="dev-row">${TRUCK_SKINS.map(
           (s, i) => `<button class="swatch${look.skin === i ? ' sel' : ''}" data-act="skin:${i}" style="background:${s.body};border-color:${s.trim}" aria-label="${t(`truck.skin.${s.id}`)}" title="${t(`truck.skin.${s.id}`)}"><i style="background:${s.neon}"></i></button>`,
         ).join('')}</div>
         <h3>${t('truck.logo')}</h3>
-        <div class="dev-row">${TRUCK_LOGOS.map((l, i) => `<button class="btn btn-sm${look.logo === i ? ' btn-y' : ''}" data-act="logo:${i}">${l}</button>`).join('')}</div>
+        <div class="dev-row">${TRUCK_LOGOS.map((l, i) => `<button class="btn btn-sm${look.logo === i ? ' btn-y' : ''}" data-act="logo:${i}">${ico(l.replace(/^ui_/, ''), '')}</button>`).join('')}</div>
         <h3>${t('truck.text')}</h3>
         <input id="truck-text" class="input-name" maxlength="${TRUCK_TEXT_MAX}" value="${esc(draft)}" placeholder="${esc(t('world.truckDefault'))}" autocomplete="off" />
         <small class="muted">${t('truck.textNote', { n: TRUCK_TEXT_MAX })}</small>
         <div class="modal-actions">
-          <button class="btn" data-act="preview">👀 ${t('truck.preview')}</button>
-          <button class="btn btn-g" data-act="save">✅ ${t('truck.save')}</button>
+          <button class="btn" data-act="preview">${gi('eye')} ${t('truck.preview')}</button>
+          <button class="btn btn-g" data-act="save">${gi('check')} ${t('truck.save')}</button>
         </div>`;
     },
     act: (act, arg) => {

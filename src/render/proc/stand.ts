@@ -8,6 +8,7 @@ import { lemonsTotal } from '../../sim/state';
 import { drawSprite, getImage, hasImage, metaFor, registerProcs, spriteShadow, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
+import { picto } from '../pictos';
 import { drawCharacter, standSpriteId } from './people';
 import { brokenMark } from './standExtras';
 import { TRUCK_SKINS } from '../../data/truck';
@@ -260,7 +261,7 @@ function sign(ctx: Ctx, price: number): void {
   faceY(ctx, x, y, 6, () => {
     rrect(ctx, -1, -33, 18, 33, 2, '#b07a43');
     rrect(ctx, 1, -31, 14, 29, 1.5, '#2f4f3f');
-    text(ctx, '🍋', 8, -24, 7, '#ffffff', 'center', 400);
+    picto(ctx, '🍋', 8, -24, 8);
     text(ctx, String(price), 8, -12, 9, '#ffffff', 'center', 900);
     circle(ctx, 8, -5, 2, '#fcc419');
   });

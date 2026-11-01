@@ -2,6 +2,7 @@
 // (juicer, mixer, cups, cooler bag, toolkit), so buying something visibly changes the kitchen.
 
 import { t } from '../i18n';
+import { GLYPHS, type GlyphName } from './glyphs';
 
 const urls = import.meta.glob('/assets/kitchen/*.{png,jpg,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
@@ -112,7 +113,7 @@ export function juicer(kind: JuicerKind): string {
     90,
     `<path d="M8 62 Q40 98 72 62 Z" fill="#fff4e6" stroke="#e8590c" stroke-width="2"/>
      <ellipse cx="40" cy="62" rx="32" ry="6" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
-     <text x="40" y="48" font-size="30" text-anchor="middle">✊</text>`,
+     ${glyphAt('fist', 40, 40, 30, '#e8590c')}`,
   );
 }
 
@@ -145,7 +146,7 @@ export function mixer(kind: MixerKind): string {
      <line x1="34" y1="40" x2="36" y2="70" stroke="#868e96" stroke-width="2.5"/>
      <ellipse cx="22" cy="74" rx="5" ry="7" fill="none" stroke="#868e96" stroke-width="2"/>
      <ellipse cx="36" cy="74" rx="5" ry="7" fill="none" stroke="#868e96" stroke-width="2"/>
-     ${kind === 'broken' ? '<text x="50" y="18" font-size="18" text-anchor="middle">🔧</text>' : ''}`,
+     ${kind === 'broken' ? glyphAt('wrench', 50, 13, 16, '#e03131') : ''}`,
   );
 }
 
@@ -178,7 +179,7 @@ export function coolerBag(): string {
     `<rect x="4" y="12" width="62" height="34" rx="6" fill="#4dabf7" stroke="#1971c2" stroke-width="1.5"/>
      <rect x="2" y="8" width="66" height="9" rx="4" fill="#f8f9fa" stroke="#adb5bd"/>
      <path d="M22 8 Q35 -2 48 8" fill="none" stroke="#1971c2" stroke-width="3"/>
-     <text x="35" y="37" font-size="16" text-anchor="middle" fill="#fff">❄</text>`,
+     ${glyphAt('snow', 35, 31, 15, '#ffffff')}`,
   );
 }
 
@@ -199,7 +200,7 @@ export function toolkitBox(): string {
 /** Splashes for the jug when something is poured in (falls back to emoji when the picture is missing). */
 export function splashArt(): string {
   const p = pic('fx_splash');
-  return p ? p + p + p : '💦💦💦';
+  return p ? p + p + p : '';
 }
 
 /** The wall of the kitchen: a window, a towel, an apron and a clock (nothing if the pictures are missing). */
@@ -225,7 +226,7 @@ export function jugArt(): string {
 
 /** Drops that fall into the jug when a lemon is squeezed. */
 export function dropsArt(): string {
-  return pic('fx_drops') || '💧';
+  return pic('fx_drops') || '';
 }
 
 /** One ice cube (it is carried by the finger or flies into the jug). */
@@ -242,7 +243,7 @@ function iceCube(): string {
 /** The picture of an ingredient that is carried by the finger or flies to its place. */
 export function itemGhost(item: 'lemon' | 'water' | 'sugar' | 'ice'): string {
   if (item === 'ice') return pic('ice') || iceCube();
-  return pic(item === 'lemon' ? 'lemon' : item === 'water' ? 'water_1' : 'sugar_2') || (item === 'lemon' ? '🍋' : item === 'water' ? '💧' : '🍬');
+  return pic(item === 'lemon' ? 'lemon' : item === 'water' ? 'water_1' : 'sugar_2') || '';
 }
 
 /** The tray of ice that the freezer made: a cube for every tray that is left (up to six). */
@@ -276,10 +277,20 @@ export function iceTray(n: number): string {
 
 /** A jug of ready lemonade standing on the counter. */
 export function readyJug(): string {
-  return pic('pitcher_full') || '<span class="k-mark">🥛</span>';
+  return pic('pitcher_full') || '';
 }
 
 /** What happens where water or sugar lands in the jug (a splash or a puff of sugar). */
 export function pourFx(item: 'water' | 'sugar'): string {
-  return pic(item === 'water' ? 'fx_water' : 'fx_sugar') || (item === 'water' ? '💦' : '✨');
+  return pic(item === 'water' ? 'fx_water' : 'fx_sugar') || '';
+}
+
+/** An interface icon inside a drawn SVG: centred at (x, y), `size` wide, in one colour. */
+function glyphAt(name: GlyphName, x: number, y: number, size: number, color: string): string {
+  return `<g transform="translate(${x - size / 2} ${y - size / 2}) scale(${size / 256})" fill="${color}">${GLYPHS[name]}</g>`;
+}
+
+/** A wooden spoon (stirring by hand while the mixer is broken). */
+export function spoonArt(): string {
+  return `<svg class="spoon-art" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6.5" rx="4.6" ry="5.6" fill="#d9a066" stroke="#a86b32" stroke-width="1.2"/><ellipse cx="12" cy="6.2" rx="2.6" ry="3.4" fill="#e8b884"/><rect x="10.9" y="11.4" width="2.2" height="11.6" rx="1.1" fill="#c48a4f" stroke="#a86b32" stroke-width="0.8"/></svg>`;
 }

@@ -5,8 +5,19 @@ import { CONFIG } from '../../core/config';
 import { t } from '../../i18n';
 import { lemonsTotal } from '../../sim/state';
 import type { Game } from '../../sim/game';
-import { coin, dots, fmtDur, fmtHour, ico, locIco, weatherIco } from '../dom';
+import type { LocEventId } from '../../data/events';
+import { coin, dots, fmtDur, fmtHour, gi, ico, locIco, weatherIco, type GlyphName } from '../dom';
 import type { Panel, UIApi } from './types';
+
+/** The mark of a place event in the list of places. */
+const EV_GLYPH: Record<LocEventId, GlyphName> = {
+  trains: 'train',
+  trackRepair: 'barricade',
+  concert: 'mic',
+  mallSale: 'tag',
+  busRush: 'bus',
+  busStrike: 'barricade',
+};
 
 /** A tap on a place: a store that is not open yet asks first whether to open it (it costs a lot, once). */
 export function pickPlace(g: Game, ui: UIApi, id: LocationId): void {
@@ -51,25 +62,25 @@ export function locationCards(g: Game): string {
       const storeLine = !l.store || repLock
         ? ''
         : st
-          ? `<span class="loc-own">✅ ${t('loc.storeReady', { pct: Math.max(0, Math.min(100, Math.round((st.earned / st.invested) * 100))) })}</span>`
-          : `<span class="loc-store">🔨 ${t('loc.storeSetup', { n: coin(storeSetupCost(id)) })}</span>`;
+          ? `<span class="loc-own">${gi('check')} ${t('loc.storeReady', { pct: Math.max(0, Math.min(100, Math.round((st.earned / st.invested) * 100))) })}</span>`
+          : `<span class="loc-store">${gi('hammer')} ${t('loc.storeSetup', { n: coin(storeSetupCost(id)) })}</span>`;
       return `<button class="loc${S.location === id ? ' sel' : ''}${repLock ? ' rep-lock' : ''}" data-act="loc:${id}" ${locked ? 'disabled' : ''}>
-        <span class="loc-ico">${repLock ? ico('lock', '🔒') : locIco(id)}</span>
+        <span class="loc-ico">${repLock ? ico('lock', '') : locIco(id)}</span>
         <span class="grow">
-          <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">🏠 ${t('loc.indoor')}</span>` : ''}${l.store ? ` <span class="tag tag-store">${ico('store', '🏪')} ${t('loc.store')}</span>` : ''}
-          ${repLock ? `<span class="loc-lock">⭐ ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}
-          ${ev ? `<span class="loc-ev">${t(`loc.ev.${ev.id}`)}</span>` : ''}
-          ${own ? `<span class="loc-own">${ico('pt_stand', '🏪')} ${t('loc.ownPoint')}</span>` : ''}
+          <b>${t(`loc.${id}.name`)}</b>${l.indoor ? ` <span class="tag">${gi('home')} ${t('loc.indoor')}</span>` : ''}${l.store ? ` <span class="tag tag-store">${gi('store')} ${t('loc.store')}</span>` : ''}
+          ${repLock ? `<span class="loc-lock">${gi('lock')} ${t('loc.locked', { n: l.minRep ?? 0 })}</span>` : ''}
+          ${ev ? `<span class="loc-ev">${gi(EV_GLYPH[ev.id])} ${t(`loc.ev.${ev.id}`)}</span>` : ''}
+          ${own ? `<span class="loc-own">${gi('store')} ${t('loc.ownPoint')}</span>` : ''}
           ${storeLine}
-          ${staffN ? `<span class="loc-own">👥 ${t('loc.storeStaff', { n: staffN })}</span>` : ''}
+          ${staffN ? `<span class="loc-own">${gi('users')} ${t('loc.storeStaff', { n: staffN })}</span>` : ''}
           <small>${t(`loc.${id}.desc`)}</small>
           <span class="loc-meta">
-            <span>👥 ${dots(l.trafficStars)}</span>
-            <span>${l.rent ? t('loc.rent', { n: coin(l.rent) }) : '✅ ' + t('loc.free')}</span>
-            ${l.store ? `<span>${ico('utilities', '🔌')} ${t('loc.utilities', { n: coin(l.store.utilities) })}</span>` : ''}
-            <span>🕐 ${travel ? t('loc.travel', { t: fmtDur(travel) }) : t('loc.travel0')}</span>
+            <span class="lm-crowd" title="${t('loc.traffic')}">${gi('users')} ${dots(l.trafficStars)}</span>
+            <span>${l.rent ? t('loc.rent', { n: coin(l.rent) }) : `${gi('check')} ${t('loc.free')}`}</span>
+            ${l.store ? `<span>${gi('plug')} ${t('loc.utilities', { n: coin(l.store.utilities) })}</span>` : ''}
+            <span>${gi('clock')} ${travel ? t('loc.travel', { t: fmtDur(travel) }) : t('loc.travel0')}</span>
           </span>
-          <small>⏰ ${t(`loc.${id}.peak`)}</small>
+          <small class="loc-peak">${gi('trend-up')} ${t(`loc.${id}.peak`)}</small>
         </span>
       </button>`;
   }).join('');
@@ -86,26 +97,26 @@ export const morningPanel: Panel = {
     const locCards = locationCards(g);
 
     return `<div class="panel">
-      <div class="panel-head"><h2>☀️ ${t('morning.title', { n: S.day })}</h2></div>
+      <div class="panel-head"><h2><span class="ph-ico">${gi('sunrise')}</span>${t('morning.title', { n: S.day })}</h2></div>
       <div class="panel-body">
         <div class="card row">
           <span class="big-ico">${weatherIco(D.forecast)}</span>
           <span class="grow"><b>${t('morning.forecast', { w: t(`weather.${D.forecast}`) })}</b><br><small class="muted">${t('morning.forecastNote')}</small></span>
         </div>
-        <div class="card row"><span class="big-ico">📰</span><span class="grow"><b>${t('news.title')}</b><br>${t(D.newsKey)}</span></div>
-        ${Object.keys(g.S.broken).length ? `<div class="warn-box">🔧 ${t('morning.broken', { list: (Object.keys(g.S.broken) as EquipId[]).map((id) => t(`equip.${id}`)).join(', ') })}</div>` : ''}
-        ${D.spoiledOvernight > 0 ? `<div class="warn-box">🍋💀 ${t('morning.spoiled', { n: D.spoiledOvernight })}</div>` : ''}
-        <div class="note">${hasStock ? `<b>${t('morning.stock')}:</b> 🍋 ${lemonsTotal(st)} · 💧 ${st.water} · 🍬 ${st.sugar} · 🥤 ${st.cups}` : t('morning.noStock')}</div>
+        <div class="card row"><span class="big-ico">${ico('em_chat', '')}</span><span class="grow"><b>${t('news.title')}</b><br><small>${t(D.newsKey)}</small></span></div>
+        ${Object.keys(g.S.broken).length ? `<div class="warn-box">${gi('wrench')} ${t('morning.broken', { list: (Object.keys(g.S.broken) as EquipId[]).map((id) => t(`equip.${id}`)).join(', ') })}</div>` : ''}
+        ${D.spoiledOvernight > 0 ? `<div class="warn-box">${gi('warning')} ${t('morning.spoiled', { n: D.spoiledOvernight })}</div>` : ''}
+        <div class="note stock-line">${hasStock ? `<b>${t('morning.stock')}:</b> <span class="st">${ico('gd_lemon', '')}${lemonsTotal(st)}</span><span class="st">${ico('gd_water', '')}${st.water}</span><span class="st">${ico('gd_sugar', '')}${st.sugar}</span><span class="st">${ico('gd_cups', '')}${st.cups}</span>` : t('morning.noStock')}</div>
         <h3>${t('morning.where')}</h3>
-        ${S.day === 1 ? `<div class="note">🔒 ${t('morning.day1lock')}</div>` : ''}
+        ${S.day === 1 ? `<div class="note">${gi('lock')} ${t('morning.day1lock')}</div>` : ''}
         <div class="locs">${locCards}</div>
-        <div class="good-box">🕐 ${t('morning.openAt', { a: fmtHour(g.openingHour(true)), b: fmtHour(g.openingHour(false)) })}</div>
+        <div class="good-box">${gi('clock')} ${t('morning.openAt', { a: fmtHour(g.openingHour(true)), b: fmtHour(g.openingHour(false)) })}</div>
       </div>
       <div class="panel-foot">
-        <button class="btn btn-y btn-big" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>${ico('gd_market', '🛒')} ${t('morning.toMarket', { t: fmtDur(g.tripHours()) })}</button>
-        ${g.S.upgrades.delivery ? `<button class="btn btn-b" data-act="delivery" ${g.canGoMarket(true) ? '' : 'disabled'}>🚚 ${t('morning.delivery')}</button>` : ''}
-        <button class="btn" data-act="skip" ${g.maxPitchersNow() >= 1 || g.D.cupsReady > 0 ? '' : 'disabled'}>🍳 ${t('morning.skip')}</button>
-        <button class="btn btn-sm" data-act="rest">😴 ${t('morning.rest')}</button>
+        <button class="btn btn-y btn-big" data-act="market" ${g.canGoMarket() ? '' : 'disabled'}>${ico('gd_market', '')} ${t('morning.toMarket', { t: fmtDur(g.tripHours()) })}</button>
+        ${g.S.upgrades.delivery ? `<button class="btn btn-b" data-act="delivery" ${g.canGoMarket(true) ? '' : 'disabled'}>${ico('up_delivery', '')} ${t('morning.delivery')}</button>` : ''}
+        <button class="btn" data-act="skip" ${g.maxPitchersNow() >= 1 || g.D.cupsReady > 0 ? '' : 'disabled'}>${ico('gd_pitcher', '')} ${t('morning.skip')}</button>
+        <button class="btn btn-sm btn-link" data-act="rest">${gi('bed')} ${t('morning.rest')}</button>
       </div>
     </div>`;
   },

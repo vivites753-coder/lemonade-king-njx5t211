@@ -3,7 +3,8 @@
 import { CONFIG } from '../../core/config';
 import { registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
-import { box, circle, ellipse, faceY, line, P, rrect, shadow, text, type Ctx } from '../iso';
+import { box, circle, ellipse, faceY, line, P, rrect, shadow, type Ctx } from '../iso';
+import { picto } from '../pictos';
 
 const SX = CONFIG.STAND.x;
 const SY = CONFIG.STAND.y;
@@ -41,7 +42,7 @@ function coolerBox(ctx: Ctx): void {
   const y = SY - 0.35;
   box(ctx, x, y, 0.42, 0.3, 14, 0, '#4dabf7');
   box(ctx, x - 0.02, y - 0.02, 0.46, 0.34, 3, 14, '#f8f9fa');
-  faceY(ctx, x, y + 0.3, 0, () => text(ctx, '❄', 6.5, -7, 8, '#ffffff', 'center', 900));
+  faceY(ctx, x, y + 0.3, 0, () => picto(ctx, 'gi:snow', 6.5, -7, 8, '#ffffff'));
 }
 
 function toolBox(ctx: Ctx): void {
@@ -211,7 +212,7 @@ export function brokenMark(ctx: Ctx, x: number, y: number, z: number): void {
   const [bx, by] = P(x, y, z);
   const pulse = ENV.reduceMotion ? 0 : Math.sin(ENV.t * 5) * 1.5;
   circle(ctx, bx, by - pulse, 10, '#fff0f0', '#fa5252', 2);
-  text(ctx, '🔧', bx, by - pulse + 0.5, 10, '#000', 'center', 400);
+  picto(ctx, 'gi:wrench', bx, by - pulse, 11, '#e03131');
 }
 
 registerProcs({

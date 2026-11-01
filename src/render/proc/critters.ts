@@ -3,6 +3,7 @@ import type { Critter } from '../../sim/critters';
 import { getImage } from '../assets';
 import { ENV } from '../env';
 import { circle, ellipse, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
+import { picto } from '../pictos';
 import { drawCharacter } from './people';
 
 /** A pulsing ring that says "tap me" around lucky finds. */
@@ -169,7 +170,7 @@ export function drawCritter(ctx: Ctx, c: Critter, t: number): { x: number; y: nu
         dirX: c.dirX >= 0 ? 1 : -1,
         t,
       });
-      if (c.phase === 1 && c.t % 1 < 0.6) text(ctx, '💫', sx, sy - 52, 14, '#000', 'center', 400);
+      if (c.phase === 1 && c.t % 1 < 0.6) picto(ctx, '💫', sx, sy - 52, 18);
       return null;
     case 'ball':
       ball(ctx, c, sx, sy);

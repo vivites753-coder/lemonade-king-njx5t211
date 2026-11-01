@@ -5,7 +5,7 @@ import { repLevel } from '../sim/economy';
 import type { Game } from '../sim/game';
 import { payback, pointOpensAt, pointProgress, pointWorkers, skillStars, type Point } from '../sim/points';
 import { dayPart } from './dayPath';
-import { fmtHour, ico, locIco, repBar, round1, signedCoin, stars, weatherIco } from './dom';
+import { fmtHour, gi, ico, locIco, repBar, round1, signedCoin, stars, weatherIco } from './dom';
 
 /** Phases in which the scene is in view and the player may look at their other stands. */
 const VIEW_PHASES: Phase[] = ['morning', 'prepare', 'sell', 'report', 'shop'];
@@ -53,33 +53,33 @@ export class Hud {
     this.root.innerHTML = `
       <div class="hud-top" data-el="top">
         <span class="chip coins" title="coins"><i class="coin"></i><b data-el="coins"></b></span>
-        <span class="chip">${ico('day', '📅')} <b data-el="day"></b></span>
-        <span class="chip tod" data-el="tod">${ico('clock', '🕐')} <b data-el="clock"></b><span class="tod-nm" data-el="todName"></span></span>
+        <span class="chip">${ico('day', '')} <b data-el="day"></b></span>
+        <span class="chip tod" data-el="tod">${ico('clock', '')} <b data-el="clock"></b><span class="tod-nm" data-el="todName"></span></span>
         <span class="chip" data-el="weather"></span>
         <span class="chip" data-el="loc"></span>
         <button class="chip chip-btn" data-hud="roadmap" data-el="rep" aria-label="${t('roadmap.title')}" title="${t('roadmap.title')}"></button>
         <span class="spacer"></span>
         <div class="seg" data-el="speed" data-move="speed">
-          <button data-hud="speed:0" aria-label="${t('hud.pause')}">${ico('btn_pause', '⏸')}</button>
+          <button data-hud="speed:0" aria-label="${t('hud.pause')}">${ico('btn_pause', '')}</button>
           <button data-hud="speed:1" aria-label="x1">${ico('btn_play', '▶')}</button>
-          <button data-hud="speed:2" aria-label="x2">${ico('btn_fast', '⏩')}</button>
-          <button data-hud="speed:3" aria-label="x3">${ico('btn_faster', '⏭')}</button>
+          <button data-hud="speed:2" aria-label="x2">${ico('btn_fast', '')}</button>
+          <button data-hud="speed:3" aria-label="x3">${ico('btn_faster', '')}</button>
         </div>
-        <button class="hud-btn hidden" data-hud="stock" data-el="stock" aria-label="${t('res.open')}" title="${t('res.title')}">${ico('btn_stock', '📦')}</button>
-        <button class="hud-btn hidden" data-hud="points" data-el="points" aria-label="${t('points.title')}">${ico('pt_stand', '🏪')}</button>
-        <button class="hud-btn" data-hud="tip" aria-label="${t('hud.tip')}">${ico('btn_tip', '🍋')}</button>
-        <button class="hud-btn" data-hud="glossary" aria-label="${t('hud.glossary')}">${ico('btn_glossary', '📖')}</button>
-        <button class="hud-btn" data-hud="sound" data-el="sound" aria-label="${t('hud.sound')}">🔊</button>
-        <button class="hud-btn" data-hud="settings" aria-label="${t('btn.settings')}">${ico('btn_settings', '⚙️')}</button>
+        <button class="hud-btn hidden" data-hud="stock" data-el="stock" aria-label="${t('res.open')}" title="${t('res.title')}">${ico('btn_stock', '')}</button>
+        <button class="hud-btn hidden" data-hud="points" data-el="points" aria-label="${t('points.title')}">${ico('pt_stand', '')}</button>
+        <button class="hud-btn" data-hud="tip" aria-label="${t('hud.tip')}">${ico('btn_tip', '')}</button>
+        <button class="hud-btn" data-hud="glossary" aria-label="${t('hud.glossary')}">${ico('btn_glossary', '')}</button>
+        <button class="hud-btn" data-hud="sound" data-el="sound" aria-label="${t('hud.sound')}">${ico('btn_sound_on', '')}</button>
+        <button class="hud-btn" data-hud="settings" aria-label="${t('btn.settings')}">${ico('btn_settings', '')}</button>
       </div>
       <div class="hud-views hidden" data-el="views"></div>
       <div class="hud-point hidden" data-el="pointinfo"></div>
       <div class="hud-funnel" data-el="funnel">
         <div class="chance"><small>${t('hud.chance')}</small><b data-el="chance"></b></div>
         <div class="frows">
-          <div class="frow">🚶 <span>${t('hud.passed')}</span><b data-el="fpassed"></b></div>
-          <div class="frow">✋ <span>${t('hud.stopped')}</span><b data-el="fstopped"></b></div>
-          <div class="frow">🥤 <span>${t('hud.sold')}</span><b data-el="fsold"></b></div>
+          <div class="frow">${gi('walk')} <span>${t('hud.passed')}</span><b data-el="fpassed"></b></div>
+          <div class="frow">${gi('hand')} <span>${t('hud.stopped')}</span><b data-el="fstopped"></b></div>
+          <div class="frow">${gi('cup')} <span>${t('hud.sold')}</span><b data-el="fsold"></b></div>
         </div>
         <button class="link-btn" data-hud="why" data-el="whybtn">${t('hud.why')}</button>
         <div class="why hidden" data-el="why"></div>
@@ -93,13 +93,13 @@ export class Hud {
           </div>
           <button class="btn" data-hud="speaker" data-el="speaker" data-move="speaker"></button>
         </div>
-        <button class="serve-btn" data-hud="serve" data-el="serve" data-move="serve">${ico('gd_ready', '🥛')}<small>${t('hud.serve')}</small>
+        <button class="serve-btn" data-hud="serve" data-el="serve" data-move="serve">${ico('gd_ready', '')}<small>${t('hud.serve')}</small>
           <span class="pour-gauge" data-el="gauge" aria-hidden="true"><i class="pg-zone"></i><i class="pg-fill"></i><i class="pg-needle"></i></span></button>
         <div class="hb-right">
           <button class="btn btn-sm clean-btn hidden" data-hud="clean" data-el="clean" data-move="clean" aria-label="${t('hud.clean')}" title="${t('hud.cleanTip')}"></button>
           <span class="chip cups-chip" data-el="cups" data-move="cups"></span>
           <button class="btn btn-y" data-hud="make" data-el="make" data-move="make"></button>
-          <button class="btn btn-sm" data-hud="end" data-move="end">${ico('btn_sleep', '🌙')}<span class="lbl"> ${t('hud.end')}</span></button>
+          <button class="btn btn-sm" data-hud="end" data-move="end">${ico('btn_sleep', '')}<span class="lbl"> ${t('hud.end')}</span></button>
         </div>
       </div>`;
     this.els = {};
@@ -201,8 +201,8 @@ export class Hud {
     this.set('loc', `${locIco(S.location)}<span class="lbl"> ${t(`loc.${S.location}.name`)}</span>`);
     // the reputation: its whole level (as stars and a number) and the green bar to the next one
     const lv = repLevel(S.rep);
-    this.set('rep', `<span class="rep-stack"><span><span class="lbl">${stars(lv.level)}</span><span class="sm">${ico('star_full', '⭐')}</span> <b>${lv.level}</b></span>${repBar(S.rep)}</span>`);
-    this.set('sound', S.settings.sound ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇'));
+    this.set('rep', `<span class="rep-stack"><span><span class="lbl">${stars(lv.level)}</span><span class="sm">${ico('star_full', '')}</span> <b>${lv.level}</b></span>${repBar(S.rep)}</span>`);
+    this.set('sound', S.settings.sound ? ico('btn_sound_on', '') : ico('btn_sound_off', ''));
     this.show('points', g.pointsOpen() || S.points.length > 0);
     // the other stands: a switch, and a card about the one shown (the controls of the own stand step aside); the store
     // where the player works is the own scene
@@ -236,7 +236,7 @@ export class Hud {
     // controls
     this.set('price', String(S.price));
     this.show('speaker', !!S.upgrades.speaker);
-    this.set('speaker', `${S.speakerOn ? ico('btn_sound_on', '🔊') : ico('btn_sound_off', '🔇')}<span class="lbl"> ${t('hud.speaker')}: ${S.speakerOn ? t('hud.on') : t('hud.off')}</span>`);
+    this.set('speaker', `${S.speakerOn ? ico('btn_sound_on', '') : ico('btn_sound_off', '')}<span class="lbl"> ${t('hud.speaker')}: ${S.speakerOn ? t('hud.on') : t('hud.off')}</span>`);
     // the player pours only at their own counter (the customers at a helper's counter are the helper's): the button
     // works while a customer stands there and nobody pours for them yet
     const own = g.playerCounters();
@@ -249,12 +249,12 @@ export class Hud {
     // the ring shows the player's own pour (helpers' pours have their own rings over the stand)
     const mine = g.servings.find((x) => x && !x.helper) ?? null;
     serveBtn.style.setProperty('--p', mine ? String(Math.min(1, mine.t / mine.dur)) : '0');
-    this.set('cups', g.isSoldOut() ? `🚫 ${t('hud.soldOut')}` : `${ico('gd_ready', '🥛')}<span class="lbl"> ${t('hud.cups')}:</span> <b>${D.cupsReady}</b> · 👥 ${g.street.queued}`);
+    this.set('cups', g.isSoldOut() ? `${gi('ban')} ${t('hud.soldOut')}` : `${ico('gd_ready', '')}<span class="lbl"> ${t('hud.cups')}:</span> <b>${D.cupsReady}</b> · ${gi('users')} ${g.street.queued}`);
     const canMake = g.canMakePitcher();
     this.show('make', canMake || !!g.making);
     const makeBtn = this.els.make as HTMLButtonElement;
     makeBtn.disabled = !!g.making;
-    this.set('make', g.making ? `🍋 ${Math.round(Math.min(1, g.making.t / g.making.dur) * 100)}%<span class="lbl"> ${t('hud.making')}</span>` : `🍳<span class="lbl"> ${t('hud.make')}</span><span class="sm">+</span>`);
+    this.set('make', g.making ? `${ico('gd_lemon', '')} ${Math.round(Math.min(1, g.making.t / g.making.dur) * 100)}%<span class="lbl"> ${t('hud.making')}</span>` : `${ico('gd_pitcher', '')}<span class="lbl"> ${t('hud.make')}</span><span class="sm">+</span>`);
     makeBtn.classList.toggle('btn-y', D.cupsReady === 0);
     // the own store: how clean the floor is; a tap wipes a stain off (so does a tap on the stain itself)
     const store = !!g.storeHere();
@@ -264,7 +264,7 @@ export class Hud {
       const cleanBtn = this.els.clean as HTMLButtonElement;
       cleanBtn.disabled = pct >= 100;
       cleanBtn.classList.toggle('btn-y', pct < 70);
-      this.set('clean', `${ico('btn_clean', '🧹')} <b>${pct}%</b>`);
+      this.set('clean', `${ico('btn_clean', '')} <b>${pct}%</b>`);
     }
   }
 
@@ -272,7 +272,7 @@ export class Hud {
     const g = this.g;
     const btn = (id: string, icon: string, label: string, on: boolean) =>
       `<button class="hv-btn${on ? ' on' : ''}" data-hud="view:${id}" title="${label}" aria-label="${label}">${icon}<span class="lbl"> ${label}</span></button>`;
-    return `<span class="hv-eye">${ico('pt_look', '👀')}</span>${btn('own', '🍋', t('points.home'), g.viewPoint === null)}${g.S.points
+    return `<span class="hv-eye">${ico('pt_look', '')}</span>${btn('own', ico('btn_tip', ''), t('points.home'), g.viewPoint === null)}${g.S.points
       .filter((p) => p.loc !== g.S.location)
       .map((p) => btn(String(p.id), locIco(p.loc), t(`loc.${p.loc}.name`), g.viewPoint === p.id))
       .join('')}`;
@@ -285,29 +285,29 @@ export class Hud {
     const workers = pointWorkers(p);
     const person = (w: (typeof workers)[number]) => `<b>${t(`staff.name${w.nameId}`)}</b> <span class="skill">${'★'.repeat(skillStars(w.skill))}</span>`;
     let who: string;
-    if (!workers.length) who = `${ico('pt_closed', '🤒')} ${t(p.away || p.issue === 'sick' ? 'points.closedIll' : p.store ? 'points.storeNoStaff' : 'points.noSeller')}`;
-    else if (p.today?.status === 'nomoney') who = `💸 ${t('points.status.nomoney')}`;
-    else who = `${workers.length > 1 ? ico('pt_team', '👥') : ico('pt_seller', '👤')} ${workers.map(person).join(' · ')}${!p.seller || p.issue === 'sick' ? `<br><small class="muted">${t('points.aloneToday')}</small>` : ''}`;
+    if (!workers.length) who = `${ico('pt_closed', '')} ${t(p.away || p.issue === 'sick' ? 'points.closedIll' : p.store ? 'points.storeNoStaff' : 'points.noSeller')}`;
+    else if (p.today?.status === 'nomoney') who = `${gi('coins')} ${t('points.status.nomoney')}`;
+    else who = `${workers.length > 1 ? ico('pt_team', '') : ico('pt_seller', '')} ${workers.map(person).join(' · ')}${!p.seller || p.issue === 'sick' ? `<br><small class="muted">${t('points.aloneToday')}</small>` : ''}`;
     let today = '';
     if (sell && p.today && workers.length && p.today.status !== 'nomoney') {
       const k = pointProgress(p, g.D.hour);
       today =
         k <= 0
-          ? `🕐 ${t('points.notOpenYet', { h: fmtHour(pointOpensAt(p)) })}`
-          : `🥤 ${t('points.soFar', { n: Math.round(p.today.sold * k), m: Math.round(p.today.revenue * k) })}`;
+          ? `${gi('clock')} ${t('points.notOpenYet', { h: fmtHour(pointOpensAt(p)) })}`
+          : `${gi('cup')} ${t('points.soFar', { n: Math.round(p.today.sold * k), m: Math.round(p.today.revenue * k) })}`;
     } else if (p.last) today = t('points.lastProfit', { n: signedCoin(p.last.profit) });
     const pct = Math.max(0, Math.min(100, Math.round(payback(p).share * 100)));
     return `<div class="hp-title">${locIco(p.loc)} <b>${t(`loc.${p.loc}.name`)}</b></div>
       <div>${who}</div>
       ${today ? `<div>${today}</div>` : ''}
-      <div class="hp-pb"><span>${ico('pt_payback', '💹')} ${t('points.payback')}: <b>${pct}%</b></span><div class="bar pb-bar"><i style="width:${pct}%"></i></div></div>
-      ${sell ? `<small class="muted">🍋 ${t('points.ownQueue', { n: g.street.queued })}</small>` : ''}
+      <div class="hp-pb"><span>${ico('pt_payback', '')} ${t('points.payback')}: <b>${pct}%</b></span><div class="bar pb-bar"><i style="width:${pct}%"></i></div></div>
+      ${sell ? `<small class="muted">${gi('users')} ${t('points.ownQueue', { n: g.street.queued })}</small>` : ''}
       <div class="hp-btns">${
         p.store
-          ? `<button class="btn btn-sm btn-y" data-hud="points">${ico('pt_stand', '🏪')} ${t('points.title')}</button>`
-          : `<button class="btn btn-sm btn-y" data-hud="pshop:${p.id}">${ico('pt_upgrades', '🛠️')} ${t('points.upgrades')}</button>`
+          ? `<button class="btn btn-sm btn-y" data-hud="points">${ico('pt_stand', '')} ${t('points.title')}</button>`
+          : `<button class="btn btn-sm btn-y" data-hud="pshop:${p.id}">${ico('pt_upgrades', '')} ${t('points.upgrades')}</button>`
       }
-        <button class="btn btn-sm btn-g" data-hud="view:own">↩ ${t('points.backHome')}</button></div>`;
+        <button class="btn btn-sm btn-g" data-hud="view:own">${gi('back')} ${t('points.backHome')}</button></div>`;
   }
 
   private renderWhy(): void {
@@ -323,18 +323,18 @@ export class Hud {
       })
       .join('');
     const reasons = [
-      [`👀 ${t('hud.inRange')}`, f.inRange],
-      [`👍 ${t('hud.joined')}`, f.joined],
-      [`💸 ${t('reason.expensive')}`, f.tooExpensive],
-      [`⏳ ${t('reason.queue')}`, f.queueFull],
-      [`😠 ${t('reason.impatient')}`, f.impatient],
+      [`${gi('eye')} ${t('hud.inRange')}`, f.inRange],
+      [`${gi('thumbs')} ${t('hud.joined')}`, f.joined],
+      [`${gi('tag')} ${t('reason.expensive')}`, f.tooExpensive],
+      [`${gi('hourglass')} ${t('reason.queue')}`, f.queueFull],
+      [`${gi('angry')} ${t('reason.impatient')}`, f.impatient],
     ]
       .map(([k, n]) => `<div class="wrow"><span>${k}</span><b>${n}</b></div>`)
       .join('');
     this.set(
       'why',
       `${rows}<div class="wrow total"><span>${t('why.total')}</span><b>${Math.round(g.interest.chance * 100)}%</b></div>
-       <small>📡 ${t('hud.zone', { n: round1(g.radius) })}</small><small>${t('why.typeNote')}</small>
+       <small>${gi('radius')} ${t('hud.zone', { n: round1(g.radius) })}</small><small>${t('why.typeNote')}</small>
        <div style="margin-top:6px">${reasons}</div>`,
     );
   }

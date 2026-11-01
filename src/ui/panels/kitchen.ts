@@ -6,8 +6,8 @@ import { t } from '../../i18n';
 import { quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
-import { coin, fmtDur, fmtHour, ico } from '../dom';
-import { coolerBag, cups, dropsArt, iceTray, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, picUrl, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, type JuicerKind } from '../kitchenArt';
+import { coin, fmtDur, fmtHour, gi, ico } from '../dom';
+import { coolerBag, cups, dropsArt, iceTray, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, picUrl, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, spoonArt, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 import { startBuzz, stopBuzz } from '../../native';
 import { loopSfx, play } from '../../audio/sfx';
@@ -414,7 +414,7 @@ export const kitchenPanel: Panel = {
     el.innerHTML = `<div class="panel kitchen${mid ? ' mid' : ''}">
       <div class="panel-head"><h2 data-k="title"></h2><span class="chip coins" data-k="coins"></span></div>
       <div class="panel-body">
-        <div class="k-hint">👆 ${t('kitchen.hint')}</div>
+        <div class="k-hint">${gi('tap')} ${t('kitchen.hint')}</div>
         <div class="k-main">
           <div class="k-wrap" data-k="wrap">
             <div class="k-scene${hasBg ? ' has-bg' : ''}">
@@ -444,7 +444,7 @@ export const kitchenPanel: Panel = {
               <div class="k-splash">${splashArt()}</div>
               <div class="k-stream" data-k="stream"></div>
               <div class="k-puff" data-k="puff"></div>
-              <div class="k-spoon" data-k="spoon">🥄</div>
+              <div class="k-spoon" data-k="spoon">${spoonArt()}</div>
               <div class="k-cups-art" data-k="cupsart"></div>
               <div class="k-ready" data-k="ready"></div>
               ${up.cooler ? `<span class="k-cooler" title="${t('up.cooler.name')}">${coolerBag()}<b data-k="cooler"></b></span>` : ''}
@@ -458,17 +458,17 @@ export const kitchenPanel: Panel = {
               <div class="k-mix-status" data-k="mixstatus"></div>
               <div>
                 <div class="taste"><i data-k="taste"></i></div>
-                <div class="taste-labels"><span>🍋</span><b data-k="tastelabel"></b><span>🍬</span></div>
+                <div class="taste-labels"><span>${ico('gd_lemon', '')}</span><b data-k="tastelabel"></b><span>${ico('gd_sugar', '')}</span></div>
               </div>
             </div>
             <div class="k-tools">
-              <button class="btn btn-sm btn-b" data-kact="repeat">🔁 ${t('kitchen.repeat')}</button>
-              <button class="btn btn-sm" data-kact="reset">↺ ${t('kitchen.reset')}</button>
+              <button class="btn btn-sm btn-b" data-kact="repeat">${gi('refresh')} ${t('kitchen.repeat')}</button>
+              <button class="btn btn-sm" data-kact="reset">${gi('undo')} ${t('kitchen.reset')}</button>
               ${
                 mid
                   ? ''
-                  : `<button class="btn btn-sm" data-kact="market">${ico('gd_market', '🛒')} ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
-              <button class="btn btn-sm" data-kact="rest">😴 ${t('morning.rest')}</button>`
+                  : `<button class="btn btn-sm" data-kact="market">${ico('gd_market', '')} ${t('prep.market', { t: fmtDur(g.tripHours()) })}</button>
+              <button class="btn btn-sm" data-kact="rest">${gi('bed')} ${t('morning.rest')}</button>`
               }
             </div>
           </div>
@@ -476,8 +476,8 @@ export const kitchenPanel: Panel = {
       </div>
       <div class="panel-foot k-foot">
         <div class="k-pour"><b data-k="jugs"></b><small data-k="pourinfo"></small></div>
-        <button class="btn btn-g btn-big" data-kact="pour" data-k="pourbtn">🥛 ${t('kitchen.pourOne')}</button>
-        <button class="btn" data-kact="stand" data-k="standbtn">${mid ? `↩ ${t('kitchen.toStandMid')}` : `▶ ${t('kitchen.toStand')}`}</button>
+        <button class="btn btn-g btn-big" data-kact="pour" data-k="pourbtn">${ico('gd_ready', '')} ${t('kitchen.pourOne')}</button>
+        <button class="btn" data-kact="stand" data-k="standbtn">${mid ? `${gi('back')} ${t('kitchen.toStandMid')}` : `${gi('play')} ${t('kitchen.toStand')}`}</button>
       </div>
     </div>`;
 
@@ -558,7 +558,7 @@ export const kitchenPanel: Panel = {
       const n = q(el, `[data-k="${key}"]`);
       if (n && n.innerHTML !== html) n.innerHTML = html;
     };
-    set('title', mid ? `🍳 ${t('kitchen.titleMid', { time: fmtHour(g.D.hour) })}` : `🍳 ${t('kitchen.title', { time: fmtHour(g.D.hour) })}`);
+    set('title', `<span class="ph-ico">${gi('pot')}</span>${mid ? t('kitchen.titleMid', { time: fmtHour(g.D.hour) }) : t('kitchen.title', { time: fmtHour(g.D.hour) })}`);
     set('coins', coin(g.S.coins));
     const st = g.S.stock;
     const left = shelf(g);
@@ -570,7 +570,7 @@ export const kitchenPanel: Panel = {
       btn.disabled = can !== 'ok';
       btn.title = can === 'full' || can === 'noStock' ? refusal(g, i.id, can) : '';
     }
-    set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>🥤 ${st.cups}</small>`);
+    set('cupsart', cups(!!g.S.upgrades.branded_cups, st.cups) + `<small>${ico('gd_cups', '')} ${st.cups}</small>`);
     // as many jugs as are prepared: four to a row on the right half of the counter (they overlap a little), the next
     // row stands behind and a little higher, shifted by half a step
     const readyN = Math.min(16, g.D.kitchenJugs);
@@ -584,7 +584,7 @@ export const kitchenPanel: Panel = {
       jugsHtml += `<span class="k-pj${readyN > prev && i === readyN - 1 ? ' new' : ''}" style="left:${cx - 64}px;top:${top}px">${readyJug()}</span>`;
     }
     set('ready', jugsHtml);
-    set('cooler', g.D.cupsReady && g.S.upgrades.cooler ? `🥛 ${g.D.cupsReady}` : '');
+    set('cooler', g.D.cupsReady && g.S.upgrades.cooler ? `${ico('gd_ready', '')} ${g.D.cupsReady}` : '');
     // jug contents
     const fill = Math.min(95, k.water * 32 + k.juice * 5);
     const juiceShare = k.water + k.juice > 0 ? k.juice / (k.juice + k.water * 2) : 0;
@@ -599,15 +599,15 @@ export const kitchenPanel: Panel = {
     const lemonsUse = g.kitchenLemons();
     set(
       'counts',
-      `<span>${ico('gd_lemon_half', '🍋')} ${t('kitchen.juice')}: <b>${k.juice}</b></span><span>${ico('gd_water', '💧')} ${t('kitchen.waterN')}: <b>${k.water}/${CONFIG.WATER_PER_PITCHER}</b></span><span>${ico('gd_sugar', '🍬')} ${t('kitchen.sugarN')}: <b>${k.sugar}</b></span>` +
-        (g.S.upgrades.freezer ? `<span>${ico('gd_ice', '❄️')} ${t('kitchen.ice')}: <b>${k.ice}/${CONFIG.ICE_PER_PITCHER}</b></span>` : '') +
-        (k.juice && lemonsUse !== k.juice ? `<small>⚙️ ${t('kitchen.lemonsUse', { n: lemonsUse })}</small>` : ''),
+      `<span>${ico('gd_lemon_half', '')} ${t('kitchen.juice')}: <b>${k.juice}</b></span><span>${ico('gd_water', '')} ${t('kitchen.waterN')}: <b>${k.water}/${CONFIG.WATER_PER_PITCHER}</b></span><span>${ico('gd_sugar', '')} ${t('kitchen.sugarN')}: <b>${k.sugar}</b></span>` +
+        (g.S.upgrades.freezer ? `<span>${ico('gd_ice', '')} ${t('kitchen.ice')}: <b>${k.ice}/${CONFIG.ICE_PER_PITCHER}</b></span>` : '') +
+        (k.juice && lemonsUse !== k.juice ? `<small>${gi('gear')} ${t('kitchen.lemonsUse', { n: lemonsUse })}</small>` : ''),
     );
     // taste
     const r = { lemons: k.juice, sugar: k.sugar };
     const pos = k.juice ? Math.max(5, Math.min(95, 50 - tasteBalance(r) * 12)) : 50;
     q(el, '[data-k="taste"]').style.left = `${pos}%`;
-    set('tastelabel', k.juice ? t(tasteKey(r)) + (quality(r) >= 0.99 ? ' ⭐' : '') : '—');
+    set('tastelabel', k.juice ? t(tasteKey(r)) + (quality(r) >= 0.99 ? ` ${ico('star_full', '')}` : '') : '—');
     // mixer: it bounces when mixing is the next step
     const broken = mixerBroken(g.S);
     const canMix = g.kitchenCanMix();
@@ -615,16 +615,16 @@ export const kitchenPanel: Panel = {
     mixBtn.disabled = !canMix || k.mix !== 'none';
     mixBtn.classList.toggle('stir', broken);
     q(el, '.k-mixer').classList.toggle('nudge', canMix && k.mix === 'none' && !broken);
-    set('mixbtn', broken ? `<span>🥄</span><span>${t('kitchen.stir')}<small>${k.stir}/${CONFIG.STIR_TAPS}</small></span>` : `<span>🌀</span><span>${t('kitchen.mixer')}<small>${g.S.upgrades.mixer_pro ? '✨' : t('kitchen.hold')}</small></span>`);
+    set('mixbtn', broken ? `<span>${spoonArt()}</span><span>${t('kitchen.stir')}<small>${k.stir}/${CONFIG.STIR_TAPS}</small></span>` : `<span>${ico('up_mixer', '')}</span><span>${t('kitchen.mixer')}<small>${g.S.upgrades.mixer_pro ? gi('sparkle') : t('kitchen.hold')}</small></span>`);
     q(el, '.k-meter').classList.toggle('hidden', broken || !!g.S.upgrades.mixer_pro);
     if (k.mix === 'none') q(el, '.k-needle').style.left = '0%';
     const status = !canMix
       ? k.water < CONFIG.WATER_PER_PITCHER
-        ? `💧 ${t('kitchen.needWater')}`
-        : `🍋 ${t('kitchen.needLemon')}`
+        ? `${ico('gd_water', '')} ${t('kitchen.needWater')}`
+        : `${ico('gd_lemon', '')} ${t('kitchen.needLemon')}`
       : k.mix === 'none'
         ? broken
-          ? `⚠️ ${t('kitchen.mixerBroken')}`
+          ? `${gi('warning')} ${t('kitchen.mixerBroken')}`
           : t('kitchen.mixNone')
         : t(`kitchen.mix${k.mix[0].toUpperCase()}${k.mix.slice(1)}`);
     set('mixstatus', status);

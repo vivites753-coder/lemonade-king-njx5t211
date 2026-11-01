@@ -18,7 +18,7 @@ import { reportPanel } from './panels/report';
 import { shopPanel } from './panels/shop';
 import { titlePanel } from './panels/title';
 import type { Panel, UIApi } from './panels/types';
-import { esc, isPhone, updatePhoneClass } from './dom';
+import { esc, gi, isPhone, updatePhoneClass } from './dom';
 import { isNativeApp, shareTextFile } from '../native';
 import { devModal, devModeOn, setDevMode } from './devModal';
 import { hireModal, pointShopModal, pointsModal, type PointsHooks } from './points';
@@ -250,7 +250,7 @@ export class UI implements UIApi {
     const bar = document.createElement('button');
     bar.id = 'update-bar';
     bar.className = 'update-bar';
-    bar.innerHTML = `🔄 ${esc(t('update.available'))} <b>${esc(t('update.reload'))}</b>`;
+    bar.innerHTML = `${gi('refresh')} ${esc(t('update.available'))} <b>${esc(t('update.reload'))}</b>`;
     bar.addEventListener('click', () => {
       if (install) {
         // the game is saved before the app closes for the update
@@ -439,7 +439,7 @@ export class UI implements UIApi {
   private applyPanelHidden(): void {
     this.panelEl.classList.toggle('collapsed', this.panelHidden);
     this.toggleEl.classList.toggle('reopen', this.panelHidden);
-    this.toggleEl.innerHTML = this.panelHidden ? `📋 ${t('ui.showPanel')}` : '✕';
+    this.toggleEl.innerHTML = this.panelHidden ? `${gi('clipboard')} ${t('ui.showPanel')}` : gi('x');
     this.toggleEl.setAttribute('aria-label', this.panelHidden ? t('ui.showPanel') : t('ui.hidePanel'));
     this.layout();
   }
@@ -797,9 +797,9 @@ export class UI implements UIApi {
     const layout: Record<string, [number, number]> = { ...this.layoutOf(kind) };
     const bar = document.createElement('div');
     bar.className = 'hud-edit-bar';
-    bar.innerHTML = `<b>✋ ${t('hudEdit.hint')}</b>
-      <div class="row"><button class="btn btn-sm" data-e="reset">↺ ${t('hudEdit.reset')}</button>
-      <button class="btn btn-sm btn-g" data-e="done">✓ ${t('hudEdit.done')}</button></div>`;
+    bar.innerHTML = `<b>${gi('hand')} ${t('hudEdit.hint')}</b>
+      <div class="row"><button class="btn btn-sm" data-e="reset">${gi('undo')} ${t('hudEdit.reset')}</button>
+      <button class="btn btn-sm btn-g" data-e="done">${gi('tick')} ${t('hudEdit.done')}</button></div>`;
     (document.getElementById('app') ?? document.body).appendChild(bar);
     const hud = document.getElementById('hud')!;
     const down = (e: PointerEvent) => {
@@ -898,7 +898,8 @@ export class UI implements UIApi {
   toast(text: string, kind: 'info' | 'warn' | 'good' = 'info'): void {
     const el = document.createElement('div');
     el.className = `toast toast-${kind}`;
-    el.innerHTML = esc(text);
+    // the kind of the message as an icon in front of it
+    el.innerHTML = `${gi(kind === 'good' ? 'check' : kind === 'warn' ? 'warning' : 'info')}${esc(text)}`;
     this.toastsEl.appendChild(el);
     while (this.toastsEl.children.length > 3) this.toastsEl.firstElementChild?.remove();
     setTimeout(() => el.classList.add('out'), 2600);

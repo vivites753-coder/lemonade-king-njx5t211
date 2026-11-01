@@ -8,7 +8,7 @@ import { t } from '../i18n';
 import { inUseEquipment, unusedHere } from '../sim/equipment';
 import type { Game } from '../sim/game';
 import { lemonsTotal } from '../sim/state';
-import { coin, ico } from './dom';
+import { coin, gi, ico } from './dom';
 import type { ModalSpec } from './overlays';
 
 const ROWS: { key: string; icon: string; img: string; label: string }[] = [
@@ -45,8 +45,8 @@ export class ResourceBar {
     this.root.innerHTML =
       `<div class="res-head">${t('res.title')}</div>` +
       ROWS.map((r) => `<div class="res-row" data-row="${r.key}"><span class="ri">${ico(r.img, r.icon)}</span><b data-r="${r.key}"></b></div>`).join('') +
-      `<div class="res-row res-warn" data-row="broken"><span class="ri">🔧</span><b data-r="broken"></b></div>` +
-      `<div class="res-row" data-row="helper"><span class="ri">🍳</span><b data-r="helper"></b></div>`;
+      `<div class="res-row res-warn" data-row="broken"><span class="ri">${gi('wrench')}</span><b data-r="broken"></b></div>` +
+      `<div class="res-row" data-row="helper"><span class="ri">${ico('pt_hire', '')}</span><b data-r="helper"></b></div>`;
     this.els = {};
     this.cache.clear();
     for (const el of Array.from(this.root.querySelectorAll<HTMLElement>('[data-r],[data-row]'))) {
@@ -84,7 +84,7 @@ export class ResourceBar {
     const w = market ? g.stockWithCart() : { ...have, cups: st.cups };
     const plus = (now: number, after: number) => (market && after > now ? ` <small class="pos">+${after - now}</small>` : '');
     const old = st.lemons.filter((b) => b.age + 1 >= CONFIG.LEMON_SPOIL_AGE).reduce((n, b) => n + b.n, 0);
-    this.set('lemons', `${have.lemons}${plus(have.lemons, w.lemons)}${old ? ` <small class="neg">⚠${old}</small>` : ''}`);
+    this.set('lemons', `${have.lemons}${plus(have.lemons, w.lemons)}${old ? ` <small class="neg">${gi('warning')}${old}</small>` : ''}`);
     this.set('water', `${have.water}${plus(have.water, w.water)}`);
     this.set('sugar', `${have.sugar}${plus(have.sugar, w.sugar)}`);
     this.set('cups', `${st.cups}${plus(st.cups, w.cups)}`);
@@ -103,7 +103,7 @@ export class ResourceBar {
       const after = market ? now + g.cart[good] * GOODS[good].pack : now;
       this.set(key, `${now}${plus(now, after)}`);
       this.show(key, after > 0 || menuOpen);
-      this.tip(key, `${GOODS[good].icon} ${t(`res.${key}`)}: ${now}`);
+      this.tip(key, `${t(`res.${key}`)}: ${now}`);
     }
     // the trays of ice of the freezer (in the kitchen: what is left after the jug)
     const ice = kitchen ? g.kitchenIceLeft() : (st.ice ?? 0);
@@ -123,19 +123,19 @@ export class ResourceBar {
     this.set('broken', broken.map((id) => EQUIPMENT[id].icon).join(''));
     this.show('broken', broken.length > 0);
     this.show('helper', g.D.helpers > 0);
-    this.set('helper', g.D.helpers > 1 ? `×${g.D.helpers}` : '✓');
+    this.set('helper', g.D.helpers > 1 ? `×${g.D.helpers}` : gi('tick'));
 
-    this.tip('lemons', `🍋 ${t('res.lemons')}: ${have.lemons}${old ? ` · ⚠ ${t('res.oldTip', { n: old })}` : ''}`);
-    this.tip('water', `💧 ${t('res.water')}: ${have.water}`);
-    this.tip('sugar', `🍬 ${t('res.sugar')}: ${have.sugar}`);
-    this.tip('cups', `🥤 ${t('res.cups')}: ${st.cups}`);
-    this.tip('cookies', `🍪 ${t('res.cookies')}: ${cookies} · ${t('res.cookiePrice', { n: g.S.cookiePrice })}`);
-    this.tip('ice', `❄️ ${t('res.ice')}: ${ice}${g.S.broken.freezer ? ` · 🔧 ${t('res.iceBroken')}` : ''}`);
-    this.tip('ready', `🥛 ${t('res.ready')}: ${ready}`);
-    this.tip('cooler', `🧊 ${t(night ? 'res.coolerNight' : 'res.coolerTip', { n: cooled })}`);
-    this.tip('make', `🏺 ${t('res.canMake')}: ${canMake}`);
-    this.tip('broken', `🔧 ${t('res.broken')}: ${broken.map((id) => t(`equip.${id}`)).join(', ')}`);
-    this.tip('helper', `🍳 ${t('res.helper')}`);
+    this.tip('lemons', `${t('res.lemons')}: ${have.lemons}${old ? ` · ${t('res.oldTip', { n: old })}` : ''}`);
+    this.tip('water', `${t('res.water')}: ${have.water}`);
+    this.tip('sugar', `${t('res.sugar')}: ${have.sugar}`);
+    this.tip('cups', `${t('res.cups')}: ${st.cups}`);
+    this.tip('cookies', `${t('res.cookies')}: ${cookies} · ${t('res.cookiePrice', { n: g.S.cookiePrice })}`);
+    this.tip('ice', `${t('res.ice')}: ${ice}${g.S.broken.freezer ? ` · ${t('res.iceBroken')}` : ''}`);
+    this.tip('ready', `${t('res.ready')}: ${ready}`);
+    this.tip('cooler', `${t(night ? 'res.coolerNight' : 'res.coolerTip', { n: cooled })}`);
+    this.tip('make', `${t('res.canMake')}: ${canMake}`);
+    this.tip('broken', `${t('res.broken')}: ${broken.map((id) => t(`equip.${id}`)).join(', ')}`);
+    this.tip('helper', t('res.helper'));
   }
 }
 
@@ -155,10 +155,10 @@ export function equipmentRows(g: Game, mode: 'repair' | 'shop'): string {
       let btn = '';
       if (broken) {
         const cost = g.repairCost(id);
-        btn = `<button class="btn btn-sm btn-g" data-act="repair:${id}" ${g.S.coins < cost ? 'disabled' : ''}>🔧 ${t('shop.repair')} ${coin(cost)}</button>`;
+        btn = `<button class="btn btn-sm btn-g" data-act="repair:${id}" ${g.S.coins < cost ? 'disabled' : ''}>${gi('wrench')} ${t('shop.repair')} ${coin(cost)}</button>`;
       } else if (mode === 'shop') {
         const cost = g.maintenanceCost(id);
-        btn = cost > 0 ? `<button class="btn btn-sm" data-act="maintain:${id}" ${g.S.coins < cost ? 'disabled' : ''}>🧽 ${t('shop.maintain')} ${coin(cost)}</button>` : `<small class="pos">${t('shop.okTag')}</small>`;
+        btn = cost > 0 ? `<button class="btn btn-sm" data-act="maintain:${id}" ${g.S.coins < cost ? 'disabled' : ''}>${gi('toolbox')} ${t('shop.maintain')} ${coin(cost)}</button>` : `<small class="pos">${t('shop.okTag')}</small>`;
       }
       return `<div class="eq-row">
         <span class="ico">${ico(`up_${id}`, EQUIPMENT[id].icon)}</span>
@@ -175,16 +175,16 @@ export function stockModal(g: Game): ModalSpec {
     render: () => {
       const st = g.S.stock;
       const old = st.lemons.filter((b) => b.age + 1 >= CONFIG.LEMON_SPOIL_AGE).reduce((n, b) => n + b.n, 0);
-      return `<h2>📦 ${t('stock.title')}</h2>
+      return `<h2><span class="ph-ico">${gi('package')}</span>${t('stock.title')}</h2>
         <h3>${t('stock.goods')}</h3>
         <div class="card">
-          <div class="kv"><span>${ico('gd_lemon', '🍋')} ${t('res.lemons')}</span><b>${lemonsTotal(st)}</b></div>
+          <div class="kv"><span>${ico('gd_lemon', '')} ${t('res.lemons')}</span><b>${lemonsTotal(st)}</b></div>
           ${old ? `<small class="neg">${t('stock.oldLemons', { n: old })}</small>` : ''}
-          <div class="kv"><span>${ico('gd_water', '💧')} ${t('res.water')}</span><b>${st.water}</b></div>
-          <div class="kv"><span>${ico('gd_sugar', '🍬')} ${t('res.sugar')}</span><b>${st.sugar}</b></div>
-          <div class="kv"><span>${ico('gd_cups', '🥤')} ${t('res.cups')}</span><b>${st.cups}</b></div>
-          ${g.S.upgrades.freezer ? `<div class="kv"><span>${ico('gd_ice', '❄️')} ${t('res.ice')}</span><b>${st.ice ?? 0}</b></div>` : ''}
-          <div class="note">${ico('gd_ready', '🥛')} ${t('stock.lemonade', { n: g.D.cupsReady })} · ${ico('gd_pitcher', '🏺')} ${t('stock.canMake', { n: g.maxPitchersNow() })}</div>
+          <div class="kv"><span>${ico('gd_water', '')} ${t('res.water')}</span><b>${st.water}</b></div>
+          <div class="kv"><span>${ico('gd_sugar', '')} ${t('res.sugar')}</span><b>${st.sugar}</b></div>
+          <div class="kv"><span>${ico('gd_cups', '')} ${t('res.cups')}</span><b>${st.cups}</b></div>
+          ${g.S.upgrades.freezer ? `<div class="kv"><span>${ico('gd_ice', '')} ${t('res.ice')}</span><b>${st.ice ?? 0}</b></div>` : ''}
+          <div class="note">${ico('gd_ready', '')} ${t('stock.lemonade', { n: g.D.cupsReady })} · ${ico('gd_pitcher', '')} ${t('stock.canMake', { n: g.maxPitchersNow() })}</div>
         </div>
         <h3>${t('stock.equipment')}</h3>
         ${equipmentRows(g, 'repair')}

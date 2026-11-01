@@ -5,6 +5,7 @@ import { t } from '../../i18n';
 import { drawSprite, getImage, registerProcs, type SpriteCall } from '../assets';
 import { ENV } from '../env';
 import { box, circle, ellipse, faceX, faceY, line, P, poly, rrect, shadow, text, type Ctx } from '../iso';
+import { picto } from '../pictos';
 
 /** Wall height in px (the compact camera shows exactly this much above the back corner). */
 export const WALL_H = 104;
@@ -459,7 +460,7 @@ function platformSign(ctx: Ctx, c: SpriteCall): void {
   box(ctx, x + 0.28, y - 0.03, 0.05, 0.05, 40, 0, '#495057');
   faceY(ctx, x - 0.4, y + 0.02, 40, () => {
     rrect(ctx, 0, -18, 26, 18, 3, '#1971c2', '#ffffff', 1.5);
-    text(ctx, '🚆', 6, -9, 8, '#000', 'center', 400);
+    picto(ctx, 'gi:train', 6.5, -9, 9, '#ffffff');
     text(ctx, '→', 19, -9, 10, '#ffffff', 'center', 900);
   });
 }

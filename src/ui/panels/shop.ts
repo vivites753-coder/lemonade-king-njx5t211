@@ -2,7 +2,7 @@ import type { EquipId, UpgradeId } from '../../core/types';
 import { LOCATIONS } from '../../data/locations';
 import { UPGRADES, UPGRADE_CATS, UPGRADE_ORDER } from '../../data/upgrades';
 import { t } from '../../i18n';
-import { coin, ico } from '../dom';
+import { coin, gi, ico } from '../dom';
 import { equipmentRows } from '../resources';
 import type { Panel } from './types';
 
@@ -17,13 +17,13 @@ export const shopPanel: Panel = {
       const owned = !!S.upgrades[id];
       let btn: string;
       if (owned) btn = `<b class="pos">${t('shop.owned')}</b>`;
-      else if (can.reason === 'rep') btn = `<small class="neg">🔒 ⭐ ${u.minRep}</small>`;
-      else if (can.reason === 'store') btn = `<small>🔒 ${t('shop.needStore')}</small>`;
+      else if (can.reason === 'rep') btn = `<small class="neg">${gi('lock')} ${t('roadmap.level', { n: u.minRep ?? 1 })}</small>`;
+      else if (can.reason === 'store') btn = `<small>${gi('lock')} ${t('shop.needStore')}</small>`;
       else if (can.reason === 'requires') btn = `<small>${t('shop.needs', { x: t(`up.${u.requires}.name`) })}</small>`;
       else btn = `<button class="btn ${can.ok ? 'btn-g' : ''} btn-sm" data-act="buy:${id}" ${can.ok ? '' : 'disabled'}>${coin(u.price)}</button>`;
       return `<div class="up${owned ? ' owned' : ''}${can.reason === 'rep' ? ' locked' : ''}" data-anchor="up:${id}">
         <div class="ico">${ico(`up_${id}`, u.icon)}</div>
-        <div><b>${t(`up.${id}.name`)}</b><small>${t(`up.${id}.desc`)}</small>${u.outdoorOnly ? `<small class="pill-out">☀️ ${t('shop.outdoorOnly')}</small>` : ''}<span class="idea">💡 ${t(`up.${id}.idea`)}</span></div>
+        <div><b>${t(`up.${id}.name`)}</b><small>${t(`up.${id}.desc`)}</small>${u.outdoorOnly ? `<small class="pill-out">${gi('sun')} ${t('shop.outdoorOnly')}</small>` : ''}<span class="idea">${gi('bulb')} ${t(`up.${id}.idea`)}</span></div>
         <div>${btn}</div>
       </div>`;
     };
@@ -37,26 +37,26 @@ export const shopPanel: Panel = {
     const hist = S.history.slice(-7);
     const maxAbs = Math.max(1, ...hist.map((h) => Math.abs(h.profit)));
     const chart = hist.length
-      ? `<h3>📈 ${t('shop.week')}</h3>
+      ? `<h3>${gi('chart')} ${t('shop.week')}</h3>
         <div class="card"><div class="chart">${hist
           .map((h) => `<div class="col${h.profit < 0 ? ' neg' : ''}"><span>${h.profit}</span><i style="height:${Math.round((Math.abs(h.profit) / maxAbs) * 70)}%"></i></div>`)
           .join('')}</div>
         <div class="chart-days">${hist.map((h) => `<span>${h.day}</span>`).join('')}</div></div>`
       : '';
     return `<div class="panel">
-      <div class="panel-head"><h2>🏪 ${t('shop.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
+      <div class="panel-head"><h2><span class="ph-ico">${gi('store')}</span>${t('shop.title')}</h2><span class="chip coins">${coin(S.coins)}</span></div>
       <div class="panel-body">
-        ${S.upgrades.truck ? `<button class="btn btn-b" data-act="truck" style="width:100%">🎨 ${t('truck.customize')}</button>` : ''}
-        ${S.points.length ? `<button class="btn btn-y" data-act="points" style="width:100%;margin-top:6px">${ico('pt_stand', '🏪')} ${t('shop.points')}</button>` : ''}
-        <h3>🔧 ${t('shop.equipment')}</h3>
+        ${S.upgrades.truck ? `<button class="btn btn-b" data-act="truck" style="width:100%">${gi('palette')} ${t('truck.customize')}</button>` : ''}
+        ${S.points.length ? `<button class="btn btn-y" data-act="points" style="width:100%;margin-top:6px">${ico('pt_stand', '')} ${t('shop.points')}</button>` : ''}
+        <h3>${gi('wrench')} ${t('shop.equipment')}</h3>
         <div class="card">${equipmentRows(g, 'shop')}</div>
-        <div class="note">💡 ${t('shop.invest')}</div>
-        ${atStore ? `<div class="note">🏪 ${t('shop.storeHides')}</div>` : ''}
+        <div class="note">${gi('bulb')} ${t('shop.invest')}</div>
+        ${atStore ? `<div class="note">${gi('store')} ${t('shop.storeHides')}</div>` : ''}
         ${groups}
         ${chart}
       </div>
       <div class="panel-foot">
-        <button class="btn btn-b btn-big" data-act="sleep">🌙 ${t('shop.sleep')}</button>
+        <button class="btn btn-b btn-big" data-act="sleep">${ico('btn_sleep', '')} ${t('shop.sleep')}</button>
       </div>
     </div>`;
   },

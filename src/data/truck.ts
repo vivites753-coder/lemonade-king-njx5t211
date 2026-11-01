@@ -18,6 +18,7 @@ export const TRUCK_SKINS: TruckSkin[] = [
 ];
 
 /** Logos without zero-width joiners (they break on Windows 10). */
-export const TRUCK_LOGOS = ['🍋', '⭐', '🍓', '👑', '🌈'];
+/** The logo pictures (assets/ui), by the number saved in the game. */
+export const TRUCK_LOGOS = ['ui_gd_lemon', 'ui_star_full', 'ui_heart', 'ui_crown', 'ui_w_sunny'];
 
 export const TRUCK_TEXT_MAX = 14;

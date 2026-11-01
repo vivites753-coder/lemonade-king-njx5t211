@@ -1,11 +1,12 @@
 import { listProfiles } from '../../core/save';
 import type { AgeMode, Avatar } from '../../core/types';
 import { LANGS, asLang, t } from '../../i18n';
-import { coin, esc, ico } from '../dom';
+import { art, coin, esc, gi, ico } from '../dom';
 import { KID_MODE_READY } from '../modals';
 import type { Panel } from './types';
 
-const AVATAR_ICON: Record<Avatar, string> = { boy: '👦', girl: '👧' };
+/** The player's picture: the head and shoulders of the player art. */
+const AVATAR_ICON: Record<Avatar, string> = { boy: 'char_player_boy_front', girl: 'char_player_girl_front' };
 
 /** The version of the game: the day and time of the build (in the player's time zone). */
 function buildLabel(): string {
@@ -31,8 +32,8 @@ export const titlePanel: Panel = {
           <div>
             <h3>${t('newgame.avatar')}</h3>
             <div class="choice-grid">
-              ${choice('avatar:boy', s.avatar === 'boy', '👦', t('newgame.boy'))}
-              ${choice('avatar:girl', s.avatar === 'girl', '👧', t('newgame.girl'))}
+              ${choice('avatar:boy', s.avatar === 'boy', art(AVATAR_ICON.boy, 'avatar'), t('newgame.boy'))}
+              ${choice('avatar:girl', s.avatar === 'girl', art(AVATAR_ICON.girl, 'avatar'), t('newgame.girl'))}
             </div>
           </div>
           ${
@@ -40,15 +41,15 @@ export const titlePanel: Panel = {
               ? `<div>
             <h3>${t('newgame.mode')}</h3>
             <div class="choice-grid">
-              ${choice('mode:kid', s.mode === 'kid', '🧸', t('mode.kid'), t('mode.kid.desc'))}
-              ${choice('mode:pro', s.mode === 'pro', '💼', t('mode.pro'), t('mode.pro.desc'))}
+              ${choice('mode:kid', s.mode === 'kid', gi('smile'), t('mode.kid'), t('mode.kid.desc'))}
+              ${choice('mode:pro', s.mode === 'pro', gi('briefcase'), t('mode.pro'), t('mode.pro.desc'))}
             </div>
           </div>`
               : ''
           }
         </div>
         <button class="btn btn-g btn-big" data-act="start">▶ ${t('btn.start')}</button>
-        <button class="btn btn-sm" data-act="back">← ${t('btn.back')}</button>
+        <button class="btn btn-sm" data-act="back">${gi('arrow-left')} ${t('btn.back')}</button>
       </div>`;
     }
     const lang = g.S.lang;
@@ -57,25 +58,25 @@ export const titlePanel: Panel = {
       .map(
         (p) => `<div class="prof">
           <button class="prof-main" data-act="profile:${p.id}">
-            <span class="prof-ico">${AVATAR_ICON[p.avatar] ?? '🙂'}</span>
+            <span class="prof-ico">${art(AVATAR_ICON[p.avatar] ?? AVATAR_ICON.boy, 'avatar')}</span>
             <span class="grow"><b>${esc(p.name)}</b><small>${p.day ? `${t('prof.day', { n: p.day })} · ${coin(p.coins ?? 0)}` : t('prof.notStarted')}</small></span>
             <span class="prof-go">▶</span>
           </button>
-          <button class="prof-del" data-act="delete:${p.id}" aria-label="${esc(t('prof.delete'))}" title="${esc(t('prof.delete'))}">🗑️</button>
+          <button class="prof-del" data-act="delete:${p.id}" aria-label="${esc(t('prof.delete'))}" title="${esc(t('prof.delete'))}">${gi('trash')}</button>
         </div>`,
       )
       .join('');
     return `<div class="title-card">
-      <div class="logo">${ico('emblem', '👑🍋')}</div>
+      <div class="logo">${ico('emblem', '')}</div>
       <h1>${t('app.title')}</h1>
       <p>${t('app.subtitle')}</p>
       ${profiles.length ? `<h3>${t('prof.who')}</h3><div class="profs">${cards}</div>` : ''}
-      <button class="btn ${profiles.length ? 'btn-y' : 'btn-g btn-big'}" data-act="new">✨ ${profiles.length ? t('prof.new') : t('btn.newGame')}</button>
-      <button class="btn" data-act="settings">⚙️ ${t('btn.settings')}</button>
+      <button class="btn ${profiles.length ? 'btn-y' : 'btn-g btn-big'}" data-act="new">${gi('plus')} ${profiles.length ? t('prof.new') : t('btn.newGame')}</button>
+      <button class="btn" data-act="settings">${gi('gear')} ${t('btn.settings')}</button>
       <div class="lang-row">
         ${LANGS.map((l) => `<button class="btn btn-sm ${lang === l.id ? 'btn-y' : ''}" data-act="lang:${l.id}">${l.name}</button>`).join('')}
       </div>
-      ${profiles.length ? `<p class="note">🔒 ${t('prof.local')}</p>` : ''}
+      ${profiles.length ? `<p class="note">${gi('lock')} ${t('prof.local')}</p>` : ''}
       <p class="version-note">${t('title.version', { v: buildLabel() })}</p>
     </div>`;
   },
