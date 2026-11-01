@@ -1,7 +1,7 @@
 import { listProfiles } from '../../core/save';
 import type { AgeMode, Avatar } from '../../core/types';
 import { LANGS, asLang, t } from '../../i18n';
-import { art, coin, esc, gi, ico } from '../dom';
+import { avatar, coin, esc, gi, ico } from '../dom';
 import { KID_MODE_READY } from '../modals';
 import type { Panel } from './types';
 
@@ -32,8 +32,8 @@ export const titlePanel: Panel = {
           <div>
             <h3>${t('newgame.avatar')}</h3>
             <div class="choice-grid">
-              ${choice('avatar:boy', s.avatar === 'boy', art(AVATAR_ICON.boy, 'avatar'), t('newgame.boy'))}
-              ${choice('avatar:girl', s.avatar === 'girl', art(AVATAR_ICON.girl, 'avatar'), t('newgame.girl'))}
+              ${choice('avatar:boy', s.avatar === 'boy', avatar(AVATAR_ICON.boy), t('newgame.boy'))}
+              ${choice('avatar:girl', s.avatar === 'girl', avatar(AVATAR_ICON.girl), t('newgame.girl'))}
             </div>
           </div>
           ${
@@ -58,7 +58,7 @@ export const titlePanel: Panel = {
       .map(
         (p) => `<div class="prof">
           <button class="prof-main" data-act="profile:${p.id}">
-            <span class="prof-ico">${art(AVATAR_ICON[p.avatar] ?? AVATAR_ICON.boy, 'avatar')}</span>
+            <span class="prof-ico">${avatar(AVATAR_ICON[p.avatar] ?? AVATAR_ICON.boy)}</span>
             <span class="grow"><b>${esc(p.name)}</b><small>${p.day ? `${t('prof.day', { n: p.day })} · ${coin(p.coins ?? 0)}` : t('prof.notStarted')}</small></span>
             <span class="prof-go">▶</span>
           </button>

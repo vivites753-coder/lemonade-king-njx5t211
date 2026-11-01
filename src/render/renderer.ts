@@ -36,8 +36,10 @@ const VIEW_COMPACT = { minX: -396, maxX: 396, minY: -110, maxY: 412 };
  * (the user tuned it in steps: 1.4, then 40 % bigger, then 40 % and 15 % smaller). */
 const PHONE_ZOOM = 1.4 * 1.4 * 0.6 * 0.85;
 const PHONE_SELL_ZOOM = 1.5;
-/** Two fingers zoom the field between "everything fits" and this many times that. */
-const PINCH_MAX = 4;
+/** Two fingers (or the mouse wheel) zoom the field between these shares of "everything fits". On a PC the camera
+ * goes 30 % further away than that and comes 40 % less close than on phones (the user asked for both). */
+const ZOOM_PHONE = { min: 1, max: 4 };
+const ZOOM_PC = { min: 0.7, max: 4 * 0.6 };
 /** A phone or a tablet (index.html marks them): the scene is drawn with fewer pixels there, see resize. */
 const TOUCH_DEVICE = typeof document !== 'undefined' && !!document.documentElement.dataset.phone;
 
@@ -175,7 +177,8 @@ export class Renderer {
     const p = this.pinch0;
     if (!p) return;
     const b = this.baseCam();
-    const s = Math.max(b.fit, Math.min(b.fit * PINCH_MAX, (p.s * Math.max(10, d)) / p.d));
+    const lim = this.compact ? ZOOM_PHONE : ZOOM_PC;
+    const s = Math.max(b.fit * lim.min, Math.min(b.fit * lim.max, (p.s * Math.max(10, d)) / p.d));
     const k = s / p.s;
     let ox = mx - (p.mx - p.ox) * k;
     let oy = my - (p.my - p.oy) * k;

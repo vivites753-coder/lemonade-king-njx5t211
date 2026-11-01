@@ -6,14 +6,15 @@ import { t } from '../../i18n';
 import { quality, tasteBalance, tasteKey } from '../../sim/economy';
 import { mixerBroken } from '../../sim/equipment';
 import type { Game, KitchenItem } from '../../sim/game';
-import { coin, fmtDur, fmtHour, gi, ico } from '../dom';
+import { coin, fmtDur, fmtHour, gi, ico, isPhone } from '../dom';
 import { coolerBag, cups, dropsArt, iceTray, itemGhost, jugArt, juicer, kitchenDecor, lemonCrate, mixer, picUrl, pourFx, readyJug, sceneBg, splashArt, sugarBag, toolkitBox, waterBottles, spoonArt, type JuicerKind } from '../kitchenArt';
 import type { Panel, UIApi } from './types';
 import { startBuzz, stopBuzz } from '../../native';
 import { loopSfx, play } from '../../audio/sfx';
 
-/** Scene pixels: the scene is 900x600 and is scaled to the panel. Planks of the wall shelf are at PLANKS. */
+/** Scene pixels: the scene is 900x672 and is scaled to the panel. Planks of the wall shelf are at PLANKS. */
 const SCENE_W = 900;
+const SCENE_H = 672;
 const PLANKS = [127, 226, 326];
 const ITEMS: { id: KitchenItem; icon: string; target: 'juicer' | 'jug' }[] = [
   { id: 'lemon', icon: '🍋', target: 'juicer' },
@@ -481,15 +482,38 @@ export const kitchenPanel: Panel = {
       </div>
     </div>`;
 
-    // the scene has a fixed size and is scaled to the space it gets
+    // the scene has a fixed size and is scaled to the space it gets; on a computer it is also no taller than the
+    // window has room for under it, so the controls stay in view and nothing scrolls (phones size it by CSS)
     const wrap = q(el, '.k-wrap');
-    const fit = () => {
+    const body = q(el, '.panel-body');
+    const scale = () => {
       const w = wrap.clientWidth;
       if (w > 0) wrap.style.setProperty('--ks', String(w / SCENE_W));
     };
+    const fit = () => {
+      if (!isPhone()) {
+        const cs = getComputedStyle(body);
+        const kids = [...body.children].filter((c) => (c as HTMLElement).offsetHeight > 0) as HTMLElement[];
+        const content = kids.reduce((sum, c) => sum + c.offsetHeight, 0) + (parseFloat(cs.rowGap) || 0) * Math.max(0, kids.length - 1);
+        const room = body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - (content - wrap.offsetHeight);
+        if (room > 0) wrap.style.setProperty('--k-fit', `${Math.floor((room * SCENE_W) / SCENE_H)}px`);
+      }
+      scale();
+    };
     fit();
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    // the room is measured in the next frame: a size changed inside the observer's call would be a loop to the browser
+    let fitRaf = 0;
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            scale();
+            cancelAnimationFrame(fitRaf);
+            fitRaf = requestAnimationFrame(fit);
+          })
+        : null;
     ro?.observe(wrap);
+    ro?.observe(body);
+    ro?.observe(q(el, '.k-side'));
 
     const onDown = (e: PointerEvent) => {
       const item = (e.target as HTMLElement).closest<HTMLElement>('.k-item');
@@ -541,9 +565,12 @@ export const kitchenPanel: Panel = {
       cancelAnimationFrame(holdRaf);
       abortGesture?.();
       ro?.disconnect();
+      cancelAnimationFrame(fitRaf);
       for (const k of BUSY_KEYS) delete el.dataset[k];
     };
     kitchenPanel.update!(el, g, ui);
+    // the controls have their words now: the picture's room is known
+    fit();
   },
 
   unmount() {
@@ -631,14 +658,14 @@ export const kitchenPanel: Panel = {
     q(el, '[data-k="mixstatus"]').className = `k-mix-status ${k.mix === 'perfect' ? 'pos' : k.mix === 'none' ? '' : 'neg'}`;
     // pouring: one jug at a time
     const jugs = g.D.kitchenJugs;
-    set('jugs', jugs ? t('kitchen.jugs', { n: jugs, c: jugs * CONFIG.CUPS_PER_PITCHER }) : t('kitchen.jugsNone'));
+    set('jugs', jugs ? t('kitchen.jugs', { n: jugs, c: jugs * CONFIG.CUPS_PER_PITCHER, cup: ico('gd_cups', '') }) : t('kitchen.jugsNone'));
     const max = g.kitchenMaxPitchers();
     const hours = mid ? (CONFIG.PITCHER_TIME * (k.hand || broken ? 2 : 1)) / CONFIG.HOUR_SEC : g.nextJugHours(k.hand || broken);
     set(
       'pourinfo',
       k.juice > 0 && st.cups < CONFIG.CUPS_PER_PITCHER
         ? `<span class="neg">${t('kitchen.noCups')}</span>`
-        : `${t('kitchen.nextJug', { t: fmtDur(hours) })}${mid ? ` · ${t('kitchen.midNote')}` : ''}`,
+        : `${t('kitchen.nextJug', { t: fmtDur(hours), clock: gi('timer') })}${mid ? ` · ${t('kitchen.midNote')}` : ''}`,
     );
     const pourBtn = q<HTMLButtonElement>(el, '[data-k="pourbtn"]');
     pourBtn.disabled = k.mix === 'none' || max < 1;

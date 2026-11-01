@@ -88,6 +88,12 @@ export function art(id: string, cls = ''): string {
   return u ? `<img class="art-img${cls ? ` ${cls}` : ''}" src="${u}" alt="" draggable="false">` : '';
 }
 
+/** A person's head and shoulders in a circle: the top of their full-length picture (empty when it is missing). */
+export function avatar(id: string): string {
+  const u = artUrls[id];
+  return u ? `<span class="avatar"><img src="${u}" alt="" draggable="false"></span>` : '';
+}
+
 /** The picture of a place (the emoji from the data when there is none). */
 export function locIco(id: LocationId, cls = ''): string {
   return ico(`loc_${id}`, LOCATIONS[id].icon, cls);

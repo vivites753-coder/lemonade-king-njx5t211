@@ -2788,7 +2788,8 @@ html.phone .rm-state {
 }
 .k-wrap {
   position: relative;
-  width: max(320px, min(100%, calc((var(--app-h, 100vh) - 400px) * 1.339)));
+  /* --k-fit: the width at which the controls under the picture still fit in the window (kitchen.ts) */
+  width: max(260px, min(100%, calc((var(--app-h, 100vh) - 400px) * 1.339), var(--k-fit, 100%)));
   aspect-ratio: 900 / 672;
   margin: 0 auto;
   overflow: hidden;
@@ -4949,22 +4950,40 @@ html.phone .day-path .dp-step.now {
   pointer-events: none;
   user-select: none;
 }
-/* a person's head and shoulders: the top of the full-length picture, in a circle */
-.art-img.avatar {
+/* a person's head and shoulders: the top of the full-length picture, in a circle (the white ring is drawn over it) */
+.avatar {
+  position: relative;
+  display: inline-block;
+  flex: none;
   width: 1.9em;
   height: 1.9em;
-  object-fit: cover;
-  object-position: 50% 0;
-  object-view-box: inset(1% 13% 57% 13%);
+  overflow: hidden;
+  vertical-align: middle;
   border-radius: 50%;
   background: radial-gradient(#fff9db, #ffe8a3);
-  box-shadow: inset 0 0 0 2px #fff, 0 1px 3px rgba(60, 45, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(60, 45, 0, 0.2);
 }
-.choice .big .art-img.avatar {
+.avatar img {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 86%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+}
+.avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+.choice .big .avatar {
   width: 1.7em;
   height: 1.7em;
 }
-.prof-ico .art-img.avatar {
+.prof-ico .avatar {
   width: 1.45em;
   height: 1.45em;
 }
@@ -5234,6 +5253,15 @@ html.phone .day-path .dp-step.now {
 .btn .ico-img {
   height: 1.4em;
   vertical-align: -0.32em;
+}
+/* the kitchen keeps its footer in one row, as before: what is poured, the pour button and the way to the stand
+   (in three rows they took the room of the picture and the window scrolled) */
+.k-foot .btn {
+  flex: 1 1 160px;
+  min-width: auto;
+}
+.k-foot .btn-big {
+  flex-basis: 160px;
 }
 .btn-link,
 .panel-foot .btn-link {

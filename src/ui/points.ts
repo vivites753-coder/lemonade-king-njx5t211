@@ -23,7 +23,7 @@ import {
   type PointStatus,
   type Seller,
 } from '../sim/points';
-import { art, coin, gi, ico, locIco, signedCoin } from './dom';
+import { avatar, coin, gi, ico, locIco, signedCoin } from './dom';
 import type { ModalSpec } from './overlays';
 
 export interface PointsHooks {
@@ -38,7 +38,7 @@ export interface PointsHooks {
 }
 
 /** The seller's picture: the head and shoulders of the helper art (a girl's or a boy's). */
-const face = (s: Seller) => art(isGirl(s.nameId) ? 'char_helper_girl_front' : 'char_helper_boy_front', 'avatar') || gi('user');
+const face = (s: Seller) => avatar(isGirl(s.nameId) ? 'char_helper_girl_front' : 'char_helper_boy_front') || gi('user');
 
 /** How a day of a point went, in words (a store has words of its own where they differ). */
 export function statusText(loc: LocationId, status: PointStatus): string {
