@@ -69,6 +69,10 @@ export interface ModalSpec {
   /** Return true to close the modal. */
   act: (act: string, arg: string, el: HTMLElement) => boolean | void;
   wide?: boolean;
+  /** An extra class of the dialog card (its own size and look). */
+  cls?: string;
+  /** Called once the dialog is on screen (not when it is drawn again), with its card. */
+  shown?: (card: HTMLElement) => void;
 }
 
 type Item = { kind: 'tip'; key: string } | { kind: 'card'; card: CardInfo } | { kind: 'modal'; spec: ModalSpec };
@@ -251,7 +255,8 @@ export class Overlays {
       return;
     }
     this.shown = spec;
-    this.modalEl.innerHTML = `<div class="modal-card${spec.wide ? ' wide' : ''}">${spec.render()}</div>`;
+    this.modalEl.innerHTML = `<div class="modal-card${spec.wide ? ' wide' : ''}${spec.cls ? ` ${spec.cls}` : ''}">${spec.render()}</div>`;
     this.modalEl.classList.remove('hidden');
+    spec.shown?.(this.modalEl.firstElementChild as HTMLElement);
   }
 }

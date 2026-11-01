@@ -2237,20 +2237,6 @@ html.phone .taste-labels {
   background: #fff8db;
 }
 
-/* reputation road map */
-.rm-now .rm-bar {
-  height: 12px;
-  border-radius: 99px;
-  background: #f1ead3;
-  overflow: hidden;
-  margin: 6px 0 4px;
-}
-.rm-now .rm-bar i {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, #69db7c, #2f9e44);
-  border-radius: 99px;
-}
 /* the green bar of the reputation to its next whole level (src/ui/dom.ts repBar) */
 .rep-bar {
   display: inline-block;
@@ -2298,126 +2284,312 @@ html.phone .rep-stack .rep-bar {
   height: 8px;
   margin: 0;
 }
-.rm-road {
+/* the reputation road (src/ui/roadmap.ts): a card with the level now, then a star for every level on a line, each
+   with a card of what it opens, sorted into places, new features and upgrades */
+.modal-card.rm-modal {
+  /* the levels measure their place in the dialog from it (to bring the next level into view) */
   position: relative;
-  margin: 6px 0;
-  padding-left: 6px;
+  width: min(1000px, 100%);
+  padding-bottom: 0;
 }
-.rm-road::before {
-  content: '';
+/* the close button stays at the bottom while the road scrolls */
+.rm-modal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 4px;
+  padding: 10px 0 14px;
+  background: var(--cream);
+  box-shadow: 0 -10px 12px -6px var(--cream);
+}
+.rm-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #fff 30%, #fff3bf);
+  box-shadow: 0 2px 0 var(--line);
+}
+.rm-medal,
+.rm-node {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.rm-medal {
+  width: 68px;
+  height: 68px;
+}
+.rm-medal > .ico-img,
+.rm-node > .ico-img {
   position: absolute;
-  left: 32px;
-  top: 20px;
-  bottom: 20px;
-  width: 6px;
-  border-radius: 6px;
-  background: repeating-linear-gradient(180deg, #e2d9bb 0 10px, transparent 10px 16px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* the level number on its star */
+.rm-medal b,
+.rm-node b {
+  position: relative;
+  padding-top: 0.18em;
+  color: #fff;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 0 #b35c00, 0 0 4px rgba(150, 75, 0, 0.75);
+}
+.rm-medal b {
+  font-size: calc(26px * var(--fs, 1));
+}
+.rm-hero-txt {
+  flex: 1;
+  min-width: 0;
+}
+.rm-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: calc(13px * var(--fs, 1));
+  font-weight: 800;
+  color: var(--muted);
+}
+.rm-hero-level {
+  margin: 1px 0 7px;
+  font-size: calc(22px * var(--fs, 1));
+  font-weight: 900;
+  line-height: 1.1;
+}
+.rm-bar {
+  height: 12px;
+  border-radius: 99px;
+  background: #f1ead3;
+  box-shadow: inset 0 1px 2px rgba(60, 45, 0, 0.12);
+  overflow: hidden;
+}
+.rm-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #69db7c, #2f9e44);
+}
+.rm-hero small {
+  display: block;
+  margin-top: 6px;
+  font-size: calc(13px * var(--fs, 1));
+  font-weight: 700;
+  color: var(--muted);
+}
+.rm-how {
+  margin: 10px 4px 2px;
+  font-size: calc(13px * var(--fs, 1));
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.rm-road {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .rm-level {
   position: relative;
   display: flex;
-  gap: 10px;
   align-items: flex-start;
-  margin: 10px 0;
+  gap: 12px;
+  padding-top: 12px;
+}
+/* the line from a level's star down to the next one: dashed ahead, green where it has been walked */
+.rm-level::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 66px;
+  bottom: -10px;
+  width: 4px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(180deg, #e2d9bb 0 8px, transparent 8px 14px);
+}
+.rm-level.line-done::before {
+  background: #8ce99a;
+}
+.rm-level:last-child::before {
+  display: none;
 }
 .rm-node {
-  position: relative;
   z-index: 1;
-  flex: none;
-  width: 58px;
-  min-height: 58px;
+  width: 52px;
+  height: 52px;
+}
+.rm-node b {
+  font-size: calc(19px * var(--fs, 1));
+}
+.rm-level.locked .rm-node b {
+  text-shadow: 0 1px 0 #868e96, 0 0 4px rgba(73, 80, 87, 0.6);
+}
+/* the next star to reach glows */
+.rm-level.next .rm-node::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  font-size: calc(13px * var(--fs, 1));
-  line-height: 1;
-  padding: 6px;
-  background: #f1f3f5;
-  border: 3px solid #ced4da;
-  filter: grayscale(0.8);
+  box-shadow: 0 0 0 4px rgba(255, 146, 43, 0.3), 0 0 14px rgba(255, 146, 43, 0.45);
 }
-.rm-level.reached .rm-node {
-  background: #ebfbee;
-  border-color: var(--green);
-  filter: none;
-}
-.rm-level.next .rm-node {
-  background: #fff3bf;
-  border-color: var(--orange);
-  filter: none;
-  box-shadow: 0 0 0 5px rgba(255, 146, 43, 0.25);
+.rm-level.locked .rm-node.top {
+  filter: grayscale(0.85);
+  opacity: 0.8;
 }
 .rm-card {
   flex: 1;
   min-width: 0;
+  padding: 10px 12px 12px;
+  border: 2px solid transparent;
+  border-radius: 18px;
   background: #fff;
-  border-radius: 16px;
-  padding: 8px 10px;
   box-shadow: 0 2px 0 var(--line);
 }
-.rm-level:not(.reached):not(.next) .rm-card {
-  opacity: 0.75;
+.rm-level.next .rm-card {
+  border-color: #ffc078;
+}
+.rm-level.locked:not(.next) .rm-card {
+  background: #fcfaf3;
 }
 .rm-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 10px;
+  min-height: 30px;
 }
-.rm-chip {
-  font-size: calc(12px * var(--fs, 1));
-  min-height: 26px;
-  padding: 2px 9px;
-  box-shadow: none;
+.rm-head h3 {
+  margin: 0;
+  font-size: calc(17px * var(--fs, 1));
+  font-weight: 900;
+}
+.rm-state {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
   background: #f1f3f5;
+  color: #868e96;
+  font-size: calc(12px * var(--fs, 1));
+  font-weight: 900;
+  white-space: nowrap;
 }
-.rm-chip.ok {
+.rm-state.ok {
   background: #ebfbee;
   color: var(--green-d);
 }
-.rm-items {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 6px;
+.rm-state.next {
+  background: #fff4e6;
+  color: #d9480f;
 }
-.rm-item {
+.rm-state .ico-img {
+  height: 1.25em;
+}
+/* how far the bar to the next level is filled */
+.rm-mini {
+  display: inline-block;
+  width: 56px;
+  height: 7px;
+  border-radius: 99px;
+  background: #ffe8cc;
+  overflow: hidden;
+}
+.rm-mini i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--orange);
+}
+.rm-label {
+  margin: 10px 2px 6px;
+  font-size: calc(11px * var(--fs, 1));
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a69f86;
+}
+.rm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+.rm-tile {
   display: flex;
   align-items: center;
-  gap: 6px;
-  border-radius: 12px;
-  padding: 4px 8px;
-  background: #fffaf0;
-  border: 2px solid #f1ead3;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1.5px solid #efe7cf;
+  border-radius: 14px;
+  background: #fff;
 }
-.rm-item.rm-place {
-  background: #e7f5ff;
-  border-color: #d0ebff;
+.rm-tile.done {
+  border-color: #b2f2bb;
+  background: #f4fcf5;
 }
-.rm-item.rm-feature {
-  background: #f3f0ff;
-  border-color: #e5dbff;
-}
-.rm-item.done {
-  border-color: var(--green);
-}
+/* the picture on a soft square: blue for places, violet for new features, yellow for upgrades */
 .rm-ico {
-  font-size: calc(22px * var(--fs, 1));
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff4cc;
+  font-size: calc(24px * var(--fs, 1));
+  line-height: 1;
+}
+.rm-place .rm-ico {
+  background: #e7f5ff;
+}
+.rm-feature .rm-ico {
+  background: #f3f0ff;
+}
+.rm-ico .ico-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
 }
 .rm-txt {
   min-width: 0;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 .rm-txt b {
   display: block;
-  font-size: calc(13px * var(--fs, 1));
+  font-size: calc(14px * var(--fs, 1));
+  font-weight: 900;
+  overflow-wrap: break-word;
 }
 .rm-txt small {
-  font-size: calc(11px * var(--fs, 1));
-  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+  font-size: calc(12px * var(--fs, 1));
   font-weight: 700;
+  color: var(--muted);
+}
+.rm-txt small.ok {
+  color: var(--green-d);
+  font-weight: 900;
+}
+/* the levels after the next one: a little faded (the next one is in full colour: it is the goal now) */
+.rm-level.locked:not(.next) .rm-tile {
+  opacity: 0.7;
+}
+.rm-level.locked:not(.next) .rm-ico {
+  filter: grayscale(0.6);
+}
+.rm-goal {
+  margin: 6px 0 0;
+  font-size: calc(14px * var(--fs, 1));
+  font-weight: 700;
+  color: var(--muted);
 }
 
 /* developer mode */
@@ -2459,16 +2631,34 @@ html.phone .rep-stack .rep-bar {
   padding: 2px 8px;
   margin-left: 6px;
 }
-html.phone .rm-node {
-  width: 46px;
-  min-height: 46px;
-  font-size: calc(10px * var(--fs, 1));
+/* the reputation road on phones (drawn at 60 %): bigger letters, the tiles a little wider */
+html.phone .rm-hero {
+  padding: 8px 12px;
 }
-html.phone .rm-road::before {
-  left: 26px;
+html.phone .rm-hero small,
+html.phone .rm-how {
+  font-size: calc(14px * var(--fs, 1));
 }
-html.phone .rm-items {
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+html.phone .rm-how {
+  margin: 8px 4px 0;
+}
+html.phone .rm-grid {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+html.phone .rm-txt b {
+  font-size: calc(16px * var(--fs, 1));
+}
+html.phone .rm-txt small {
+  font-size: calc(14px * var(--fs, 1));
+}
+html.phone .rm-label {
+  font-size: calc(12px * var(--fs, 1));
+}
+html.phone .rm-head h3 {
+  font-size: calc(18px * var(--fs, 1));
+}
+html.phone .rm-state {
+  font-size: calc(13px * var(--fs, 1));
 }
 
 
@@ -4555,8 +4745,7 @@ html.hud-editing #hud [data-move].dragging {
 }
 /* the pictures of the places on their cards and in the lists */
 .loc-ico .ico-img,
-.pt-ico .ico-img,
-.rm-ico .ico-img {
+.pt-ico .ico-img {
   height: 1.15em;
   vertical-align: middle;
 }
