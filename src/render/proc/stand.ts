@@ -480,31 +480,49 @@ function table2Items(ctx: Ctx, level: number): void {
   for (let i = 0; i < 3; i++) rrect(ctx, cx - 4, cy - 3 - i * 3, 8, 3, 1, i === 2 ? '#ffffff' : '#f1f3f5', '#ced4da', 0.6);
 }
 
-/** The menu of the store on its counter: a basket of oranges, cartons of juice, pastries on a plate. */
+/** The picture of an item of the menu standing on the counter (sheet 12d), `h` px high; false when it has not loaded. */
+function menuPicture(ctx: Ctx, id: string, x: number, y: number, h: number): boolean {
+  const img = getImage(id);
+  if (!img) return false;
+  const w = (h * img.naturalWidth) / img.naturalHeight;
+  ctx.drawImage(img, x - w / 2, y - h * 0.92, w, h);
+  return true;
+}
+
+/** The menu of the store on its counter: oranges, juice and pastries (their pictures; drawn here until they load). */
 function menuItems(ctx: Ctx, S: SceneSource['S']): void {
-  if (S.stock.oranges > 0) {
-    const [x, y] = P(SX - 1.78, SY - 0.1, TABLE_H);
-    ellipse(ctx, x, y - 1.5, 9, 4, '#c58b4f', '#8a5a35', 1);
-    const n = Math.min(6, Math.ceil(S.stock.oranges / 2));
-    for (let i = 0; i < n; i++) circle(ctx, x - 5 + (i % 3) * 5, y - 4 - Math.floor(i / 3) * 4, 2.7, '#ff922b', '#e8590c', 0.6);
+  if (S.stock.oranges > 0) menuOranges(ctx, S.stock.oranges);
+  if (S.stock.juice > 0) menuJuice(ctx, S.stock.juice);
+  if (S.stock.pastries > 0) menuPastries(ctx, S.stock.pastries);
+}
+
+function menuOranges(ctx: Ctx, have: number): void {
+  const [x, y] = P(SX - 1.78, SY - 0.1, TABLE_H);
+  if (menuPicture(ctx, 'ui_gd_orange', x, y, 15)) return;
+  ellipse(ctx, x, y - 1.5, 9, 4, '#c58b4f', '#8a5a35', 1);
+  const n = Math.min(6, Math.ceil(have / 2));
+  for (let i = 0; i < n; i++) circle(ctx, x - 5 + (i % 3) * 5, y - 4 - Math.floor(i / 3) * 4, 2.7, '#ff922b', '#e8590c', 0.6);
+}
+
+function menuJuice(ctx: Ctx, have: number): void {
+  const [x, y] = P(SX - 1.6, SY + 0.25, TABLE_H);
+  if (menuPicture(ctx, 'ui_gd_juice', x, y, 16)) return;
+  const n = Math.min(3, Math.ceil(have / 5));
+  for (let i = 0; i < n; i++) {
+    rrect(ctx, x - 7 + i * 5, y - 12, 4.5, 11, 1, '#fff3bf', '#e8590c', 0.6);
+    rrect(ctx, x - 7 + i * 5, y - 8, 4.5, 3.5, 0.5, '#ff922b');
+    circle(ctx, x - 4.75 + i * 5, y - 11, 0.9, '#ff6b6b');
   }
-  if (S.stock.juice > 0) {
-    const [x, y] = P(SX - 1.6, SY + 0.25, TABLE_H);
-    const n = Math.min(3, Math.ceil(S.stock.juice / 5));
-    for (let i = 0; i < n; i++) {
-      rrect(ctx, x - 7 + i * 5, y - 12, 4.5, 11, 1, '#fff3bf', '#e8590c', 0.6);
-      rrect(ctx, x - 7 + i * 5, y - 8, 4.5, 3.5, 0.5, '#ff922b');
-      circle(ctx, x - 4.75 + i * 5, y - 11, 0.9, '#ff6b6b');
-    }
-  }
-  if (S.stock.pastries > 0) {
-    const [x, y] = P(SX - 0.62, SY + 0.3, TABLE_H);
-    ellipse(ctx, x, y - 1, 8.5, 3.2, '#ffffff', '#ced4da', 0.8);
-    const n = Math.min(3, S.stock.pastries);
-    for (let i = 0; i < n; i++) {
-      poly(ctx, [[x - 6 + i * 4.2, y - 2], [x - 2.2 + i * 4.2, y - 2], [x - 2.6 + i * 4.2, y - 6], [x - 6 + i * 4.2, y - 5.5]], '#ffe8a3', '#e9c46a', 0.6);
-      ellipse(ctx, x - 4.2 + i * 4.2, y - 6, 1.8, 0.9, '#ff8787');
-    }
+}
+
+function menuPastries(ctx: Ctx, have: number): void {
+  const [x, y] = P(SX - 0.62, SY + 0.3, TABLE_H);
+  if (menuPicture(ctx, 'ui_gd_pastry', x, y, 13)) return;
+  ellipse(ctx, x, y - 1, 8.5, 3.2, '#ffffff', '#ced4da', 0.8);
+  const n = Math.min(3, have);
+  for (let i = 0; i < n; i++) {
+    poly(ctx, [[x - 6 + i * 4.2, y - 2], [x - 2.2 + i * 4.2, y - 2], [x - 2.6 + i * 4.2, y - 6], [x - 6 + i * 4.2, y - 5.5]], '#ffe8a3', '#e9c46a', 0.6);
+    ellipse(ctx, x - 4.2 + i * 4.2, y - 6, 1.8, 0.9, '#ff8787');
   }
 }
 

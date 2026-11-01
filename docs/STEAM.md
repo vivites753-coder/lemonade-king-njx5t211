@@ -93,19 +93,21 @@
 | Знімки екрана (щонайменше 5) | 1920×1080 | ✅ `art/steam/screenshots/uk` і `en` (8 + 8) |
 | Значок ярлика | 256×256 (.ico або .png) | ✅ `art/steam/shortcut_icon_256.png` |
 | Значок спільноти | 184×184 (.jpg) | ✅ `art/steam/community_icon_184.jpg` |
-| Header capsule | 920×430 | потрібно намалювати |
-| Small capsule | 462×174 | потрібно намалювати |
-| Main capsule | 1232×706 | потрібно намалювати |
-| Vertical capsule | 748×896 | потрібно намалювати |
-| Library capsule | 600×900 | потрібно намалювати |
-| Library header | 920×430 | (те саме, що Header capsule) |
-| Library hero | 3840×1240, PNG | потрібно намалювати |
-| Library logo | 1280 в ширину та/або 720 у висоту, PNG з прозорим фоном | потрібно намалювати |
-| Фон сторінки | 1438×810 | за бажанням |
+| Header capsule | 920×430 | ✅ `art/steam/store/header_capsule_920x430.jpg` |
+| Small capsule | 462×174 | ✅ `art/steam/store/small_capsule_462x174.jpg` |
+| Main capsule | 1232×706 | ✅ `art/steam/store/main_capsule_1232x706.jpg` |
+| Vertical capsule | 748×896 | ✅ `art/steam/store/vertical_capsule_748x896.jpg` |
+| Library capsule | 600×900 | ✅ `art/steam/store/library_capsule_600x900.jpg` |
+| Library header | 920×430 | ✅ `art/steam/store/library_header_920x430.jpg` |
+| Library hero | 3840×1240, PNG | ✅ `art/steam/store/library_hero_3840x1240.png` |
+| Library logo | 1280 в ширину та/або 720 у висоту, PNG з прозорим фоном | ✅ `art/steam/store/library_logo.png` |
+| Фон сторінки | 1438×810 | ✅ `art/steam/store/page_background_1438x810.jpg` |
 | Трейлер | відео | за бажанням, але дуже допомагає |
 
 Правила Steam: на капсулах **лише логотип гри й малюнок**, жодного іншого тексту; на Library hero — малюнок без
-логотипа (логотип Steam кладе зверху сам). Промпти для генератора напишу на прохання, по одному.
+логотипа (логотип Steam кладе зверху сам). Усе це робить `python tools/make_store_art.py` з ключових малюнків
+`art/steam/keyart_wide.jpg`, `keyart_tall.jpg` і логотипа `logo.png` (промпти: docs/ART_PROMPTS.md); там же банер
+Google Play `google_play_feature_1024x500.jpg`.
 
 Знімки екрана можна зробити знову (після змін у грі): `electron desktop --shots=<папка> --lang=uk` (див. DESKTOP.md).
 

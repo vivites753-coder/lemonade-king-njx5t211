@@ -12,6 +12,8 @@ export type Order = 'lemonade' | DrinkId;
 export interface ExtraDef {
   id: ExtraId;
   icon: string;
+  /** Its picture (assets/ui/ui_<img>, sheet 12d); the emoji stands in until it has loaded. */
+  img: string;
   /** What it is made of in the stock, and how much one portion takes. */
   stock: 'oranges' | 'juice' | 'pastries';
   per: number;
@@ -26,9 +28,9 @@ export interface ExtraDef {
 }
 
 export const EXTRAS: Record<ExtraId, ExtraDef> = {
-  orange: { id: 'orange', icon: '🍊', stock: 'oranges', per: 2, fair: 1.6, time: 1.5, quality: 1, taste: { kid: 0.5, adult: 0.9, granny: 0.6, sport: 1.6, tourist: 1.2 } },
-  multifruit: { id: 'multifruit', icon: '🧃', stock: 'juice', per: 1, fair: 1.25, time: 1, quality: 0.85, taste: { kid: 1.5, adult: 0.6, granny: 0.8, sport: 0.5, tourist: 0.8 } },
-  pastry: { id: 'pastry', icon: '🍰', stock: 'pastries', per: 1, fair: 1.1, time: 0, quality: 1, taste: { kid: 1.2, adult: 1, granny: 1.4, sport: 0.4, tourist: 1.2 } },
+  orange: { id: 'orange', icon: '🍊', img: 'gd_orange', stock: 'oranges', per: 2, fair: 1.6, time: 1.5, quality: 1, taste: { kid: 0.5, adult: 0.9, granny: 0.6, sport: 1.6, tourist: 1.2 } },
+  multifruit: { id: 'multifruit', icon: '🧃', img: 'gd_juice', stock: 'juice', per: 1, fair: 1.25, time: 1, quality: 0.85, taste: { kid: 1.5, adult: 0.6, granny: 0.8, sport: 0.5, tourist: 0.8 } },
+  pastry: { id: 'pastry', icon: '🍰', img: 'gd_pastry', stock: 'pastries', per: 1, fair: 1.1, time: 0, quality: 1, taste: { kid: 1.2, adult: 1, granny: 1.4, sport: 0.4, tourist: 1.2 } },
 };
 
 export const DRINK_IDS: DrinkId[] = ['orange', 'multifruit'];

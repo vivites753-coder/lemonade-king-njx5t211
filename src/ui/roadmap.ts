@@ -36,7 +36,7 @@ function itemsFor(g: Game, level: number): Item[] {
   if (level === CONFIG.ONLINE_ADS_MIN_REP) out.push({ icon: ico('btn_onlineads', '📱'), name: t('roadmap.onlineAds'), kind: 'feature', note: t('roadmap.onlineAdsNote', { n: CONFIG.ONLINE_ADS_COST }) });
   if (level === POINTS.MIN_REP) out.push({ icon: '🏪', name: t('roadmap.points'), kind: 'feature', note: t('roadmap.pointsNote', { n: POINTS.COST }) });
   if (level === POINTS.MIN_REP) out.push({ icon: ico('btn_clean', '🧹'), name: t('roadmap.storeStaff'), kind: 'feature', note: t('roadmap.storeStaffNote', { n: CONFIG.CLEANER_WAGE }) });
-  if (level === MENU.MIN_REP) out.push({ icon: '🍊', name: t('roadmap.menu'), kind: 'feature', note: t('roadmap.menuNote') });
+  if (level === MENU.MIN_REP) out.push({ icon: ico('gd_orange', '🍊'), name: t('roadmap.menu'), kind: 'feature', note: t('roadmap.menuNote') });
   for (const id of UPGRADE_ORDER) {
     const u = UPGRADES[id];
     if ((u.minRep ?? 1) !== level) continue;

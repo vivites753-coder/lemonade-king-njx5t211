@@ -114,7 +114,7 @@ export const reportPanel: Panel = {
           <div class="kv"><span>🥤 ${t('report.sales')}</span><span>${coin(r.sales - (r.cookieSales ?? 0) - extrasSales)}</span></div>
           ${r.cookieSales ? `<div class="kv"><span>🍪 ${t('report.cookies', { n: r.cookiesSold })}</span><span>${coin(r.cookieSales)}</span></div>` : ''}
           ${EXTRA_IDS.filter((id) => r.extras?.[id]?.sales)
-            .map((id) => `<div class="kv"><span>${EXTRAS[id].icon} ${t('report.extra', { name: t(`extra.${id}`), n: r.extras![id].sold })}</span><span>${coin(r.extras![id].sales)}</span></div>`)
+            .map((id) => `<div class="kv"><span>${ico(EXTRAS[id].img, EXTRAS[id].icon)} ${t('report.extra', { name: t(`extra.${id}`), n: r.extras![id].sold })}</span><span>${coin(r.extras![id].sales)}</span></div>`)
             .join('')}
           ${r.bonus ? `<div class="kv"><span>🎁 ${t('report.bonus')}</span><span>${coin(r.bonus)}</span></div>` : ''}
           ${r.tips ? `<div class="kv"><span>💛 ${t('report.tips')}</span><span>${coin(r.tips)}</span></div>` : ''}
