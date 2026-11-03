@@ -571,7 +571,7 @@ export class UI implements UIApi {
     play('click');
     switch (act) {
       case 'speed':
-        if (arg === '0') this.userPaused = !this.userPaused;
+        if (arg === '0') this.togglePause();
         else {
           this.userPaused = false;
           g.setSpeed(Number(arg));
@@ -867,11 +867,22 @@ export class UI implements UIApi {
       e.preventDefault();
       // held like the button: the cup fills until the key is let go
       if (!e.repeat) this.startPour();
-    } else if (e.key === 'p' || e.key === 'P') this.userPaused = !this.userPaused;
+    } else if (e.key === 'p' || e.key === 'P') this.togglePause();
     else if (e.key === '1' || e.key === '2' || e.key === '3') {
       this.userPaused = false;
       this.g.setSpeed(Number(e.key));
     } else if (e.key === 'n' || e.key === 'N') this.g.makePitcher();
+  }
+
+  /** The pause button (or P) stops the selling day; pressed again, the day goes on at the normal speed, not at the fast
+   * one chosen before the pause. */
+  private togglePause(): void {
+    if (!this.userPaused) {
+      this.userPaused = true;
+      return;
+    }
+    this.userPaused = false;
+    this.g.setSpeed(1);
   }
 
   /** The phone's Back button: closes the tip or window on top; a card that waits for a choice stays (true too). */
